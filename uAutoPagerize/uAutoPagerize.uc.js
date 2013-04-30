@@ -6,6 +6,7 @@
 // @compatibility  Firefox 17
 // @charset        UTF-8
 // @version        0.3.0
+// @note           添加最大加载页数，参考 卡饭论坛 lastdream2013
 // @note           添加 Super_preloader 的数据库支持及更新 By ywzhaiqi。
 // @note           0.3.0 本家に倣って Cookie の処理を変更した
 // @note           0.2.9 remove E4X
@@ -37,7 +38,42 @@
 
 (function(css) {
 
-var isUrlbar = true;   // 放置的位置，true未地址栏，否则附加组件栏。
+// 以下 設定が無いときに利用する
+var isUrlbar = true;   // 放置的位置，true为地址栏，否则附加组件栏。
+var FORCE_TARGET_WINDOW = true;
+var BASE_REMAIN_HEIGHT = 600;
+var MAX_PAGER_NUM = -1;   //默认最大翻页数， -1表示无限制
+var DEBUG = true;
+var AUTO_START = true;
+var SCROLL_ONLY = false;
+var CACHE_EXPIRE = 24 * 60 * 60 * 1000;
+var XHR_TIMEOUT = 30 * 1000;
+
+
+var NLF_DB_FILENAME =  "uSuper_preloader.db.js";
+// 替换Super_preloader数据库中 auto; ，加的太多可能有错误的链接
+var AUTO_NEXT_XPATH = '\
+	//a[descendant-or-self::*[contains(text(), "下一页")]][@href] \
+	| //a[descendant-or-self::*[contains(text(), "下一頁")]][@href] \
+	| //a[descendant-or-self::*[contains(text(), "下页")]][@href] \
+	| //a[descendant-or-self::*[contains(text(), "下頁")]][@href] \
+	| //a[descendant-or-self::*[contains(text(), "下一章")]][@href] \
+	| //a[descendant-or-self::*[contains(text(), "下章")]][@href] \
+	| //a[descendant-or-self::*[contains(text(), "下一节")]][@href] \
+	| //a[descendant-or-self::*[contains(text(), "下一節")]][@href] \
+	| //a[descendant-or-self::*[contains(text(), "后页")]][@href] \
+';
+
+//Super_preloader的翻页规则更新地址
+var SITEINFO_NLF_IMPORT_URLS = [
+	"http://simpleu.googlecode.com/svn/trunk/scripts/Super_preloader.db.js"
+];
+
+//官方规则， 太大了，先注释掉，默认用uSuper_preloader.db.js
+var SITEINFO_IMPORT_URLS = [
+    /*'http://wedata.net/databases/AutoPagerize/items.json',*/ 
+];
+
 
 // ワイルドカード(*)で記述する
 var INCLUDE = [
@@ -113,10 +149,6 @@ var MICROFORMAT = [
 	}
 ];
 
-var SITEINFO_IMPORT_URLS = [
-    'http://wedata.net/databases/AutoPagerize/items.json', 
-];
-
 var COLOR = {
 	on: '#0f0',
 	off: '#ccc',
@@ -135,22 +167,6 @@ if (typeof window.uAutoPagerize != 'undefined') {
 	window.uAutoPagerize.theEnd();
 }
 
-// 以下 設定が無いときに利用する
-var FORCE_TARGET_WINDOW = true;
-var BASE_REMAIN_HEIGHT = 400;
-var DEBUG = false;
-var AUTO_START = true;
-var SCROLL_ONLY = false;
-var CACHE_EXPIRE = 24 * 60 * 60 * 1000;
-var XHR_TIMEOUT = 30 * 1000;
-
-var NLF_DB_FILENAME =  "uSuper_preloader.db.js";
-// 替换Super_preloader数据库中 auto;
-// var AUTO_NEXT_XPATH = '//a[contains(text(),"下一页")][@href] | //a[contains(text(),"下一章")][@href] | //a[contains(text(),"后一页")][@href] | //a[descendant::*[contains(text(), "下一页")]][@href]';
-var AUTO_NEXT_XPATH = '//a[descendant-or-self::*[contains(text(), "下一页")]][@href] \
-	| //a[descendant-or-self::*[contains(text(), "下一章")]][@href] \
-	| //a[descendant-or-self::*[contains(text(), "下页")]][@href] ';
-
 
 var ns = window.uAutoPagerize = {
 	INCLUDE_REGEXP : /./,
@@ -159,7 +175,6 @@ var ns = window.uAutoPagerize = {
 	MY_SITEINFO    : MY_SITEINFO.slice(),
 	NLF_SITEINFO   : [],
 	SITEINFO       : [],
-	CN_SITEINFO:     {},
 
 	get prefs() {
 		delete this.prefs;
@@ -212,6 +227,14 @@ var ns = window.uAutoPagerize = {
 		if (!num) return num;
 		let m = $("uAutoPagerize-BASE_REMAIN_HEIGHT");
 		if (m) m.setAttribute("tooltiptext", BASE_REMAIN_HEIGHT = num);
+		return num;
+	},
+	get MAX_PAGER_NUM() MAX_PAGER_NUM,
+	set MAX_PAGER_NUM(num) {
+		num = parseInt(num, 10);
+		if (!num) return num;
+		let m = $("uAutoPagerize-MAX_PAGER_NUM");
+		if (m) m.setAttribute("tooltiptext", MAX_PAGER_NUM = num);
 		return num;
 	},
 	get DEBUG() DEBUG,
@@ -269,8 +292,6 @@ var ns = window.uAutoPagerize = {
 				          oncommand="uAutoPagerize.toggle(event);"/>\
 				<menuitem label="重载配置文件"\
 				          oncommand="uAutoPagerize.loadSetting(true);"/>\
-				<menuitem label="重载配置文件(Super_perloader)"\
-				          oncommand="uAutoPagerize.loadSetting_NLF(true);"/>\
 				<menuitem label="重置站点信息(Super_perloader)"\
 				          oncommand="uAutoPagerize.resetSITEINFO_NLF();"/>\
 				<menuitem label="重置站点信息(官方)"\
@@ -286,6 +307,10 @@ var ns = window.uAutoPagerize = {
 				          id="uAutoPagerize-BASE_REMAIN_HEIGHT"\
 				          tooltiptext="'+ BASE_REMAIN_HEIGHT +'"\
 				          oncommand="uAutoPagerize.BASE_REMAIN_HEIGHT = prompt(\'\', uAutoPagerize.BASE_REMAIN_HEIGHT);"/>\
+                <menuitem label="设置最大自动翻页数"\
+				          id="uAutoPagerize-MAX_PAGER_NUM"\
+				          tooltiptext="'+ MAX_PAGER_NUM +'"\
+				          oncommand="uAutoPagerize.MAX_PAGER_NUM = prompt(\'\', uAutoPagerize.MAX_PAGER_NUM);"/>\
 				<menuitem label="滚动时才翻页"\
 				          id="uAutoPagerize-SCROLL_ONLY"\
 				          type="checkbox"\
@@ -318,6 +343,9 @@ var ns = window.uAutoPagerize = {
 		try {
 			ns["BASE_REMAIN_HEIGHT"] = ns.prefs.getIntPref("BASE_REMAIN_HEIGHT");
 		} catch (e) {}
+		try {
+			ns["MAX_PAGER_NUM"] = ns.prefs.getIntPref("MAX_PAGER_NUM");
+		} catch (e) {}
 
 		if (!getCache())
 			requestSITEINFO();
@@ -339,6 +367,9 @@ var ns = window.uAutoPagerize = {
 		}, ns);
 		try {
 			ns.prefs.setIntPref("BASE_REMAIN_HEIGHT", ns["BASE_REMAIN_HEIGHT"]);
+		} catch (e) {}
+		try {
+			ns.prefs.setIntPref("MAX_PAGER_NUM", ns["MAX_PAGER_NUM"]);
 		} catch (e) {}
 	},
 	theEnd: function() {
@@ -459,6 +490,7 @@ var ns = window.uAutoPagerize = {
 			});
 		});
 
+		// 原脚本检测下一页链接2次，这里传递一个变量。
 		var index = -1, info, nextLink;
 
 		if (/\bgoogle\.(?:com|co\.jp)$/.test(win.location.host)) {
@@ -598,7 +630,7 @@ var ns = window.uAutoPagerize = {
 			if (info) {
 				win.ap = new AutoPager(win.document, info, nextLink && nextLink.href);
 			}else{
-				debug("没有找到当前站点的配置.");
+				debug("没有找到当前站点的配置: " + win.location.href);
 			}
 
 			updateIcon();
@@ -844,8 +876,12 @@ AutoPager.prototype = {
 		}
 	},
 	request : function(){
-		// if (!this.requestURL || this.lastRequestURL == this.requestURL) return;
 		if (!this.requestURL || this.loadedURLs[this.requestURL]) return;
+		// 最大页数自动停止
+		if(this.pageNum > (MAX_PAGER_NUM - 1) && MAX_PAGER_NUM > 0){
+			this.addEndSeparator();
+			return;
+		}
 
 		var [reqScheme,,reqHost] = this.requestURL.split('/');
 		var {protocol, host} = this.win.location;
@@ -913,12 +949,10 @@ AutoPager.prototype = {
 			var url = this.getNextURL(htmlDoc);
 		}
 		catch(e){
-			log("Get page and url Error: ", e);
+			debug("Get page and url Error: ", e);
 			this.state = 'error';
 			return;
 		}
-
-
 
 		if (!page || page.length < 1 ) {
 			debug('pageElement not found.' , this.info.pageElement);
@@ -960,7 +994,20 @@ AutoPager.prototype = {
 		ev.initEvent('GM_AutoPagerizeNextPageLoaded', true, false);
 		this.doc.dispatchEvent(ev);
 	},
-	addPage : function(htmlDoc, page){
+	addEndSeparator: function(){
+		// debug('page number > :', this.pageNum,  MAX_PAGER_NUM );
+		
+		var html = '<a class="autopagerize_link" href="' + this.requestURL.replace(/&/g, '&amp;') + 
+			'" > 已达到设置的最大自动翻页数，点击进入下一页 </a> ';
+
+		var fragment = this.doc.createDocumentFragment();
+		var page = this.doc.createElement('div');
+
+		this.addPage(fragment, [page], html);
+
+		this.state = 'terminated';
+	},
+	addPage : function(htmlDoc, page, separatorHTML){
 		var fragment = this.doc.createDocumentFragment();
 		page.forEach(function(i) { fragment.appendChild(i); });
 		this.win.fragmentFilters.forEach(function(i) { i(fragment, htmlDoc, page) }, this);
@@ -979,7 +1026,8 @@ AutoPager.prototype = {
 		var p  = this.doc.createElement('p');
 		p.setAttribute('class', 'autopagerize_page_info');
 		p.setAttribute('style', 'clear: both;');
-		p.innerHTML = '<a class="autopagerize_link" target="_blank" href="' +
+		p.innerHTML = separatorHTML ? separatorHTML :
+			'<a class="autopagerize_link" target="_blank" href="' +
 			this.requestURL.replace(/&/g, '&amp;') + '"> 第 ' + (++this.pageNum) + ' 页: </a> ';
 
 		if (!this.isFrame) {
@@ -1101,15 +1149,14 @@ AutoPager.prototype = {
 	},
 };
 
+// 获取更新 Super_preloader.db 函数
 (function(){
 
-	var SITEINFO_IMPORT_URLS = [
-		"http://simpleu.googlecode.com/svn/trunk/scripts/Super_preloader.db.js"
-	];
+	ns.requestSITEINFO_NLF = requestSITEINFO;
 
 	ns.resetSITEINFO_NLF = function(){
-		if (confirm('确定要更新 Super_preloader.db 数据库吗？'))
-			requestSITEINFO(SITEINFO_IMPORT_URLS);
+		if (confirm('确定要重置 Super_preloader.db 数据库吗？'))
+			requestSITEINFO(SITEINFO_NLF_IMPORT_URLS);
 	};
 	
 	ns.loadSetting_NLF = function(isAlert) {
@@ -1145,18 +1192,15 @@ AutoPager.prototype = {
 		debug("Super_preloader.db 数据库已经载入")
 
 		if (isAlert)
-			Cc['@mozilla.org/alerts-service;1'].getService(Ci.nsIAlertsService)
-				.showAlertNotification(null, 'uAutoPagerize', 
-					'Super_preloader.db 数据库已经重新载入', false, "", null, "");
+			alert('uAutoPagerize', 'Super_preloader.db 数据库已经重新载入');
+
 		return true;
 	};
-
-	ns.requestSITEINFO_NLF = requestSITEINFO;
 
 	function requestSITEINFO(){
 		debug(" request Super_preloader.db");
 		var xhrStates = {};
-		SITEINFO_IMPORT_URLS.forEach(function(i) {
+		SITEINFO_NLF_IMPORT_URLS.forEach(function(i) {
 			var opt = {
 				method: 'get',
 				url: i,
@@ -1600,7 +1644,6 @@ function getElementsMix(selector, doc) {
 	}
 }
 
-
 function hrefInc(obj,doc,win){
 
 	var _cplink = cplink || content.window.location.href;
@@ -1686,8 +1729,7 @@ function hrefInc(obj,doc,win){
 
 function alert(title, info){
 	Cc['@mozilla.org/alerts-service;1'].getService(Ci.nsIAlertsService)
-		.showAlertNotification(null, title, 
-		info, false, "", null, "");
+		.showAlertNotification(null, title, info, false, "", null, "");
 }
 
 

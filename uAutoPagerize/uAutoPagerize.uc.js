@@ -490,9 +490,10 @@ var ns = window.uAutoPagerize = {
 			});
 		});
 
-		var index = -1, info;
+		// 原脚本检测下一页链接2次，这里传递一个变量。
+		var index = -1, info, nextLink;
 
-		if (/\bgoogle\.(?:com|co\.jp|com\.hk)$/.test(win.location.host)) {
+		if (/\bgoogle\.(?:com|co\.jp)$/.test(win.location.host)) {
 			if (!timer || timer < 400) timer = 400;
 			win.addEventListener("hashchange", function(event) {
 				if (!win.ap) {
@@ -594,7 +595,7 @@ var ns = window.uAutoPagerize = {
 			win.ap = null;
 			miscellaneous.forEach(function(func){ func(doc, locationHref); });
 			var index = -1;
-			if (!info) [, info] = ns.getInfo(ns.MY_SITEINFO, win);
+			if (!info) [, info, nextLink] = ns.getInfo(ns.MY_SITEINFO, win);
 			if (info) {
 				if (info.requestFilter)
 					win.requestFilters.push(info.requestFilter.bind(win));
@@ -618,25 +619,16 @@ var ns = window.uAutoPagerize = {
 				}
 			}
 
-			// 第二检测 Super_preloader.db 的数据库
 			// var s = new Date().getTime();
-			if(!info) [index, info] = ns.getInfo(ns.NLF_SITEINFO, win);
+			if(!info) [index, info, nextLink] = ns.getInfo(ns.NLF_SITEINFO, win);
 			// debug(index + 'th/' + (new Date().getTime() - s) + 'ms');
 
 			// var s = new Date().getTime();
-			if (!info) [index, info] = ns.getInfo(ns.SITEINFO, win);
+			if (!info) [index, info, nextLink] = ns.getInfo(ns.SITEINFO, win);
 			// debug(index + 'th/' + (new Date().getTime() - s) + 'ms');
-			if (!info) [, info] = ns.getInfo(ns.MICROFORMAT, win);
+			if (!info) [, info, nextLink] = ns.getInfo(ns.MICROFORMAT, win);
 			if (info) {
-				// 有延迟的情况
-				if(info.delay){
-					var delay = parseInt(info.delay);
-					setTimeout(function(){
-						win.ap = new AutoPager(win.document, info);
-					}, delay)	
-				}else{
-					win.ap = new AutoPager(win.document, info);
-				}
+				win.ap = new AutoPager(win.document, info, nextLink && nextLink.href);
 			}else{
 				debug("没有找到当前站点的配置: " + win.location.href);
 			}
@@ -644,10 +636,12 @@ var ns = window.uAutoPagerize = {
 			updateIcon();
 		}, timer||0);
 	},
+
 	search: function(){
 		var keyword = encodeURIComponent(content.location.href);
 		openLinkIn('http://ap.teesoft.info/?exp=0&url=' + keyword, 'tab', {});
 	},
+
 	iconClick: function(event){
 		if (!event || !event.button) {
 			ns.toggle();
@@ -671,7 +665,7 @@ var ns = window.uAutoPagerize = {
 		}
 	},
 	getInfo: function (list, win) {
-		if (!list) list = ns.NLF_SITEINFO.concat(ns.SITEINFO);
+		if (!list) list = ns.NLF_SITEINFO || ns.SITEINFO;
 		if (!win)  win  = content;
 		var doc = win.document;
 		var locationHref = doc.location.href;
@@ -689,17 +683,13 @@ var ns = window.uAutoPagerize = {
 					// limiting greater than 12 to filter microformats like SITEINFOs.
 					if (info.url.length > 12)
 						debug('nextLink not found. getInfo(). ', info.nextLink);
-					if(!info['delay']){  // 需要延迟的
-						continue;
-					}
+					continue;
 				}
 				var pageElement = getElementMix(info.pageElement, doc);
 				if (!pageElement) {
 					if (info.url.length > 12)
 						debug('pageElement not found.', info.pageElement);
-					if(!info['delay']){
-						continue;
-					}
+					continue;
 				}
 				return [index, info, nextLink, pageElement];
 			} catch(e) {
@@ -710,7 +700,7 @@ var ns = window.uAutoPagerize = {
 	},
 	getInfoFromURL: function (url) {
 		if (!url) url = content.location.href;
-		var list = ns.NLF_SITEINFO.concat(ns.SITEINFO);
+		var list = ns.NLF_SITEINFO ||ns.SITEINFO;
 		return list.filter(function(info, index, array) {
 			try {
 				var exp = info.url_regexp || Object.defineProperty(info, "url_regexp", {
@@ -725,7 +715,7 @@ var ns = window.uAutoPagerize = {
 
 var cplink;
 // Class
-function AutoPager(doc, info) {
+function AutoPager(doc, info, nextLink) {
 	this.init.apply(this, arguments);
 };
 AutoPager.prototype = {
@@ -752,7 +742,7 @@ AutoPager.prototype = {
 		}
 		return state;
 	},
-	init: function(doc, info) {
+	init: function(doc, info, nextLink) {
 		this.doc = doc;
 		this.win = doc.defaultView;
 		this.documentElement = doc.documentElement;
@@ -764,7 +754,12 @@ AutoPager.prototype = {
 			this.info[key] = val;
 		}
 		
-		var url = this.getNextURL(this.doc);
+		var url;
+		if(nextLink){
+			url = nextLink;
+		}else{
+			url = this.getNextURL(this.doc);
+		}
 		if ( !url ) {
 			debug("getNextURL returns null.", this.info.nextLink);
 			return;
@@ -1636,8 +1631,14 @@ function getElementMix(selector, doc, win){
 };
 
 function getElementsMix(selector, doc) {
+
 	if(selector.search(/^css;/i)==0){
-		return Array.prototype.slice(doc.querySelectorAll(selector.slice(4)));
+		var elems = [];
+		var nodes = doc.querySelectorAll(selector.slice(4));
+		for(var i = 0, l= nodes.length; i < l; i++){
+			elems[i] = nodes[i];
+		}
+		return elems;
 	}else{
 		return getElementsByXPath(selector, doc);
 	}

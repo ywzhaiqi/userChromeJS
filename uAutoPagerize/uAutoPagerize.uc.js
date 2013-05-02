@@ -89,6 +89,12 @@ var EXCLUDE = [
 ];
 
 var MY_SITEINFO = [
+	{siteName: "google"
+		,url          : '^https?\\:\\/\\/(www|encrypted)\\.google\\..{2,9}\\/(webhp|search|#|$|\\?)'
+		,nextLink    : "//a[div[@id=('nn')]] | //a[span/@id='nn'] | id('nav')//td[last()]/a | id('nn')/parent::a"
+		,pageElement : "//div[@id='res'] | //table[@id='nav'] | //div[@id='cnt'][not(//div[@id='res'] | //table[@id='nav'])]"
+		,exampleUrl  : 'http://www.google.com.hk/'
+	},
 	{
 		url         : 'http://eow\\.alc\\.co\\.jp/[^/]+'
 		,nextLink   : 'id("AutoPagerizeNextLink")'
@@ -588,6 +594,29 @@ var ns = window.uAutoPagerize = {
 					img.removeAttribute('data-src');
 				});
 			});
+		} 
+		// 水木清华社区延迟加载及下一页的重新启用
+		else if (/www\.newsmth\.net$/.test(win.location.host)) {
+			timer = 1000;   // 这个网站 =400 则找到的下一页链接会错误
+			win.addEventListener("hashchange", function(event) {
+				debug("hashchanged: " + win.location.href);
+				if (!win.ap) {
+					win.setTimeout(function(){
+						let [index, info] = [-1, null];
+						if (!info) [, info] = ns.getInfo(ns.MY_SITEINFO, win);
+						if (!info) [, info] = ns.getInfo(null, win);
+						if (info) win.ap = new AutoPager(win.document, info);
+						updateIcon();
+					}, timer);
+					return;
+				}
+				let info = win.ap.info;
+				win.ap.destroy(true);
+				win.setTimeout(function(){
+					win.ap = new AutoPager(win.document, info);
+					updateIcon();
+				}, timer);
+			}, false);
 		}
 
 		win.setTimeout(function(){
@@ -628,16 +657,7 @@ var ns = window.uAutoPagerize = {
 			// debug(index + 'th/' + (new Date().getTime() - s) + 'ms');
 			if (!info) [, info] = ns.getInfo(ns.MICROFORMAT, win);
 			if (info) {
-				// 有延迟的情况
-				if(info.itimeout){
-					var delay = parseInt(info.itimeout);
-					setTimeout(function(){
-						win.ap = new AutoPager(win.document, info);
-						updateIcon();
-					}, delay);
-				}else{
-					win.ap = new AutoPager(win.document, info);
-				}
+				win.ap = new AutoPager(win.document, info);
 			}else{
 				debug("没有找到当前站点的配置: " + win.location.href);
 			}
@@ -688,21 +708,15 @@ var ns = window.uAutoPagerize = {
 				if (!nextLink) {
 					// FIXME microformats case detection.
 					// limiting greater than 12 to filter microformats like SITEINFOs.
-					if(info.itimeout){  // 需要延迟的
-						debug("此站点需要延迟")
-					}else{
-						if (info.url.length > 12)
-							debug('nextLink not found. getInfo(). ', info.nextLink);
-						continue;
-					}
+					if (info.url.length > 12)
+						debug('nextLink not found. getInfo(). ', String(info.nextLink));
+					continue;
 				}
 				var pageElement = getElementMix(info.pageElement, doc);
 				if (!pageElement) {
-					if(!info.itimeout){
-						if (info.url.length > 12)
-							debug('pageElement not found.', info.pageElement);
-						continue;
-					}
+					if (info.url.length > 12)
+						debug('pageElement not found.', info.pageElement);
+					continue;
 				}
 				return [index, info, nextLink, pageElement];
 			} catch(e) {
@@ -1115,7 +1129,7 @@ AutoPager.prototype = {
 	setInsertPoint: function() {
 		var insertPoint = null;
 		if (this.info.insertBefore) {
-			insertPoint = getFirstElementByXPath(this.info.insertBefore, this.doc);
+			insertPoint = getElementsMix(this.info.insertBefore, this.doc);
 		}
 		if (!insertPoint) {
 			var lastPageElement = getElementsMix(this.info.pageElement, this.doc).pop();

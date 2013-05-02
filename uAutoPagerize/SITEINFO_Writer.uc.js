@@ -444,7 +444,7 @@ Inspector.prototype = {
 			var elemHtml = elem.textContent;
 			if(elemHtml.length < 20  && elemHtml.match(this.NEXT_REG)){
 				if(elemHtml.match(this.NEXT_REG_A)){
-					return elem.nodeName.toLowerCase() + '[text()="' + elemHtml + '")]';
+					return elem.nodeName.toLowerCase() + '[text()="' + elemHtml + '"]';
 				}
 				return elem.nodeName.toLowerCase() + '[contains(text(), "' + elemHtml + '")]';
 			}

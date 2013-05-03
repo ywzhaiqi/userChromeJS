@@ -51,18 +51,6 @@ var XHR_TIMEOUT = 30 * 1000;
 
 
 var NLF_DB_FILENAME =  "uSuper_preloader.db.js";
-// 替换Super_preloader数据库中 auto; ，加的太多可能有错误的链接
-var AUTO_NEXT_XPATH = '\
-	//a[descendant-or-self::*[contains(text(), "下一页")]][@href] \
-	| //a[descendant-or-self::*[contains(text(), "下一頁")]][@href] \
-	| //a[descendant-or-self::*[contains(text(), "下页")]][@href] \
-	| //a[descendant-or-self::*[contains(text(), "下頁")]][@href] \
-	| //a[descendant-or-self::*[contains(text(), "下一章")]][@href] \
-	| //a[descendant-or-self::*[contains(text(), "下章")]][@href] \
-	| //a[descendant-or-self::*[contains(text(), "下一节")]][@href] \
-	| //a[descendant-or-self::*[contains(text(), "下一節")]][@href] \
-	| //a[descendant-or-self::*[contains(text(), "后页")]][@href] \
-';
 
 //Super_preloader的翻页规则更新地址
 var SITEINFO_NLF_IMPORT_URLS = [
@@ -89,12 +77,6 @@ var EXCLUDE = [
 ];
 
 var MY_SITEINFO = [
-	{siteName: "google"
-		,url          : '^https?\\:\\/\\/(www|encrypted)\\.google\\..{2,9}\\/(webhp|search|#|$|\\?)'
-		,nextLink    : "//a[div[@id=('nn')]] | //a[span/@id='nn'] | id('nav')//td[last()]/a | id('nn')/parent::a"
-		,pageElement : "//div[@id='res'] | //table[@id='nav'] | //div[@id='cnt'][not(//div[@id='res'] | //table[@id='nav'])]"
-		,exampleUrl  : 'http://www.google.com.hk/'
-	},
 	{
 		url         : 'http://eow\\.alc\\.co\\.jp/[^/]+'
 		,nextLink   : 'id("AutoPagerizeNextLink")'
@@ -291,7 +273,7 @@ var ns = window.uAutoPagerize = {
 			           onpopupshowing="if (this.triggerNode) this.triggerNode.setAttribute(\'open\', \'true\');"\
 			           onpopuphiding="if (this.triggerNode) this.triggerNode.removeAttribute(\'open\');">\
 				<menuitem label="启用自动翻页"\
-								  id="uAutoPagerize-AUTOSTART"\
+						  id="uAutoPagerize-AUTOSTART"\
 				          type="checkbox"\
 				          autoCheck="true"\
 				          checked="'+ AUTO_START +'"\
@@ -496,9 +478,11 @@ var ns = window.uAutoPagerize = {
 			});
 		});
 
-		var index = -1, info;
+		// 还得加上nextLink，不加上的话会查找下一页链接 2 次，特别是加了自动查找功能后
+		var index = -1, info, nextLink;
 
-		if (/\bgoogle\.(?:com|co\.jp|com\.hk)$/.test(win.location.host)) {
+		// 这个范围有些大，每次都得检测 2 次。先不加上 |com\.hk
+		if (/\bgoogle\.(?:com|co\.jp)$/.test(win.location.host)) {
 			if (!timer || timer < 400) timer = 400;
 			win.addEventListener("hashchange", function(event) {
 				if (!win.ap) {
@@ -596,7 +580,7 @@ var ns = window.uAutoPagerize = {
 			});
 		} 
 		// 水木清华社区延迟加载及下一页的重新启用
-		else if (/www\.newsmth\.net$/.test(win.location.host)) {
+		else if (win.location.host === 'www.newsmth.net') {
 			timer = 1000;   // 这个网站 =400 则找到的下一页链接会错误
 			win.addEventListener("hashchange", function(event) {
 				debug("hashchanged: " + win.location.href);
@@ -623,7 +607,7 @@ var ns = window.uAutoPagerize = {
 			win.ap = null;
 			miscellaneous.forEach(function(func){ func(doc, locationHref); });
 			var index = -1;
-			if (!info) [, info] = ns.getInfo(ns.MY_SITEINFO, win);
+			if (!info) [, info, nextLink] = ns.getInfo(ns.MY_SITEINFO, win);
 			if (info) {
 				if (info.requestFilter)
 					win.requestFilters.push(info.requestFilter.bind(win));
@@ -649,15 +633,15 @@ var ns = window.uAutoPagerize = {
 
 			// 第二检测 Super_preloader.db 的数据库
 			// var s = new Date().getTime();
-			if(!info) [index, info] = ns.getInfo(ns.NLF_SITEINFO, win);
+			if(!info) [index, info, nextLink] = ns.getInfo(ns.NLF_SITEINFO, win);
 			// debug(index + 'th/' + (new Date().getTime() - s) + 'ms');
 
 			// var s = new Date().getTime();
-			if (!info) [index, info] = ns.getInfo(ns.SITEINFO, win);
+			if (!info) [index, info, nextLink] = ns.getInfo(ns.SITEINFO, win);
 			// debug(index + 'th/' + (new Date().getTime() - s) + 'ms');
-			if (!info) [, info] = ns.getInfo(ns.MICROFORMAT, win);
+			if (!info) [, info, nextLink] = ns.getInfo(ns.MICROFORMAT, win);
 			if (info) {
-				win.ap = new AutoPager(win.document, info);
+				win.ap = new AutoPager(win.document, info, nextLink);
 			}else{
 				debug("没有找到当前站点的配置: " + win.location.href);
 			}
@@ -740,9 +724,10 @@ var ns = window.uAutoPagerize = {
 	},
 };
 
-var cplink;
+var cplink; // hrefInc 函数用
+
 // Class
-function AutoPager(doc, info) {
+function AutoPager(doc, info, nextLink) {
 	this.init.apply(this, arguments);
 };
 AutoPager.prototype = {
@@ -769,7 +754,7 @@ AutoPager.prototype = {
 		}
 		return state;
 	},
-	init: function(doc, info) {
+	init: function(doc, info, nextLink) {
 		this.doc = doc;
 		this.win = doc.defaultView;
 		this.documentElement = doc.documentElement;
@@ -780,8 +765,8 @@ AutoPager.prototype = {
 		for (let [key, val] in Iterator(info)) {
 			this.info[key] = val;
 		}
-		
-		var url = this.getNextURL(this.doc);
+
+		var url = this.getNextURL(nextLink ? nextLink : this.doc);
 		if ( !url ) {
 			debug("getNextURL returns null.", this.info.nextLink);
 			return;
@@ -1197,16 +1182,11 @@ AutoPager.prototype = {
 		var list = sandbox.SITEINFO.concat(sandbox.SITEINFO_TP);
 		var newList = []
 		for(let [index, info] in Iterator(list)){
-			let type = typeof info.nextLink;
-			if(!info.nextLink || (type == 'string' && info.nextLink.toLowerCase() == 'auto;')){
-				info.nextLink = AUTO_NEXT_XPATH;
-			}
-
 			newList.push({
 				url: info.url,
 				nextLink: info.nextLink,
 				pageElement: info.autopager.pageElement
-			})
+			});
 		}
 
 		ns.NLF_SITEINFO = newList;
@@ -1272,6 +1252,345 @@ AutoPager.prototype = {
 
 })();
 
+// 来自 NLF 的 Super_preloader，主要2个函数: hrefInc 和 autoGetLink
+var NLF = {
+	nextPageKey: [  //下一页关键字
+		'下一页',
+		'下一頁',
+		'下1页',
+		'下1頁',
+		'下页',
+		'下頁',
+		'翻页',
+		'翻頁',
+		'翻下頁',
+		'翻下页',
+		'下一张',
+		'下一張',
+		'下一幅',
+		'下一章',
+		'下一节',
+		'下一節',
+		'下一篇',
+		'后一页',
+		'後一頁',
+		'前进',
+		'下篇',
+		'后页',
+		'往后',
+		'Next',
+		'Next Page',
+		'次へ'
+	],
+	autoMatch: {
+		keyMatch:true,  //是否启用关键字匹配
+		digitalCheck:true,  //对数字连接进行检测,从中找出下一页的链接
+	    cases:false,  //关键字区分大小写....
+		pfwordl:{//关键字前面的字符限定.
+			previous:{//上一页关键字前面的字符,例如 "上一页" 要匹配 "[上一页" ,那么prefix要的设置要不小于1,并且character要包含字符 "["
+				enable:true,
+				maxPrefix:3,
+				character:[' ','　','[','［','<','＜','‹','«','<<','『','「','【','(','←']
+			},
+			next:{//下一页关键字前面的字符
+				enable:true,
+				maxPrefix:2,
+				character:[' ','　','[','［','『','「','【','(']
+			}
+		},
+		sfwordl:{//关键字后面的字符限定.
+			previous:{//上一页关键字后面的字符
+				enable:true,
+				maxSubfix:2,
+				character:[' ','　',']','］','』','」','】',')']
+			},
+			next:{//下一页关键字后面的字符
+				enable:true,
+				maxSubfix:3,
+				character:[' ','　',']','］','>','﹥','›','»','>>','』','」','】',')','→']
+			}
+		},
+	},
+	autoGetLink: function(doc,win){
+		if(!NLF.autoMatch.keyMatch)return;
+		if(!NLF.parseKWRE.done){
+			NLF.parseKWRE();
+			NLF.parseKWRE.done=true;
+		};
+
+		var startTime=new Date();
+
+		var _nextPageKey=NLF.nextPageKey;
+		var _nPKL=NLF.nextPageKey.length;
+		var _getFullHref=NLF.getFullHref;
+		var _getAllElementsByXpath=getElementsByXPath;
+		var _Number=Number;
+		var cplink = cplink || win.location.href;
+		var _domain_port=cplink.match(/https?:\/\/([^\/]+)/)[1];//端口和域名,用来验证是否跨域.
+		var alllinks=doc.links;
+		var alllinksl=alllinks.length;
+
+		var curLHref=cplink;
+		var _nextlink;
+
+		var DCEnable=NLF.autoMatch.digitalCheck;
+		var DCRE=/^\s*\D{0,1}(\d+)\D{0,1}\s*$/;
+
+		var i,a,ahref,atext,numtext;
+		var aP,initSD,searchD=1,preS1,preS2,searchedD,pSNText,preSS,nodeType;
+		var nextS1,nextS2,nSNText,nextSS;
+		var aimgs,j,jj,aimg_x,xbreak,k,keytext;
+
+		function finalCheck(a,type){
+			//C.log(a);
+			var ahref=a.getAttribute('href');//在chrome上当是非当前页面文档对象的时候直接用a.href访问,不返回href
+			ahref=_getFullHref(ahref, doc);//从相对路径获取完全的href;
+			//3个条件:http协议链接,非跳到当前页面的链接,非跨域
+			if(/^https?:/i.test(ahref) && ahref.replace(/#.*$/,'')!=curLHref && ahref.match(/https?:\/\/([^\/]+)/)[1]==_domain_port){
+				debug((type=='pre'? '上一页' : '下一页')+'匹配到的关键字为:',atext);
+				return a;//返回对象A
+				//return ahref;
+			};
+		};
+
+		debug('全文档链接数量:',alllinksl);
+
+		for(i=0;i<alllinksl;i++){
+			if(_nextlink)break;
+			a=alllinks[i];
+			if(!a)continue;//undefined跳过
+			//links集合返回的本来就是包含href的a元素..所以不用检测
+			//if(!a.hasAttribute("href"))continue;
+			atext=a.textContent;
+			if(atext){
+				if(DCEnable){
+					numtext=atext.match(DCRE);
+					if(numtext){//是不是纯数字
+						//C.log(numtext);
+						numtext=numtext[1];
+						//alert(numtext);
+						aP=a;
+						initSD=0;
+
+						if(!_nextlink){
+							preS1=a.previousSibling;
+							preS2=a.previousElementSibling;
+							
+
+							while(!(preS1 || preS2) && initSD<searchD){
+								aP=aP.parentNode;
+								if(aP){
+									preS1=aP.previousSibling;
+									preS2=aP.previousElementSibling;
+								};
+								initSD++;
+								//alert('initSD: '+initSD);
+							};
+							searchedD=initSD>0? true : false;
+
+							if(preS1 || preS2){
+								pSNText=preS1? preS1.textContent.match(DCRE) : '';
+								if(pSNText){
+									preSS=preS1;
+								}else{
+									pSNText=preS2? preS2.textContent.match(DCRE) : '';
+									preSS=preS2;
+								};
+								//alert(previousS);
+								if(pSNText){
+									pSNText=pSNText[1];
+									//C.log(pSNText)
+									//alert(pSNText)
+									if(_Number(pSNText)==_Number(numtext)-1){
+										//alert(searchedD);
+										nodeType=preSS.nodeType;
+										//alert(nodeType);
+										if(nodeType==3 || (nodeType==1 && (searchedD? _getAllElementsByXpath('./descendant-or-self::a[@href]',preSS,doc).snapshotLength==0 : (!preSS.hasAttribute('href') || _getFullHref(preSS.getAttribute('href'), doc)==curLHref)))){
+											_nextlink=finalCheck(a,'next');
+											//alert(_nextlink);
+										};
+										continue;
+									};
+								};
+							};
+						};
+
+						continue;
+					};
+				};
+			}else{
+				atext=a.title;
+			};
+			if(!atext){
+				aimgs=a.getElementsByTagName('img');
+				for(j=0,jj=aimgs.length;j<jj;j++){
+					aimg_x=aimgs[j];
+					atext=aimg_x.alt || aimg_x.title;
+					if(atext)break;
+				};
+			};
+			if(!atext)continue;
+			if(!_nextlink){
+				xbreak=false;
+				for(k=0;k<_nPKL;k++){
+					keytext=_nextPageKey[k];
+					if(!(keytext.test(atext)))continue;
+					_nextlink=finalCheck(a,'next');
+					xbreak=true;
+					break;
+				};
+				if(xbreak || _nextlink)continue;
+			};
+		};
+
+		debug('搜索链接数量:',i,'耗时:',new Date()-startTime,'毫秒')
+
+		return _nextlink;
+	},
+	parseKWRE: function(){
+		function modifyPageKey(name,pageKey,pageKeyLength){
+			function strMTE(str){
+				return (str.replace(/\\/g, '\\\\')
+							.replace(/\+/g, '\\+')
+							.replace(/\./g, '\\.')
+							.replace(/\?/g, '\\?')
+							.replace(/\{/g, '\\{')
+							.replace(/\}/g, '\\}')
+							.replace(/\[/g, '\\[')
+							.replace(/\]/g, '\\]')
+							.replace(/\^/g, '\\^')
+							.replace(/\$/g, '\\$')
+							.replace(/\*/g, '\\*')
+							.replace(/\(/g, '\\(')
+							.replace(/\)/g, '\\)')
+							.replace(/\|/g, '\\|')
+							.replace(/\//g, '\\/'));
+			};
+
+			var pfwordl=NLF.autoMatch.pfwordl,
+						sfwordl=NLF.autoMatch.sfwordl;
+
+			var RE_enable_a=pfwordl[name].enable,
+						RE_maxPrefix=pfwordl[name].maxPrefix,
+						RE_character_a=pfwordl[name].character,
+						RE_enable_b=sfwordl[name].enable,
+						RE_maxSubfix=sfwordl[name].maxSubfix,
+						RE_character_b=sfwordl[name].character;
+			var plwords,
+						slwords,
+						rep;
+
+			plwords=RE_maxPrefix>0? ('['+(RE_enable_a? strMTE(RE_character_a.join('')) : '.')+']{0,'+RE_maxPrefix+'}') : '';
+			plwords='^\\s*' + plwords;
+			//alert(plwords);
+			slwords=RE_maxSubfix>0? ('['+(RE_enable_b? strMTE(RE_character_b.join('')) : '.')+']{0,'+RE_maxSubfix+'}') : '';
+			slwords=slwords + '\\s*$';
+			//alert(slwords);
+			rep= NLF.autoMatch.cases ? '' : 'i';
+
+			for(var i=0;i<pageKeyLength;i++){
+				pageKey[i]=new RegExp(plwords + strMTE(pageKey[i]) + slwords,rep);
+				//alert(pageKey[i]);
+			};
+			return pageKey;
+		}
+
+		//转成正则.
+		// prePageKey=modifyPageKey('previous',prePageKey,prePageKey.length);
+		NLF.nextPageKey=modifyPageKey('next', NLF.nextPageKey, NLF.nextPageKey.length);
+	},
+	getFullHref: function(href, doc){
+		if(typeof href!='string') href=href.getAttribute('href');
+		var a=doc.createElement('a');
+		a.href=href;
+		return a.href;
+	},
+	hrefInc: function(obj,doc,win){
+
+		var _cplink = cplink || win.location.href;
+		_cplink = _cplink.replace(/#.*$/,''); //url 去掉hash
+
+		function getHref(href){
+			var mFails=obj.mFails;
+			if(!mFails)return href;
+			var str;
+			if(typeof mFails=='string'){
+				str=mFails;
+			}else{
+				var fx;
+				var array=[];
+				var i,ii;
+				var mValue;
+				for(i=0,ii=mFails.length;i<ii;i++){
+					fx=mFails[i];
+					if(!fx)continue;
+					if(typeof fx=='string'){
+						array.push(fx);
+					}else{
+						mValue=href.match(fx);
+						if(!mValue)return href;
+						array.push(mValue);
+					};
+				};
+				var str=array.join('');
+			};
+			return str;
+		};
+		 // alert(getHref(_cplink))
+
+		var sa=obj.startAfter;
+		var saType=typeof sa;
+		var index;
+
+		if(saType=='string'){
+			index=_cplink.indexOf(sa);
+			if(index==-1){
+				_cplink=getHref(_cplink);
+				index=_cplink.indexOf(sa);
+				if(index==-1)return;
+				// alert(index);
+			};
+		}else{
+			var tsa=_cplink.match(sa);
+			// alert(sa);
+			if(!tsa){
+				_cplink=getHref(_cplink);
+				sa=(_cplink.match(sa) || [])[0];
+				if(!sa)return;
+				index=_cplink.indexOf(sa);
+				if(index==-1)return;
+			}else{
+				sa=tsa[0];
+				index=_cplink.indexOf(sa);
+				//alert(index)
+				//alert(tsa.index)
+			};
+		};
+
+		index+=sa.length;
+		var max=obj.max===undefined? 9999 : obj.max;
+		var min=obj.min===undefined? 1 : obj.min;
+		var aStr=_cplink.slice(0,index);
+		var bStr=_cplink.slice(index);
+		var nbStr=bStr.replace(/^(\d+)(.*)$/,function(a,b,c){
+			b=Number(b)+obj.inc;
+			if(b>=max || b<min)return a;
+			return b+c;
+		});
+		//alert(aStr+nbStr);
+		if(nbStr!==bStr){
+			var ilresult;
+			try{
+				ilresult=obj.isLast(doc,win,_cplink);
+			}catch(e){
+				// debug("Error: getNextUrl hrefInc().", e);
+			}
+			if(ilresult)return;
+			return aStr+nbStr;
+		};
+	}
+};
+
 
 function updateIcon(){
 	var newState = "";
@@ -1327,6 +1646,41 @@ function launchAutoPager_org(list, win) {
 	updateIcon();
 }
 
+//-------- 来自 Super_preloader, 为了兼容 Super_preloader 数据库 -------------
+//获取单个元素,混合。
+function getElementMix(selector, doc, win){
+	var ret;
+	if(!selector) return ret;
+	win = win || content.window;
+	var type = typeof selector;
+	if(type == 'string'){
+		if(selector.search(/^css;/i) == 0){
+			ret = doc.querySelector(selector.slice(4));
+		}else if(selector.toLowerCase() == 'auto;'){
+			ret = NLF.autoGetLink(doc,win);
+			// debug("NextLink is auto. ", content.location.href);
+		}else{
+			ret= getFirstElementByXPath(selector, doc);
+		};
+	}else if(type=='function'){
+		ret=selector(doc,win,cplink);
+	}else{
+		var url = NLF.hrefInc(selector,doc,win);
+		if(url){
+			ret = doc.createElement('a');
+			ret.setAttribute('href', url);
+		}
+	};
+	return ret;
+}
+
+function getElementsMix(selector, doc) {
+	if(selector.search(/^css;/i)==0){
+		return Array.prototype.slice.call(doc.querySelectorAll(selector.slice(4)));
+	}else{
+		return getElementsByXPath(selector, doc);
+	}
+}
 
 function getElementsByXPath(xpath, node) {
 	var nodesSnapshot = getXPathResult(xpath, node, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE);
@@ -1622,128 +1976,7 @@ function saveFile(name, data) {
 	foStream.init(file, 0x02 | 0x08 | 0x20, 0664, 0);
 	foStream.write(data, data.length);
 	foStream.close();
-};
-
-//-------- 来自 Super_preloader, 为了兼容 Super_preloader 数据库 -------------
-//获取单个元素,混合。
-function getElementMix(selector, doc, win){
-	var ret;
-	if(!selector)return ret;
-	win=win || content.window;
-	var type=typeof selector;
-	if(type=='string'){
-		if(selector.search(/^css;/i)==0){
-			ret= doc.querySelector(selector.slice(4));
-		}else if(selector.toLowerCase()=='auto;'){
-			// ret=autoGetLink(doc,win);
-			debug("NextLink is auto. ", content.location.href);
-		}else{
-			ret= getFirstElementByXPath(selector, doc);
-		};
-	}else if(type=='function'){
-		ret=selector(doc,win,cplink);
-	}else{
-		var url = hrefInc(selector,doc,win);
-		if(url){
-			ret = doc.createElement('a');
-			ret.setAttribute('href', url);
-		}
-	};
-	return ret;
-};
-
-function getElementsMix(selector, doc) {
-	if(selector.search(/^css;/i)==0){
-		return Array.prototype.slice(doc.querySelectorAll(selector.slice(4)));
-	}else{
-		return getElementsByXPath(selector, doc);
-	}
 }
-
-function hrefInc(obj,doc,win){
-
-	var _cplink = cplink || content.window.location.href;
-	_cplink = _cplink.replace(/#.*$/,''); //url 去掉hash
-
-	function getHref(href){
-		var mFails=obj.mFails;
-		if(!mFails)return href;
-		var str;
-		if(typeof mFails=='string'){
-			str=mFails;
-		}else{
-			var fx;
-			var array=[];
-			var i,ii;
-			var mValue;
-			for(i=0,ii=mFails.length;i<ii;i++){
-				fx=mFails[i];
-				if(!fx)continue;
-				if(typeof fx=='string'){
-					array.push(fx);
-				}else{
-					mValue=href.match(fx);
-					if(!mValue)return href;
-					array.push(mValue);
-				};
-			};
-			var str=array.join('');
-		};
-		return str;
-	};
-	 // alert(getHref(_cplink))
-
-	var sa=obj.startAfter;
-	var saType=typeof sa;
-	var index;
-
-	if(saType=='string'){
-		index=_cplink.indexOf(sa);
-		if(index==-1){
-			_cplink=getHref(_cplink);
-			index=_cplink.indexOf(sa);
-			if(index==-1)return;
-			// alert(index);
-		};
-	}else{
-		var tsa=_cplink.match(sa);
-		// alert(sa);
-		if(!tsa){
-			_cplink=getHref(_cplink);
-			sa=(_cplink.match(sa) || [])[0];
-			if(!sa)return;
-			index=_cplink.indexOf(sa);
-			if(index==-1)return;
-		}else{
-			sa=tsa[0];
-			index=_cplink.indexOf(sa);
-			//alert(index)
-			//alert(tsa.index)
-		};
-	};
-
-	index+=sa.length;
-	var max=obj.max===undefined? 9999 : obj.max;
-	var min=obj.min===undefined? 1 : obj.min;
-	var aStr=_cplink.slice(0,index);
-	var bStr=_cplink.slice(index);
-	var nbStr=bStr.replace(/^(\d+)(.*)$/,function(a,b,c){
-		b=Number(b)+obj.inc;
-		if(b>=max || b<min)return a;
-		return b+c;
-	});
-	//alert(aStr+nbStr);
-	if(nbStr!==bStr){
-		var ilresult;
-		try{
-			ilresult=obj.isLast(doc,win,_cplink);
-		}catch(e){
-			debug("Error: getNextUrl hrefInc().", e);
-		}
-		if(ilresult)return;
-		return aStr+nbStr;
-	};
-};
 
 function alert(title, info){
 	Cc['@mozilla.org/alerts-service;1'].getService(Ci.nsIAlertsService)

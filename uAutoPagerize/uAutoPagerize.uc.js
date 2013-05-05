@@ -58,7 +58,7 @@ var SITEINFO_NLF_IMPORT_URLS = [
 	//Super_preloader 的翻页规则更新地址
 	"http://simpleu.googlecode.com/svn/trunk/scripts/Super_preloader.db.js",
 	// ywzhaiqi 的规则。github 速度略慢，用 googlecode
-	"http://autopagerize-userchrome.googlecode.com/git/_uAutoPagerize.js"
+	"http://autopagerize-userchrome.googlecode.com/git/_uAutoPagerize.js",
 ];
 
 //官方规则， 太大了，先注释掉，默认用uSuper_preloader.db.js
@@ -1246,7 +1246,7 @@ AutoPager.prototype = {
 		}
 
 		// 加上 Super_preloader
-		sandbox.SITEINFO.concat(sandbox.SITEINFO_TP);
+		sandbox.SITEINFO = sandbox.SITEINFO.concat(sandbox.SITEINFO_TP);
 		for(let [index, info] in Iterator(sandbox.SITEINFO)){
 			list.push({
 				url: info.url,

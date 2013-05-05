@@ -40,6 +40,7 @@
 
 // 以下 設定が無いときに利用する
 var isUrlbar = true;   // 放置的位置，true为地址栏，否则附加组件栏。
+var useiframe = false;  // 启用 iframe 加载下一页的总开关。体验不好，先禁用。
 var FORCE_TARGET_WINDOW = true;
 var BASE_REMAIN_HEIGHT = 600;
 var MAX_PAGER_NUM = -1;   //默认最大翻页数， -1表示无限制
@@ -52,9 +53,12 @@ var XHR_TIMEOUT = 30 * 1000;
 
 var NLF_DB_FILENAME =  "uSuper_preloader.db.js";
 
-//Super_preloader的翻页规则更新地址
+
 var SITEINFO_NLF_IMPORT_URLS = [
-	"http://simpleu.googlecode.com/svn/trunk/scripts/Super_preloader.db.js"
+	//Super_preloader 的翻页规则更新地址
+	"http://simpleu.googlecode.com/svn/trunk/scripts/Super_preloader.db.js",
+	// ywzhaiqi 的规则。github 速度略慢，用 googlecode
+	"http://autopagerize-userchrome.googlecode.com/git/_uAutoPagerize.js"
 ];
 
 //官方规则， 太大了，先注释掉，默认用uSuper_preloader.db.js
@@ -147,7 +151,6 @@ var COLOR = {
 	error: '#f0f'
 }
 
-
 let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
 
@@ -161,7 +164,7 @@ var ns = window.uAutoPagerize = {
 	EXCLUDE_REGEXP : /^$/,
 	MICROFORMAT    : MICROFORMAT.slice(),
 	MY_SITEINFO    : MY_SITEINFO.slice(),
-	NLF_SITEINFO   : [],
+	SITEINFO_NLF   : [],
 	SITEINFO       : [],
 
 	get prefs() {
@@ -174,11 +177,11 @@ var ns = window.uAutoPagerize = {
 		delete this.file;
 		return this.file = aFile;
 	},
-	get NLF_file() {
+	get file_NLF() {
 		var aFile = Services.dirsvc.get('UChrm', Ci.nsILocalFile);
 		aFile.appendRelativePath(NLF_DB_FILENAME);
-		delete this.NLF_file;
-		return this.NLF_file = aFile;
+		delete this.file_NLF;
+		return this.file_NLF = aFile;
 	},
 	get INCLUDE() INCLUDE,
 	set INCLUDE(arr) {
@@ -633,7 +636,7 @@ var ns = window.uAutoPagerize = {
 
 			// 第二检测 Super_preloader.db 的数据库
 			// var s = new Date().getTime();
-			if(!info) [index, info, nextLink] = ns.getInfo(ns.NLF_SITEINFO, win);
+			if(!info) [index, info, nextLink] = ns.getInfo(ns.SITEINFO_NLF, win);
 			// debug(index + 'th/' + (new Date().getTime() - s) + 'ms');
 
 			// var s = new Date().getTime();
@@ -676,7 +679,7 @@ var ns = window.uAutoPagerize = {
 		}
 	},
 	getInfo: function (list, win) {
-		if (!list) list = ns.NLF_SITEINFO.concat(ns.SITEINFO);
+		if (!list) list = ns.SITEINFO_NLF.concat(ns.SITEINFO);
 		if (!win)  win  = content;
 		var doc = win.document;
 		var locationHref = doc.location.href;
@@ -698,7 +701,7 @@ var ns = window.uAutoPagerize = {
 				}
 				var pageElement = getElementMix(info.pageElement, doc);
 				if (!pageElement) {
-					if (info.url.length > 12)
+					if (info.url.length > 12 || (typeof(info.url) !='string'))
 						debug('pageElement not found.', info.pageElement);
 					continue;
 				}
@@ -711,7 +714,7 @@ var ns = window.uAutoPagerize = {
 	},
 	getInfoFromURL: function (url) {
 		if (!url) url = content.location.href;
-		var list = ns.NLF_SITEINFO.concat(ns.SITEINFO);
+		var list = ns.SITEINFO_NLF.concat(ns.SITEINFO);
 		return list.filter(function(info, index, array) {
 			try {
 				var exp = info.url_regexp || Object.defineProperty(info, "url_regexp", {
@@ -734,6 +737,7 @@ AutoPager.prototype = {
 	req: null,
 	pageNum: 1,
 	_state: 'disable',
+	remove: [],
 	get state() this._state,
 	set state(state) {
 		if (this.state !== "terminated" && this.state !== "error") {
@@ -815,6 +819,10 @@ AutoPager.prototype = {
 				style.parentNode.removeChild(style);
 		}
 
+		for (var i = this.remove.length - 1; i >= 0; i--) {
+			this.remove[i]();
+		};
+
 		this.win.ap = null;
 		updateIcon();
 	},
@@ -882,7 +890,7 @@ AutoPager.prototype = {
 			return aHost === bHost;
 		}
 	},
-	request : function(){
+	request: function(){
 		if (!this.requestURL || this.loadedURLs[this.requestURL]) return;
 		// 最大页数自动停止
 		if(this.pageNum > (MAX_PAGER_NUM - 1) && MAX_PAGER_NUM > 0){
@@ -890,6 +898,44 @@ AutoPager.prototype = {
 			return;
 		}
 
+		if(useiframe && this.info.useiframe){
+			this.frameRequest();
+		}else{
+			this.httpRequest();
+		}
+	},
+	frameRequest: function(){
+		var self = this;
+
+		if(!this.iframe){
+			this.iframe = this.doc.createElement('iframe');
+			this.iframe.name = 'uAutoPagerizeRequest';
+			this.iframe.width = this.iframe.height = 1;
+			this.iframe.style.visibility = 'hidden';
+			this.remove.push(function(){
+				self.doc.body.removeChild(self.iframe);
+			});
+		}
+
+        if (this.iframe.src == this.requestURL) return;
+        this.iframe.src = this.requestURL;
+
+
+		this.doc.body.appendChild(this.iframe);
+		this.iframe.addEventListener("load", iframeLoad, false);
+
+		function iframeLoad(){
+			debug("iframe load");
+			self.iframeLoad(self.iframe);
+		}
+
+		this.cleanIframe = function(){
+			self.iframe.src = "about:blank";
+			self.iframe.contentDocument.location.href = "about:blank";
+			self.iframe.removeEventListener("load", iframeLoad, false);
+		};
+	},
+	httpRequest: function(){
 		var [reqScheme,,reqHost] = this.requestURL.split('/');
 		var {protocol, host} = this.win.location;
 		if (reqScheme !== protocol) {
@@ -951,6 +997,15 @@ AutoPager.prototype = {
 		}
 		this.win.documentFilters.forEach(function(i) { i(htmlDoc, this.requestURL, this.info) }, this);
 
+		this.loaded(htmlDoc);
+	},
+	iframeLoad: function(iframe){
+		var htmlDoc = iframe.contentDocument || iframe.contentWindow.document;
+		this.loaded(htmlDoc);
+		if(this.cleanIframe)
+			this.cleanIframe();
+	},
+	loaded: function(htmlDoc){
 		try {
 			var page = getElementsMix(this.info.pageElement, htmlDoc);
 			var url = this.getNextURL(htmlDoc);
@@ -962,7 +1017,7 @@ AutoPager.prototype = {
 		}
 
 		if (!page || page.length < 1 ) {
-			debug('pageElement not found.' , this.info.pageElement);
+			debug('pageElement not found.', "requestLoad ", this.info.pageElement);
 			this.state = 'terminated';
 			return;
 		}
@@ -997,6 +1052,7 @@ AutoPager.prototype = {
 			debug('nextLink not found. requestLoad(). ', this.info.nextLink, htmlDoc);
 			this.state = 'terminated';
 		}
+
 		var ev = this.doc.createEvent('Event');
 		ev.initEvent('GM_AutoPagerizeNextPageLoaded', true, false);
 		this.doc.dispatchEvent(ev);
@@ -1162,12 +1218,12 @@ AutoPager.prototype = {
 	ns.requestSITEINFO_NLF = requestSITEINFO;
 
 	ns.resetSITEINFO_NLF = function(){
-		if (confirm('确定要重置 Super_preloader.db 数据库吗？'))
+		if (confirm('确定要重置 Super_preloader 及其它规则吗？'))
 			requestSITEINFO(SITEINFO_NLF_IMPORT_URLS);
 	};
 	
 	ns.loadSetting_NLF = function(isAlert) {
-		var data = loadText(ns.NLF_file);
+		var data = loadText(ns.file_NLF);
 		if (!data) return false;
 		var sandbox = new Cu.Sandbox( new XPCNativeWrapper(window) );
 		sandbox.SITEINFO = [];
@@ -1179,22 +1235,33 @@ AutoPager.prototype = {
 			return log('load error.', e);
 		}
 
-		var list = sandbox.SITEINFO.concat(sandbox.SITEINFO_TP);
-		var newList = []
-		for(let [index, info] in Iterator(list)){
-			newList.push({
+		var list = [];
+		// 加上 MY_SITEINFO
+		var mSiteInfo;
+		for(var i = 0, l = SITEINFO_NLF_IMPORT_URLS.length -1; i < l; i++){
+			mSiteInfo = sandbox["MY_SITEINFO_" + i];
+			if(mSiteInfo){
+				list = list.concat(mSiteInfo);
+			}
+		}
+
+		// 加上 Super_preloader
+		sandbox.SITEINFO.concat(sandbox.SITEINFO_TP);
+		for(let [index, info] in Iterator(sandbox.SITEINFO)){
+			list.push({
 				url: info.url,
 				nextLink: info.nextLink,
-				pageElement: info.autopager.pageElement
+				pageElement: info.autopager.pageElement,
+				useiframe: info.autopager.useiframe
 			});
 		}
 
-		ns.NLF_SITEINFO = newList;
+		ns.SITEINFO_NLF = list;
 
-		debug("Super_preloader.db 数据库已经载入")
+		debug("Super_preloader 及其它规则已经载入")
 
 		if (isAlert)
-			alert('uAutoPagerize', 'Super_preloader.db 数据库已经重新载入');
+			alert('uAutoPagerize', 'Super_preloader  及其它规则已经重新载入');
 
 		return true;
 	};
@@ -1226,6 +1293,8 @@ AutoPager.prototype = {
 		});
 	}
 
+	var finishCount = 0;
+	var dataStr = "";
 	function getCacheCallback(res, url) {
 		if (res.status != 200) {
 			return getCacheErrorCallback(url);
@@ -1234,15 +1303,21 @@ AutoPager.prototype = {
 		var temp;
 		var matches = res.responseText.match(/(var SITEINFO=\[[\s\S]*\])[\s\S]*var SITEINFO_comp=/i);
 		if(!matches){
-			log("no matches.");
-			return;
+			matches = res.responseText.match(/(var MY_SITEINFO\s*=\s*\[[\s\S]*\];)/i);
+			if(!matches){
+				log("no matches.");
+				return;
+			}
 		}
 
-		saveFile(NLF_DB_FILENAME, matches[1]);
+		dataStr += "\n\n" + matches[1].replace("MY_SITEINFO", "MY_SITEINFO_" + finishCount);
+		finishCount += 1;
+		if(finishCount >= SITEINFO_NLF_IMPORT_URLS.length){
+			saveFile(NLF_DB_FILENAME, dataStr);
+			ns.loadSetting_NLF();
+			alert("uAutoPagerize", "Super_preloader 及其它规则已经更新完毕。");
+		}
 
-		ns.loadSetting_NLF();
-
-		alert("uAutoPagerize", "Super_preloader 数据库已经更新完毕。");
 		log('getCacheCallback:' + url);
 	}
 
@@ -1345,6 +1420,8 @@ var NLF = {
 			//C.log(a);
 			var ahref=a.getAttribute('href');//在chrome上当是非当前页面文档对象的时候直接用a.href访问,不返回href
 			ahref=_getFullHref(ahref, doc);//从相对路径获取完全的href;
+
+			// debug([ahref, _domain_port].join("\n"))
 			//3个条件:http协议链接,非跳到当前页面的链接,非跨域
 			if(/^https?:/i.test(ahref) && ahref.replace(/#.*$/,'')!=curLHref && ahref.match(/https?:\/\/([^\/]+)/)[1]==_domain_port){
 				debug((type=='pre'? '上一页' : '下一页')+'匹配到的关键字为:',atext);

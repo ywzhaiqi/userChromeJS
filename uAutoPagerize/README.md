@@ -1,8 +1,11 @@
 
 # uAutoPagerize 中文规则版
 
- - 增加 Super\_preloader.db 的规则的支持，几乎完美兼容规则。（起点、漫画网站除外）
+ - 增加了 Super\_preloader.db 的规则的支持，几乎完美兼容该规则，能自动查找下一页，支持 css;、函数、地址栏递增等多种选择器。
  - 能下载更新 Super\_preloader.db 的规则，cache文件名为 uSuper_preloader.db.js（Chrome目录下）
+ - 增加了可添加和更新他人规则的功能，能分享规则。
+ - 增加了iframe的支持，一些特殊网站：如起点等已经可用。
+ - 增加了鼠标手势（FireGestures）上滚一页、下滚一页的支持
  - 原官方规则优先级最低。对内存、速度有极高要求的可自行禁用。
 
 ![按钮图标](按钮图标.png)
@@ -19,6 +22,28 @@
 ## 使用注意
 
  - 如果加载的下一页以图片为主，内存占用会不断加大（文字则完全不受影响）。建议点击 第 XX 页 链接，关闭当前页面，继续阅读。
+
+## 配合鼠标手势或其它工具调用的代码
+
+启用禁用
+
+	uAutoPagerize.toggle()
+
+向下滚一页，否则向下滚一屏（FireGestures代码）。
+
+	if(content.window.ap){
+		return uAutoPagerize.gotonext();
+	}
+
+	FireGestures._performAction(event, "FireGestures:ScrollPageDown");
+
+向上滚一页，否则向下滚一屏（FireGestures代码）。
+
+	if(content.window.ap){
+		return uAutoPagerize.gotoprev();
+	}
+
+	FireGestures._performAction(event, "FireGestures:ScrollPageUp");
 
 ## 备注
 

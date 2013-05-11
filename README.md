@@ -1,11 +1,9 @@
 #userChromeJS
 
-在 Firefox 下先安装 userChrome 扩展，放入 Firefox 配置 Chrome 目录下。
+userChromeJS for Firefox.
 
-## 一览
-
- - uAutoPagerize.uc.js 中文规则增强版。
- - addmenu.uc.js
+ - uAutoPagerize, 中文规则增强版。
+ - addmenuPlus. Now not only can add menu, you can modify the menu.
 
 ## Copyright
 

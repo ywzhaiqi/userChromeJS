@@ -1,9 +1,7 @@
-#userChromeJS
-
 userChromeJS for Firefox.
 
- - uAutoPagerize, 中文规则增强版。
- - addmenuPlus. Now not only can add menu, you can modify the menu.
+ - uAutoPagerize, 中文规则增强版
+ - addmenuPlus, Now not only can add menu, you can modify the menu.
 
 ## Copyright
 

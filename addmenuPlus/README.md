@@ -11,10 +11,12 @@ Base on [Griever/addMenu.uc.js](https://github.com/Griever/userChromeJS/tree/mas
 
 ### Modify the menu
 
-	{
+modify the firebug key
+
+	page({
 		id: "menu_firebug_firebugInspect",
 		accesskey: "F"
-	},
+	});
 
 
 ## 我修改的说明

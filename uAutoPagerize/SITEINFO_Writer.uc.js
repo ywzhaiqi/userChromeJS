@@ -32,7 +32,7 @@ window.siteinfo_writer = {
 				    <hbox id="sw-hbox">\
 				      <toolbarbutton label="查看规则" oncommand="siteinfo_writer.toJSON();"/>\
 				      <toolbarbutton label="查看规则(SP)" oncommand="siteinfo_writer.toSuperPreLoaderFormat();"/>\
-				      <toolbarbutton label="读取当前页面规则" oncommand="siteinfo_writer.getCurPageInfo();"/>\
+				      <toolbarbutton id="sw-curpage-info" label="读取当前页面规则" oncommand="siteinfo_writer.getCurPageInfo();"/>\
 				      <toolbarbutton label="从剪贴板读取规则" oncommand="siteinfo_writer.readFromClipboard();"/>\
 				      <toolbarbutton label="选取AutoPager规则" oncommand="siteinfo_writer.getInfoFromAutoPager();"/>\
 				      <toolbarbutton id="sw-launch" label="启动规则" tooltiptext="启动uAutoPagerize" oncommand="siteinfo_writer.launch();"/>\
@@ -234,23 +234,39 @@ window.siteinfo_writer = {
 
 		var self = this;
 		if(list.length == 1){
-			setValue(list[0]);
+			this.setValueFromCurPage(list[0]);
 		}else{
-			setValue(list[0]);
+			this.curPageInfos = list;
+
+			let range = document.createRange();
+			range.selectNodeContents(self.popup);
+			range.deleteContents();
+			range.detach();
+			for (let [i, info] in Iterator(list)) {
+				let menuitem = document.createElement("menuitem");
+				menuitem.setAttribute("label", info.siteName || info.name || info.url);
+				menuitem.setAttribute("oncommand", "siteinfo_writer.setValueFromCurPage(" + i + ")");
+				self.popup.appendChild(menuitem);
+			}
+			self.popup.openPopup($("sw-curpage-info"), "before_after");
+		}
+	},
+	setValueFromCurPage: function(info){
+		if(typeof info == 'number'){
+			info = this.curPageInfos[info];
 		}
 
-		function setValue(info){
-			self.siteName.value = info.siteName || info.site || info.name || content.document.title;
-			self.nextLink.value = info.nextLink;
-			self.pageElement.value = info.pageElement;
-			self.insertBefore.value = info.insertBefore || "";
+		this.siteName.value = info.siteName || info.site || info.name || content.document.title;
+		this.nextLink.value = info.nextLink;
+		this.pageElement.value = info.pageElement;
+		this.insertBefore.value = info.insertBefore || "";
 
-			let url = info.url;
-			if(typeof url == 'string'){
-				self.url.value = url.replace(/\\\\/g, '\\');
-			}else{
-				self.url.value = String(url).replace(/^\//, '').replace(/\/[img]*$/, '');
-			}
+		let url = info.url;
+		if(typeof url == 'string'){
+			this.url.value = url.replace(/\\\//g, '/').replace(/\\\\/g, '\\');
+		}else{
+			this.url.value = String(url).replace(/^\//, '').replace(/\/[img]*$/, '')
+				.replace(/\\\//g, '/');
 		}
 	},
 	getInfoFromAutoPager: function(){
@@ -279,7 +295,7 @@ window.siteinfo_writer = {
 
 		var urlPattern = getFirstElementByXPath("//urlPattern", site).textContent;
 		var urlIsRegex = getFirstElementByXPath("//urlIsRegex", site).textContent;
-		this.url.value = urlIsRegex ? urlPattern : wildcardToRegExpStr(urlPattern);
+		this.url.value = (urlIsRegex == 'false') ? wildcardToRegExpStr(urlPattern) : urlPattern;
 
 		this.siteName.value = getFirstElementByXPath("//desc", site).textContent.replace("AutoPager rule for ", "");
 		this.nextLink.value = getFirstElementByXPath("//linkXPath", site).textContent;
@@ -290,8 +306,14 @@ window.siteinfo_writer = {
 		if(dataStr){
 			var data = this.parseInfo(dataStr);
 			if(data){
-				this.url.value = data.url;
-				this.siteName.value = data.siteName;
+				var url;
+				if(data.url.match(/^\/(.*)\/[igm]?$/)){
+					url = RegExp.$1.replace(/\\\/\\\//g, '\/\/');
+				}else{
+					url = data.url.replace(/\\\\/g, '\\');
+				}
+				this.url.value = url;
+				this.siteName.value = data.siteName || data.name;
 				this.nextLink.value = data.nextLink;
 				this.pageElement.value = data.pageElement;
 				this.insertBefore.value = data.insertBefore || '';
@@ -310,7 +332,7 @@ window.siteinfo_writer = {
 	    for (var i = 0; i < lines.length; i++) {
 	    	lines[i] = strip(lines[i]);
 	        if (lines[i].match(re)) {
-	            info[RegExp.$1] = strip(RegExp.$2);
+	            info[RegExp.$1.trim()] = strip(RegExp.$2).trim();
 	        }
 	    }
 	    var isValid = function(info) {
@@ -776,5 +798,8 @@ function readFromClipboard() {
 }\
   #sw-popup > * {\
   max-width: none !important;\
+}\
+#sw-launch{\
+	font-weight: 700;\
 }\
 ');

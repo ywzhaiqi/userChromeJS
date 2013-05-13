@@ -40,7 +40,7 @@
 
 // 以下 設定が無いときに利用する
 var isUrlbar = true;   // 放置的位置，true为地址栏，否则附加组件栏。
-var useiframe = true;  // 启用 iframe 加载下一页的总开关。体验不好，先禁用。
+var useiframe = true;  // 启用 iframe 加载下一页的总开关。
 var usePageNav = false;
 var PAGE_NAVIGATION_SITE_RE = /forum|thread/i;
 var FORCE_TARGET_WINDOW = true;
@@ -284,7 +284,7 @@ var ns = window.uAutoPagerize = {
 				          oncommand="uAutoPagerize.toggle(event);"/>\
 				<menuitem label="重载配置文件"\
 				          oncommand="uAutoPagerize.loadSetting(true);"/>\
-				<menuitem label="重置站点信息(Super_perloader)"\
+				<menuitem label="重置站点信息(SP)"\
 				          oncommand="uAutoPagerize.resetSITEINFO_NLF();"/>\
 				<menuitem label="重置站点信息(官方)"\
 				          oncommand="uAutoPagerize.resetSITEINFO();"/>\
@@ -473,7 +473,7 @@ var ns = window.uAutoPagerize = {
 		doc.dispatchEvent(ev);
 
 		var miscellaneous = [];
-		// 新标签打开链接。拼接的部分
+		// 新标签打开链接。
 		win.fragmentFilters.push(function(df){
 			if (!ns.FORCE_TARGET_WINDOW) return;
 			var arr = Array.slice(df.querySelectorAll('a[href]:not([href^="mailto:"]):not([href^="javascript:"]):not([href^="#"])'));
@@ -583,7 +583,7 @@ var ns = window.uAutoPagerize = {
 				});
 			});
 		} 
-		// 水木清华社区延迟加载及下一页的重新启用
+		// 水木清华社区延迟加载及下一页加载的修复
 		else if (win.location.host === 'www.newsmth.net') {
 			timer = 1000;   // 这个网站 =400 则找到的下一页链接会错误
 			win.addEventListener("hashchange", function(event) {
@@ -680,7 +680,7 @@ var ns = window.uAutoPagerize = {
 		}
 	},
 	getInfo: function (list, win) {
-		if (!list) list = ns.SITEINFO_NLF.concat(ns.SITEINFO);
+		if (!list) list = ns.MY_SITEINFO.concat(ns.SITEINFO_NLF, ns.SITEINFO);
 		if (!win)  win  = content;
 		var doc = win.document;
 		var locationHref = doc.location.href;
@@ -715,7 +715,7 @@ var ns = window.uAutoPagerize = {
 	},
 	getInfoFromURL: function (url) {
 		if (!url) url = content.location.href;
-		var list = ns.SITEINFO_NLF.concat(ns.SITEINFO);
+		var list = ns.MY_SITEINFO.concat(ns.SITEINFO_NLF, ns.SITEINFO);
 		return list.filter(function(info, index, array) {
 			try {
 				var exp = info.url_regexp || Object.defineProperty(info, "url_regexp", {
@@ -749,15 +749,14 @@ var ns = window.uAutoPagerize = {
 		var pos,
 			previous = 0,
 			bottom = Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight);
-		// var fix = -8;
+
 		var fix = 0;  // 加入导航栏的情况，未完善的
 
-		// var links = getElementsByXPath('//div[@class="autopagerize_icon"]', doc);
 		var links = getElementsByXPath('//a[@class="autopagerize_link"]', doc);
 		for (var i = 0; i < links.length; i++) {
 			pos = scrollY + parseInt(links[i].getBoundingClientRect().top);
 
-			content.console.log(i + ": " + previous + " <= " +  scrollY + " <= " +  pos);
+			// content.console.log(i + ": " + previous + " <= " +  scrollY + " <= " +  pos);
 			if(scrollY >= previous && scrollY <= pos){
 				if(scrollY == pos){
 					pos = links[i+1] ? (scrollY + links[i+1].getBoundingClientRect().top) : bottom;
@@ -966,15 +965,23 @@ AutoPager.prototype = {
 			this.iframe.name = 'uAutoPagerizeRequest';
 			this.iframe.width = this.iframe.height = 1;
 			this.iframe.style.visibility = 'hidden';
+
+			this.doc.body.appendChild(this.iframe);
 			this.remove.push(function(){
 				self.doc.body.removeChild(self.iframe);
 			});
+
+			iframe.webNavigation.allowAuth = false;
+			iframe.webNavigation.allowImages = false;
+			iframe.webNavigation.allowJavascript = true;
+			iframe.webNavigation.allowMetaRedirects = true;
+			iframe.webNavigation.allowPlugins = false;
+			iframe.webNavigation.allowSubframes = false;
 		}
 
         if (this.iframe.src == this.requestURL) return;
         this.iframe.src = this.requestURL;
 
-		this.doc.body.appendChild(this.iframe);
 		this.iframe.addEventListener("load", iframeLoad, false);
 
 		function iframeLoad(){
@@ -1112,7 +1119,6 @@ AutoPager.prototype = {
 	},
 	addEndSeparator: function(){
 		// debug('page number > :', this.pageNum,  MAX_PAGER_NUM );
-		
 		var html = '<a class="autopagerize_link" href="' + this.requestURL.replace(/&/g, '&amp;') + 
 			'" > 已达到设置的最大自动翻页数，点击进入下一页 </a> ';
 
@@ -1141,8 +1147,8 @@ AutoPager.prototype = {
 		hr.setAttribute('style', 'clear: both;');
 		var p  = this.doc.createElement('p');
 		p.setAttribute('class', 'autopagerize_page_info');
-		// p.setAttribute('style', 'clear: both;');
-		//
+		p.setAttribute('style', 'clear: both;');
+
 		if(usePageNav && this.usePageNav && this.nextLink){
 			var pageNav = this.nextLink.parentNode;
 			p.innerHTML = pageNav.innerHTML;
@@ -1284,7 +1290,7 @@ AutoPager.prototype = {
 	}
 };
 
-// 获取更新 Super_preloader.db 函数
+// 获取更新 Super_preloader.db
 (function(){
 
 	ns.requestSITEINFO_NLF = requestSITEINFO;
@@ -1309,9 +1315,8 @@ AutoPager.prototype = {
 
 		var list = [];
 		// 加上 MY_SITEINFO
-		var mSiteInfo;
 		for(var i = 0, l = SITEINFO_NLF_IMPORT_URLS.length -1; i < l; i++){
-			mSiteInfo = sandbox["MY_SITEINFO_" + i];
+			let mSiteInfo = sandbox["MY_SITEINFO_" + i];
 			if(mSiteInfo){
 				list = list.concat(mSiteInfo);
 			}
@@ -1324,7 +1329,9 @@ AutoPager.prototype = {
 				url: info.url,
 				nextLink: info.nextLink,
 				pageElement: info.autopager.pageElement,
-				useiframe: info.autopager.useiframe
+				useiframe: info.autopager.useiframe,
+				siteName: info.siteName || '',
+				exampleUrl: info.siteExample || ''
 			});
 		}
 

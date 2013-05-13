@@ -12,6 +12,8 @@
 
 ![按钮右键菜单](按钮右键菜单.png)
 
+![SITEINFO_Writer](SITEINFO_Writer.png)
+
 ## 文件简介
 
  - uAutoPagerize.uc.js（必须）。脚本文件。
@@ -44,8 +46,3 @@
 	}
 
 	FireGestures._performAction(event, "FireGestures:ScrollPageUp");
-
-## 备注
-
- - [起点中文网](http://read.qidian.com/BookReader/1545376,27301383.aspx) 内容加载不了。
- - Super\_preloader 能对没有规则的站点进行强行拼接。

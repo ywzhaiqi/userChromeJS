@@ -4,11 +4,11 @@
 // @namespace      http://d.hatena.ne.jp/Griever/
 // @author         Griever
 // @include        main
-// @compatibility  Firefox 5
+// @compatibility  Firefox 5 - firefox 23a1
 // @charset        UTF-8
 // @version        下書き1
 // @note           增加下一页中文选择xpath By ywzhaiqi@gmail.com
-// @note           fix compatibility by lastdream2013
+// @note           fix compatibility for firefox 23a1 by lastdream2013
 // @note           まだこれからつくり込む段階
 // @note           ツールメニューから起動する
 // ==/UserScript==
@@ -30,8 +30,12 @@ window.siteinfo_writer = {
 	        <window id="main-window">\
 				<vbox id="sw-container" class="sw-add-element" hidden="true">\
 				    <hbox id="sw-hbox">\
-				      <toolbarbutton label="JSON" oncommand="siteinfo_writer.toJSON();"/>\
-				      <toolbarbutton id="sw-launch" label="launch" tooltiptext="uAutoPagerize im Vorfeld ausführen" oncommand="siteinfo_writer.launch();"/>\
+				      <toolbarbutton label="查看规则" oncommand="siteinfo_writer.toJSON();"/>\
+				      <toolbarbutton label="查看规则(SP)" oncommand="siteinfo_writer.toSuperPreLoaderFormat();"/>\
+				      <toolbarbutton label="读取当前页面规则" oncommand="siteinfo_writer.getCurPageInfo();"/>\
+				      <toolbarbutton label="从剪贴板读取规则" oncommand="siteinfo_writer.readFromClipboard();"/>\
+				      <toolbarbutton label="选取AutoPager规则" oncommand="siteinfo_writer.getInfoFromAutoPager();"/>\
+				      <toolbarbutton id="sw-launch" label="启动规则" tooltiptext="启动uAutoPagerize" oncommand="siteinfo_writer.launch();"/>\
 				      <spacer flex="1"/>\
 				      <toolbarbutton class="tabs-closebutton" oncommand="siteinfo_writer.hide();"/>\
 				    </hbox>\
@@ -44,41 +48,49 @@ window.siteinfo_writer = {
 				      </columns>\
 				      <rows>\
 				        <row>\
+				          <label value="siteName" />\
+				          <textbox id="sw-siteName"/>\
+				          <hbox />\
+				          <toolbarbutton class="inspect"\
+				                         tooltiptext="提取网站名称"\
+				                         oncommand="siteinfo_writer.siteName.value = content.document.title;"/>\
+				        </row>\
+				        <row>\
 				          <label value="url" />\
 				          <textbox id="sw-url" oninput="siteinfo_writer.onInput(event);"/>\
 				          <hbox />\
 				          <toolbarbutton class="inspect"\
-				                         tooltiptext="Url Abruf"\
-				                         oncommand="siteinfo_writer.url.value = \'^\' + content.location.href.replace(/[()\[\]{}|+.,^$?\\]/g, \'\\$&amp;\');"/>\
+				                         tooltiptext="提取地址"\
+				                         oncommand="siteinfo_writer.setUrl();"/>\
 				        </row>\
 				        <row>\
 				          <label value="nextLink" />\
 				          <textbox id="sw-nextLink" multiline="true"/>\
 				          <toolbarbutton class="check"\
-				                         tooltiptext="XPath Test"\
+				                         tooltiptext="测试XPath"\
 				                         oncommand="siteinfo_writer.xpathTest(\'nextLink\');"/>\
 				          <toolbarbutton class="inspect"\
-				                         tooltiptext="XPath Abruf"\
+				                         tooltiptext="提取XPath"\
 				                         oncommand="siteinfo_writer.inspect(\'nextLink\');"/>\
 				        </row>\
 				        <row>\
 				          <label value="pageElement" />\
 				          <textbox id="sw-pageElement" multiline="true"/>\
 				          <toolbarbutton class="check"\
-				                         tooltiptext="XPath Test"\
+				                         tooltiptext="测试XPath"\
 				                         oncommand="siteinfo_writer.xpathTest(\'pageElement\');"/>\
 				          <toolbarbutton class="inspect"\
-				                         tooltiptext="XPath Abruf"\
+				                         tooltiptext="提取XPath"\
 				                         oncommand="siteinfo_writer.inspect(\'pageElement\');"/>\
 				        </row>\
 				        <row>\
 				          <label value="insertBefore" />\
-				          <textbox id="sw-insertBefore" multiline="true"/>\
+				          <textbox id="sw-insertBefore"/>\
 				          <toolbarbutton class="check"\
-				                         tooltiptext="XPath Test"\
+				                         tooltiptext="测试XPath"\
 				                         oncommand="siteinfo_writer.xpathTest(\'insertBefore\');"/>\
 				          <toolbarbutton class="inspect"\
-				                         tooltiptext="XPath Abruf"\
+				                         tooltiptext="提取XPath"\
 				                         oncommand="siteinfo_writer.inspect(\'insertBefore\');"/>\
 				        </row>\
 				      </rows>\
@@ -86,51 +98,58 @@ window.siteinfo_writer = {
 				  </vbox>\
 			</window>\
 	      </overlay>';
-	    overlay = "data:application/vnd.mozilla.xul+xml;charset=utf-8," + encodeURI(overlay);
-	    window.userChrome_js.loadOverlay(overlay, window.siteinfo_writer);
+    	overlay = "data:application/vnd.mozilla.xul+xml;charset=utf-8," + encodeURI(overlay);
+    	window.userChrome_js.loadOverlay(overlay, window.siteinfo_writer);
 	},
-  	observe: function(aSubject, aTopic, aData){
-    	if (aTopic == "xul-overlay-merged") {
+	observe : function (aSubject, aTopic, aData) {
+		if (aTopic == "xul-overlay-merged")
+		{
+			this.popup = $("mainPopupSet").appendChild($C("menupopup",
+					{
+						id : "sw-popup",
+						class : "sw-add-element",
+					}
+					));
 
-		this.popup = $("mainPopupSet").appendChild($C("menupopup",{
-		 id: "sw-popup",
-		 class: "sw-add-element",
-		 }));
+			var menuitem = $C("menuitem",
+				{
+					class : "sw-add-element",
+					label : "辅助查找翻页规则",
+					oncommand : "siteinfo_writer.show();",
+				}
+				);
+			$("devToolsSeparator").parentNode.insertBefore(menuitem, $("devToolsSeparator"));
 
-		var menuitem = $C("menuitem", {
-			 class: "sw-add-element",
-			 label: "SITEINFO Writer starten",
-			 oncommand: "siteinfo_writer.show();",
-			 });
-		$("devToolsSeparator").parentNode.insertBefore(menuitem, $("devToolsSeparator"));
-		
-		setTimeout(function() {
-			if (!window.uAutoPagerize) {
-				$("sw-launch").hidden = true;
-				return;
-			};
-			
-			let aupPopup = $("uAutoPagerize-popup");
-			if (aupPopup) {
-				aupPopup.appendChild(document.createElement("menuseparator")).setAttribute("class", "sw-add-element");
-				aupPopup.appendChild(menuitem.cloneNode(false));
-			}
-		}, 2000);
+			setTimeout(function ()
+			{
+				if (!window.uAutoPagerize)
+				{
+					$("sw-launch").hidden = true;
+					return;
+				};
 
-		this.container = $("sw-container"); 
-		this.url = $("sw-url");
-		this.nextLink = $("sw-nextLink");
-		this.pageElement = $("sw-pageElement");
-		this.insertBefore = $("sw-insertBefore"); 
+				let aupPopup = $("uAutoPagerize-popup");
+				if (aupPopup)
+				{
+					aupPopup.appendChild(document.createElement("menuseparator")).setAttribute("class", "sw-add-element");
+					aupPopup.appendChild(menuitem.cloneNode(false));
+				}
+			}, 2000);
 
-		this.nextLink.addEventListener("popupshowing", siteinfo_writer.pps, false);
-		this.pageElement.addEventListener("popupshowing", siteinfo_writer.pps, false);
-		this.insertBefore.addEventListener("popupshowing", siteinfo_writer.pps, false);
-	}
+			this.container = $("sw-container");
+			this.url = $("sw-url");
+			this.siteName =  $("sw-siteName");
+			this.nextLink = $("sw-nextLink");
+			this.pageElement = $("sw-pageElement");
+			this.insertBefore = $("sw-insertBefore");
+
+			this.nextLink.addEventListener("popupshowing", siteinfo_writer.pps, false);
+			this.pageElement.addEventListener("popupshowing", siteinfo_writer.pps, false);
+			this.insertBefore.addEventListener("popupshowing", siteinfo_writer.pps, false);
+		}
 	},
-	uninit: function() {
+	uninit : function ()  {
 	},
-
 	pps: function(event) {
 		event.currentTarget.removeEventListener(event.type, arguments.callee, false);
 		var popup = event.originalTarget;
@@ -158,6 +177,7 @@ window.siteinfo_writer = {
 	},
 	show: function() {
 		this.setUrl();
+		this.siteName.value = content.document.title;
 		this.nextLink.value = "";
 		this.pageElement.value = "";
 		this.insertBefore.value = "";
@@ -167,17 +187,152 @@ window.siteinfo_writer = {
 		this.container.hidden = true;
 	},
 	toJSON: function() {
-		var json = "{\n";
-		json += "\turl          : '" + this.url.value.replace(/\\/g, "\\\\") + "'\n";
-		json += "\t,nextLink    : '" + this.nextLink.value + "'\n";
-		json += "\t,pageElement : '" + this.pageElement.value + "'\n";
-		json += "\t,insertBefore: '" + this.insertBefore.value + "'\n";
-		json += "\t,exampleUrl  : '" + content.location.href + "'\n";
-		json += "}";
-		alert(json);
+		var json = "\t{";
+		json += "siteName: '" + this.siteName.value + "',\n";
+		json += "\t\turl: '" + this.url.value.replace(/\\/g, "\\\\") + "',\n";
+		json += "\t\tnextLink: '" + this.nextLink.value + "',\n";
+		json += "\t\tpageElement: '" + this.pageElement.value + "',\n";
+		if ( this.insertBefore.value != '' ) {json += "\t\tinsertBefore: '" + this.insertBefore.value + "',\n";}
+		json += "\t\texampleUrl: '" + content.location.href + "',\n";
+		json += "\t},";
+		var r=confirm("翻页规则（按确定键将其复制到剪贴板）："+'\n\n' + json);
+		if(r){
+			try{
+				Components.classes["@mozilla.org/widget/clipboardhelper;1"].getService(Components.interfaces.nsIClipboardHelper).copyString(json);
+			}
+			catch(e){
+				alert(e);
+			}
+		}
+	},
+	toSuperPreLoaderFormat: function() {
+		var spdb = "\t{\n";
+		spdb += "\t\tsiteName    : '" + this.siteName.value + "',\n";
+		spdb += "\t\turl         : /" + this.url.value.replace(/\//g, "\\\/") + "/i,\n";
+		spdb += "\t\tsiteExample : '" + content.location.href + "',\n";
+		spdb += "\t\tnextLink    : '" + this.nextLink.value + "',\n";
+		spdb += "\t\tautopager: {\n";
+		spdb += "\t\t\tuseiframe   : true,\n";
+		spdb += "\t\t\tpageElement : '" + this.pageElement.value + "',\n";
+		if ( this.insertBefore.value != '' ) {spdb += "\t\t\tHT_insert   : ['" + this.insertBefore.value + "', 1],\n";}
+		spdb += "\t\t}\n";
+		spdb += "\t},";
+		var r=confirm("翻页规则(SuperPreLoader格式)（按OK键将其复制到剪贴板）："+'\n\n' + spdb);
+		if(r==true){
+			try{
+				Components.classes["@mozilla.org/widget/clipboardhelper;1"].getService(Components.interfaces.nsIClipboardHelper).copyString(spdb);
+			}
+			catch(e){
+				alert(e);
+			}
+		}
+	},
+	getCurPageInfo: function(){
+		if(!uAutoPagerize) return;
+		var list = uAutoPagerize.getInfoFromURL();
+		if(!list) return;
+
+		var self = this;
+		if(list.length == 1){
+			setValue(list[0]);
+		}else{
+			setValue(list[0]);
+		}
+
+		function setValue(info){
+			self.siteName.value = info.siteName || info.site || info.name || content.document.title;
+			self.nextLink.value = info.nextLink;
+			self.pageElement.value = info.pageElement;
+			self.insertBefore.value = info.insertBefore || "";
+
+			let url = info.url;
+			if(typeof url == 'string'){
+				self.url.value = url.replace(/\\\\/g, '\\');
+			}else{
+				self.url.value = String(url).replace(/^\//, '').replace(/\/[img]*$/, '');
+			}
+		}
+	},
+	getInfoFromAutoPager: function(){
+		if (this._inspect) 
+			this._inspect.uninit();
+		var self = this;
+
+		this._inspect = new Inspector(content, function(xpathArray) {
+			if (xpathArray.length) {
+				var elem = getFirstElementByXPath(xpathArray[0], content.document);
+				if(elem && elem.href && elem.href.match(/www\.teesoft\.info\/autopager\/down/)){
+					var xhr = new XMLHttpRequest();
+					xhr.onload = function() {
+						self.readFromAutoPager(xhr.responseXML);
+					};
+					xhr.open("GET", elem.href);
+					xhr.responseType = "document";
+					xhr.send();
+				}
+			}
+			self._inspect = null;
+		});
+	},
+	readFromAutoPager: function(xml){
+		var site = getFirstElementByXPath("/autopager/site", xml);
+
+		var urlPattern = getFirstElementByXPath("//urlPattern", site).textContent;
+		var urlIsRegex = getFirstElementByXPath("//urlIsRegex", site).textContent;
+		this.url.value = urlIsRegex ? urlPattern : wildcardToRegExpStr(urlPattern);
+
+		this.siteName.value = getFirstElementByXPath("//desc", site).textContent.replace("AutoPager rule for ", "");
+		this.nextLink.value = getFirstElementByXPath("//linkXPath", site).textContent;
+		this.pageElement.value = getFirstElementByXPath("//contentXPath", site).textContent;
+	},
+	readFromClipboard: function(){
+		var dataStr = readFromClipboard();
+		if(dataStr){
+			var data = this.parseInfo(dataStr);
+			if(data){
+				this.url.value = data.url;
+				this.siteName.value = data.siteName;
+				this.nextLink.value = data.nextLink;
+				this.pageElement.value = data.pageElement;
+				this.insertBefore.value = data.insertBefore || '';
+			}else{
+				alert("剪贴板的数据格式不正确");
+			}
+		}
+	},
+	parseInfo: function(str) {
+	    var lines = str.split(/\r\n|\r|\n/)
+	    var re = /(^[^:]*?):(.*)$/
+	    var strip = function(str) {
+	        return str.replace(/^[\s\t{'"]*/, '').replace(/[\s,}'"]*$/, '')
+	    }
+	    var info = {}
+	    for (var i = 0; i < lines.length; i++) {
+	    	lines[i] = strip(lines[i]);
+	        if (lines[i].match(re)) {
+	            info[RegExp.$1] = strip(RegExp.$2);
+	        }
+	    }
+	    var isValid = function(info) {
+	        var infoProp = ['url', 'nextLink', 'pageElement']
+	        for (var i = 0; i < infoProp.length; i++) {
+	            if (!info[infoProp[i]]) {
+	                return false
+	            }
+	        }
+	        return true
+	    }
+	    return isValid(info) ? info : null
 	},
 	launch: function() {
-		if (content.ap) return alert("已经运行");
+		if(content.ap){
+			var r = confirm("已经运行，是否重新启动？");
+			if(r){
+				content.ap.destroy(true);
+			}else{
+				return;
+			}
+		}
 
 		var i = {};
 		["url", "nextLink", "pageElement", "insertBefore"].forEach(function(type) {
@@ -192,9 +347,9 @@ window.siteinfo_writer = {
 		if (index === 0) {
 			if (content.AutoPagerize && content.AutoPagerize.launchAutoPager)
 				content.AutoPagerize.launchAutoPager([i]);
-			else alert("SITEINFO 正常但 uAutoPagerize 无法执行");
+			else alert("翻页规则语法正确，但uAutoPagerize无法执行，可能uAutoPagerize被禁用或没有安装脚本");
 		} else {
-			alert("SITEINFO 不匹配");
+			alert("翻页规则不匹配");
 		}
 	},
 	inspect: function(aType) {
@@ -441,12 +596,12 @@ Inspector.prototype = {
 			return elem.nodeName.toLowerCase();
 		}
 		if(this.TEXT == constant){
-			var elemHtml = elem.textContent;
-			if(elemHtml.length < 20  && elemHtml.match(this.NEXT_REG)){
-				if(elemHtml.match(this.NEXT_REG_A)){
-					return elem.nodeName.toLowerCase() + '[text()="' + elemHtml + '"]';
+			var text = elem.textContent;
+			if(text.length < 20  && text.match(this.NEXT_REG)){
+				if(text.match(this.NEXT_REG_A)){
+					return elem.nodeName.toLowerCase() + '[text()="' + text + '"]';
 				}
-				return elem.nodeName.toLowerCase() + '[contains(text(), "' + elemHtml + '")]';
+				return elem.nodeName.toLowerCase() + '[contains(text(), "' + text + '")]';
 			}
 			return elem.nodeName.toLowerCase();
 		}
@@ -492,6 +647,14 @@ function $C(name, attr) {
 	var el = document.createElement(name);
 	if (attr) Object.keys(attr).forEach(function(n) el.setAttribute(n, attr[n]));
 	return el;
+}
+
+function wildcardToRegExpStr(urlstr) {
+	if (urlstr.source) return urlstr.source;
+	let reg = urlstr.replace(/[()\[\]{}|+.,^$?\\]/g, "\\$&").replace(/\*+/g, function(str){
+		return str === "*" ? ".*" : "[^/]*";
+	});
+	return "^" + reg + "$";
 }
 
 function addStyle(css) {
@@ -559,6 +722,29 @@ function addDefaultPrefix(xpath, prefix) {
 	return xpath.replace(tokenPattern, replacer)
 };
 
+function readFromClipboard() {
+	var url;
+	try {
+		// Create transferable that will transfer the text. 
+		var trans = Components.classes["@mozilla.org/widget/transferable;1"]
+						.createInstance(Components.interfaces.nsITransferable);
+		trans.init(getLoadContext());
+		trans.addDataFlavor("text/unicode");
+		// If available, use selection clipboard, otherwise global one 
+		if (Services.clipboard.supportsSelectionClipboard()) 
+			Services.clipboard.getData(trans, Services.clipboard.kSelectionClipboard);
+		else 
+			Services.clipboard.getData(trans, Services.clipboard.kGlobalClipboard);
+		var data = {};
+		var dataLen = {};
+		trans.getTransferData("text/unicode", data, dataLen);
+		if (data) {
+			data = data.value.QueryInterface(Components.interfaces.nsISupportsString);
+			url = data.data.substring(0, dataLen.value / 2);
+		}
+	} catch (ex) {}
+	return url;
+}
 
 })('\
 \

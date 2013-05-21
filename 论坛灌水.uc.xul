@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<!DOCTYPE overlay>
+<!--
+// ==UserScript==
+// @name           Kaomoji.uc.xul
+// @namespace      http://d.hatena.ne.jp/Griever
+// @include        main
+// ==/UserScript==
+ -->
+<overlay id="menu_overlay"  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+	<script type="application/x-javascript" xmlns="http://www.w3.org/1999/xhtml"><![CDATA[
+
+var kaomoji = {
+	list : [
+		"非常感谢楼主的分享!谢谢" ,
+		"坐等小白鼠的说 - - ",
+		"没图没真相，纯支持下了",
+		"看起来很不错哦，收了" ,
+		"强势插入!前排" ,
+		"我就看看，飘过~~",
+		"拒绝伸手党，回复个~",
+		"潜力贴留名，字数补丁.字数加强补丁..." ,
+		"不明真相的围观群众" ,
+        "虽然不知道LZ在说什么但是感觉很厉害的样子～" ,
+        "我顶！（此回复虽仅有两个字，却深刻的表达了回复人的深深的祝福与刻骨的情感，可谓言简意赅，一字千金，字字扣人心弦，催人泪下，足见回复人扎实的文字功底和信手拈来的写作技巧及惨绝人寰的创新能力。实在是佩服佩服！再加上以感叹号收尾，点睛之笔，妙笔生花，意境深远，照应前文，升华主题，把回复人的感情表达得淋漓尽致，给人无限感动和惆怅，有浑然天成之感，实属回复中之极品，祝福中之绝笔）" ,
+        "汉语:关我什么事，我来打酱油。英语:It's none of my business .I come to buy some sauce.德语:Ich bezogen, was ich kam zu einer Soja-Soße. 法语:Je lis ce qui, j'en suis arriv une sauce de soja. 荷兰语:Ik gerelateerd wat, kwam ik tot een sojasaus. 俄语:Я,касающихся того, что я пришел к соевым соусом. 西班牙语:Relacionados con lo que yo, me vino a un salsa de soja. 意大利语:I relativi cosa, sono venuto a una salsa di soia. 日语:私関连したどのような、私がして醤油. 希腊语:I σχετικέ ς τι ή ρθα σε μια σά λτσα σό γιας. 火星语：関莪什庅倳，莪唻咑酱怞。韩文：汪汪汪汪汪汪汪" ,
+        "评论的永远有28种人：1个说前排围观的，1个路过打酱油的，1个留名的，1个上来直接骂LZ去死LZSB的，1个整天抢2楼的，1个说自己SB的，1个tm就知道呵呵的，1个进来P都不放按顶走人的，1个涂鸦的，1个发广告的，1个成天装内涵的，1个表情帝，1个没事就撸撸睡觉的，1个要摸楼下狗头的，1个总是@ 别人的，1个整天拜膜的，1个吹NB的，1个只会说“哦”的，1个宣扬春哥的，1个灌水的，1个爪机马克的，1个蛋疼的，1个TM的说挽尊的，1个TM的说亲哦有木有的，1个说内容太长没看的，1个废话连篇的，1个留邮箱的，最后就是1个像我这样复制粘贴混经验的" ,
+	],
+	init : function(){
+		var popup = document.getElementById('kaomoji-popup');
+		this.list.forEach(function(elem, index){
+			var menuitem = document.createElement('menuitem');
+			menuitem.setAttribute('label', elem);
+			menuitem.setAttribute('accesskey', index%10);
+			menuitem.setAttribute('oncommand', 'if(gContextMenu.onTextInput) kaomoji.insert(gContextMenu.target, this.label)');
+			popup.appendChild(menuitem);
+		}, this);
+
+		this.contextMenu = document.getElementById('kaomoji-context-menu');
+		this.contextMenu.setAttribute('label', "论坛灌水");
+		document.getElementById('contentAreaContextMenu').addEventListener('popupshowing', this, false);
+	},
+	uninit : function(){
+		document.getElementById('contentAreaContextMenu').removeEventListener('popupshowing', this, false);
+	},
+	handleEvent : function(event){
+		this.contextMenu.hidden = !gContextMenu.onTextInput;
+	},
+	insert : function(obj, word){
+		var nStart = obj.selectionStart;
+		var nEnd = obj.selectionEnd;
+		var sTop = obj.scrollTop;
+
+		var strValue = obj.value.substring(0, nStart) + word + obj.value.substring(nEnd, obj.value.length);
+		obj.value = strValue;
+		obj.setSelectionRange(nStart + word.length, nStart + word.length);
+		obj.scrollTop = sTop;
+	},
+};
+setTimeout(function(){ kaomoji.init(); }, 1000);
+window.addEventListener('unload', function(){ kaomoji.uninit(); }, false);
+
+	]]></script>
+	<popup id="contentAreaContextMenu">
+		<menu label="顔文字" id="kaomoji-context-menu" accesskey="L" insertbefore="context-undo">
+			<menupopup id="kaomoji-popup" style="max-width:25em;"/>
+		</menu>
+	</popup>
+</overlay>
+

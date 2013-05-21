@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE overlay>
+<overlay id="jsoff-overlay" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+    <script type="application/x-javascript"><![CDATA[
+
+if ("undefined" == typeof(jsoffNamespace)) {
+	var jsoffNamespace = {};
+};
+
+jsoffNamespace.ON_IMG = "data:image/gif;base64,R0lGODlhEAAQAPYAAAAAAAiAAAmGAAmOAAqWAAueAAuiAAumAAuoAAukAAmEAABSAQBcAgmMAAmIAABYAof%2FOQqSAABeAgEBARNAABVCAAqYAAqaAAyyAAy6ABKgAAyuAAqcAAy0ABG%2BABfGAAywAA28ABbEAAMuAAMmAAMqAAMsAAy2AAysAAAEAFL%2BAFv%2FFYH%2FNwdyAAMMAHr%2FMwugAAACAEjwABZKAAMKACh8AD7OAAEQAABUAQh4AAAWAAUOAD7QAIb%2FN3T%2FMTWwAAIFAQRCAABIAQduAAA2AQAcAAEUAAVIAAmKAABKAQBGAQBCAQdmAAp0AAh6AAmCAAh0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAFEALAAAAAAQABAAAAifAAEIHEiwoEAHCC1YQMAQwUILCAXmwIHDIEEHB3EgANCjo8eOACwItKBxIIWOFAaKBOBgIYIMKDj2CMlwpcKXHj7IBOAhg8ODLjPoBOnzZ0gSSEl42Fl0JUYVKwBk2FnT6c4cHF8AqIkRAFYVPVLW6GHjhkIcXXPcAGDjRY8XPwAogagEq1ciJAjeUOJAiV%2B7TJjkGIywsIPBTCwqFhgQADs%3D";
+
+jsoffNamespace.OFF_IMG = "data:image/gif;base64,R0lGODlhEAAQAPYAAAAAAP8UCf8hF%2F8yKf8%2BNf9GOf9IO%2F9KPf8cEbAEAMoEAP8vJf8jGcAEAP%2FR0f88M%2F8tI8wEAAEBAV0TE18TE%2F9AN%2F9OQf9QQ%2F9HP%2F9EN%2F9MP%2F9COf9TR%2F9bT14EAFAFAFgEAFwEAAgAAP%2BRkf%2Bdnf%2FPzwYAAP%2FLy%2BwKAA8DA%2F%2B9vQIAAP%2BJiWkVFREBAbQkJP9hYSACALYEAPgLADABABAEBP9paf%2B%2Fv%2F%2FNzf%2Bzs%2F8xMQYCAooGAKAAAOQKAHoCADwBAAoAAAQAACoCAJgKAP8nHaQAAJgDAJADANQJAOIKAPAQAPwLAP8WC%2F8fFe4LAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAFAALAAAAAAQABAAAAiqAAEIHEiwoEAmThZkWMiQ4QInAp0YiWCQYJGIETIAcMCxI0cAOgQuyDhwAscJAzUCUIiBAweNHzNgWCiSIYcOGx0AcDmzZkuXOXcyFFjEAxAQIDgEzfAyJACIJEgAwBB0Jk0ATQCc0MlkowqhGRYcBMDCQQsALxzYiJFBRwOIAJjQAGBDxQkVF3mEPdIVAIofQAjGOCLxCF%2BBEZYwWYzQiZMmi1GgqEhZYEAAOw%3D%3D";
+
+jsoffNamespace.jsStatus = function () {
+	var prefManager = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefBranch);
+
+	return {
+		startup : function(){
+			this.setStatusBar();
+		},
+
+		// run this onClick from the status bar
+		run : function () {
+			var jsEnabled = prefManager.getBoolPref("javascript.enabled");
+			prefManager.setBoolPref("javascript.enabled", !jsEnabled);
+			// change propogation handled in observer, don't need to call setStatusBar here
+		},
+
+		// something changed, update UI
+		setStatusBar : function(){
+			var statusBar = document.getElementById('jsoff-statusbar');
+			var jsEnabled = prefManager.getBoolPref("javascript.enabled");
+			statusBar.src = jsEnabled ? jsoffNamespace.ON_IMG : jsoffNamespace.OFF_IMG;
+		}
+	};
+}();
+/*** jsStatus ***/
+
+
+
+// This handles watching preferences for changes to javascript options
+jsoffNamespace.myPrefObserver =
+{
+  register: function()
+  {
+    // First we'll need the preference services to look for preferences.
+    var prefService = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService);
+
+    // For this._branch we ask that the preferences for extensions.myextension. and children
+    this._branch = prefService.getBranch("javascript.");
+
+    // Now we queue the interface called nsIPrefBranch2. This interface is described as:
+    // "nsIPrefBranch2 allows clients to observe changes to pref values."
+    this._branch.QueryInterface(Components.interfaces.nsIPrefBranch2);
+
+    // Finally add the observer.
+    this._branch.addObserver("", this, false);
+  },
+
+  unregister: function()
+  {
+    if(!this._branch) return;
+    this._branch.removeObserver("", this);
+  },
+
+  observe: function(aSubject, aTopic, aData)
+  {
+    if(aTopic != "nsPref:changed") return;
+    // aSubject is the nsIPrefBranch we're observing (after appropriate QI)
+    // aData is the name of the pref that's been changed (relative to aSubject)
+    switch (aData) {
+      case "enabled":
+        jsoffNamespace.jsStatus.setStatusBar();
+        break;
+    }
+  }
+}
+
+jsoffNamespace.myPrefObserver.register();
+window.addEventListener("load", function(e) { jsoffNamespace.jsStatus.startup(); }, false);
+
+]]></script>
+ <statusbar id="status-bar">
+  <statusbarpanel id="jsoff-statusbar" class="statusbarpanel-menu-iconic" tooltiptext="Javascript 启用/禁用" src="data:image/gif;base64,R0lGODlhEAAQAPYAAAAAAAiAAAmGAAmOAAqWAAueAAuiAAumAAuoAAukAAmEAABSAQBcAgmMAAmIAABYAof%2FOQqSAABeAgEBARNAABVCAAqYAAqaAAyyAAy6ABKgAAyuAAqcAAy0ABG%2BABfGAAywAA28ABbEAAMuAAMmAAMqAAMsAAy2AAysAAAEAFL%2BAFv%2FFYH%2FNwdyAAMMAHr%2FMwugAAACAEjwABZKAAMKACh8AD7OAAEQAABUAQh4AAAWAAUOAD7QAIb%2FN3T%2FMTWwAAIFAQRCAABIAQduAAA2AQAcAAEUAAVIAAmKAABKAQBGAQBCAQdmAAp0AAh6AAmCAAh0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAFEALAAAAAAQABAAAAifAAEIHEiwoEAHCC1YQMAQwUILCAXmwIHDIEEHB3EgANCjo8eOACwItKBxIIWOFAaKBOBgIYIMKDj2CMlwpcKXHj7IBOAhg8ODLjPoBOnzZ0gSSEl42Fl0JUYVKwBk2FnT6c4cHF8AqIkRAFYVPVLW6GHjhkIcXXPcAGDjRY8XPwAogagEq1ciJAjeUOJAiV%2B7TJjkGIywsIPBTCwqFhgQADs%3D" onclick="jsoffNamespace.jsStatus.run()" />
+ </statusbar>
+
+</overlay>

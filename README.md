@@ -1,7 +1,10 @@
 userChromeJS for Firefox.
 
- - uAutoPagerize, 中文规则增强版
  - addmenuPlus, Now not only can add menu, you can modify the menu.
+ - ExternalEditor
+ - MyNovelReader
+ - stylishEdit
+ - uAutoPagerize, 中文规则增强版
 
 ## Copyright
 

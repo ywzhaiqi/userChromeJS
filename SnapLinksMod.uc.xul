@@ -1,0 +1,402 @@
+<?xml version="1.0"?>
+<!DOCTYPE overlay>
+<!--
+// ==UserScript==
+// @name           SnapLinksMod.uc.xul
+// @namespace      http://d.hatena.ne.jp/Griever/
+// @description    Snap Links for userChromeJS
+// @include        main
+// @charset        UTF-8
+// @version        2012/04/02 fixed by lastdream2013
+// @note           add display count
+// @note           fix open/copy url order
+// @note           add context menu
+// @note           fix memory leak
+// @note           CSS が適用されていなかったのを修正
+// @note           2012/03/08 フレーム跨いだりツールチップ使うのをやめた
+// ==/UserScript==
+ -->
+<!--
+
+FireGestures や keyconfig で snapLinks(); を実行
+
+引数に eventを送るとすぐに四角を描くようになる（MouseEvent限定）
+snapLinks.init();
+
+-->
+<?xml-stylesheet href="data:text/css;charset=utf-8,@namespace%20url('http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul');
+
+#snapLinksMenupopup.hasLink .hasLink,
+#snapLinksMenupopup.hasImageLink .hasImageLink,
+#snapLinksMenupopup.hasCheckbox .hasCheckbox
+  { display: -moz-box !important; }
+
+#snapLinksMenupopup:not(.hasLink) .hasLink,
+#snapLinksMenupopup:not(.hasImageLink) .hasImageLink,
+#snapLinksMenupopup:not(.hasCheckbox) .hasCheckbox
+  { display: none !important; }
+
+" type="text/css"?>
+
+<overlay id="SnapLinks_overlay"  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+	<popupset id="mainPopupSet">
+		<menupopup id="snapLinksMenupopup"
+			        onpopuphidden="this.className = ''; snapLinks.lowlightAll();">
+			<menuitem label="在新标签打开所有链接"
+			           id="SnapLinksOpenLinks"
+			          class="hasLink"
+			          oncommand="snapLinks.openLinks();" />
+			<menuitem label="复制所有链接URL"
+				id="SnapLinksCopyLinks"
+			          class="hasLink"
+			          oncommand="snapLinks.copyLinks();" />
+			<menuitem label="在新标签页打开所有图片链接" hidden="true"
+			          id="SnapLinksOpenImageLinks"
+			          class="hasImageLink"
+			          oncommand="snapLinks.openLinks(/\.(jpe?g|png|gif|bmp)$/i);" />
+			<menuitem label="在一个标签页显示所有图片链接"
+		            	id="SnapLinksImageLinksOnePage"
+			          class="hasImageLink"
+			          oncommand="snapLinks.imageOnePage();" />
+			<menuseparator class="hasLink hasCheckbox" />
+			<menuitem label="复选框 - 选中"
+			      	id="SnapLinksCheckBoxSelect"
+			          class="hasCheckbox"
+			          oncommand="snapLinks.checkbox(true);" />
+			<menuitem label="复选框 - 取消"
+		                 id="SnapLinksCheckBoxCancel"
+			          class="hasCheckbox"
+			          oncommand="snapLinks.checkbox(false);" />
+			<menuitem label="复选框 - 反选"
+				id="SnapLinksCheckBoxTaggle"
+			          class="hasCheckbox"
+			          oncommand="snapLinks.checkbox();" />
+		</menupopup>
+<!--         <popup id="contentAreaContextMenu">
+    		<menuitem id="snaplinksMenuEntry"
+    			label="snaplinks批量操作模式"
+      			oncommand="snapLinks.init();"
+       			insertafter="context-paste"/>
+    	</popup> -->
+	</popupset>
+
+	<script type="application/x-javascript" xmlns="http://www.w3.org/1999/xhtml"><![CDATA[
+
+
+var snapLinks = {
+	timer: null,
+	button: 0,
+
+	init: function() {
+
+		this.win = document.commandDispatcher.focusedWindow;
+		if (this.win == window) this.win = content;
+		this.doc = this.win.document;
+		this.body = this.doc.body;
+		if (!this.body instanceof HTMLBodyElement){
+			alert("Can not snaplinks.");
+			return false;
+		}
+
+		this.root = this.doc.documentElement;
+		this.utils = this.win.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
+		this.popup = document.getElementById("snapLinksMenupopup");
+
+		this.bodyCursor = this.body.style.cursor;
+		this.rootCursor = this.root.style.cursor;
+		this.body.style.setProperty("cursor", "crosshair", "important");
+		this.root.style.setProperty("cursor", "crosshair", "important");
+
+		this.highlights = [];
+		this.elements = [];
+
+		this.doc.addEventListener("mousedown", this, true);
+		this.doc.addEventListener("pagehide", this, true);
+
+		// var cacm = document.getElementById("contentAreaContextMenu");
+  //       if (!cacm) return;
+  //      	var snaplink = document.getElementById("snaplinksMenuEntry");
+  //       cacm.addEventListener("popupshowing", function () {
+  //           // snaplink.hidden = gContextMenu.onCanvas || gContextMenu.onImage || gContextMenu.onLink || gContextMenu.onTextInput;
+  //       }, false);
+
+	},
+	uninit: function() {
+		this.doc.removeEventListener("mousedown", this, true);
+		this.doc.removeEventListener("mousemove", this, true);
+		this.doc.removeEventListener("pagehide", this, true);
+		removeEventListener("mouseup", this, true);
+		setTimeout(function(self){
+			self.doc.removeEventListener("click", self, true);
+		}, 10, this);
+
+		if (this.box && this.box.parentNode)
+			this.box.parentNode.removeChild(this.box);
+		this.box = null;
+		this.body.style.cursor = this.bodyCursor;
+		this.root.style.cursor = this.rootCursor;
+	},
+	destroy: function() {
+		this.uninit();
+		this.lowlightAll();
+	},
+	handleEvent: function(event) {
+		switch(event.type){
+			case "mousedown":
+				if (event.button != 0 || event.ctrlKey || event.shiftKey || event.altKey) return;
+				event.preventDefault();
+				event.stopPropagation();
+
+				this.draw(event);
+				break;
+			case "mousemove":
+				event.preventDefault();
+				event.stopPropagation();
+				var moveX = event.pageX;
+				var moveY = event.pageY;
+				if (this.downX > moveX) this.box.style.left = moveX + "px";
+				if (this.downY > moveY) this.box.style.top  = moveY + "px";
+				this.box.style.width  = Math.abs(moveX - this.downX) + "px";
+				this.box.style.height = Math.abs(moveY - this.downY) + "px";
+
+				if (this.timer) {
+					clearTimeout(this.timer);
+					this.timer = null;
+				}
+				var timeStamp = new Date().getTime();
+				if (timeStamp - this.lastHiglightedTime > 150) {
+					this.boxRect = this.box.getBoundingClientRect();
+					this.highlightAll();
+				} else {
+					var self = this;
+					this.timer = setTimeout(function() {
+						self.boxRect = self.box.getBoundingClientRect();
+						self.highlightAll();
+					}, 200);
+				}
+				break;
+			case "mouseup":
+				if (event.button != this.button || event.ctrlKey || event.shiftKey) return;
+				event.preventDefault();
+				event.stopPropagation();
+
+				if (this.timer) {
+					clearTimeout(this.timer);
+					this.timer = null;
+				}
+				this.boxRect = this.box.getBoundingClientRect();
+				this.highlightAll();
+
+				for (let [i, e] in Iterator(this.highlights)) {
+					if (e instanceof HTMLImageElement) {
+						let link = this.doc.evaluate(
+							'ancestor::*[@href]', e, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+						if (this.highlights.indexOf(link) === -1) {
+							this.elements[this.elements.length] = link;
+						}
+						continue;
+					}
+					this.elements[this.elements.length] = e;
+				}
+				this.elements = this.elements;
+				this.uninit();
+				this.showPopup(event);
+				break;
+			case "click":
+				event.preventDefault();
+				event.stopPropagation();
+				break;
+			case "pagehide":
+				this.destroy();
+				break;
+		}
+	},
+	draw: function(aEvent) {
+		this.lastHiglightedTime = new Date().getTime();
+		this.downX = aEvent.pageX;
+		this.downY = aEvent.pageY;
+		this.box = this.doc.createElement("div");
+		this.box.id = "snap-links-box";
+		this.box.style.cssText = [
+			'background-color: rgba(0,128,255,.1) !important;'
+			,'border: 1px solid rgb(255,255,0) !important;'
+			,'box-sizing: border-box !important;'
+			,'-moz-box-sizing: border-box !important;'
+			,'position: absolute !important;'
+			,'z-index: 2147483647 !important;'
+			,'top:' + this.downY + 'px;'
+			,'left:' + this.downX + 'px;'
+			,'cursor: crosshair !important;'
+			,'margin: 0px !important;'
+			,'padding: 0px !important;'
+			,'outline: none !important;'
+		].join(" ");
+		this.body.appendChild(this.box);
+
+		this.doc.removeEventListener("mousedown", this, true);
+		this.doc.addEventListener("mousemove", this, true);
+		addEventListener("mouseup", this, true);
+		this.doc.addEventListener("click", this, true);
+	},
+	highlightAll: function() {
+		var a = '[href]:not([href^="javascript:"]):not([href^="mailto:"]):not([href^="#"])';
+		var selector = a + ', ' + a + ' img, input[type="checkbox"]';
+
+		var contains = this.getContainsElements();
+		contains.reverse();
+		var matches = [];
+		for (let [i, e] in Iterator(contains)) {
+			if (e.nodeType !== 1 || !e.mozMatchesSelector(selector))
+				continue;
+
+			if (e.hasAttribute('href')) {
+				let imgs = Array.slice(e.getElementsByTagName('img'));
+				if (imgs[0]) {
+					[].push.apply(contains, imgs);
+					continue;
+				}
+			}
+
+			if (!("defStyle" in e))
+				this.highlight(e);
+			matches[matches.length] = e;
+		}
+
+		this.highlights.forEach(function(e, i, a){
+			if (matches.indexOf(e) === -1)
+				this.lowlight(e);
+		}, this);
+
+		this.highlights = matches;
+		this.lastHiglightedTime = new Date().getTime();
+	},
+	lowlightAll: function() {
+		this.highlights.forEach(function(e){
+			this.lowlight(e);
+		}, this);
+	},
+	highlight: function(elem) {
+		if (!('defStyle' in elem))
+			elem.defStyle = elem.getAttribute('style');
+		elem.style.setProperty('outline', '2px solid #ff0000', 'important');
+		elem.style.setProperty('outline-offset', '-1px', 'important');
+	},
+	lowlight: function(elem) {
+		if ("defStyle" in elem) {
+			elem.defStyle?
+				elem.style.cssText = elem.defStyle:
+				elem.removeAttribute("style");
+			delete elem.defStyle;
+		}
+	},
+	getContainsElements: function() {
+		if (!this.boxRect) return;
+		var { top, right, bottom, left, width, height } = this.boxRect;
+		// http://piro.sakura.ne.jp/latest/blosxom/mozilla/xul/2010-07-07_nodesfromrect.htm
+		// nsIDOMNodeList nodesFromRect(in float aX,
+		//                              in float aY,
+		//                              in float aTopSize,
+		//                              in float aRightSize,
+		//                              in float aBottomSize,
+		//                              in float aLeftSize,
+		//                              in boolean aIgnoreRootScrollFrame,
+		//                              in boolean aFlushLayout);
+		return Array.slice(this.utils.nodesFromRect(left, top, 0, width, height, 0, true, false));
+	},
+
+
+	showPopup: function(aEvent) {
+		var cls = [];
+
+		var linkcount = 0;
+		var imagecount = 0;
+		var checkboxcount = 0;
+		for (let [i, elem] in Iterator(this.elements)) {
+			if (elem instanceof HTMLAnchorElement)
+			   linkcount++;
+		}
+		for (let [i, elem] in Iterator(this.elements)) {
+			if (elem instanceof HTMLAnchorElement && /\.(jpe?g|png|gif|bmp)$/i.test(elem.href))
+				imagecount++;
+		}
+		for (let [i, elem] in Iterator(this.elements)) {
+			if (elem instanceof HTMLInputElement && elem.type === 'checkbox') {
+ 				checkboxcount++;
+			}
+		}
+		if ( linkcount > 0 ) cls.push("hasLink");
+		if ( imagecount > 0 ) cls.push("hasImageLink");
+		if ( checkboxcount > 0 ) cls.push("hasCheckbox");
+             var currentEntry=document.getElementById("SnapLinksOpenLinks");
+			if(currentEntry){  currentEntry.setAttribute("label", "\u5728\u65B0\u6807\u7B7E\u6253\u5F00\u6240\u6709\u94FE\u63A5 (" + linkcount +")"); }
+             var currentEntry=document.getElementById("SnapLinksCopyLinks");
+			if(currentEntry){  currentEntry.setAttribute("label", "\u590D\u5236\u6240\u6709\u94FE\u63A5URL (" + linkcount +")"); }
+             var currentEntry=document.getElementById("SnapLinksOpenImageLinks");
+			if(currentEntry){  currentEntry.setAttribute("label", "\u5728\u65B0\u6807\u7B7E\u9875\u6253\u5F00\u6240\u6709\u56FE\u7247\u94FE\u63A5 (" + imagecount +")"); }
+             var currentEntry=document.getElementById("SnapLinksImageLinksOnePage");
+			if(currentEntry){  currentEntry.setAttribute("label", "\u5728\u4E00\u4E2A\u6807\u7B7E\u9875\u663E\u793A\u6240\u6709\u56FE\u7247\u94FE\u63A5 (" + imagecount +")"); }
+             var currentEntry=document.getElementById("SnapLinksCheckBoxSelect");
+			if(currentEntry){  currentEntry.setAttribute("label", "\u590D\u9009\u6846 - \u9009\u4E2D (" + checkboxcount +")"); }
+             var currentEntry=document.getElementById("SnapLinksCheckBoxCancel");
+			if(currentEntry){  currentEntry.setAttribute("label", "\u590D\u9009\u6846 - \u53D6\u6D88 (" + checkboxcount +")"); }
+             var currentEntry=document.getElementById("SnapLinksCheckBoxTaggle");
+			if(currentEntry){  currentEntry.setAttribute("label", "\u590D\u9009\u6846 - \u53CD\u9009 (" + checkboxcount +")"); }
+	/*	if (this.elements.some(function(e) e instanceof HTMLAnchorElement))
+			cls.push("hasLink");
+		if (this.elements.some(function(e) e instanceof HTMLAnchorElement && /\.(?:jpe?g|png|gif)$/i.test(e.href)))
+			cls.push("hasImageLink");
+		if (this.elements.some(function(e) e instanceof HTMLInputElement && e.type === 'checkbox'))
+			cls.push("hasCheckbox");*/
+
+		if (cls.length > 0) {
+			this.popup.className = cls.join(' ');
+			this.popup.openPopupAtScreen(aEvent.screenX, aEvent.screenY);
+		} else {
+			this.lowlightAll();
+		}
+	},
+	openLinks : function(regexp){
+		var obj = {};
+		for (let [i, elem] in Iterator(this.elements)) {
+			if (!elem.href || /^(?:javascript:|mailto:|#)/i.test(elem.href)) continue;
+			if (!regexp || regexp.test(elem.href))
+				obj[elem.href] = true;
+		}
+		for (let [key, val] in Iterator(obj)) {
+			gBrowser.addTab(key, { ownerTab: gBrowser.mCurrentTab });
+		}
+	},
+	copyLinks : function(regexp){
+		var links = this.elements.filter(function(elem){
+			return elem instanceof HTMLAnchorElement && (!regexp || regexp.test(elem.href))
+		}).map(function(e) e.href);
+		if (links.length){
+			Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(links.join('\n'));
+		}
+	},
+	imageOnePage : function(){
+		var htmlsrc = [
+			'<style>'
+			,'img { max-width: 100%; max-height: 100%; }'
+			,'</style>'].join('');
+		for (let [i, elem] in Iterator(this.elements)) {
+			if (elem instanceof HTMLAnchorElement && /\.(jpe?g|png|gif|bmp)$/i.test(elem.href))
+				htmlsrc += '\n<img src="' + elem.href + '">'
+		}
+		gBrowser.addTab("data:text/html;charset=utf-8," +
+			'<html><head><title>' + this.doc.domain + ' \u306E\u753B\u50CF\u4E00\u89A7</title><body>' +
+			encodeURIComponent(htmlsrc));
+	},
+	checkbox : function(bool){
+		for (let [i, elem] in Iterator(this.elements)) {
+			if (elem instanceof HTMLInputElement && elem.type === 'checkbox') {
+				elem.checked = arguments.length == 0?
+					!elem.checked :
+					bool;
+			}
+		}
+	},
+};
+
+	]]></script>
+</overlay>

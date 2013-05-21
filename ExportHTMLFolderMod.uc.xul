@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<overlay id="ExportHTMLFolder-overlay" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+<!--
+// ==UserScript==
+// @name           ExportHTMLFolder.uc.xul
+// @description    导出书签目录到html文件，根据ExportHTMLFolder扩展制作. 修复原扩展只能在工具栏导出的bug, 并新增导出icon_url, icon功能，方便交流书签/小书签
+// @include        main
+// @include        chrome://browser/content/places/places.xul
+// @include        chrome://browser/content/bookmarks/bookmarksPanel.xul
+// @note           fixed bug when on Bookmarks Toolbar By ywzhaiqi
+// @note           fixed & modified by lastdream2013
+// @note           test version 20130510 fix compatibility for firefox23a1
+// @note           v0.35 add sidebar-popup-menu, hide for separator|livemarkChild|livemark/feedURI
+// @note           v0.33 add export icon_url
+// @note           v0.32 add export icon base64
+// @note           v0.31 fix bug: exporthtml only works on personal bar
+// @author         luc.pastisman
+// @version        0.35
+// ==/UserScript==
+ -->
+  <script type="application/x-javascript" xmlns="http://www.w3.org/1999/xhtml"><![CDATA[
+
+(function(){
+
+function ImageConverter(imageURL) {
+	this.imageURL = imageURL;
+	this.channel = Services.io.newChannel(imageURL, null, null);
+	this.channel.asyncOpen(this, null);
+}
+ImageConverter.prototype = {
+	imageURL : "",
+	channel : null,
+	bytes : [],
+	stream : null,
+	Database64 : null,
+	iscompleted: false,
+
+	// nsISupports
+	QueryInterface : function (iid) {
+		if (!iid.equals(Components.interfaces.nsISupports) &&
+			!iid.equals(Components.interfaces.nsIRequestObserver) &&
+			!iid.equals(Components.interfaces.nsIStreamListener)) {
+			throw Components.results.NS_ERROR_NO_INTERFACE;
+		}
+		return this;
+	},
+
+	// nsIRequestObserver
+	onStartRequest : function (aRequest, aContext) {
+		this.stream = Components.classes["@mozilla.org/binaryinputstream;1"].createInstance(Components.interfaces.nsIBinaryInputStream);
+	},
+
+	onStopRequest : function (aRequest, aContext, aStatusCode) {
+		this.Database64 = 'data:' + this.channel.contentType + ';base64,' + btoa(String.fromCharCode.apply(null, this.bytes));
+		this.iscompleted = true;
+	},
+
+	// nsIStreamListener
+	onDataAvailable : function (aRequest, aContext, aInputStream, aOffset, aCount) {
+		this.stream.setInputStream(aInputStream);
+		var chunk = this.stream.readByteArray(aCount);
+		this.bytes = this.bytes.concat(chunk);
+	}
+};
+
+var ExportHTMLFolder = window.ExportHTMLFolder = {
+    escapeHTML: function(str) {
+		return str.replace(/[&"<>]/g, function (m) ({ "&": "&amp;", '"': "&quot", "<": "&lt;", ">": "&gt;" })[m]);
+	},
+
+	onMenuItemCommand: function(event) {
+		var bookmarkService = Cc["@mozilla.org/browser/nav-bookmarks-service;1"].getService(Ci.nsINavBookmarksService);
+		var historyService = Cc["@mozilla.org/browser/nav-history-service;1"].getService(Ci.nsINavHistoryService);
+		var fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+		var MPMenu = PlacesUtils.getString("BookmarksMenuFolderTitle");
+		//var NodeID = document.popupNode._placesNode;
+		var NodeID = document.popupNode._placesNode || document.popupNode.parentNode.selectedNode;
+		fp.init(window, PlacesUIUtils.getString("EnterExport"),Ci.nsIFilePicker.modeSave);
+		fp.appendFilters(Ci.nsIFilePicker.filterHTML);
+		fp.defaultString = NodeID.title+".html";
+		if (fp.show() != Ci.nsIFilePicker.returnCancel) {
+			var file = fp.file;
+			var foStream = Components.classes["@mozilla.org/network/file-output-stream;1"]
+                         .createInstance(Components.interfaces.nsIFileOutputStream);
+			var charset = "UTF-8";
+			foStream.init(file, 0x02 | 0x08 | 0x20, 0664, 0);
+			var os = Components.classes["@mozilla.org/intl/converter-output-stream;1"]
+                   .createInstance(Components.interfaces.nsIConverterOutputStream);
+			os.init(foStream, charset, 0, 0x0000);
+			var nbTab = 5;
+			var data = '<!DOCTYPE NETSCAPE-Bookmark-file-1>\n';
+			data = data + '<!-- This is an automatically generated file.\n';
+			data = data + '\tIt will be read and overwritten.\n';
+			data = data + '\tDO NOT EDIT! -->\n';
+			data = data + '<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n';
+			data = data + '<TITLE>Bookmarks</TITLE>\n';
+			data = data + '<H1>'+ExportHTMLFolder.escapeHTML(MPMenu)+'</H1>\n';
+			data = data + '\n';
+			data = data + '<DL><p>\n';
+			os.writeString(data);
+			var options = historyService.getNewQueryOptions();
+			var query = historyService.getNewQuery();
+
+            // content && content.console.log(NodeID);
+            var node;
+            if(NodeID.type === 0){  // 图标
+                node = NodeID;
+            }else{
+                if(NodeID.type === 9){  // 书签工具栏、书签菜单栏等
+                    query.setFolders([NodeID.folderItemId], 1);
+                }else{
+                    query.setFolders([NodeID.itemId], 1);
+                }
+                // options.setGroupingMode([options.GROUP_BY_FOLDER], 1);
+                var result = historyService.executeQuery(query, options);
+                node = result.root;
+            }
+			this.ecrireUnMP( os, node, nbTab );
+			data = '</DL></p>\n';
+			os.writeString(data);
+			os.close();
+		}
+	},
+
+	ecrireUnMP: function( flux, elem, nbTab ) {
+		var resultTypes = Ci.nsINavHistoryResultNode;
+		if( elem.type == resultTypes.RESULT_TYPE_SEPARATOR ) {
+			var chaine = new Array(nbTab).join(' ') + "<HR>\n";
+			flux.writeString(chaine);
+		}
+		else if( elem.type == resultTypes.RESULT_TYPE_URI ) {
+			var Description= PlacesUIUtils.getItemDescription(elem.itemId);
+			//var chaine = new Array(nbTab).join(' ') + '<DT><A HREF="' + this.escapeHTML(elem.uri) + '" ADD_DATE="' + Math.floor(elem.dateAdded/1000000);
+			//chaine = chaine + '"  LAST_MODIFIED="' + Math.floor(elem.lastModified/1000000);
+
+			var chaine = new Array(nbTab).join(' ') + '<DT><A HREF="' + this.escapeHTML(elem.uri);
+			if ( elem.icon.indexOf('moz-anno:favicon:http') >= 0 ){
+				if ( elem.icon.indexOf('http://www.mozilla.org/2005/made-up-favicon/') < 0 ){
+					chaine = chaine + '" ICON_URI="' + elem.icon.slice(elem.icon.indexOf('moz-anno:favicon:http') + 'moz-anno:favicon:'.length);
+				}
+				var iconImage = new ImageConverter( elem.icon.slice(elem.icon.indexOf('moz-anno:favicon:http')) );
+				var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
+				while ( !iconImage.iscompleted ) {
+				    thread.processNextEvent(true);
+				}
+				/*var iscontinue;
+				do{
+					iscontinue = iconImage.iscompleted;
+					if ( iscontinue )
+					   break;
+				}while(!iconImage.iscompleted)*/
+				chaine = chaine + '" ICON="' + iconImage.Database64;
+			}else if ( elem.icon.indexOf('moz-anno:favicon:data:image') >= 0 ) {
+				chaine = chaine + '" ICON="' +elem.icon.slice(elem.icon.indexOf('data:image'));
+			}
+
+			var chaine = chaine + '">' + this.escapeHTML(elem.title) + '</A>\n' + new Array(nbTab).join(' ') + '<DD>' + this.escapeHTML(Description) + '\n';
+			flux.writeString(chaine);
+
+		}else if(( elem.type == resultTypes.RESULT_TYPE_FOLDER )||( elem.type == resultTypes.RESULT_TYPE_FOLDER_SHORTCUT )) {
+			var bookmarkService = Cc["@mozilla.org/browser/nav-bookmarks-service;1"].getService(Ci.nsINavBookmarksService);
+			var historyService = Cc["@mozilla.org/browser/nav-history-service;1"].getService(Ci.nsINavHistoryService);
+			var Description= PlacesUIUtils.getItemDescription(elem.itemId);
+			//var chaine = new Array(nbTab).join(' ') + '<DT><H3 ADD_DATE="' + Math.floor(elem.dateAdded/1000000) + '" LAST_MODIFIED="' + Math.floor(elem.lastModified/1000000) + '">' + this.escapeHTML(elem.title) + '</H3>\n';
+			var chaine = new Array(nbTab).join(' ') + '<DT><H3>' + this.escapeHTML(elem.title) + '</H3>\n';
+			var chaine = chaine + new Array(nbTab).join(' ') + '<DD>' + this.escapeHTML(Description) + '\n';
+			chaine = chaine + new Array(nbTab).join(' ') + '<DL><p>\n';
+			flux.writeString(chaine);
+			nbTab = nbTab + 4;
+			var options = historyService.getNewQueryOptions();
+			var query = historyService.getNewQuery();
+			query.setFolders([elem.itemId], 1);
+			// options.setGroupingMode([options.GROUP_BY_FOLDER], 1);
+			var result = historyService.executeQuery(query, options);
+			var rootNode = result.root;
+			rootNode.containerOpen = true;
+			for (var inc = 0; inc < rootNode.childCount; inc ++) {
+				var node = rootNode.getChild(inc);
+				this.ecrireUnMP( flux, node, nbTab );
+			}
+			rootNode.containerOpen = false;
+			nbTab = nbTab - 4;
+			chaine = new Array(nbTab).join(' ') + '</DL></p>\n';
+			flux.writeString(chaine);
+		}
+	},
+
+	init: function(){
+		var contextMenu = document.getElementById("placesContext");
+		if (contextMenu) contextMenu.addEventListener("popupshowing", this.exportHTMLFolderShowHideItem, false);
+    },
+
+    exportHTMLFolderShowHideItem: function(event){
+		var show = document.getElementById("placesContext_ExportHTMLFolder");
+		show.hidden = (document.popupNode.localName == "menuseparator")||( document.popupNode.className == "openintabs-menuitem");
+		document.getElementById("placesContext_ExportHTMLFolderSep").hidden = show.hidden;
+    },
+};
+
+window.addEventListener("load", function load(event) {
+	window.removeEventListener("load", load, false); //remove listener, no longer needed
+	ExportHTMLFolder.init();
+}, false);
+
+})();
+
+  ]]></script>
+
+  <popup id="placesContext">
+    <menuitem id="placesContext_ExportHTMLFolder" label="导出到HTML"
+              accesskey="x"
+              insertafter="placesContext_newSeparator"
+      		  forcehideselection="separator|livemarkChild|livemark/feedURI"
+              oncommand="ExportHTMLFolder.onMenuItemCommand(event)"/>
+	<menuseparator id="placesContext_ExportHTMLFolderSep" insertafter="placesContext_ExportHTMLFolder" />
+  </popup>
+
+</overlay>

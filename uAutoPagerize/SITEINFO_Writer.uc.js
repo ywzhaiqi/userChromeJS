@@ -23,7 +23,7 @@ if (window.siteinfo_writer) {
 window.siteinfo_writer = {
 	init: function() {
       	this.style = addStyle(css);
-      	
+
 	  	var overlay = '\
 	      <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" \
 	               xmlns:html="http://www.w3.org/1999/xhtml"> \
@@ -113,6 +113,7 @@ window.siteinfo_writer = {
 
 			var menuitem = $C("menuitem",
 				{
+                    id: "sw-menuitem",
 					class : "sw-add-element",
 					label : "辅助查找翻页规则",
 					oncommand : "siteinfo_writer.show();",
@@ -154,7 +155,7 @@ window.siteinfo_writer = {
 		event.currentTarget.removeEventListener(event.type, arguments.callee, false);
 		var popup = event.originalTarget;
 		var type = event.currentTarget.id.replace("sw-", "");
-		
+
 	    popup.appendChild($C("menuseparator",{}));
 	    popup.appendChild($C("menuitem", {
 	 	label: '@class="xxx" → contains()',
@@ -190,8 +191,8 @@ window.siteinfo_writer = {
 		var json = "\t{";
 		json += "siteName: '" + this.siteName.value + "',\n";
 		json += "\t\turl: '" + this.url.value.replace(/\\/g, "\\\\") + "',\n";
-		json += "\t\tnextLink: '" + this.nextLink.value + "',\n";
-		json += "\t\tpageElement: '" + this.pageElement.value + "',\n";
+		json += "\t\tnextLink: '" + this.nextLink.value.replace(/'/g, '"') + "',\n";
+		json += "\t\tpageElement: '" + this.pageElement.value.replace(/'/g, '"') + "',\n";
 		if ( this.insertBefore.value != '' ) {json += "\t\tinsertBefore: '" + this.insertBefore.value + "',\n";}
 		json += "\t\texampleUrl: '" + content.location.href + "',\n";
 		json += "\t},";
@@ -270,7 +271,7 @@ window.siteinfo_writer = {
 		}
 	},
 	getInfoFromAutoPager: function(){
-		if (this._inspect) 
+		if (this._inspect)
 			this._inspect.uninit();
 		var self = this;
 
@@ -375,7 +376,7 @@ window.siteinfo_writer = {
 		}
 	},
 	inspect: function(aType) {
-		if (this._inspect) 
+		if (this._inspect)
 			this._inspect.uninit();
 		var self = this;
 		this._inspect = new Inspector(content, function(xpathArray) {
@@ -433,7 +434,7 @@ window.siteinfo_writer = {
 			var regexp = new RegExp(this.url.value);
 			if (regexp.test(content.location.href))
 				this.url.classList.remove("error");
-			else 
+			else
 				this.url.classList.add("error");
 		} catch (e) {
 			this.url.classList.add("error");
@@ -451,10 +452,10 @@ window.siteinfo_writer = {
 	},
 	class2contains: function(aType) {
 		this[aType].value = this.splitClass(this[aType].value);
-	}, 
+	},
 	contains2class: function(aType) {
 		this[aType].value = this.normalClass(this[aType].value);
-	}, 
+	},
 	splitClass: function(xpath) {
 		return xpath.replace(/@class=\"(.+?)\"/g, function(str, cls) {
 			cls = cls.replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "").split(" ");
@@ -650,8 +651,8 @@ Inspector.prototype = {
 		};
 */
 		var arr = [
-			"@"+ x.nodeName +'="'+ x.nodeValue +'"' 
-				for each(x in $A(elem.attributes)) 
+			"@"+ x.nodeName +'="'+ x.nodeValue +'"'
+				for each(x in $A(elem.attributes))
 					if (!/^(?:id|class|style)$/i.test(x.nodeName))
 		];
 		if (arr.length > 0)
@@ -747,15 +748,15 @@ function addDefaultPrefix(xpath, prefix) {
 function readFromClipboard() {
 	var url;
 	try {
-		// Create transferable that will transfer the text. 
+		// Create transferable that will transfer the text.
 		var trans = Components.classes["@mozilla.org/widget/transferable;1"]
 						.createInstance(Components.interfaces.nsITransferable);
 		trans.init(getLoadContext());
 		trans.addDataFlavor("text/unicode");
-		// If available, use selection clipboard, otherwise global one 
-		if (Services.clipboard.supportsSelectionClipboard()) 
+		// If available, use selection clipboard, otherwise global one
+		if (Services.clipboard.supportsSelectionClipboard())
 			Services.clipboard.getData(trans, Services.clipboard.kSelectionClipboard);
-		else 
+		else
 			Services.clipboard.getData(trans, Services.clipboard.kGlobalClipboard);
 		var data = {};
 		var dataLen = {};

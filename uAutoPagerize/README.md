@@ -36,7 +36,6 @@
 	if(content.window.ap){
 		return uAutoPagerize.gotonext();
 	}
-
 	FireGestures._performAction(event, "FireGestures:ScrollPageDown");
 
 向上滚一页，否则向下滚一屏（FireGestures代码）。
@@ -44,5 +43,10 @@
 	if(content.window.ap){
 		return uAutoPagerize.gotoprev();
 	}
-
 	FireGestures._performAction(event, "FireGestures:ScrollPageUp");
+
+## 更新
+
+2013年5月18日
+
+ - 增加可移动按钮。可通过设置isUrlbar参数切换（true为地址栏按钮，false为可移动按钮）。

@@ -39,7 +39,7 @@
 (function(css) {
 
 // 以下 設定が無いときに利用する
-var isUrlbar = true;   // 放置的位置，true为地址栏，否则附加组件栏。
+var isUrlbar = false;  // 放置的位置，true为地址栏，false为附加组件栏（可移动按钮）
 var useiframe = true;  // 启用 iframe 加载下一页的总开关。
 var usePageNav = false;
 var PAGE_NAVIGATION_SITE_RE = /forum|thread/i;
@@ -64,7 +64,7 @@ var SITEINFO_NLF_IMPORT_URLS = [
 
 //官方规则， 太大了，先注释掉，默认用uSuper_preloader.db.js
 var SITEINFO_IMPORT_URLS = [
-    // 'http://wedata.net/databases/AutoPagerize/items.json', 
+    // 'http://wedata.net/databases/AutoPagerize/items.json',
 ];
 
 
@@ -187,7 +187,7 @@ var ns = window.uAutoPagerize = {
 	get INCLUDE() INCLUDE,
 	set INCLUDE(arr) {
 		try {
-			this.INCLUDE_REGEXP = arr.length > 0 ? 
+			this.INCLUDE_REGEXP = arr.length > 0 ?
 				new RegExp(arr.map(wildcardToRegExpStr).join("|")) :
 				/./;
 			INCLUDE = arr;
@@ -250,119 +250,129 @@ var ns = window.uAutoPagerize = {
 
 	init: function() {
 		ns.style = addStyle(css);
-		
-		if(isUrlbar){
-			ns.icon = $('urlbar-icons').appendChild($C("image", {
-				id: "uAutoPagerize-icon",
-				state: "disable",
-				tooltiptext: "disable",
-				onclick: "if (event.button != 2) uAutoPagerize.iconClick(event);",
-				context: "uAutoPagerize-popup",
-				style: "padding: 0px 2px;",
-			}));
-		}else{
-			ns.icon = $('status-bar').appendChild($C("statusbarpanel", {
-				id: "uAutoPagerize-icon",
-				class: "statusbarpanel-iconic-text",
-				state: "disable",
-				tooltiptext: "disable",
-				onclick: "if (event.button != 2) uAutoPagerize.iconClick(event);",
-				context: "uAutoPagerize-popup",
-			}));
-		}
 
-		var xml = '\
-			<menupopup id="uAutoPagerize-popup"\
-			           position="after_start"\
-			           onpopupshowing="if (this.triggerNode) this.triggerNode.setAttribute(\'open\', \'true\');"\
-			           onpopuphiding="if (this.triggerNode) this.triggerNode.removeAttribute(\'open\');">\
-				<menuitem label="启用自动翻页"\
-						  id="uAutoPagerize-AUTOSTART"\
-				          type="checkbox"\
-				          autoCheck="true"\
-				          checked="'+ AUTO_START +'"\
-				          oncommand="uAutoPagerize.toggle(event);"/>\
-				<menuitem label="重载配置文件"\
-				          oncommand="uAutoPagerize.loadSetting(true);"/>\
-				<menuitem label="重置站点信息(SP)"\
-				          oncommand="uAutoPagerize.resetSITEINFO_NLF();"/>\
-				<menuitem label="重置站点信息(官方)"\
-				          oncommand="uAutoPagerize.resetSITEINFO();"/>\
-				<menuseparator/>\
-				<menuitem label="新标签打开链接"\
-				          id="uAutoPagerize-FORCE_TARGET_WINDOW"\
-				          type="checkbox"\
-				          autoCheck="false"\
-				          checked="'+ FORCE_TARGET_WINDOW +'"\
-				          oncommand="uAutoPagerize.FORCE_TARGET_WINDOW = !uAutoPagerize.FORCE_TARGET_WINDOW;"/>\
-				<menuitem label="设置翻页高度"\
-				          id="uAutoPagerize-BASE_REMAIN_HEIGHT"\
-				          tooltiptext="'+ BASE_REMAIN_HEIGHT +'"\
-				          oncommand="uAutoPagerize.BASE_REMAIN_HEIGHT = prompt(\'\', uAutoPagerize.BASE_REMAIN_HEIGHT);"/>\
-                <menuitem label="设置最大自动翻页数"\
-				          id="uAutoPagerize-MAX_PAGER_NUM"\
-				          tooltiptext="'+ MAX_PAGER_NUM +'"\
-				          oncommand="uAutoPagerize.MAX_PAGER_NUM = prompt(\'\', uAutoPagerize.MAX_PAGER_NUM);"/>\
-				<menuitem label="滚动时才翻页"\
-				          id="uAutoPagerize-SCROLL_ONLY"\
-				          type="checkbox"\
-				          autoCheck="false"\
-				          checked="'+ SCROLL_ONLY +'"\
-				          oncommand="uAutoPagerize.SCROLL_ONLY = !uAutoPagerize.SCROLL_ONLY;"/>\
-				<menuitem label="调试模式"\
-				          id="uAutoPagerize-DEBUG"\
-				          type="checkbox"\
-				          autoCheck="false"\
-				          checked="'+ DEBUG +'"\
-				          oncommand="uAutoPagerize.DEBUG = !uAutoPagerize.DEBUG;"/>\
-				<menuseparator/>\
-				<menuitem label="在线搜索翻页规则"\
-				          id="uAutoPagerize-search"\
-				          oncommand="uAutoPagerize.search()"/>\
-			</menupopup>\
-		';
-		var range = document.createRange();
-		range.selectNodeContents($('mainPopupSet'));
-		range.collapse(false);
-		range.insertNode(range.createContextualFragment(xml.replace(/\n|\t/g, '')));
-		range.detach();
+        ns.makeIcon();
 
-		["DEBUG", "AUTO_START", "FORCE_TARGET_WINDOW", "SCROLL_ONLY"].forEach(function(name) {
+		["DEBUG", "AUTO_START", "FORCE_TARGET_WINDOW", "SCROLL_ONLY", "BASE_REMAIN_HEIGHT",
+         "MAX_PAGER_NUM"].forEach(function(name) {
 			try {
 				ns[name] = ns.prefs.getBoolPref(name);
 			} catch (e) {}
 		}, ns);
-		try {
-			ns["BASE_REMAIN_HEIGHT"] = ns.prefs.getIntPref("BASE_REMAIN_HEIGHT");
-		} catch (e) {}
-		try {
-			ns["MAX_PAGER_NUM"] = ns.prefs.getIntPref("MAX_PAGER_NUM");
-		} catch (e) {}
 
 		if (!getCache())
 			requestSITEINFO();
+
+        if(!ns.loadSetting_NLF())
+            ns.requestSITEINFO_NLF();
+
 		ns.INCLUDE = INCLUDE;
 		ns.EXCLUDE = EXCLUDE;
 		ns.addListener();
 		ns.loadSetting();
 		updateIcon();
-
-		if(!ns.loadSetting_NLF())
-			ns.requestSITEINFO_NLF();
 	},
+    makeIcon: function(){
+        if(isUrlbar){
+            ns.icon = $('urlbar-icons').appendChild($C("image", {
+                id: "uAutoPagerize-icon",
+                state: "disable",
+                tooltiptext: "disable",
+                onclick: "if (event.button != 2) uAutoPagerize.iconClick(event);",
+                context: "uAutoPagerize-popup",
+                style: "padding: 0px 2px;",
+            }));
+        }else{
+            ns.icon = $('addon-bar').appendChild($C("toolbarbutton", {
+                id: "uAutoPagerize-icon",
+                class: "toolbarbutton-1",
+                type: "context",
+                removable: "true",
+                state: "disable",
+                tooltiptext: "disable",
+                onclick: "if (event.button != 2) uAutoPagerize.iconClick(event);",
+                context: "uAutoPagerize-popup",
+                style: "list-style-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAAAQCAYAAACBSfjBAAAA2klEQVRYhe2WwYmGMBhE390+0kCOwZLswQK82YAg2Ict2IBdeJ3/FHcW9oewnoRv4N0yGB4TECLPs22bHIBlWeQAzPMsp/a7q5MDkM4kB6DsRc7PDaTfQEqnHIBSdjm1fXWXHIAznXIA9rLLub+esxyA4zjkfDsXAkNgCHy/wMjDtK5tHEc5td+6tn7t5dz9xrX1/Sqn9lvXtvarnNpvXdtfLzUEhsAQ+H6BkYdpXdswDHJqv3Vtecpy7n7j2nKe5NR+69qmPMmp/da1ff2NCYEhMAS+WmDk//kA2XH2W9CWRjQAAAAASUVORK5CYII=);"
+            }));
+        }
+
+        var xml = '\
+            <menupopup id="uAutoPagerize-popup"\
+                       position="after_start"\
+                       onpopupshowing="if (this.triggerNode) this.triggerNode.setAttribute(\'open\', \'true\');"\
+                       onpopuphiding="if (this.triggerNode) this.triggerNode.removeAttribute(\'open\');">\
+                <menuitem label="启用自动翻页"\
+                          id="uAutoPagerize-AUTOSTART"\
+                          type="checkbox"\
+                          autoCheck="true"\
+                          checked="'+ AUTO_START +'"\
+                          oncommand="uAutoPagerize.toggle(event);"/>\
+                <menuitem label="重载配置文件"\
+                          oncommand="uAutoPagerize.loadSetting(true);"/>\
+                <menuitem label="重置站点信息(SP)"\
+                          oncommand="uAutoPagerize.resetSITEINFO_NLF();"/>\
+                <menuitem label="重置站点信息(官方)"\
+                          oncommand="uAutoPagerize.resetSITEINFO();"/>\
+                <menuseparator/>\
+                <menuitem label="新标签打开链接"\
+                          id="uAutoPagerize-FORCE_TARGET_WINDOW"\
+                          type="checkbox"\
+                          autoCheck="false"\
+                          checked="'+ FORCE_TARGET_WINDOW +'"\
+                          oncommand="uAutoPagerize.FORCE_TARGET_WINDOW = !uAutoPagerize.FORCE_TARGET_WINDOW;"/>\
+                <menuitem label="设置翻页高度"\
+                          id="uAutoPagerize-BASE_REMAIN_HEIGHT"\
+                          tooltiptext="'+ BASE_REMAIN_HEIGHT +'"\
+                          oncommand="uAutoPagerize.BASE_REMAIN_HEIGHT = prompt(\'\', uAutoPagerize.BASE_REMAIN_HEIGHT);"/>\
+                <menuitem label="设置最大自动翻页数"\
+                          id="uAutoPagerize-MAX_PAGER_NUM"\
+                          tooltiptext="'+ MAX_PAGER_NUM +'"\
+                          oncommand="uAutoPagerize.MAX_PAGER_NUM = prompt(\'\', uAutoPagerize.MAX_PAGER_NUM);"/>\
+                <menuitem label="滚动时才翻页"\
+                          id="uAutoPagerize-SCROLL_ONLY"\
+                          type="checkbox"\
+                          autoCheck="false"\
+                          checked="'+ SCROLL_ONLY +'"\
+                          oncommand="uAutoPagerize.SCROLL_ONLY = !uAutoPagerize.SCROLL_ONLY;"/>\
+                <menuitem label="调试模式"\
+                          id="uAutoPagerize-DEBUG"\
+                          type="checkbox"\
+                          autoCheck="false"\
+                          checked="'+ DEBUG +'"\
+                          oncommand="uAutoPagerize.DEBUG = !uAutoPagerize.DEBUG;"/>\
+                <menuseparator/>\
+                <menuitem label="在线搜索翻页规则"\
+                          id="uAutoPagerize-search"\
+                          oncommand="uAutoPagerize.search()"/>\
+            </menupopup>\
+        ';
+        var range = document.createRange();
+        range.selectNodeContents($('mainPopupSet'));
+        range.collapse(false);
+        range.insertNode(range.createContextualFragment(xml.replace(/\n|\t/g, '')));
+        range.detach();
+
+        if(isUrlbar){
+            /* 更新按鈕到 Toolbar，可移动按钮 */
+            var toolbars = document.querySelectorAll("toolbar");
+            Array.slice(toolbars).forEach(function(toolbar) {
+                var currentset = toolbar.getAttribute("currentset");
+                if (currentset.split(",").indexOf("uAutoPagerize-icon") < 0) return;
+                toolbar.currentSet = currentset;
+                try {
+                    BrowserToolboxCustomizeDone(true);
+                } catch (ex) {}
+            });
+        }
+    },
 	uninit: function() {
 		ns.removeListener();
-		["DEBUG", "AUTO_START", "FORCE_TARGET_WINDOW", "SCROLL_ONLY"].forEach(function(name) {
-			try {
-				ns.prefs.setBoolPref(name, ns[name]);
-			} catch (e) {}
-		}, ns);
-		try {
-			ns.prefs.setIntPref("BASE_REMAIN_HEIGHT", ns["BASE_REMAIN_HEIGHT"]);
-		} catch (e) {}
-		try {
-			ns.prefs.setIntPref("MAX_PAGER_NUM", ns["MAX_PAGER_NUM"]);
-		} catch (e) {}
+		["DEBUG", "AUTO_START", "FORCE_TARGET_WINDOW", "SCROLL_ONLY", "BASE_REMAIN_HEIGHT",
+         "MAX_PAGER_NUM"].forEach(function(name) {
+            try {
+                ns[name] = ns.prefs.getBoolPref(name);
+            } catch (e) {}
+        }, ns);
 	},
 	theEnd: function() {
 		var ids = ["uAutoPagerize-icon", "uAutoPagerize-popup"];
@@ -418,7 +428,7 @@ var ns = window.uAutoPagerize = {
 		sandbox.MICROFORMAT = [];
 		sandbox.USE_MY_SITEINFO = true;
 		sandbox.USE_MICROFORMAT = true;
-		
+
 		try {
 			Cu.evalInSandbox(data, sandbox, '1.8');
 		} catch (e) {
@@ -442,7 +452,7 @@ var ns = window.uAutoPagerize = {
 	launch: function(win, timer){
 		var locationHref = win.location.href;
 		if (locationHref.indexOf('http') !== 0 ||
-		   !ns.INCLUDE_REGEXP.test(locationHref) || 
+		   !ns.INCLUDE_REGEXP.test(locationHref) ||
 		    ns.EXCLUDE_REGEXP.test(locationHref))
 			return updateIcon();
 
@@ -582,7 +592,7 @@ var ns = window.uAutoPagerize = {
 					img.removeAttribute('data-src');
 				});
 			});
-		} 
+		}
 		// 水木清华社区延迟加载及下一页加载的修复
 		else if (win.location.host === 'www.newsmth.net') {
 			timer = 1000;   // 这个网站 =400 则找到的下一页链接会错误
@@ -1119,7 +1129,7 @@ AutoPager.prototype = {
 	},
 	addEndSeparator: function(){
 		// debug('page number > :', this.pageNum,  MAX_PAGER_NUM );
-		var html = '<a class="autopagerize_link" href="' + this.requestURL.replace(/&/g, '&amp;') + 
+		var html = '<a class="autopagerize_link" href="' + this.requestURL.replace(/&/g, '&amp;') +
 			'" > 已达到设置的最大自动翻页数，点击进入下一页 </a> ';
 
 		var fragment = this.doc.createDocumentFragment();
@@ -1207,7 +1217,7 @@ AutoPager.prototype = {
 	},
 	getNextURL : function(doc) {
 		cplink = this.requestURL;
-		var nextLink = doc instanceof HTMLElement ? 
+		var nextLink = doc instanceof HTMLElement ?
 			doc :
 			getElementMix(this.info.nextLink, doc);
 		if (nextLink) {
@@ -1299,14 +1309,14 @@ AutoPager.prototype = {
 		if (confirm('确定要重置 Super_preloader 及其它规则吗？'))
 			requestSITEINFO(SITEINFO_NLF_IMPORT_URLS);
 	};
-	
+
 	ns.loadSetting_NLF = function(isAlert) {
 		var data = loadText(ns.file_NLF);
 		if (!data) return false;
 		var sandbox = new Cu.Sandbox( new XPCNativeWrapper(window) );
 		sandbox.SITEINFO = [];
 		sandbox.SITEINFO_TP = [];
-		
+
 		try {
 			Cu.evalInSandbox(data, sandbox, '1.8');
 		} catch (e) {
@@ -1382,7 +1392,6 @@ AutoPager.prototype = {
 			return getCacheErrorCallback(url);
 		}
 
-		var temp;
 		var matches = res.responseText.match(/(var SITEINFO=\[[\s\S]*\])[\s\S]*var SITEINFO_comp=/i);
 		if(!matches){
 			matches = res.responseText.match(/(var MY_SITEINFO\s*=\s*\[[\s\S]*\];)/i);
@@ -1534,7 +1543,7 @@ var NLF = {
 						if(!_nextlink){
 							preS1=a.previousSibling;
 							preS2=a.previousElementSibling;
-							
+
 
 							while(!(preS1 || preS2) && initSD<searchD){
 								aP=aP.parentNode;
@@ -1756,7 +1765,7 @@ function updateIcon(){
 	var tooltiptext = "";
     var checkautomenu = $("uAutoPagerize-AUTOSTART");
 	if (ns.AUTO_START == false) {
-		newState = "off"; 
+		newState = "off";
 		tooltiptext = "自动翻页已关闭";
 		checkautomenu.setAttribute("checked", false);
 	} else {
@@ -1766,7 +1775,7 @@ function updateIcon(){
 			if (tooltiptext == "terminated"){ tooltiptext = "自动翻页已结束" };
 			if (tooltiptext == "enable")	{ tooltiptext = "自动翻页已启用" };
 		} else {
-			newState = "disable"; 
+			newState = "disable";
 			tooltiptext = "此页面不支持自动翻页";
 		}
 		checkautomenu.setAttribute("checked", true);
@@ -1875,7 +1884,7 @@ function getXPathResult(xpath, node, resultType) {
 		}catch(e){
 			log(xpath);
 		}
-		
+
 		var defaultResolver = resolver;
 		resolver = function (prefix) {
 			return (prefix == defaultPrefix)
@@ -2059,7 +2068,7 @@ function GM_xmlhttpRequest(obj, win) {
 			req.setRequestHeader(i,obj.headers[i]);
 	if (obj.overrideMimeType)
 		req.overrideMimeType(obj.overrideMimeType);
-	
+
 	['onload','onerror','onreadystatechange'].forEach(function(k) {
 		if (obj[k] && (typeof(obj[k]) == 'function' || obj[k] instanceof Function)) req[k] = function() {
 			obj[k]({

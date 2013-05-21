@@ -192,15 +192,19 @@ var ExportHTMLFolder = window.ExportHTMLFolder = {
 
     exportHTMLFolderShowHideItem: function(event){
 		var show = document.getElementById("placesContext_ExportHTMLFolder");
-		show.hidden = (document.popupNode.localName == "menuseparator")||( document.popupNode.className == "openintabs-menuitem");
+		// content.console.log(document.popupNode)
+		var node = document.popupNode;
+		if(node.localName.match(/separator|livemarkChild|livemark\/feedURI/) ||
+			node.className.match(/openintabs-menuitem/)){
+			show.hidden = true;
+		}else{
+			show.hidden = false;
+		}
 		document.getElementById("placesContext_ExportHTMLFolderSep").hidden = show.hidden;
     },
 };
 
-window.addEventListener("load", function load(event) {
-	window.removeEventListener("load", load, false); //remove listener, no longer needed
-	ExportHTMLFolder.init();
-}, false);
+ExportHTMLFolder.init();
 
 })();
 
@@ -210,7 +214,6 @@ window.addEventListener("load", function load(event) {
     <menuitem id="placesContext_ExportHTMLFolder" label="导出到HTML"
               accesskey="x"
               insertafter="placesContext_newSeparator"
-      		  forcehideselection="separator|livemarkChild|livemark/feedURI"
               oncommand="ExportHTMLFolder.onMenuItemCommand(event)"/>
 	<menuseparator id="placesContext_ExportHTMLFolderSep" insertafter="placesContext_ExportHTMLFolder" />
   </popup>

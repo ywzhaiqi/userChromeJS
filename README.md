@@ -25,10 +25,6 @@
 
 **以下uc脚本可能包含个人使用习惯**
 
-### MyNovelReader.uc.js
-
-原创，小说清爽阅读 uc版，未完成。此外还有 GM 版，GM 无jQuery版（自己用于手机 Opera Mobile）、扩展版（简易、未完成）。
-
 ### viewMenuInScriptishPopup.uc.js
 
 为 Scritish 扩展增加 "为本站搜索脚本" 功能。

@@ -194,12 +194,8 @@ var ExportHTMLFolder = window.ExportHTMLFolder = {
 		var show = document.getElementById("placesContext_ExportHTMLFolder");
 		// content.console.log(document.popupNode)
 		var node = document.popupNode;
-		if(node.localName.match(/separator|livemarkChild|livemark\/feedURI/) ||
-			node.className.match(/openintabs-menuitem/)){
-			show.hidden = true;
-		}else{
-			show.hidden = false;
-		}
+        show.hidden = /separator|livemarkChild|livemark\/feedURI/.test(node.localName) ||
+            /openintabs-menuitem/.test(node.className);
 		document.getElementById("placesContext_ExportHTMLFolderSep").hidden = show.hidden;
     },
 };

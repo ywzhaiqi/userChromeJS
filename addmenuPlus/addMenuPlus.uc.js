@@ -22,13 +22,6 @@
 // @note           ツールの再読み込みメニューの右クリックで設定ファイルを開くようにした
 // ==/UserScript==
 
-/*
-我修改的说明
-1、增加 修改原菜单的功能（克隆一个，隐藏原来的）。可修改菜单名称、快捷键等各种属性或移动位置。
-2、添加 %TITLES% 参数，简短的标题。
-3、添加 %FAVICON_BASE64% 参数，站点图标的 base64
-4、添加 %IMAGE_BASE64% 参数，图片的 BASE64
-*/
 
 /***** 説明 *****
 
@@ -230,7 +223,7 @@ window.addMenu = {
 			case "popupshowing":
 				if (event.target != event.currentTarget) return;
 				var state = [];
-				if (gContextMenu.onTextInput) 
+				if (gContextMenu.onTextInput)
 					state.push("input");
 				if (gContextMenu.isContentSelected || gContextMenu.isTextSelected)
 					state.push("select");
@@ -265,7 +258,7 @@ window.addMenu = {
 			this.openCommand(event, this.convertText(url), where);
 		else if (exec)
 			this.exec(exec, this.convertText(text));
-		else if (text) 
+		else if (text)
 			this.copy(this.convertText(text));
 	},
 	openCommand: function(event, url, where) {
@@ -343,7 +336,7 @@ window.addMenu = {
 
 		function ps(item, array) {
 			("join" in item && "unshift" in item) ?
-				[].push.apply(array, item) : 
+				[].push.apply(array, item) :
 				array.push(item);
 		}
 
@@ -356,7 +349,7 @@ window.addMenu = {
 		}
 		if (this.style2 && this.style2.parentNode)
 			this.style2.parentNode.removeChild(this.style2);
-		if (sandbox._css.length) 
+		if (sandbox._css.length)
 			this.style2 = addStyle(sandbox._css.join("\n"));
 
 		this.removeMenuitem();
@@ -420,7 +413,7 @@ window.addMenu = {
 	newMenuitem: function(obj) {
 		var menuitem;
 		// label == separator か必要なプロパティが足りない場合は区切りとみなす
-		if (obj.label === "separator" || 
+		if (obj.label === "separator" ||
 		    (!obj.label && !obj.text && !obj.keyword && !obj.url && !obj.oncommand && !obj.command)) {
 			menuitem = document.createElement("menuseparator");
 		} else if (obj.oncommand || obj.command) {
@@ -431,7 +424,7 @@ window.addMenu = {
 				menuitem = document.createElement("menuitem");
 				if (obj.command)
 					menuitem.setAttribute("command", obj.command);
-				if (!obj.label) 
+				if (!obj.label)
 					obj.label = obj.command || obj.oncommand;
 			}
 		} else {
@@ -518,8 +511,11 @@ window.addMenu = {
 					dupMenuitem.setAttribute(key, val);
 				}
 
-				obj.insertAfter = obj.id;
-				insertMenuItem(obj, dupMenuitem);
+                // 插入到原来那个菜单的后面
+                if(!obj.insertAfter && !obj.insertBefore && !obj.position){
+                    obj.insertAfter = obj.id;
+                }
+				insertMenuItem(obj, dupMenuitem, true);
 
 				menuitem.hidden = true;
 				menuitem.classList.add("addMenuR");
@@ -530,7 +526,7 @@ window.addMenu = {
 			insertMenuItem(obj, menuitem);
 		}
 
-		function insertMenuItem(obj, menuitem){
+		function insertMenuItem(obj, menuitem, noMove){
 			let ins;
 			if (obj.insertAfter && (ins = $(obj.insertAfter))) {
 				ins.parentNode.insertBefore(menuitem, ins.nextSibling);
@@ -546,7 +542,7 @@ window.addMenu = {
 					insertPoint.parentNode.appendChild(menuitem);
 				return;
 			}
-			insertPoint.parentNode.insertBefore(menuitem, insertPoint);
+            insertPoint.parentNode.insertBefore(menuitem, insertPoint);
 		}
 	},
 
@@ -595,14 +591,17 @@ window.addMenu = {
 
 		menu.setAttribute("scheme", uri.scheme);
 		try {
-			iconURI = PlacesUtils.favicons.getFaviconForPage(uri);
+			PlacesUtils.favicons.getFaviconURLForPage(uri, function(iconURI){
+                if(iconURI && iconURI.spec){
+                    menu.setAttribute("image", "moz-anno:favicon:" + iconURI.spec);
+                }
+			});
 		} catch (e) { }
-		try {
-			// javascript: URI の host にアクセスするとエラー
-			menu.setAttribute("image", iconURI && iconURI.spec?
-				"moz-anno:favicon:" + iconURI.spec:
-				"moz-anno:favicon:" + uri.scheme + "://" + uri.host + "/favicon.ico");
-		} catch (e) { }
+        try{
+            // javascript: URI の host にアクセスするとエラー
+            menu.setAttribute("image", "moz-anno:favicon:" + uri.scheme + "://" + uri.host + "/favicon.ico");
+        }catch (e) { }
+
 	},
 	setCondition: function(menu, condition) {
 		if (/\bnormal\b/i.test(condition)) {
@@ -687,35 +686,12 @@ window.addMenu = {
 		function img2base64(imgsrc){
 			if(typeof imgsrc == 'undefined') return "";
 
-			const NSURI = "http://www.w3.org/1999/xhtml";
-			var img = new Image();
-			var that = this;
-			var canvas,
-				isCompleted = false;
-			img.onload = function () {
-			      var width = this.naturalWidth,
-			          height = this.naturalHeight;
-			      canvas = document.createElementNS(NSURI, "canvas");
-			      canvas.width = width;
-			      canvas.height = height;
-			      var ctx = canvas.getContext("2d");
-			      ctx.drawImage(this, 0, 0);
-			      isCompleted = true;
-			 };
-			 img.onerror = function () {
-			     Components.utils.reportError("Count not load: " + imgsrc);
-			     isCompleted = true;
-			 };
-			 img.src = imgsrc;
-
-			 var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
-			 while(!isCompleted){
-			 	thread.processNextEvent(true);
-			 }
-
-			 var data = canvas ? canvas.toDataURL("image/png") : "";
-			 canvas = null;
-			 return data;
+            var iconImage = new ImageConverter(imgsrc);
+            var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
+            while ( !iconImage.iscompleted ) {
+                thread.processNextEvent(true);
+            }
+            return iconImage.Database64;
 		}
 	},
 	getSelection: function(win) {
@@ -788,6 +764,47 @@ window.addMenu = {
 };
 
 window.addMenu.init();
+
+function ImageConverter(imageURL) {
+    this.imageURL = imageURL;
+    this.channel = Services.io.newChannel(imageURL, null, null);
+    this.channel.asyncOpen(this, null);
+}
+ImageConverter.prototype = {
+    imageURL : "",
+    channel : null,
+    bytes : [],
+    stream : null,
+    Database64 : null,
+    iscompleted: false,
+
+    // nsISupports
+    QueryInterface : function (iid) {
+        if (!iid.equals(Components.interfaces.nsISupports) &&
+            !iid.equals(Components.interfaces.nsIRequestObserver) &&
+            !iid.equals(Components.interfaces.nsIStreamListener)) {
+            throw Components.results.NS_ERROR_NO_INTERFACE;
+        }
+        return this;
+    },
+
+    // nsIRequestObserver
+    onStartRequest : function (aRequest, aContext) {
+        this.stream = Components.classes["@mozilla.org/binaryinputstream;1"].createInstance(Components.interfaces.nsIBinaryInputStream);
+    },
+
+    onStopRequest : function (aRequest, aContext, aStatusCode) {
+        this.Database64 = 'data:' + this.channel.contentType + ';base64,' + btoa(String.fromCharCode.apply(null, this.bytes));
+        this.iscompleted = true;
+    },
+
+    // nsIStreamListener
+    onDataAvailable : function (aRequest, aContext, aInputStream, aOffset, aCount) {
+        this.stream.setInputStream(aInputStream);
+        var chunk = this.stream.readByteArray(aCount);
+        this.bytes = this.bytes.concat(chunk);
+    }
+};
 
 function $(id) { return document.getElementById(id); }
 function $$(exp, doc) { return Array.prototype.slice.call((doc || document).querySelectorAll(exp)); }
@@ -882,8 +899,5 @@ menuitem.addMenu[text]:not([url]):not([keyword]):not([exec])\
 \
 .addMenu > .menu-iconic-left {\
   -moz-appearance: menuimage;\
-}\
-#appmenuPrimaryPane > menuitem > .menu-accel-container{\
-	display: none;\
 }\
 ');

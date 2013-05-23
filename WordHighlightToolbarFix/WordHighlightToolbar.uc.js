@@ -8,7 +8,7 @@
 // @charset        UTF-8
 // @include        main
 // @version        0.0.6
-// @note           add delay on special sites By ywzhaiqi
+// @note           增加延迟及 super_preloader 加载下一页高亮的支持 By ywzhaiqi
 // @note           0.0.6 アイコンを作って検索時の強調を ON/OFF できるようにした
 // @note           0.0.6 背面のタブを複数開いた際の引き継ぎを修正
 // @note           0.0.5 大幅に変更（変更し過ぎてどこを変更したのかすら忘れた）
@@ -42,7 +42,7 @@ var wmap = new WeakMap();
 window.gWHT = {
 	DEBUG: false,
     delayUrl: "https://developer\\.mozilla\\.org/.*/docs/",  //需要延长的站点正则
-    delayTime: 1000,  // 单位毫秒
+    delayTime: 2000,  // 单位毫秒
 	SITEINFO: [
 		/**
 			url     URL。正規表現。keyword, input が無い場合は $1 がキーワードになる。
@@ -75,10 +75,14 @@ window.gWHT = {
 			url: '^https?://duckduckgo\\.com/',
 			input: 'input[name="q"]'
 		},
-//		{// MICROFORMAT
-//			url: '^https?://.*[?&](?:q|word|keyword|search|query|search_query)=([^&]+)',
-//			input: 'input[type="text"]:-moz-any([name="q"],[name="word"],[name="keyword"],[name="search"],[name="query"],[name="search_query"]), input[type="search"]'
-//		},
+		{
+			url: '^https?://developer\\.mozilla\\.org/.*/search',
+			input: 'input[name="q"]',
+		},
+		// {// MICROFORMAT
+		// 	url: '^https?://.*[?&](?:q|word|keyword|search|query|search_query)=([^&]+)',
+		// 	input: 'input[type="text"]:-moz-any([name="q"],[name="word"],[name="keyword"],[name="search"],[name="query"],[name="search_query"]), input[type="search"]'
+		// },
 	],
 
 	FIND_FOUND   : 0,
@@ -222,16 +226,9 @@ window.gWHT = {
 				// HTMLDocument じゃない場合
 				if (!checkDoc(doc)) return;
 
-				var keywords = this.GET_KEYWORD ? this.getKeyword(this.SITEINFO, doc) : [];
+                this.delayLaunch(doc);
 
-                var delay = 0;
-                if(new RegExp(this.delayUrl).test(win.location.href)){
-                    delay = this.delayTime;
-                }
-                var self = this;
-                setTimeout(function(){
-                    self.launch(doc, keywords);
-                }, delay);
+                this.fixAutoPage(doc, win);
 
 				break;
 			case "pageshow":
@@ -289,6 +286,30 @@ window.gWHT = {
 				break;
 		}
 	},
+    delayLaunch: function(doc){
+        var keywords = this.GET_KEYWORD ? this.getKeyword(this.SITEINFO, doc) : [];
+
+        var delay = 0;
+        if(new RegExp(this.delayUrl).test(doc.URL)){
+            delay = this.delayTime;
+            debug("delay ", delay);
+        }
+        setTimeout(function(self){
+            self.launch(doc, keywords);
+        }, delay, this);
+    },
+    fixAutoPage: function(doc, win){
+        // 创建观察者对象
+        var observer = new win.MutationObserver(function(mutations){
+            if(mutations[0].addedNodes){
+                debug("MutationObserver addedNodes");
+                setTimeout(function(){
+                    gWHT.recoveryToolbar();
+                }, 200);
+            }
+        });
+        observer.observe(doc, {childList: true, subtree: true});
+    },
 	onResponse: function(event) {
 		var { target, detail: { name, args } } = event;
 		debug(name, args, target);

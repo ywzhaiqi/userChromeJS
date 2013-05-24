@@ -6,8 +6,9 @@
 // @compatibility  Firefox 2.0 3.0
 // @author         Original Author: pile0nades
 // @modifier       Alice0775
-// @note           使用时需把 extensions.stylish.editor 设为 1（默认0）
-// @modifier       ywzhaiqi 编辑器路径移到最前面，如果为空则为 about:config 中 view_source.editor.path。
+// @modifier       ywzhaiqi
+// @note           修复了原脚本只能在纯文本下编辑的情况（即使用时需把 extensions.stylish.editor 设为 1，默认0）。现在无需设置也能使用。
+// @note           编辑器路径移到最前面，如果为空则为 about:config 中 view_source.editor.path。
 // @version        2009/04/30 version 1.0対応(tnks 音吉) でも0.59で不具合がないなら1.0にしない方がいいよ
 // @version        2007/05/25
 // @Note
@@ -61,6 +62,8 @@ WindowHook.register("chrome://stylish/content/edit.xul",
 
     var EDITOR_PATH = "";
 
+    var isNewEditor = Services.prefs.getIntPref('extensions.stylish.editor') === 0;
+
     // get the checkbox
     var checkbox = aWindow.document.getElementById("wrap-lines");
 
@@ -82,7 +85,12 @@ WindowHook.register("chrome://stylish/content/edit.xul",
 
         var getColor = function(){
                 if (arguments.callee.caller.name != 'onchange') return;  //why is this necessary?
-                var box    = aWindow.document.getElementById("internal-code").mInputField;
+                var box;
+                if(isNewEditor){
+                    box = aWindow.codeElementWrapper;
+                }else{
+                    box = aWindow.document.getElementById("internal-code").mInputField;
+                }
                 var text   = box.value.toString()
                 var s      = box.selectionStart;
                 var e      = box.selectionEnd;
@@ -107,18 +115,24 @@ WindowHook.register("chrome://stylish/content/edit.xul",
 
       // add click event to button
       button.addEventListener("click", function() {
-        var codeElement = aWindow.document.getElementById("code");
-        if (!codeElement)
-          codeElement = aWindow.document.getElementById("internal-code");
-        var box = codeElement.mInputField;
+        var box, codeElement;
+        if(isNewEditor){
+            box = codeElement = aWindow.codeElementWrapper;
+        }else{
+            var codeElement = aWindow.document.getElementById("code");
+            if (!codeElement)
+              codeElement = aWindow.document.getElementById("internal-code");
+            box = codeElement.mInputField;
+        }
         var scroll = [box.scrollTop, box.scrollLeft];
         var code = codeElement.value;
+
         code = code.replace(/\s*?!\s*?important/gi, "")    // remove existing !important's to simplify things
         //change ;base64 to __base64__ so we don't match it on the ; when we split declarations
         code = code.replace(/;base64/g, "__base64__");
         var declarationBlocks = code.match(/\{[^\{\}]*[\}]/g);
         var declarations = [];
-        declarationBlocks.forEach(function (declarationBlock) {
+        declarationBlocks && declarationBlocks.forEach(function (declarationBlock) {
         declarations = declarations.concat(declarationBlock.split(/;/));
         });
         //make sure everything is really a declaration, and make sure it's not already !important
@@ -159,8 +173,9 @@ WindowHook.register("chrome://stylish/content/edit.xul",
     // add click event to button
     button.addEventListener("click", function() {
       var textarea = aWindow.document.getElementById("code");
-      if (!textarea)
-        textarea = aWindow.document.getElementById("internal-code");
+        if (!textarea)
+          textarea = aWindow.document.getElementById("internal-code");
+
       try{
         editinit();
         edittarget(textarea);
@@ -252,10 +267,19 @@ WindowHook.register("chrome://stylish/content/edit.xul",
 
         textBoxText = sstream.read(sstream.available());
         encode = target.getAttribute("encode");
-        if(textBoxText.length)
-          target.value = utf.convertStringToUTF8(textBoxText, encode, true);
-        else
-          target.value = "";
+
+        var box;
+        if(isNewEditor){
+            box = aWindow.codeElementWrapper;
+        }else{
+            box = target;
+        }
+
+        if(textBoxText.length){
+            box.value = utf.convertStringToUTF8(textBoxText, encode, true);
+        }else{
+            box.value = "";
+        }
 
         sstream.close();
         istr.close();
@@ -294,6 +318,9 @@ WindowHook.register("chrome://stylish/content/edit.xul",
     function edittarget(target){
 
       var textBoxText = target.value;
+      if(!textBoxText){
+        textBoxText = aWindow.codeElementWrapper.value;
+      }
       // Get filename.
       var file = Components.classes["@mozilla.org/file/local;1"].
                  createInstance(Components.interfaces.nsILocalFile);

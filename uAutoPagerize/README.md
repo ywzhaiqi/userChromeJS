@@ -1,5 +1,6 @@
 
-# uAutoPagerize 中文规则版
+uAutoPagerize 中文规则版
+========================
 
  - 增加了 Super\_preloader.db 的规则的支持，几乎完美兼容该规则，能自动查找下一页，支持 css;、函数、地址栏递增等多种选择器。
  - 能下载更新 Super\_preloader.db 的规则，cache文件名为 uSuper_preloader.db.js（Chrome目录下）
@@ -7,6 +8,7 @@
  - 增加了iframe的支持，一些特殊网站：如起点等已经可用。
  - 增加了鼠标手势（FireGestures）上滚一页、下滚一页的支持
  - 原官方规则优先级最低。对内存、速度有极高要求的可自行禁用。
+ - 默认为可移动按钮，可在 isUrlbar 更改，true为地址栏，false为附加组件栏（可移动按钮）。
 
 ![按钮图标](按钮图标.png)
 
@@ -50,3 +52,5 @@
 2013年5月18日
 
  - 增加可移动按钮。可通过设置isUrlbar参数切换（true为地址栏按钮，false为可移动按钮）。
+
+ [原作者地址（日文）](https://github.com/Griever/userChromeJS/tree/master/uAutoPagerize)

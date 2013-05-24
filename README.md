@@ -33,9 +33,6 @@
 
 中文规则增强版。[原作者地址（日文）](https://github.com/Griever/userChromeJS/tree/master/uAutoPagerize)
 
- - 默认为可移动按钮，可在 isUrlbar 更改，true为地址栏，false为附加组件栏（可移动按钮）。
- - 第一次加载可能需要从定制窗口中拖出，此外如为可移动按钮，启动加载时有个图标缩小的过程。
-
 ### rebuild_userChrome.uc.xul
 
 脚本管理器，按钮可移动版，改自 lastDream2013 的版本。[原作者地址（日文）](https://github.com/alice0775/userChrome.js/blob/master/rebuild_userChrome.uc.xul)

@@ -6,4 +6,7 @@
 
 ## 说明
 
- - 第62行 EDITOR\_PATH 为编辑器路径，如果空则为 about:config 中 "view_source.editor.path" 的路径。
+ - 需要有 000-windowhook.uc.js 这个脚本。
+ - 如果没有反应，请设置 第63行 "EDITOR\_PATH" 路径 或 about:config 中 "view_source.editor.path" 路径。类似：
+    `var EDITOR_PATH = "C:\\Program Files\\Sublime Text 2\\sublime_text.exe";`
+ - Stylish有个bug，中文输入法下输入的会为空，请切换输入法。

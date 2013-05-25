@@ -343,7 +343,7 @@ WindowHook.register("chrome://stylish/content/edit.xul",
 
       if(navigator.platform == "Win32"){
         // Convert Unix newlines to standard network newlines.
-        textBoxText = textBoxText.replace(/[^\r]\n/g, "\r\n");
+        // textBoxText = textBoxText.replace(/\n/g, "\r\n");
       }
       var conv = Components.classes['@mozilla.org/intl/saveascharset;1'].
             createInstance(Components.interfaces.nsISaveAsCharset);

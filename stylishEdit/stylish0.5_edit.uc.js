@@ -133,25 +133,25 @@ WindowHook.register("chrome://stylish/content/edit.xul",
         var declarationBlocks = code.match(/\{[^\{\}]*[\}]/g);
         var declarations = [];
         declarationBlocks && declarationBlocks.forEach(function (declarationBlock) {
-        declarations = declarations.concat(declarationBlock.split(/;/));
+            declarations = declarations.concat(declarationBlock.split(/;/));
         });
         //make sure everything is really a declaration, and make sure it's not already !important
         declarations = declarations.filter(function (declaration) {
-        return /[A-Za-z0-9-]+\s*:\s*[^};]+/.test(declaration) && !/!important/.test(declaration);
+            return /[A-Za-z0-9-]+\s*:\s*[^};]+/.test(declaration) && !/!important/.test(declaration);
         });
         //strip out any extra stuff like brackets and whitespace
         declarations = declarations.map(function (declaration) {
-        return declaration.match(/[A-Za-z0-9-]+\s*:\s*[^};]+/)[0].replace(/\s+$/, "");
+            return declaration.match(/[A-Za-z0-9-]+\s*:\s*[^};]+/)[0].replace(/\s+$/, "");
         });
         //replace them with "hashes" to avoid a problem with multiple identical name/value pairs
         var replacements = [];
         declarations.forEach(function (declaration) {
-        var replacement = {hash: Math.random(), value: declaration};
-        replacements.push(replacement);
-        code = code.replace(replacement.value, replacement.hash);
+            var replacement = {hash: Math.random(), value: declaration};
+            replacements.push(replacement);
+            code = code.replace(replacement.value, replacement.hash);
         });
         replacements.forEach(function (replacement) {
-        code = code.replace(replacement.hash, replacement.value + " !important");
+            code = code.replace(replacement.hash, replacement.value + " !important");
         });
         //put ;base64 back
         code = code.replace(/__base64__/g, ";base64");
@@ -318,7 +318,7 @@ WindowHook.register("chrome://stylish/content/edit.xul",
     function edittarget(target){
 
       var textBoxText = target.value;
-      if(!textBoxText){
+      if(isNewEditor){
         textBoxText = aWindow.codeElementWrapper.value;
       }
       // Get filename.
@@ -343,7 +343,7 @@ WindowHook.register("chrome://stylish/content/edit.xul",
 
       if(navigator.platform == "Win32"){
         // Convert Unix newlines to standard network newlines.
-        textBoxText = textBoxText.replace(/\n/g, "\r\n");
+        textBoxText = textBoxText.replace(/[^\r]\n/g, "\r\n");
       }
       var conv = Components.classes['@mozilla.org/intl/saveascharset;1'].
             createInstance(Components.interfaces.nsISaveAsCharset);

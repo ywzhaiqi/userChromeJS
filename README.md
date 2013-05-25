@@ -27,7 +27,7 @@
 
 ### viewMenuInScriptishPopup.uc.js
 
-为 Scritish 扩展增加 "为本站搜索脚本" 功能。
+为 Scriptish 扩展增加 "为本站搜索脚本" 功能。
 
 ### uAutoPagerize.uc.js
 

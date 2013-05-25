@@ -31,15 +31,34 @@ if (!window.SidebarMod) {
                         favicon: 'chrome://browser/content/abouthome/history.png'
 					},
 					{
-						name: '扩展',
-						url: 'chrome://mozapps/content/extensions/extensions.xul',
-                        favicon: "chrome://browser/content/abouthome/addons.png"
-					},
-					{
 						name: '下载',
 						url: 'chrome://mozapps/content/downloads/downloads.xul',
                         favicon: "chrome://browser/content/abouthome/downloads.png"
-					}
+					},
+                    {
+                        name: '扩展',
+                        url: 'chrome://mozapps/content/extensions/extensions.xul',
+                        favicon: "chrome://browser/content/abouthome/addons.png"
+                    },
+                    {
+                        name: 'Scrapbook',
+                        url: 'chrome://scrapbook/content/scrapbook.xul',
+                        favicon: 'chrome://scrapbook/skin/main_24.png'
+                    },
+                    {
+                        name: 'Console',
+                        url: 'chrome://global/content/console.xul',
+                        style: 'list-style-image: url("chrome://global/skin/console/console-toolbar.png");-moz-image-region: rect(0px, 24px, 24px, 0px);'
+                    },
+                    {
+                        name: 'Preferences',
+                        url: "about:config"
+                    },
+                    {
+                        name: 'Stylish',
+                        url: 'chrome://stylish/content/manage-standalone.xul?sidebar',
+                        favicon: 'chrome://stylish/skin/16.png'
+                    }
 				]
 			},
 			{
@@ -64,7 +83,7 @@ if (!window.SidebarMod) {
 						name: 'Twitter',
 						url: 'https://mobile.twitter.com/',
 						favicon: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABtElEQVQ4jc2SsUsbURzHf+DQRbxF19zSQSg0B67FbCVbF+f4HzR19wpdKqEaSofSg4AcBtNQQ6YmYBKFKgSOloRwxmDwLMlpQLn3Qi5Hohm+HRo1Vy/q2AdfePD9fb783pdH9F8cxphwnxfOVqKB9f3dxXRpvcq5eO1VORdJM7nkV/bKXiGMMcGv7JVJ0UHqCShWg/Ah3w5nK1H/l91SqtZaoPyJFaR4E+Knwm/N5NJowGrxeIniTdAWu1XyHKTomEqa9mL2KEEG6z6nLQZKtECRAkbXfFs0oy54ROFf9lcAs1QwrJdvSs63GzNWA73fhvhx2/BtHDTHBQB4SkREP886L0jR7w4lWn/lAUu5dv3mnQAmXRs8Qq81lnC1bfDevKw7qpC27McEGLw37wpo2faMlDw8oOT5g3BI62YAPHEFAJgAMBc77kdCWjczDpZy7fqFczXn+eM0k0tysbHm26yfjoN5bxAAMOEC5Z3Dd8LKd0aRAuhz+U7zQtqyZd1RPeHh+qLVHwRTjctlWXfUV/udHyGtm5F1R001Lpet/iAIQPSE/+lgejj4DMDs8D59L0hEfwC1m8lBvoNIXAAAAABJRU5ErkJggg=='
-					},
+					}
 
 				]
 			},
@@ -250,6 +269,7 @@ if (!window.SidebarMod) {
 						// menuitem.setAttribute('src', item.favicon);
                         menuitem.setAttribute('style', getIconStyle(item));
 						menuitem.setAttribute('oncommand', 'openWebPanel(this.getAttribute("tooltiptext"), this.getAttribute("url"))');
+                        menuitem.setAttribute('onclick', 'SidebarMod.itemClicked(this, this.getAttribute("url"));');
 					}
 				} else {
 					btn = frag.appendChild(document.createElement('toolbarbutton'));
@@ -267,7 +287,7 @@ if (!window.SidebarMod) {
                 }else{
                     // 如果不存在则取第一个子条目的 favicon
                     if(!item.favicon){
-                        return getIconStyle(item.childs[0]);
+                        return item.childs && getIconStyle(item.childs[0]);
                     }
                     return 'list-style-image: url("' + item.favicon + '")';
                 }
@@ -386,6 +406,10 @@ if (!window.SidebarMod) {
 				'if (wpb) wpb.onclick = null;' + '}'
 			);
 		},
+
+        itemClicked: function(e){
+            // content.console.log(e);
+        },
 
 		init: function () {
 			window.toggleSidebar = this.toggleSidebar;

@@ -117,7 +117,8 @@ window.gWHT = {
 		var icon = $("status-bar").appendChild(document.createElement("image"));
 		icon.setAttribute("id", PREFIX + "icon");
 		icon.setAttribute("class", PREFIX + "icon");
-		icon.setAttribute("onclick", "gWHT.GET_KEYWORD = !gWHT.GET_KEYWORD");
+		// icon.setAttribute("onclick", "gWHT.GET_KEYWORD = !gWHT.GET_KEYWORD");
+        icon.setAttribute("onclick", "gWHT.iconClick(event);");
 		icon.setAttribute("context", "");
 		icon.setAttribute("style", "padding: 0px 2px;");
 
@@ -309,6 +310,26 @@ window.gWHT = {
             }
         });
         observer.observe(doc, {childList: true, subtree: true});
+    },
+    iconClick: function(event){
+        if (event.target != $(CLASS_ICON)) return;
+        if (event.button == 2) {
+            event.preventDefault();
+            this.GET_KEYWORD = !this.GET_KEYWORD;
+
+            var win = getFocusedWindow();
+            var doc = win.document;
+            if (doc.wht) {
+                content.window.location.reload();
+            }else{
+                var keywords = this.getKeyword(null, doc);
+                if(keywords.length > 0){
+                    win.location.reload();
+                }
+            }
+        }else if (event.button == 0) {
+            this.addWord();
+        }
     },
 	onResponse: function(event) {
 		var { target, detail: { name, args } } = event;

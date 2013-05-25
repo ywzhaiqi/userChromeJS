@@ -41,7 +41,7 @@ var wmap = new WeakMap();
 
 window.gWHT = {
 	DEBUG: false,
-    delayUrl: "https://developer\\.mozilla\\.org/.*/docs/",  //需要延长的站点正则
+    delayUrl: "developer\\.mozilla\\.org/.*/docs/",  //需要延长的站点正则
     delayTime: 2000,  // 单位毫秒
 	SITEINFO: [
 		/**
@@ -77,7 +77,7 @@ window.gWHT = {
 		},
 		{
 			url: '^https?://developer\\.mozilla\\.org/.*/search',
-			input: 'input[name="q"]',
+			input: 'input[name="q"][value]'
 		},
 		// {// MICROFORMAT
 		// 	url: '^https?://.*[?&](?:q|word|keyword|search|query|search_query)=([^&]+)',

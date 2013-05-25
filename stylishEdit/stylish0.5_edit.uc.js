@@ -60,9 +60,11 @@
 WindowHook.register("chrome://stylish/content/edit.xul",
   function winhook(aWindow) {
 
+    // EDITOR_PATH = "C:\\WINDOWS\\notepad.exe";     /* windows */
+    // 如果为空则为 about:config 中 view_source.editor.path，仅window下。
     var EDITOR_PATH = "";
 
-    var isNewEditor = Services.prefs.getIntPref('extensions.stylish.editor') === 0;
+    var isNewEditor = (Services.prefs.getIntPref('extensions.stylish.editor') === 0);
 
     // get the checkbox
     var checkbox = aWindow.document.getElementById("wrap-lines");
@@ -343,7 +345,7 @@ WindowHook.register("chrome://stylish/content/edit.xul",
 
       if(navigator.platform == "Win32"){
         // Convert Unix newlines to standard network newlines.
-        // textBoxText = textBoxText.replace(/\n/g, "\r\n");
+        textBoxText = textBoxText.replace(/(\r)?\n/g, "\r\n");
       }
       var conv = Components.classes['@mozilla.org/intl/saveascharset;1'].
             createInstance(Components.interfaces.nsISaveAsCharset);

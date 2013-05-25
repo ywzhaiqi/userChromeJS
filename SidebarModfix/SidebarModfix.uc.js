@@ -4,6 +4,7 @@
 // @include         chrome://browser/content/browser.xul
 // @charset         UTF-8
 // @author          NightsoN
+// @note            v20130526: 增加中键点击标题或菜单则在标签页打开 by ywzhaiqi
 // @note            v20130520: 更改了图标获取顺序，现在的获取顺序 style > favicon > 第一个子图标 by ywzhaiqi
 // @note            v20130428: mino fixed by lastdream2013, add useful site
 // @version         0.5
@@ -52,7 +53,8 @@ if (!window.SidebarMod) {
                     },
                     {
                         name: 'Preferences',
-                        url: "about:config"
+                        url: "about:config",
+                        favicon: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABxElEQVQ4jZXQzYsScRzH8d/f16lTFCwRdOoSUYddtlrUaXTVEdR1xqfysLtUrC2EujNjbplPjIGtJIZB6YLMjqu105/w7tQhMB8+99f7C18hVpiiKGiaRjqdJplMsor5B6dSKWzbxnVdVFVdL6CqKuPxmMlkgmmaxOPx9QKapmHbNt1uF0VREEKISCRCOBxmd3d3eSyRSDAcDmk2m4RCIYLBIPl8nsFggCzLiwOyLBOLxej3+7TbbSqVCuVymVqtRqPRQJKk+QE5bSLnPhGNRrEsi06ng2VZtFot6vU61WoVn883Hz/TDLLmhOSJQ/j1N3q9HqVSiUAggCzLSJKE1+udjyXNIKs7VLq/KZ+5hI/HbGd6+P3+5c/yqQYp3eHdmcvL6pT900sK7V94Ds656/+4OOBN6CSLDuXPLocfpqjFC56bE45bP9nKjbjjNf8f2Eno7BUcjI7L4fspe4ULMrrDm8aMzRcjbnuMxde3ckP0zhX7p5fE3tqkTxzy9RmPsiM2dpZgIYS4r32n0L4iY0xIFh2O6jMeZkfceroCFkKIe4qF5+Cco9qMV9UZD1I/uPl4Rfx3G7LFdd9Xrj35wo3t9fAfyK1fDftrXK0AAAAASUVORK5CYII='
                     },
                     {
                         name: 'Stylish',
@@ -269,7 +271,7 @@ if (!window.SidebarMod) {
 						// menuitem.setAttribute('src', item.favicon);
                         menuitem.setAttribute('style', getIconStyle(item));
 						menuitem.setAttribute('oncommand', 'openWebPanel(this.getAttribute("tooltiptext"), this.getAttribute("url"))');
-                        menuitem.setAttribute('onclick', 'SidebarMod.itemClicked(this, this.getAttribute("url"));');
+                        menuitem.setAttribute('onclick', 'SidebarMod.itemClicked(event, this.getAttribute("url"));');
 					}
 				} else {
 					btn = frag.appendChild(document.createElement('toolbarbutton'));
@@ -293,7 +295,6 @@ if (!window.SidebarMod) {
                 }
             }
 		},
-
 		makeSplitter: function () {
 			var sidebarBox = document.getElementById('sidebar-box'),
 				splitter = sidebarBox.parentNode.insertBefore(document.createElement('splitter'), sidebarBox),
@@ -305,7 +306,6 @@ if (!window.SidebarMod) {
 			sidebarBoxArrow.className = sidebarBox.hidden ? 'right' : '';
 			//sidebarBoxArrow.className = sidebarBox.collapsed ? 'right' : '';
 		},
-
 		toggleSidebar: function (commandID, forceOpen) {
 			var sidebarBox = document.getElementById("sidebar-box"),
 				sidebar = document.getElementById("sidebar"),
@@ -383,7 +383,6 @@ if (!window.SidebarMod) {
 			else
 			fireSidebarFocusedEvent();
 		},
-
 		modifySidebarClickBehaviour: function () {
 			var sidebar = document.getElementById('sidebar');
 			sidebar.addEventListener('DOMContentLoaded', function(){
@@ -406,11 +405,25 @@ if (!window.SidebarMod) {
 				'if (wpb) wpb.onclick = null;' + '}'
 			);
 		},
-
-        itemClicked: function(e){
-            // content.console.log(e);
+        itemClicked: function(e, url){
+            if(e.button == 1){
+                gBrowser.selectedTab = gBrowser.addTab(url);
+            }
         },
-
+        addEventListener: function(){
+            var sidebarTitle = document.getElementById('sidebar-title');
+            if(sidebarTitle){
+                sidebarTitle.addEventListener("click", function(e){
+                    if(e.button == 1){
+                        var sidebar = document.getElementById('sidebar');
+                        if (sidebar.contentDocument){
+                            var url = sidebar.contentDocument.URL;
+                            gBrowser.selectedTab = gBrowser.addTab(url);
+                        }
+                    }
+                }, false);
+            }
+        },
 		init: function () {
 			window.toggleSidebar = this.toggleSidebar;
 			this.makeButton(this.sitelist);
@@ -458,6 +471,8 @@ if (!window.SidebarMod) {
 			if (!sss.sheetRegistered(uri, sss.AGENT_SHEET)) {
 				sss.loadAndRegisterSheet(uri, sss.AGENT_SHEET);
 			}
+
+            this.addEventListener();
 		}
 	};
 

@@ -67,7 +67,7 @@ window.gWHT = {
 		},
 		//百度
 		{
-			url: '^https?://\\w+\\.baidu\\.com/(?:s|baidu\\?wd=)',
+			url: '^https?://\\w+\\.baidu\\.com/(?:s|baidu)\\?',
 			input: 'input[name="wd"]'
 		},
 		//DuckDuckGo

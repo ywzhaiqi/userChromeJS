@@ -67,7 +67,7 @@ window.gWHT = {
 		},
 		//百度
 		{
-			url: '^https?://\\w+\\.baidu\\.com/s',
+			url: '^https?://\\w+\\.baidu\\.com/(?:s|baidu\\?wd=)',
 			input: 'input[name="wd"]'
 		},
 		//DuckDuckGo
@@ -315,20 +315,21 @@ window.gWHT = {
         if (event.target != $(CLASS_ICON)) return;
         if (event.button == 2) {
             event.preventDefault();
-            this.GET_KEYWORD = !this.GET_KEYWORD;
 
             var win = getFocusedWindow();
             var doc = win.document;
-            if (doc.wht) {
-                content.window.location.reload();
+            if(this.GET_KEYWORD){
+                this.GET_KEYWORD = false;
+                this.destroyToolbar();
             }else{
+                this.GET_KEYWORD = true;
                 var keywords = this.getKeyword(null, doc);
-                if(keywords.length > 0){
-                    win.location.reload();
-                }
+                this.launch(doc, keywords);
             }
         }else if (event.button == 0) {
-            this.addWord();
+            if(this.GET_KEYWORD){
+                this.addWord();
+            }
         }
     },
 	onResponse: function(event) {

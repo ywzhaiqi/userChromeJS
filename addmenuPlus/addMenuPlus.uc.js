@@ -501,8 +501,7 @@ window.addMenu = {
 			// clone menuitem and set attribute
 			if(obj.id && (menuitem = $(obj.id))){
 				let dupMenuitem = menuitem.cloneNode(true);
-				var cls = dupMenuitem.classList;
-				cls.add("addMenu");
+				dupMenuitem.classList.add("addMenu");
 
 				for (let [key, val] in Iterator(obj)) {
 					if (key === "command") continue;
@@ -517,7 +516,6 @@ window.addMenu = {
                 }
 				insertMenuItem(obj, dupMenuitem, true);
 
-				menuitem.hidden = true;
 				menuitem.classList.add("addMenuR");
 				continue;
 			}
@@ -549,7 +547,7 @@ window.addMenu = {
 	removeMenuitem: function() {
 		$$('menu.addMenu').forEach(function(e) e.parentNode.removeChild(e) );
 		$$('.addMenu').forEach(function(e) e.parentNode.removeChild(e) );
-		$$('.addMenuR').forEach(function(e) {e.hidden = false; e.classList.remove('addMenuR');} );
+		$$('.addMenuR').forEach(function(e) { e.classList.remove('addMenuR');} );
 	},
 
 	setIcon: function(menu, obj) {
@@ -856,6 +854,9 @@ function loadFile(aLeafName) {
 
 
 })('\
+.addMenuR\
+  { display: none !important; }\
+\
 #contentAreaContextMenu:not([addMenu~="select"]) .addMenu[condition~="select"],\
 #contentAreaContextMenu:not([addMenu~="link"])   .addMenu[condition~="link"],\
 #contentAreaContextMenu:not([addMenu~="mailto"]) .addMenu[condition~="mailto"],\

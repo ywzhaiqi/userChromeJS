@@ -260,7 +260,7 @@ var ns = window.uAutoPagerize = {
 	init: function() {
 		ns.style = addStyle(css);
 
-        ns.makeIcon();
+        ns.makeButton();
 
 		["DEBUG", "AUTO_START", "FORCE_TARGET_WINDOW", "SCROLL_ONLY"].forEach(function(name) {
 			try {
@@ -587,7 +587,8 @@ var ns = window.uAutoPagerize = {
 			updateIcon();
 		}, timer||0);
 	},
-    makeIcon: function(){
+    makeButton: function(){
+
         if(isUrlbar){
             ns.icon = $('urlbar-icons').appendChild($C("image", {
                 id: "uAutoPagerize-icon",
@@ -1011,6 +1012,38 @@ AutoPager.prototype = {
 			this.httpRequest();
 		}
 	},
+    httpRequest: function(){
+        var [reqScheme,,reqHost] = this.requestURL.split('/');
+        var {protocol, host} = this.win.location;
+        if (reqScheme !== protocol) {
+            log(protocol + " が " + reqScheme + "にリクエストを送ることはできません");
+            this.state = "error";
+            return;
+        }
+        var isSameDomain = reqHost == host;
+        if (!isSameDomain && !this.isThridParty(host, reqHost)) {
+            log(host + " が " + reqHost + "にリクエストを送ることはできません");
+            this.state = 'error';
+            return;
+        }
+        this.lastRequestURL = this.requestURL;
+        var self = this;
+        var headers = {};
+        if (isSameDomain)
+            headers.Cookie = getCookie(reqHost, reqScheme === 'https');
+        var opt = {
+            method: 'get',
+            get url() self.requestURL,
+            set url(url) self.requestURL = url,
+            headers: headers,
+            overrideMimeType: 'text/html; charset=' + this.doc.characterSet,
+            onerror: function(){ self.state = 'error'; self.req = null; },
+            onload: function(res) { self.requestLoad.apply(self, [res]); self.req = null; }
+        }
+        this.win.requestFilters.forEach(function(i) { i(opt) }, this);
+        this.state = 'loading';
+        this.req = GM_xmlhttpRequest(opt);
+    },
 	frameRequest: function(){
 		var self = this;
 
@@ -1024,13 +1057,6 @@ AutoPager.prototype = {
 			this.remove.push(function(){
 				self.doc.body.removeChild(self.iframe);
 			});
-
-			iframe.webNavigation.allowAuth = false;
-			iframe.webNavigation.allowImages = false;
-			iframe.webNavigation.allowJavascript = true;
-			iframe.webNavigation.allowMetaRedirects = true;
-			iframe.webNavigation.allowPlugins = false;
-			iframe.webNavigation.allowSubframes = false;
 		}
 
         if (this.iframe.src == this.requestURL) return;
@@ -1048,38 +1074,6 @@ AutoPager.prototype = {
 			self.iframe.contentDocument.location.href = "about:blank";
 			self.iframe.removeEventListener("load", iframeLoad, false);
 		};
-	},
-	httpRequest: function(){
-		var [reqScheme,,reqHost] = this.requestURL.split('/');
-		var {protocol, host} = this.win.location;
-		if (reqScheme !== protocol) {
-			log(protocol + " が " + reqScheme + "にリクエストを送ることはできません");
-			this.state = "error";
-			return;
-		}
-		var isSameDomain = reqHost == host;
-		if (!isSameDomain && !this.isThridParty(host, reqHost)) {
-			log(host + " が " + reqHost + "にリクエストを送ることはできません");
-			this.state = 'error';
-			return;
-		}
-		this.lastRequestURL = this.requestURL;
-		var self = this;
-		var headers = {};
-		if (isSameDomain)
-			headers.Cookie = getCookie(reqHost, reqScheme === 'https');
-		var opt = {
-			method: 'get',
-			get url() self.requestURL,
-			set url(url) self.requestURL = url,
-			headers: headers,
-			overrideMimeType: 'text/html; charset=' + this.doc.characterSet,
-			onerror: function(){ self.state = 'error'; self.req = null; },
-			onload: function(res) { self.requestLoad.apply(self, [res]); self.req = null; }
-		}
-		this.win.requestFilters.forEach(function(i) { i(opt) }, this);
-		this.state = 'loading';
-		this.req = GM_xmlhttpRequest(opt);
 	},
 	requestLoad : function(res){
 		var before = res.URI.host;

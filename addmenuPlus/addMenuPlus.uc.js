@@ -5,10 +5,11 @@
 // @author         Griever
 // @include        main
 // @license        MIT License
-// @compatibility  Firefox 5
+// @compatibility  Firefox 21
 // @charset        UTF-8
-// @version        0.0.6
-// @note           0.0.5 Firefox 19 に合わせて修正
+// @version        0.0.7
+// @note           0.0.7 Firefox 21 の Favicon 周りの変更に対応
+// @note           0.0.6 Firefox 19 に合わせて修正
 // @note           0.0.5 Remove E4X
 // @note           0.0.4 設定ファイルから CSS を追加できるようにした
 // @note           0.0.4 label の無い menu を splitmenu 風の動作にした
@@ -588,18 +589,16 @@ window.addMenu = {
 		if (!uri) return;
 
 		menu.setAttribute("scheme", uri.scheme);
-		try {
-			PlacesUtils.favicons.getFaviconURLForPage(uri, function(iconURI){
-                if(iconURI && iconURI.spec){
-                    menu.setAttribute("image", "moz-anno:favicon:" + iconURI.spec);
-                }
-			});
-		} catch (e) { }
-        try{
-            // javascript: URI の host にアクセスするとエラー
-            menu.setAttribute("image", "moz-anno:favicon:" + uri.scheme + "://" + uri.host + "/favicon.ico");
-        }catch (e) { }
-
+		PlacesUtils.favicons.getFaviconDataForPage(uri, {
+			onComplete: function(aURI, aDataLen, aData, aMimeType) {
+				try {
+					// javascript: URI の host にアクセスするとエラー
+					menu.setAttribute("image", aURI && aURI.spec?
+						"moz-anno:favicon:" + aURI.spec:
+						"moz-anno:favicon:" + uri.scheme + "://" + uri.host + "/favicon.ico");
+				} catch (e) { }
+			}
+		});
 	},
 	setCondition: function(menu, condition) {
 		if (/\bnormal\b/i.test(condition)) {

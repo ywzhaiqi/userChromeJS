@@ -508,13 +508,12 @@ window.addMenu = {
                     dupMenuitem = menuitem.cloneNode(true);
                     dupMenuitem.classList.add("addMenu");
 
-                    // 插入到原来那个菜单的后面
+                    menuitem.classList.add("addMenuR");
+
+                    // 没有插入位置的默认放在原来那个菜单的后面
                     if(!obj.insertAfter && !obj.insertBefore && !obj.position){
                         obj.insertAfter = obj.id;
                     }
-                    insertMenuItem(obj, dupMenuitem, true);
-
-                    menuitem.classList.add("addMenuR");
                 }
 
 				for (let [key, val] in Iterator(obj)) {
@@ -523,6 +522,8 @@ window.addMenu = {
 						obj[key] = val = "(" + val.toSource() + ").call(this, event);";
 					dupMenuitem.setAttribute(key, val);
 				}
+
+                insertMenuItem(obj, dupMenuitem, true);
 
 				continue;
 			}

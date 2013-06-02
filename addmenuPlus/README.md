@@ -16,7 +16,8 @@ modify the firebug key
 
 	page({
 		id: "menu_firebug_firebugInspect",
-		accesskey: "F"
+		accesskey: "F",
+        clone: false  //
 	});
 
 
@@ -152,7 +153,8 @@ modify the firebug key
 
     page({
         id: "menu_firebug_firebugInspect",
-        accesskey: "F"
+        accesskey: "F",
+        clone: false  // 直接修改原菜单，还原回去需重启后生效
     });
 
 示例：添加图标

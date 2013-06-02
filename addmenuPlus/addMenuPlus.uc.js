@@ -501,8 +501,21 @@ window.addMenu = {
 			let menuitem;
 			// clone menuitem and set attribute
 			if(obj.id && (menuitem = $(obj.id))){
-				let dupMenuitem = menuitem.cloneNode(true);
-				dupMenuitem.classList.add("addMenu");
+                let dupMenuitem;
+                if(obj.clone == false){
+                    dupMenuitem = menuitem;
+                }else{
+                    dupMenuitem = menuitem.cloneNode(true);
+                    dupMenuitem.classList.add("addMenu");
+
+                    // 插入到原来那个菜单的后面
+                    if(!obj.insertAfter && !obj.insertBefore && !obj.position){
+                        obj.insertAfter = obj.id;
+                    }
+                    insertMenuItem(obj, dupMenuitem, true);
+
+                    menuitem.classList.add("addMenuR");
+                }
 
 				for (let [key, val] in Iterator(obj)) {
 					if (key === "command") continue;
@@ -511,13 +524,6 @@ window.addMenu = {
 					dupMenuitem.setAttribute(key, val);
 				}
 
-                // 插入到原来那个菜单的后面
-                if(!obj.insertAfter && !obj.insertBefore && !obj.position){
-                    obj.insertAfter = obj.id;
-                }
-				insertMenuItem(obj, dupMenuitem, true);
-
-				menuitem.classList.add("addMenuR");
 				continue;
 			}
 

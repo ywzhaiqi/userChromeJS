@@ -39,7 +39,7 @@ modify the firebug key
 
     label       标签的名字
     accesskey   快捷键
-    exec        启动外部应用程序
+    exec        启动外部应用程序。（我新增相对路径。 \\ 代表当前配置的路径，例：\\Chrome 配置下的Chrome文件夹）
     keyword     指定了关键字的书签和搜索引擎
     text        复制你想要的字符串到剪贴板，可与 keyword, exec 一起使用
     url         打开你想要的网址
@@ -155,6 +155,14 @@ modify the firebug key
         id: "menu_firebug_firebugInspect",
         accesskey: "F",
         clone: false  // 直接修改原菜单，还原回去需重启后生效
+    });
+
+示例：打开相对路径程序或文件夹
+
+    page({
+        label: "执行相对路径程序",
+        // exec: "\\1\\base64.exe",  // 执行当前配置文件夹下的程序
+        exec: "\\Chrome"  // 打开当前配置下的Chrome文件夹
     });
 
 示例：添加图标

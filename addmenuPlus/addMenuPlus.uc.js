@@ -278,17 +278,41 @@ window.addMenu = {
 		else openUILink(uri.spec, event);
 	},
 	exec: function(path, arg){
+        path = this.handleRelativePath(path);
+
 		var file    = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
 		var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
 		try {
 			var a = (typeof arg == 'string' || arg instanceof String) ? arg.split(/\s+/) : [arg];
 			file.initWithPath(path);
-			process.init(file);
-			process.run(false, a, a.length);
+
+            if (!file.exists()) {
+                Cu.reportError('File Not Found: ' + path);
+                return;
+            }
+
+            if (file.isExecutable()) {
+                process.init(file);
+                process.run(false, a, a.length);
+            } else {
+                file.launch();
+            }
+
 		} catch(e) {
 			this.log(e);
 		}
 	},
+    handleRelativePath: function(path) {
+        if (path) {
+            path = path.replace(/\//g, '\\').toLocaleLowerCase();
+            var ffdir = Components.classes['@mozilla.org/file/directory_service;1'].getService(Components.interfaces.nsIProperties).get("ProfD", Components.interfaces.nsILocalFile).path;
+            if (/^(\\)/.test(path)) {
+                return ffdir + path;
+            }else{
+                return path;
+            }
+        }
+    },
 	rebuild: function(isAlert) {
 		var aFile = this.FILE;
 		if (!aFile || !aFile.exists() || !aFile.isFile()) {

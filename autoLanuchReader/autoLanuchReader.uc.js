@@ -6,7 +6,6 @@
 // @include        main
 // @charset        UTF-8
 // @version        0.0.2
-// @note           脚本版不再更新，改为扩展版
 // @note           2013/06/03 ver0.002 改用 Overlay
 // @note           2013/06/02 ver0.001 js创建按钮
 // ==/UserScript==
@@ -103,7 +102,7 @@ if (typeof window.autoReader != "undefined") {
             var overlay = '\
                 <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" \
                         xmlns:html="http://www.w3.org/1999/xhtml"> \
-                    <toolbarpalette id="PersonalToolbar">\
+                    <toolbarpalette id="addon-bar">\
                         <toolbarbutton id="' + BUTTON_ID + '" type="menu-button" class="toolbarbutton-1"\
                                 state="on" label="autoReader" removable="true" \
                                 onclick="autoReader.iconClick(event);" tooltiptext="点击启用阅读器"\
@@ -124,7 +123,7 @@ if (typeof window.autoReader != "undefined") {
                                             />\
                                 </hbox>\
                                 <menuitem id="autoReader-menuitem-preferences" label="设置自动启用的站点"\
-                                        oncommand="event.stopPropagation();autoReader.showSettingDialog();" />\
+                                        oncommand="autoReader.showSettingDialog();" />\
                             </menupopup>\
                         </toolbarbutton>\
                     </toolbarpalette>\
@@ -219,7 +218,6 @@ if (typeof window.autoReader != "undefined") {
             if(event.button == 1){
                 autoReader.launch();
             }else if (event.button == 2){
-                // $("autoReader-menupopup").;
                 event.preventDefault();
                 event.stopPropagation();
             }
@@ -273,18 +271,14 @@ if (typeof window.autoReader != "undefined") {
         if(!icon) return;
 
         var state = "";
-        // var tooltiptext = "";
 
         if (ns.AUTO_START == false) {
-            // tooltiptext = "自动阅读器已关闭";
             state = "off";
         } else {
-            // tooltiptext = "自动阅读器已启用";
             state = "on";
         }
 
         icon.setAttribute("state", state);
-        // icon.setAttribute("tooltiptext", tooltiptext);
     }
 
     function debug() {

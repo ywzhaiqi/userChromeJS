@@ -1,5 +1,5 @@
 ﻿// ==UserScript==
-// @name          downloadPlus.uc.js
+// @name           downloadPlus.uc.js
 // @description    新建下载 + 下载重命名 + 另存为 + 自动关闭下载产生的空白标签 + 完成下载提示音
 // @note           修改整合（Alice0775、紫云飞）
 // @include        chrome://browser/content/browser.xul
@@ -16,17 +16,32 @@
 (function(){
 
     switch(location.href){
-        case "chrome://browser/content/browser.xul":  // 下载按钮右键新建下载
-            newDownload_main();    // 新建下载
-            download_sound_play();  //下载提示音
-            autoClose_blankTab();  //自动关闭下载产生的空白标签
+        case "chrome://browser/content/browser.xul":
+
+            // 新建下载：下载按钮右键
+            newDownload_main();
+
+            //下载提示音
+            download_sound_play();
+
+            //自动关闭下载产生的空白标签
+            autoClose_blankTab();
+
             break;
-        case "chrome://browser/content/places/places.xul":  // 下载窗口新建下载
+        case "chrome://browser/content/places/places.xul":
+
+            // 书签窗口 "新建下载" 按钮
             newDownload_places();
+
             break;
-        case "chrome://mozapps/content/downloads/unknownContentType.xul":  // 下载另存为窗口
+        case "chrome://mozapps/content/downloads/unknownContentType.xul":
+
+            // 下载改名
             download_dialog_changeName();
+
+            // 下载另存为
             download_dialog_saveAs();
+
             break;
     }
 

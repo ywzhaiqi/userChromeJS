@@ -115,7 +115,7 @@ window.siteinfo_writer = {
 				{
                     id: "sw-menuitem",
 					class : "sw-add-element",
-					label : "辅助查找翻页规则",
+					label : "辅助定制翻页规则",
 					oncommand : "siteinfo_writer.show();",
 				}
 				);
@@ -132,7 +132,7 @@ window.siteinfo_writer = {
 				let aupPopup = $("uAutoPagerize-popup");
 				if (aupPopup)
 				{
-					aupPopup.appendChild(document.createElement("menuseparator")).setAttribute("class", "sw-add-element");
+					// aupPopup.appendChild(document.createElement("menuseparator")).setAttribute("class", "sw-add-element");
 					aupPopup.appendChild(menuitem.cloneNode(false));
 				}
 			}, 2000);

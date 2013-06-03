@@ -6,6 +6,7 @@
 // @include        main
 // @charset        UTF-8
 // @version        0.0.2
+// @note           2013/06/03 ver0.0.3  改进一些情况下无法移动的问题。
 // @note           2013/05/22 ver0.0.2，新增参数 clone: true（克隆按钮/菜单，原来的保留）
 // @note           2013/05/21 初始版本
 // ==/UserScript==
@@ -52,8 +53,9 @@
 
 var moveButton = {
     buttons:[
-       { id: "translatorButton",  insertAfter: "jsoff-statusbar" },
-       { id: "ScrapBookStatusPanel", insertBefore: "scriptish-button" },
+        { id: "autoReaderButton", bar: "PersonalToolbar", pos: 1 },
+        { id: "translatorButton",  insertAfter: "jsoff-statusbar" },
+        { id: "ScrapBookStatusPanel", insertBefore: "scriptish-button" },
     ],
 
     interval: 200, // 0.2秒间隔
@@ -62,7 +64,10 @@ var moveButton = {
     timer: null,
 
     init: function(){
-        this.run();
+        setTimeout(function(self){
+            self.run();
+        }, 100, this);
+
     },
     uninit: function(){
 
@@ -91,27 +96,30 @@ var moveButton = {
                     button = button.cloneNode(true);
                 }
                 let ins;
+
                 if (info.insertBefore && (ins = $(info.insertBefore))){
-                    setTimeout(function(ins, button){
-                        ins.parentNode.insertBefore(button, ins);
-                    }, 100, ins, button);
+                    ins.parentNode.insertBefore(button, ins);
+
                     this.buttons.splice(i, 1);
                     continue;
                 }
+
                 if (info.insertAfter && (ins = $(info.insertAfter))){
-                    setTimeout(function(ins, button){
-                        ins.parentNode.insertBefore(button, ins.nextSibling);
-                    }, 100, ins, button);
+                    ins.parentNode.insertBefore(button, ins);
+
                     this.buttons.splice(i, 1);
                     continue;
                 }
+
                 if (info.pos && (parseInt(info.pos, 10) > 0)){
-                    setTimeout(function(ins, button){
-                        let bar = $(info.bar) || button.parentNode;
-                        (ins = bar.children[parseInt(info.pos, 10) - 1]) ?
-                            bar.insertBefore(button, ins) :
-                            bar.appendChild(button);
-                    }, 100, ins, button);
+                    let bar = $(info.bar) || button.parentNode;
+                    ins = bar.children[parseInt(info.pos, 10) - 1];
+                    if(ins){
+                        bar.insertBefore(button, ins);
+                    }else{
+                        bar.appendChild(button);
+                    }
+
                     this.buttons.splice(i, 1);
                     continue;
                 }

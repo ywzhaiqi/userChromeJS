@@ -36,10 +36,11 @@
 // Released under the GPL license
 // http://www.gnu.org/copyleft/gpl.html
 
+var isUrlbar = false;  // 放置的位置，true为地址栏，false为附加组件栏（可移动按钮）
+
 (function(css) {
 
 // 以下 設定が無いときに利用する
-var isUrlbar = false;  // 放置的位置，true为地址栏，false为附加组件栏（可移动按钮）
 var useiframe = true;  // 启用 iframe 加载下一页的总开关。
 var IMMEDIATELY_PAGER_NUM = 1;  // 立即加载的页数
 var loadImmediatelyTime = 500;  // 立即加载延迟的时间（ms）
@@ -672,19 +673,6 @@ var ns = window.uAutoPagerize = {
         range.collapse(false);
         range.insertNode(range.createContextualFragment(xml.replace(/\n|\t/g, '')));
         range.detach();
-
-        if(isUrlbar){
-            /* 更新按鈕到 Toolbar，可移动按钮 */
-            var toolbars = document.querySelectorAll("toolbar");
-            Array.slice(toolbars).forEach(function(toolbar) {
-                var currentset = toolbar.getAttribute("currentset");
-                if (currentset.split(",").indexOf("uAutoPagerize-icon") < 0) return;
-                toolbar.currentSet = currentset;
-                try {
-                    BrowserToolboxCustomizeDone(true);
-                } catch (ex) {}
-            });
-        }
     },
 	iconClick: function(event){
 		if (!event || !event.button) {
@@ -2223,3 +2211,31 @@ function alert(title, info){
 '.replace(/\n|\t/g, ''));
 
 window.uAutoPagerize.init();
+
+(function(){
+    var updateToolbar = {
+        /**
+         * 只能运行一次？有问题？
+         */
+        runOnce: function(){
+            var toolbars = document.querySelectorAll("toolbar");
+            Array.slice(toolbars).forEach(function(toolbar) {
+                var currentset = toolbar.getAttribute("currentset");
+                if (currentset.split(",").indexOf("uAutoPagerize-icon") < 0) return;
+                toolbar.currentSet = currentset;
+
+                // toolbar.ownerDocument.persist(toolbar.id, "currentset");
+                try {
+                    BrowserToolboxCustomizeDone(true);
+                } catch (ex) {}
+            });
+        }
+    };
+
+    if(!isUrlbar){
+        updateToolbar.runOnce();
+    }
+
+    delete window.isUrlbar;
+
+})();

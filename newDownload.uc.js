@@ -10,13 +10,16 @@ location == "chrome://browser/content/browser.xul" && (function () {
     var button = document.getElementById("downloads-button");
     button.addEventListener("click", onClicked, false);
 
-    // 暂且用笨办法
-    setInterval(function checkNewButton(){
-        var button = document.getElementById("downloads-indicator");
-        if(!button) return;
-        button.addEventListener("click", onClicked, false);
-        clearInterval(checkNewButton);
-    }, 200);
+    var observer = new window.MutationObserver(function(mutations){
+        var newButton = document.getElementById("downloads-indicator");
+        if(!newButton) return;
+
+        newButton.addEventListener("click", onClicked, false);
+        observer.disconnect();
+        // alert("Button: downloads-indicator addEventListener");
+    });
+
+    observer.observe(button, { attributes: true });
 
     function onClicked(e){
         if(e.button == 2  && !e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey){

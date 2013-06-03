@@ -509,11 +509,6 @@ window.addMenu = {
                     dupMenuitem.classList.add("addMenu");
 
                     menuitem.classList.add("addMenuR");
-
-                    // 没有插入位置的默认放在原来那个菜单的后面
-                    if(!obj.insertAfter && !obj.insertBefore && !obj.position){
-                        obj.insertAfter = obj.id;
-                    }
                 }
 
 				for (let [key, val] in Iterator(obj)) {
@@ -523,6 +518,10 @@ window.addMenu = {
 					dupMenuitem.setAttribute(key, val);
 				}
 
+                // 没有插入位置的默认放在原来那个菜单的后面
+                if(!obj.insertAfter && !obj.insertBefore && !obj.position){
+                    obj.insertAfter = obj.id;
+                }
                 insertMenuItem(obj, dupMenuitem, true);
 
 				continue;

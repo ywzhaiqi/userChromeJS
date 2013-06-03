@@ -96,17 +96,18 @@ var nextPage = new function() {
         ,
         isFix4FG: false
     };
-    
+
     //---------------------------------------------------------------------------------
     var rule = {};
-        
+
     //强制使用模拟点击方式的页面,比如淘宝的成交列表,使用正则的方式来判断
     rule.forceClick = [
         /item\.taobao\.com/i,
         /news\.163\.com\/photoview\//i,
         /360buy\.com\/product/i,
         /music\.baidu.com/i,
-        /blog\.sina\.com\.cn/i];
+        /blog\.sina\.com\.cn/i
+    ];
 
 
     //完全禁止使用iframe方式预读,会转而使用xhr方式,兼容性比较好
@@ -115,7 +116,7 @@ var nextPage = new function() {
         /image\.youdao\.com/i];
 
         //通用规则的站点,比如discuz和phpwind的论坛
-        rule.specialCommon = [{
+    rule.specialCommon = [{
             siteName: 'Discuz论坛帖子列表页面',
             url: /^https?:\/\/.+\/(?:(?:forum)|(?:showforum)|(?:viewforum))/i,
             preLink: '//div[@class="pages" or @class="pg"]/descendant::a[@class="prev"][@href]',
@@ -136,8 +137,15 @@ var nextPage = new function() {
             preLink: '//div[starts-with(@class,"pages")]/b[1]/preceding-sibling::a[1][not(@class)][@href] | //div[starts-with(@class,"pages")]/ul[1]/li[b]/preceding-sibling::li/a[1][not(@class)][@href]',
             nextLink: '//div[starts-with(@class,"pages")]/b[1]/following-sibling::a[1][not(@class)][@href] | //div[starts-with(@class,"pages")]/ul[1]/li[b]/following-sibling::li/a[1][not(@class)][@href]'
         }];
-        //专用规则的站点
-        rule.specialSite = [{
+    //专用规则的站点
+    rule.specialSite = [
+        {
+            siteName: "特殊google搜索",
+            url: /^https?:\/\/www\.google\.com\/cse\?cx=/i,
+            siteExample: 'https://www.google.com/cse?cx=008745974804865311006%3Achikzhnrhzs&ie=UTF-8&q=mactype&sa=%E6%90%9C%E5%B0%8B#gsc.tab=0&gsc.q=mactype&gsc.page=2',
+            nextLink: '//div[contains(@class, "gsc-cursor-current-page")]/following-sibling::div[1]'
+        },
+        {
             siteName: 'google搜索', //站点名字...(可选)
             url: /^https?:\/\/\w{3,10}\.google(?:\.\w{1,4}){1,2}\/search/i, //站点正则...(~~必须~~)
             siteExample: 'http://www.google.com', //站点实例...(可选)
@@ -950,7 +958,7 @@ var nextPage = new function() {
         }
     }
 
-    var num = new function() {
+        var num = new function() {
             // 取得相邻的纯数字节点，type: 1 下一个；-1 上一个
 
             function getSiblingNode(node, type) {
@@ -1624,7 +1632,7 @@ var nextPage = new function() {
         })
         return linkNode;
     }
-};    
+};
 
 nextPage.init();
 

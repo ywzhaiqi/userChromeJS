@@ -226,6 +226,9 @@ if (typeof window.autoReader != "undefined") {
             if(event.button == 1){
                 autoReader.launch();
             }else if (event.button == 2){
+                var popup = document.getElementById("autoReader-menupopup");
+                popup.showPopup();
+
                 event.preventDefault();
                 event.stopPropagation();
             }

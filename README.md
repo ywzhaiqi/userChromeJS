@@ -71,6 +71,7 @@ userChromeJS for Firefox
  - 书签窗口 "新建下载" 按钮
  - 下载改名
  - 下载另存为
+ - 下载保存并打开
  - 下载弹出窗口双击链接复制完整链接
 
 ### ExportHTMLFolderMod.uc.xul

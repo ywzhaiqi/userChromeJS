@@ -26,7 +26,9 @@
 
     function newDownload_main(){
         var button = document.getElementById("downloads-button");
-        addButtonListener(button);
+        if(button){
+            addButtonListener(button);
+        }
 
         var newButton = document.getElementById("downloads-indicator");
         if(newButton){

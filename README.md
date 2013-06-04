@@ -52,7 +52,7 @@ userChromeJS for Firefox
  - [viewMenuInScriptishPopup.uc.js](viewMenuInScriptishPopup.uc.js)，为 Scriptish 扩展增加 "为本站搜索脚本" 功能。
 
 
-## 单文件的说明
+## 单文件说明
 
 ### copyBookmark.uc.js
 

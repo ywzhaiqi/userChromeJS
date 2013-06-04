@@ -36,6 +36,9 @@ if (typeof window.autoReader != "undefined") {
     var AUTO_START = true;
     var BUTTON_ID = "autoReaderButton";
 
+    let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+    if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
+
     var ns = window.autoReader = {
         auto_sites_reg: [],
         button: null,
@@ -136,11 +139,16 @@ if (typeof window.autoReader != "undefined") {
         },
         loadSetting: function(){
             ["AUTO_START"].forEach(function(name) {
-                ns[name] = ns.prefs.getBoolPref(name);
+                try{
+                    ns[name] = ns.prefs.getBoolPref(name);
+                }catch(e) {}
+
             }, ns);
 
             ["AUTO_SITE_TEXT"].forEach(function(name) {
-                ns[name] = ns.prefs.getCharPref(name);
+                try{
+                    ns[name] = ns.prefs.getCharPref(name);
+                }catch(e) {}
             }, ns);
         },
         handleAutoSiteText: function(text) {

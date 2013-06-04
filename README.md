@@ -1,11 +1,14 @@
-# userChromeJS for Firefox.
+userChromeJS for Firefox
+========================
+
+修改、原创、自用的uc脚本。注： **以下uc脚本可能包含个人使用习惯**
 
 ## 资源地址
 
- - [userChrome.js 维基（日文）](http://wiki.nothing.sh/page/userChrome.js%CD%D1%A5%B9%A5%AF%A5%EA%A5%D7%A5%C8)，最全的uc脚本维基，最近的版面重整没了很多东西（希望是暂时的）。
+ - [userChrome.js 维基（日文）](http://wiki.nothing.sh/page/userChrome.js%CD%D1%A5%B9%A5%AF%A5%EA%A5%D7%A5%C8)，最全的uc脚本维基。
  - [Griever/userChromeJS · GitHub（日文）](https://github.com/Griever/userChromeJS)，原创作者。
  - [alice0775/userChrome.js · GitHub（日文）](https://github.com/alice0775/userChrome.js)，原创作者。
- - [ardiman/userChrome.js · GitHub（德文）](https://github.com/ardiman/userChrome.js)，大量的uc脚本集中地，有图片说明。
+ - [ardiman/userChrome.js · GitHub（德文）](https://github.com/ardiman/userChrome.js)，收集着大量的uc脚本，有图片说明。
 
 以下中文
 
@@ -17,52 +20,69 @@
  - [lastdream2013/userChrome · GitHub](https://github.com/lastdream2013/userChrome)
 
 
-## 最近的修改或修复说明
+## 说明
 
-本人使用以扩展为主，uc脚本为辅，故下面的uc脚本有一定的针对性。
+ - [addmenuPlus](addmenuPlus)，增加修改 Firefox 菜单（修改版）。
+ - [autoLanuchReader](autoLanuchReader)，自动启用阅读器（原创）。
+ - [ExternalEditor](ExternalEditor)，输入框右键添加 `用外部编辑器打开` 功能（修改版）。
+ - [moveButton](moveButton)，移动或克隆按钮/菜单到任意位置（原创）。
+ - [MyNovelReader](MyNovelReader)，小说阅读uc版（原创），已弃用，请用 [小说阅读GM版](https://userscripts.org/scripts/show/165951)（原创）和[autoLanuchReader](autoLanuchReader)。
+ - [rebuild_userChrome](rebuild_userChrome)，脚本管理器（菜单修改版）。
+ - [SidebarModfix](SidebarModfix)，侧边栏增强（修改版）。
+ - [stylishEdit](stylishEdit)，为 Stylish 增加外部编辑器等（修复版）。
+ - [uAutoPagerize](uAutoPagerize)，中文规则增强版。
+ - [uc\_google\_translator](uc_google_translator)，google 翻译脚本（修改版）。
+ - [viewSourceModoki](viewSourceModoki)，右键菜单增加 `View Source With: All、Document、css、js`。
+ - [WordHighlightToolbarFix](WordHighlightToolbarFix)，搜索高亮（修改版）。
+ - [copybookmark.uc.js](copybookmark.uc.js)，书签右键复制标题链接（修改版）。
+ - [downloadPlus.uc.js](downloadPlus.uc.js)，多个下载脚本整合版。
+ - [ExportHTMLFolderMod.uc.xul](ExportHTMLFolderMod.uc.xul)，书签右键 `导出到HTML`（修改版）。
+ - [IME-Colors.uc.js](IME-Colors.uc.js)，输入框聚焦时变色。
+ - [JSCSS_Highlight.uc.js](JSCSS_Highlight.uc.js)，在浏览器中打开的 js、css、ahk 代码着色。
+ - [JSOff.uc.xul](JSOff.uc.xul)，js开关，图标在状态栏。
+ - [MoreToolsMenu.uc.js](MoreToolsMenu.uc.js)，拆分工具菜单为2个。
+ - [newDownload.uc.js](newDownload.uc.js)，增加下载按钮右键新建下载，此为单一功能，上面有整合版（修改版）。
+ - [nextpage.uc.xul](nextpage.uc.xul)，下一页。
+ - [OpenLinkinNewTabwithRightClick.uc.js](OpenLinkinNewTabwithRightClick.uc.js)，右键在新标签页打开链接，修改自`openlinkinnewtabwithleftdoubleclick.uc.js`。
+ - [SnapLinksMod.uc.xul](SnapLinksMod.uc.xul)，自用版，无右键菜单（修改版）。
+ - [speedupErrorConsole.uc.js](speedupErrorConsole.uc.js)，加速错误控制台。
+ - [statusbarButtonScrapbook.uc.js](statusbarButtonScrapbook.uc.js)，更改 Scrapbook 状态栏图标为鼠标中键打开侧边栏。
+ - [textLink.uc.js](textLink.uc.js)，双击打开文字链接。
+ - [UserAgentChangeModLite.uc.js](UserAgentChangeModLite.uc.js)，UA切换（修改版）。
+ - [viewMenuInScriptishPopup.uc.js](viewMenuInScriptishPopup.uc.js)，为 Scriptish 扩展增加 "为本站搜索脚本" 功能。
 
-本人使用 pentadactyl 扩展，默认隐藏地址栏，故在地址栏的脚本都改成可移动版或放在附加组件栏。
 
-**以下uc脚本可能包含个人使用习惯**
+## 单文件的说明
 
-### viewMenuInScriptishPopup.uc.js
+### copyBookmark.uc.js
 
-为 Scriptish 扩展增加 "为本站搜索脚本" 功能。
+书签右键 "复制标题"、"复制地址"、"复制标题和地址"。原贴发布在百度贴吧
 
-### uAutoPagerize.uc.js
+ - 更改原来的 "复制" 为 "复制地址"，并调整顺序。
 
-中文规则增强版。[原作者地址（日文）](https://github.com/Griever/userChromeJS/tree/master/uAutoPagerize)
+### downloadPlus.uc.js
 
-### rebuild_userChrome.uc.xul
+新建下载，删除文件，下载窗口（下载重命名 + 双击复制链接 + 另存为），完成下载提示音，自动关闭下载产生的空白标签。
 
-脚本管理器，按钮可移动版，改自 lastDream2013 的版本。[原作者地址（日文）](https://github.com/alice0775/userChrome.js/blob/master/rebuild_userChrome.uc.xul)
+ - 下载按钮右键点击新建下载
+ - DownloadsPanel 右键新增移除下载文件功能
+ - 下载提示音
+ - 自动关闭下载产生的空白标签
+ - 书签窗口 "新建下载" 按钮
+ - 下载改名
+ - 下载另存为
+ - 下载弹出窗口双击链接复制完整链接
 
- - 第74行 editor 为编辑器的路径，如果空则为 "about:config" 中 "view_source.editor.path" 的路径。
- - 第45行 movedMenus 为 其它uc脚本设置的 id，加入后可移动到 "userChromeJS用户脚本命令" 处统一管理。下面的是示例：
-    - "JSCSS-menuitem",  // js、css、ahk 代码着色开关
-    - "addMenu-rebuild",  // addMenu 重新载入配置
-    - "sw-menuitem",  // siteinfo_write
-
-### 010-ucjs_editor.uc.js (ExternalEditor)
-
-输入框右键添加 "用外部编辑器打开" 功能，同类扩展It's All Text!，这个脚本简单点。[原作者地址（日文）](https://github.com/alice0775/userChrome.js/blob/master/010-ucjs_editor.uc.js)
-
- - 第55行 \_editor 为编辑器路径，如果空则为 "about:config" 中 "view_source.editor.path" 的路径。
-
-### stylish0.5_edit.uc.js
-
-为 Stylish 添加外部编辑器、颜色选择、自动添加 !important 功能。[原作者地址（日文）](https://github.com/alice0775/userChrome.js/blob/master/stylish0.5_edit.uc.js)
-
- - 第62行 EDITOR\_PATH 为编辑器路径，如果空则为 "about:config" 中 "view_source.editor.path" 的路径。
- - 使用时需把 extensions.stylish.editor 设为 1（默认0）。
- - 上面的改了后原输入框没有了代码高亮。
-
-### ExportHTMLFolder.uc.xul
+### ExportHTMLFolderMod.uc.xul
 
 书签右键 "导出到HTML"，基于 [lastdream2013 的版本](http://bbs.kafan.cn/thread-1512731-1-1.html)。
 
 - 修复了当在书签工具栏、书签菜单栏、未排序书签栏上导出空白的情况
 - 精简了代码，修复了当在侧边栏图标上导出空白及错误的情况。
+
+### IME-Colors.uc.js
+
+输入框聚焦时变色。[原作者地址（日文）](https://github.com/Griever/userChromeJS/blob/master/IME-Colors.uc.js)
 
 ### UserAgentChangeModLite.uc.js
 
@@ -72,33 +92,19 @@ UA切换，基于 [lastdream2013 的版本](http://bbs.kafan.cn/thread-1534937-1
 - 修复了撑大的问题（原脚本用css没法解决）。
 - 完善了原脚本的一些正则的错误。
 
-### SidebarModfix.uc.js
-
-侧边栏增强，基于 [lastdream2013 的版本](http://bbs.kafan.cn/thread-1552255-1-1.html)。
-
- - 更改了一些图标为 Firefox 默认图标
- - 更改了图标获取顺序，现在的获取顺序 style > favicon > 第一个子图标
- - 新增了一些站点
-
-### copyBookmark.uc.js
-
-书签右键 "复制标题"、"复制地址"、"复制标题和地址"。原贴发布在百度贴吧
-
- - 更改原来的 "复制" 为 "复制地址"，并调整顺序。
-
-### IME-Colors.uc.js
-
-输入框聚焦时变色。[原作者地址（日文）](https://github.com/Griever/userChromeJS/blob/master/IME-Colors.uc.js)
-
- - 屏蔽控制台错误。
-
-
-## 一些自用的脚本说明
-
 ### nextpage.uc.xul
 
- - 下一页： nextpage.next(true);
- - 上一页： nextpage.next();
+ - 下一页： nextPage.next(true);
+ - 上一页： nextPage.next();
+
+### SnapLinksMod.uc.xul
+
+基于[lastDream2013修改版](http://bbs.kafan.cn/thread-1512731-1-1.html), [原作者地址（日文）](https://github.com/Griever/userChromeJS/blob/master/SnapLinks.uc.xul)
+
+ - 去除右键菜单，自己用 addMenu.uc 添加，菜单只出现在一般情况下，在链接、图片、输入框等情况下不会出现。
+
+
+## 不用的脚本（Disable文件夹中）
 
 ### inlineEditForBookmarkTitleOnSidebar.uc.js
 
@@ -115,36 +121,6 @@ UA切换，基于 [lastdream2013 的版本](http://bbs.kafan.cn/thread-1534937-1
 
 选中自动弹出右键菜单，可开关，可用 rebuild_userChrome.uc 集中设置在一起。[原作者地址（日文）](https://github.com/alice0775/userChrome.js/blob/master/autoContextmenu.uc.xul)
 
-### JSCSS_Highlight.uc.js
-
-在浏览器中打开的 js、css、ahk 代码着色
-
-### JSOff.uc.xul
-
-js开关，图标在状态栏。
-
-### speedupErrorConsole.uc.js
-
-加速 错误控制台，不知道是否有用，不过看作者最近更新时间 2013/02/15，姑且用着。
-
-### statusbarButtonScrapbook.uc.js
-
-更改 Scrapbook 状态栏图标 鼠标中键打开侧边栏，左键、右键弹出菜单。
-
-### viewSourceModoki.uc.js
-
-右键菜单增加 View Source With: All、Document、css、js
-
- - 需要在 about:config 中设置 view_source.editor.path 路径。
-
 ### KeepBookmarksOnMiddleClick.uc.js
 
 鼠标中键连续打开书签。
-
-### 论坛灌水.uc.xul
-
-### SnapLinksMod.uc.xul
-
-基于[lastDream2013修改版](http://bbs.kafan.cn/thread-1512731-1-1.html), [原作者地址（日文）](https://github.com/Griever/userChromeJS/blob/master/SnapLinks.uc.xul)
-
- - 取消右键菜单，自己用 addMenu.uc 添加，菜单只出现在一般情况下，在链接、图片、输入框等情况下不会出现。

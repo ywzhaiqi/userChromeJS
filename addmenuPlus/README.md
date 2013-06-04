@@ -17,7 +17,7 @@ modify the firebug key
 	page({
 		id: "menu_firebug_firebugInspect",
 		accesskey: "F",
-        clone: false  //
+        // clone: false
 	});
 
 

@@ -5,7 +5,8 @@
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
-// @version        0.0.2
+// @version        0.0.3
+// @note           2013/06/04 ver0.003 修复诸多bug
 // @note           2013/06/03 ver0.002 改用 Overlay
 // @note           2013/06/02 ver0.001 js创建按钮
 // ==/UserScript==
@@ -41,12 +42,11 @@ if (typeof window.autoReader != "undefined") {
 
     var ns = window.autoReader = {
         auto_sites_reg: [],
-        button: null,
         currentMatch_siteText: "",
 
         get prefs() {
-            delete this.prefs;
-            return this.prefs = Services.prefs.getBranch("autoReader.");
+            delete ns.prefs;
+            return ns.prefs = Services.prefs.getBranch("autoReader.");
         },
         get AUTO_START() AUTO_START,
         set AUTO_START(bool) {
@@ -55,13 +55,16 @@ if (typeof window.autoReader != "undefined") {
         },
         get AUTO_SITE_TEXT() AUTO_SITE_TEXT,
         set AUTO_SITE_TEXT(text) {
-            this.handleAutoSiteText(text);
+            ns.handleAutoSiteText(text);
             AUTO_SITE_TEXT = text;
         },
 
         init: function() {
 
-            ns.loadOverlay();
+            ns.style = addStyle(css);
+
+            // addon-bar, urlbar-icons, nav-bar, PersonalToolbar
+            ns.makeIcon("addon-bar");
 
             ns.loadSetting();
 
@@ -100,42 +103,50 @@ if (typeof window.autoReader != "undefined") {
             }
         },
 
-        loadOverlay: function() {
-             // addon-bar, urlbar-icons, nav-bar, PersonalToolbar
-            var overlay = '\
-                <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" \
-                        xmlns:html="http://www.w3.org/1999/xhtml"> \
-                    <toolbarpalette id="addon-bar">\
-                        <toolbarbutton id="' + BUTTON_ID + '" type="menu-button" class="toolbarbutton-1"\
-                                state="on" label="autoReader" removable="true" \
-                                onclick="autoReader.iconClick(event);" tooltiptext="点击启用阅读器"\
-                                insertBefore="downloads-button" >\
-                            <menupopup id="autoReader-menupopup" onpopupshowing="autoReader.onPopupShowing();">\
-                                <menuitem label="启用自动阅读器"\
-                                          id="autoReader-AUTOSTART"\
-                                          type="checkbox"\
-                                          autoCheck="true"\
-                                          checked="' + AUTO_START + '"\
-                                          oncommand="autoReader.toggle(event);"/>\
-                                <hbox hidden="true">\
-                                    <textbox id="autoReader-autosite-textbox" cols="50"/>\
-                                    <toolbarbutton id="autoReader-autosite-button"\
-                                            class="toolbarbutton-1" tooltiptext="设置是否自动启用"\
-                                            oncommand="autoReader.onAutoSiteButtonCommand();"\
-                                            image="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAJdSURBVDjLpZP7S1NhGMf9W7YfogSJboSEUVCY8zJ31trcps6zTI9bLGJpjp1hmkGNxVz4Q6ildtXKXzJNbJRaRmrXoeWx8tJOTWptnrNryre5YCYuI3rh+8vL+/m8PA/PkwIg5X+y5mJWrxfOUBXm91QZM6UluUmthntHqplxUml2lciF6wrmdHriI0Wx3xw2hAediLwZRWRkCPzdDswaSvGqkGCfq8VEUsEyPF1O8Qu3O7A09RbRvjuIttsRbT6HHzebsDjcB4/JgFFlNv9MnkmsEszodIIY7Oaut2OJcSF68Qx8dgv8tmqEL1gQaaARtp5A+N4NzB0lMXxon/uxbI8gIYjB9HytGYuusfiPIQcN71kjgnW6VeFOkgh3XcHLvAwMSDPohOADdYQJdF1FtLMZPmslvhZJk2ahkgRvq4HHUoWHRDqTEDDl2mDkfheiDgt8pw340/EocuClCuFvboQzb0cwIZgki4KhzlaE6w0InipbVzBfqoK/qRH94i0rgokSFeO11iBkp8EdV8cfJo0yD75aE2ZNRvSJ0lZKcBXLaUYmQrCzDT6tDN5SyRqYlWeDLZAg0H4JQ+Jt6M3atNLE10VSwQsN4Z6r0CBwqzXesHmV+BeoyAUri8EyMfi2FowXS5dhd7doo2DVII0V5BAjigP89GEVAtda8b2ehodU4rNaAW+dGfzlFkyo89GTlcrHYCLpKD+V7yeeHNzLjkp24Uu1Ed6G8/F8qjqGRzlbl2H2dzjpMg1KdwsHxOlmJ7GTeZC/nesXbeZ6c9OYnuxUc3fmBuFft/Ff8xMd0s65SXIb/gAAAABJRU5ErkJggg=="\
-                                            />\
-                                </hbox>\
-                                <menuitem id="autoReader-menuitem-preferences" label="设置自动启用的站点"\
-                                        oncommand="autoReader.showSettingDialog();" />\
-                            </menupopup>\
-                        </toolbarbutton>\
-                    </toolbarpalette>\
-                </overlay>';
+        makeIcon: function(_toolbarId) {
+            var _toolbar = $(_toolbarId);
+            if(!_toolbar){
+                throw("autoLaunchReader.uc.js 没有工具栏ID");
+            }
 
-            overlay = "data:application/vnd.mozilla.xul+xml;charset=utf-8," + encodeURI(overlay);
-            window.userChrome_js.loadOverlay(overlay, autoReader);
+            ns.icon = _toolbar.appendChild($C("toolbarbutton", {
+                id: BUTTON_ID,
+                class: "toolbarbutton-1",
+                type: "context",
+                removable: "true",
+                state: ns.AUTO_START ? "on" : "off",
+                label: "autoReader",
+                onclick: "if (event.button != 2) autoReader.iconClick(event);",
+                context: "autoReader-menupopup",
+                tooltiptext: "左键启用禁用阅读器，中键进入阅读模式，右键弹出菜单"
+            }));
 
-            ns.style = addStyle(css);
+            var xml = '\
+                <menupopup id="autoReader-menupopup" onpopupshowing="autoReader.onPopupShowing();">\
+                    <menuitem label="启用自动阅读器"\
+                              id="autoReader-AUTOSTART"\
+                              type="checkbox"\
+                              autoCheck="true"\
+                              checked="' + AUTO_START + '"\
+                              oncommand="autoReader.toggle(event);"/>\
+                    <hbox hidden="true">\
+                        <textbox id="autoReader-autosite-textbox" cols="50"/>\
+                        <toolbarbutton id="autoReader-autosite-button"\
+                                class="toolbarbutton-1" tooltiptext="设置是否自动启用"\
+                                oncommand="autoReader.onAutoSiteButtonCommand();"\
+                                image="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAJdSURBVDjLpZP7S1NhGMf9W7YfogSJboSEUVCY8zJ31trcps6zTI9bLGJpjp1hmkGNxVz4Q6ildtXKXzJNbJRaRmrXoeWx8tJOTWptnrNryre5YCYuI3rh+8vL+/m8PA/PkwIg5X+y5mJWrxfOUBXm91QZM6UluUmthntHqplxUml2lciF6wrmdHriI0Wx3xw2hAediLwZRWRkCPzdDswaSvGqkGCfq8VEUsEyPF1O8Qu3O7A09RbRvjuIttsRbT6HHzebsDjcB4/JgFFlNv9MnkmsEszodIIY7Oaut2OJcSF68Qx8dgv8tmqEL1gQaaARtp5A+N4NzB0lMXxon/uxbI8gIYjB9HytGYuusfiPIQcN71kjgnW6VeFOkgh3XcHLvAwMSDPohOADdYQJdF1FtLMZPmslvhZJk2ahkgRvq4HHUoWHRDqTEDDl2mDkfheiDgt8pw340/EocuClCuFvboQzb0cwIZgki4KhzlaE6w0InipbVzBfqoK/qRH94i0rgokSFeO11iBkp8EdV8cfJo0yD75aE2ZNRvSJ0lZKcBXLaUYmQrCzDT6tDN5SyRqYlWeDLZAg0H4JQ+Jt6M3atNLE10VSwQsN4Z6r0CBwqzXesHmV+BeoyAUri8EyMfi2FowXS5dhd7doo2DVII0V5BAjigP89GEVAtda8b2ehodU4rNaAW+dGfzlFkyo89GTlcrHYCLpKD+V7yeeHNzLjkp24Uu1Ed6G8/F8qjqGRzlbl2H2dzjpMg1KdwsHxOlmJ7GTeZC/nesXbeZ6c9OYnuxUc3fmBuFft/Ff8xMd0s65SXIb/gAAAABJRU5ErkJggg=="\
+                                />\
+                    </hbox>\
+                    <menuitem id="autoReader-menuitem-preferences" label="设置自动启用的站点"\
+                            oncommand="autoReader.showSettingDialog();" />\
+                </menupopup>\
+            ';
+
+            var range = document.createRange();
+            range.selectNodeContents($('mainPopupSet'));
+            range.collapse(false);
+            range.insertNode(range.createContextualFragment(xml.replace(/\n|\t/g, '')));
+            range.detach();
         },
         loadSetting: function(){
             ["AUTO_START"].forEach(function(name) {
@@ -152,15 +163,14 @@ if (typeof window.autoReader != "undefined") {
             }, ns);
         },
         handleAutoSiteText: function(text) {
-            var self = this;
-            this.auto_sites_reg = [];
+            ns.auto_sites_reg = [];
 
-            var auto_sites = (text || this.AUTO_SITE_TEXT).split("\n");
+            var auto_sites = (text || ns.AUTO_SITE_TEXT).split("\n");
 
             auto_sites.forEach(function(line) {
                 line = line.trim();
                 if (line) {
-                    self.auto_sites_reg.push(wildcardToRegExpStr(line));
+                    ns.auto_sites_reg.push(wildcardToRegExpStr(line));
                 }
             });
         },
@@ -223,14 +233,11 @@ if (typeof window.autoReader != "undefined") {
         iconClick: function(event){
             if(event.target.id != BUTTON_ID) return;
 
-            if(event.button == 1){
+            if (!event || !event.button) {
                 autoReader.launch();
-            }else if (event.button == 2){
-                var popup = document.getElementById("autoReader-menupopup");
-                popup.showPopup();
+                // ns.toggle();
+            } else if (event.button == 1) {
 
-                event.preventDefault();
-                event.stopPropagation();
             }
         },
         toggle: function() {
@@ -255,7 +262,7 @@ if (typeof window.autoReader != "undefined") {
         },
         showSettingDialog: function(xulBase64) {
             if (!xulBase64) {
-                xulBase64 = "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjw/eG1sLXN0eWxlc2hlZXQgaHJlZj0iY2hyb21lOi8vZ2xvYmFsL3NraW4vIiB0eXBlPSJ0ZXh0L2NzcyI/Pg0KPHdpbmRvdyB4bWxucz0iaHR0cDovL3d3dy5tb3ppbGxhLm9yZy9rZXltYXN0ZXIvZ2F0ZWtlZXBlci90aGVyZS5pcy5vbmx5Lnh1bCIgd2lkdGg9IjUwMCIgaGVpZ2h0PSIzMDAiIA0KICAgIHRpdGxlPSLorr7nva7oh6rliqjlkK/nlKjnmoTnq5nngrkiPg0KICAgIDxoYm94IGFsaWduPSJjZW50ZXIiIHRvb2x0aXB0ZXh0PSLkuIDooYzkuIDkuKrnvZHlnYDvvIzlm57ovabplK7ovpPlhaXnu5PmnpzvvIznpLrkvovvvJpodHRwOi8vd3d3LmNuYmV0YS5jb20vYXJ0aWNsZXMvKi5odG0iPg0KICAgICAgICA8bGFiZWwgdmFsdWU9IuW9k+WJjeermeeCuee9keWdgCI+PC9sYWJlbD4NCiAgICAgICAgPHRleHRib3ggZmxleD0iMSIvPg0KICAgICAgICA8YnV0dG9uIGlkPSJidG5fb3JpZ2luYWxfdXJsIiBsYWJlbD0i5Y6f5aeL5Zyw5Z2AIi8+DQogICAgPC9oYm94Pg0KICAgIDx0ZXh0Ym94IGlkPSJ1cmxzIiBtdWx0aWxpbmU9InRydWUiIGZsZXg9IjEiLz4NCiAgICA8aGJveCBkaXI9InJldmVyc2UiPg0KICAgICAgICA8YnV0dG9uIGlkPSJzYXZlIiBsYWJlbD0i5L+d5a2YIi8+DQogICAgPC9oYm94Pg0KICAgIDxzY3JpcHQ+DQogICAgICAgIDwhW0NEQVRBWw0KDQogICAgICAgIHZhciB1cmxfdGV4dGJveCA9IGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoInRleHRib3giKTsNCiAgICAgICAgdmFyIHVybHNfdGV4dGJveCA9ICQoInVybHMiKTsNCiAgICAgICAgdmFyIGJ0bl9vcmlnaW5hbF91cmwgPSAkKCJidG5fb3JpZ2luYWxfdXJsIik7DQoNCiAgICAgICAgdmFyIGxvY2F0aW9uSHJlZiA9IG9wZW5lci5jb250ZW50LmxvY2F0aW9uLmhyZWY7DQoNCiAgICAgICAgLy8g5a+55Zyw5Z2A6L+b6KGM566A5Y2V5aSE55CGDQogICAgICAgIHZhciB2YWx1ZSA9IGxvY2F0aW9uSHJlZi5yZXBsYWNlKC8jW15cL10qJC8sICIiKTsNCiAgICAgICAgdmFsdWUgPSB2YWx1ZS5yZXBsYWNlKC9cL1teXC9dKihcLnM/aHRtbD98XC5hc3B4KT8kLywgIi8qJDEiKTsNCiAgICAgICAgdXJsX3RleHRib3gudmFsdWUgPSB2YWx1ZTsNCg0KICAgICAgICB1cmxfdGV4dGJveC5hZGRFdmVudExpc3RlbmVyKCJrZXl1cCIsIGZ1bmN0aW9uKGV2ZW50KXsNCiAgICAgICAgICAgIGlmKGV2ZW50LndoaWNoID09IDEzIHx8IGV2ZW50LmtleUNvZGUgPT0gMTMpew0KICAgICAgICAgICAgICAgIHZhciB2YWx1ZSA9IHVybF90ZXh0Ym94LnZhbHVlLnRyaW0oKTsNCiAgICAgICAgICAgICAgICBpZih2YWx1ZSl7DQogICAgICAgICAgICAgICAgICAgIHVybHNfdGV4dGJveC52YWx1ZSArPSAiXG4iICsgdXJsX3RleHRib3gudmFsdWU7DQogICAgICAgICAgICAgICAgICAgIHVybF90ZXh0Ym94LnZhbHVlID0gIiI7DQogICAgICAgICAgICAgICAgfQ0KICAgICAgICAgICAgfQ0KICAgICAgICB9LCBmYWxzZSk7DQoNCiAgICAgICAgdXJsc190ZXh0Ym94LnZhbHVlID0gb3BlbmVyLmF1dG9SZWFkZXIuQVVUT19TSVRFX1RFWFQNCg0KICAgICAgICBidG5fb3JpZ2luYWxfdXJsLnNldEF0dHJpYnV0ZSgidG9vbHRpcHRleHQiLCBsb2NhdGlvbkhyZWYpOw0KICAgICAgICBidG5fb3JpZ2luYWxfdXJsLmFkZEV2ZW50TGlzdGVuZXIoImNvbW1hbmQiLCBmdW5jdGlvbigpew0KICAgICAgICAgICAgdXJsX3RleHRib3gudmFsdWUgPSBsb2NhdGlvbkhyZWY7DQogICAgICAgIH0sIGZhbHNlKTsNCg0KICAgICAgICAkKCJzYXZlIikuYWRkRXZlbnRMaXN0ZW5lcigiY29tbWFuZCIsIGZ1bmN0aW9uKCl7DQogICAgICAgICAgICBvcGVuZXIuYXV0b1JlYWRlci5BVVRPX1NJVEVfVEVYVCA9IHVybHNfdGV4dGJveC52YWx1ZTsNCiAgICAgICAgICAgIGNsb3NlKCk7DQogICAgICAgIH0sIGZhbHNlKTsNCg0KICAgICAgICBmdW5jdGlvbiAkKGlkKSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZChpZCk7DQoNCiAgICAgICAgXV0+DQogICAgPC9zY3JpcHQ+DQo8L3dpbmRvdz4=";
+                xulBase64 = "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjw/eG1sLXN0eWxlc2hlZXQgaHJlZj0iY2hyb21lOi8vZ2xvYmFsL3NraW4vIiB0eXBlPSJ0ZXh0L2NzcyI/Pg0KPHdpbmRvdyB4bWxucz0iaHR0cDovL3d3dy5tb3ppbGxhLm9yZy9rZXltYXN0ZXIvZ2F0ZWtlZXBlci90aGVyZS5pcy5vbmx5Lnh1bCIgDQogICAgd2lkdGg9IjYwMCIgaGVpZ2h0PSI0MDAiICB0aXRsZT0i6K6+572u6Ieq5Yqo5ZCv55So55qE56uZ54K5Ij4NCiAgICA8aGJveCBhbGlnbj0iY2VudGVyIiB0b29sdGlwdGV4dD0i5LiA6KGM5LiA5Liq572R5Z2A77yM5Zue6L2m6ZSu6L6T5YWl57uT5p6c77yM56S65L6L77yaaHR0cDovL3d3dy5jbmJldGEuY29tL2FydGljbGVzLyouaHRtIj4NCiAgICAgICAgPGxhYmVsIHZhbHVlPSLlvZPliY3nvZHlnYAiPjwvbGFiZWw+DQogICAgICAgIDx0ZXh0Ym94IGZsZXg9IjEiLz4NCiAgICAgICAgPGJ1dHRvbiBpZD0iYnRuX2VudGVyIiBsYWJlbD0i56Gu5a6aIiBvbmNvbW1hbmQ9ImJ0bl9lbnRlcl9jbGlja2VkKCk7Ii8+DQogICAgICAgIDxidXR0b24gaWQ9ImJ0bl9vcmlnaW5hbF91cmwiIGxhYmVsPSLljp/lp4vlnLDlnYAiLz4NCiAgICA8L2hib3g+DQogICAgPHRleHRib3ggaWQ9InVybHMiIG11bHRpbGluZT0idHJ1ZSIgZmxleD0iMSIvPg0KICAgIDxoYm94IGRpcj0icmV2ZXJzZSI+DQogICAgICAgIDxidXR0b24gaWQ9InNhdmUiIGxhYmVsPSLkv53lrZgiLz4NCiAgICA8L2hib3g+DQogICAgPHNjcmlwdD4NCiAgICAgICAgPCFbQ0RBVEFbDQoNCiAgICAgICAgdmFyIHVybF90ZXh0Ym94ID0gZG9jdW1lbnQucXVlcnlTZWxlY3RvcigidGV4dGJveCIpOw0KICAgICAgICB2YXIgdXJsc190ZXh0Ym94ID0gJCgidXJscyIpOw0KICAgICAgICB2YXIgYnRuX2VudGVyID0gJCgiYnRuX2VudGVyIik7DQogICAgICAgIHZhciBidG5fb3JpZ2luYWxfdXJsID0gJCgiYnRuX29yaWdpbmFsX3VybCIpOw0KDQogICAgICAgIHZhciBsb2NhdGlvbkhyZWYgPSBvcGVuZXIuY29udGVudC5sb2NhdGlvbi5ocmVmOw0KDQogICAgICAgIC8vIOWvueWcsOWdgOi/m+ihjOeugOWNleWkhOeQhg0KICAgICAgICB2YXIgdmFsdWUgPSBsb2NhdGlvbkhyZWYucmVwbGFjZSgvI1teXC9dKiQvLCAiIik7DQogICAgICAgIHZhbHVlID0gdmFsdWUucmVwbGFjZSgvXC9bXlwvXSooXC5zP2h0bWw/fFwuYXNweCkkLywgIi8qJDEiKTsNCiAgICAgICAgdXJsX3RleHRib3gudmFsdWUgPSB2YWx1ZTsNCg0KICAgICAgICB1cmxfdGV4dGJveC5hZGRFdmVudExpc3RlbmVyKCJrZXl1cCIsIGZ1bmN0aW9uKGV2ZW50KXsNCiAgICAgICAgICAgIGlmKGV2ZW50LndoaWNoID09IDEzIHx8IGV2ZW50LmtleUNvZGUgPT0gMTMpew0KICAgICAgICAgICAgICAgIGJ0bl9lbnRlcl9jbGlja2VkKCk7DQogICAgICAgICAgICB9DQogICAgICAgIH0sIGZhbHNlKTsNCg0KICAgICAgICB1cmxzX3RleHRib3gudmFsdWUgPSBvcGVuZXIuYXV0b1JlYWRlci5BVVRPX1NJVEVfVEVYVA0KDQogICAgICAgIGJ0bl9vcmlnaW5hbF91cmwuc2V0QXR0cmlidXRlKCJ0b29sdGlwdGV4dCIsIGxvY2F0aW9uSHJlZik7DQogICAgICAgIGJ0bl9vcmlnaW5hbF91cmwuYWRkRXZlbnRMaXN0ZW5lcigiY29tbWFuZCIsIGZ1bmN0aW9uKCl7DQogICAgICAgICAgICB1cmxfdGV4dGJveC52YWx1ZSA9IGxvY2F0aW9uSHJlZjsNCiAgICAgICAgfSwgZmFsc2UpOw0KDQogICAgICAgICQoInNhdmUiKS5hZGRFdmVudExpc3RlbmVyKCJjb21tYW5kIiwgZnVuY3Rpb24oKXsNCiAgICAgICAgICAgIG9wZW5lci5hdXRvUmVhZGVyLkFVVE9fU0lURV9URVhUID0gdXJsc190ZXh0Ym94LnZhbHVlOw0KICAgICAgICAgICAgb3BlbmVyLmF1dG9SZWFkZXIuaGFuZGxlQXV0b1NpdGVUZXh0KCk7DQogICAgICAgICAgICBjbG9zZSgpOw0KICAgICAgICB9LCBmYWxzZSk7DQoNCiAgICAgICAgZnVuY3Rpb24gYnRuX2VudGVyX2NsaWNrZWQoKXsNCiAgICAgICAgICAgIHZhciB2YWx1ZSA9IHVybF90ZXh0Ym94LnZhbHVlLnRyaW0oKTsNCiAgICAgICAgICAgIGlmKHZhbHVlKXsNCiAgICAgICAgICAgICAgICB2YXIgbmV3VmFsdWUgPSB1cmxzX3RleHRib3gudmFsdWU7DQogICAgICAgICAgICAgICAgaWYobmV3VmFsdWUpew0KICAgICAgICAgICAgICAgICAgICBuZXdWYWx1ZSArPSAiXG4iOw0KICAgICAgICAgICAgICAgIH0NCiAgICAgICAgICAgICAgICB1cmxzX3RleHRib3gudmFsdWUgPSBuZXdWYWx1ZSArIHVybF90ZXh0Ym94LnZhbHVlOw0KICAgICAgICAgICAgICAgIHVybF90ZXh0Ym94LnZhbHVlID0gIiI7DQogICAgICAgICAgICB9DQogICAgICAgIH0NCg0KICAgICAgICBmdW5jdGlvbiAkKGlkKSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZChpZCk7DQoNCiAgICAgICAgXV0+DQogICAgPC9zY3JpcHQ+DQo8L3dpbmRvdz4=";
             }
             window.openDialog("data:application/vnd.mozilla.xul+xml;charset=UTF-8;base64," + xulBase64,
                 "name", "top=" + (window.screenY + 100) + ",left=" + (window.screenX + 50));
@@ -278,18 +285,18 @@ if (typeof window.autoReader != "undefined") {
     ns.init();
 
     function updateIcon() {
-        var icon = $(BUTTON_ID);
-        if(!icon) return;
-
-        var state = "";
+        var newState = "";
+        var checkautomenu = $("autoReader-AUTOSTART");
 
         if (ns.AUTO_START == false) {
-            state = "off";
+            newState = "off";
+            checkautomenu.setAttribute("checked", false);
         } else {
-            state = "on";
+            newState = "on";
+            checkautomenu.setAttribute("checked", true);
         }
 
-        icon.setAttribute("state", state);
+        ns.icon.setAttribute("state", newState);
     }
 
     function debug() {

@@ -1,6 +1,6 @@
 ﻿// ==UserScript==
 // @name           downloadPlus.uc.js
-// @description    新建下载，删除文件，下载窗口（下载重命名 + 双击复制链接 + 另存为），完成下载提示音，自动关闭下载产生的空白标签
+// @description    新建下载，删除文件，下载窗口（下载重命名 + 双击复制链接 + 另存为 + 保存并打开），完成下载提示音，自动关闭下载产生的空白标签
 // @note           ywzhaiqi 修改整合（Alice0775、紫云飞）
 // @include        chrome://browser/content/browser.xul
 // @include        chrome://browser/content/places/places.xul
@@ -285,3 +285,30 @@
     }
 
 })();
+
+
+// saveAndOpen 保存并打开,学习IE9.这里的open方式和下载框里选择的打开方式无关.打开只是调用系统的默认程序.相当于下载完成后双击该文件图标.
+
+location == "chrome://mozapps/content/downloads/unknownContentType.xul" && (function (s) {
+    var saveAndOpen = document.getAnonymousElementByAttribute(document.querySelector("*"), "dlgtype", "extra2");
+    saveAndOpen.parentNode.insertBefore(saveAndOpen,document.documentElement.getButton("accept").nextSibling.nextSibling);
+    saveAndOpen.setAttribute("hidden", "false");
+    saveAndOpen.setAttribute("label", "\u4FDD\u5B58\u5E76\u6253\u5F00");
+    saveAndOpen.setAttribute("oncommand", 'Components.classes["@mozilla.org/browser/browserglue;1"].getService(Components.interfaces.nsIBrowserGlue).getMostRecentBrowserWindow().saveAndOpen.urls.push(dialog.mLauncher.source.asciiSpec);document.querySelector("#save").click();document.documentElement.getButton("accept").disabled=0;document.documentElement.getButton("accept").click()')
+})()
+
+location == "chrome://browser/content/browser.xul" && (function () {
+    saveAndOpen = {
+        urls: [],
+        onStateChange: function (prog, req, flags, status, dl) {
+            if (flags == 327696 && !! ~this.urls.indexOf(dl.source.spec)) {
+                this.urls[this.urls.indexOf(dl.source.spec)] = "";
+                Cc["@mozilla.org/download-manager;1"].getService(Ci.nsIDownloadManager).getDownload(Cc["@mozilla.org/download-manager;1"].getService(Ci.nsIDownloadManager).DBConnection.lastInsertRowID).targetFile.launch();
+            }
+        },
+        onSecurityChange: function (prog, req, state, dl) {},
+        onProgressChange: function (prog, req, prog, progMax, tProg, tProgMax, dl) {},
+        onDownloadStateChange: function (state, dl) {}
+    }
+    Components.classes["@mozilla.org/download-manager;1"].getService(Components.interfaces.nsIDownloadManager).addListener(saveAndOpen);
+})()

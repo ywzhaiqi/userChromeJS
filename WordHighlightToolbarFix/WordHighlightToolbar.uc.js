@@ -42,9 +42,9 @@ var enableBooklink = true;  // 百度搜索的 booklink.me 不要高亮
 var wmap = new WeakMap();
 
 window.gWHT = {
-	DEBUG: false,
+	DEBUG: true,
     delayUrl: "developer\\.mozilla\\.org/.*/docs/",  //需要延长的站点正则
-    delayTime: 2000,  // 单位毫秒
+    delayTime: 3000,  // 单位毫秒
 	SITEINFO: [
 		/**
 			url     URL。正規表現。keyword, input が無い場合は $1 がキーワードになる。
@@ -188,7 +188,7 @@ window.gWHT = {
 		// gBrowser.mPanelContainer.removeEventListener("click", this, false);
 		// gBrowser.mPanelContainer.removeEventListener("dragend", this, false);
 		gBrowser.mPanelContainer.removeEventListener("pageshow", this, false);
-		gBrowser.mPanelContainer.removeEventListener(EVENT_RESPONSE, this, true);
+	gBrowser.mPanelContainer.removeEventListener(EVENT_RESPONSE, this, true);
 		gBrowser.mPanelContainer.removeEventListener("WordHighlightToolbarAddWord", this, false);
 		gBrowser.mPanelContainer.removeEventListener("WordHighlightToolbarRemoveWord", this, false);
 		gBrowser.mTabContainer.removeEventListener("TabOpen", this, false);
@@ -230,8 +230,10 @@ window.gWHT = {
 				if (!checkDoc(doc)) return;
 
                 this.delayLaunch(doc);
-
-                this.fixAutoPage(doc, win);
+                
+                setTimeout(function(self){
+                	self.fixAutoPage(doc, win);
+                }, 2000, this)
 
 				break;
 			case "pageshow":
@@ -306,13 +308,18 @@ window.gWHT = {
         }, delay, this);
     },
     fixAutoPage: function(doc, win){
+    	var _bodyHeight = doc.body.clientHeight;
         // 创建观察者对象
         var observer = new win.MutationObserver(function(mutations){
-            if(mutations[0].addedNodes){
+            if(mutations[0].addedNodes && doc.body.clientHeight > _bodyHeight){
+
                 debug("MutationObserver addedNodes");
+                _bodyHeight = doc.body.clientHeight;
+
                 setTimeout(function(){
                     gWHT.recoveryToolbar();
                 }, 200);
+                
             }
         });
         observer.observe(doc, {childList: true, subtree: true});

@@ -15,7 +15,6 @@ autoLanuchReader.uc.js
  1. [小说阅读脚本 for Greasemonkey](https://userscripts.org/scripts/show/165951)
  2. [Evernote Clearly :: Firefox 附加组件 - Mozilla Add-ons](https://addons.mozilla.org/zh-cn/firefox/addon/clearly/)
  3. [Readability 中文增强版 for Greasemonkey](https://userscripts.org/scripts/show/163581)
- 4. Readability 在线版
 
 ## 说明
 

@@ -18,15 +18,28 @@ if (typeof window.autoReader != "undefined") {
 
 (function(css) {
 
-    var reader_tools = [
-        { name: "小说阅读脚本", wrapped_command: "readx" },
-        { name: "Evernote Clealy", command: function(){ window.__readable_by_evernote.readable_by_evernote__button__call();} },
-        { name: "Readability 脚本版", wrapped_command: "X_readability" },
-        // 在线版
-        { name: "Readability 在线版", url: "javascript:(function(){readStyle='style-newspaper';readSize='size-large';readMargin='margin-wide';_readability_script=document.createElement('SCRIPT');_readability_script.type='text/javascript';_readability_script.src='http://lab.arc90.com/experiments/readability/js/readability.js?x='+(Math.random());document.getElementsByTagName('head')%5B0%5D.appendChild(_readability_script);_readability_css=document.createElement('LINK');_readability_css.rel='stylesheet';_readability_css.href='http://lab.arc90.com/experiments/readability/css/readability.css';_readability_css.type='text/css';_readability_css.media='screen';document.getElementsByTagName('head')%5B0%5D.appendChild(_readability_css);_readability_print_css=document.createElement('LINK');_readability_print_css.rel='stylesheet';_readability_print_css.href='http://lab.arc90.com/experiments/readability/css/readability-print.css';_readability_print_css.media='print';_readability_print_css.type='text/css';document.getElementsByTagName('head')%5B0%5D.appendChild(_readability_print_css);})();"},
-        { name: "Instapaper 在线版", url: "javascript:function%20iprl5(){var%20d=document,z=d.createElement('scr'+'ipt'),b=d.body,l=d.location;try{if(!b)throw(0);d.title='(Saving...)%20'+d.title;z.setAttribute('src',l.protocol+'//www.instapaper.com/j/H88Ks3SLLP21?u='+encodeURIComponent(l.href)+'&t='+(new%20Date().getTime()));b.appendChild(z);}catch(e){alert('Please%20wait%20until%20the%20page%20has%20loaded.');}}iprl5();void(0)"},
-        { name: "Readable 在线版", url: "javascript:(function(){if(document.getElementsByTagName('html').length>0);else{return;}if(document.getElementsByTagName('body').length>0);else{return;}if(window.$readable);else{window.$readable={};window.$readable.path='http://readable-app.appspot.com/';}window.$readable.options={};window.$readable.options.base='better_readability';window.$readable.options.font_family='lucida';window.$readable.options.font_size='16';window.$readable.options.text_line_height='1_625';window.$readable.options.text_align='normal';window.$readable.options.text_image_align='center';window.$readable.options.text_box_width='30_em';window.$readable.options.text_box_align='center';window.$readable.options.text_box_outer_margin='1';window.$readable.options.text_box_inner_margin='2';window.$readable.options.color_theme='off_yellow_off_black';window.$readable.options.background_transparency='90';window.$readable.options.background_transparency_color='from_theme';window.$readable.options.video='strip';if(window.$readable.callScript){window.$readable.callScript();return;}if(document.getElementsByTagName('head').length>0);else{document.getElementsByTagName('html')[0].insertBefore(document.createElement('head'),document.getElementsByTagName('body')[0]);}document.getElementsByTagName('head')[0].appendChild(document.createElement('script')).setAttribute('src',window.$readable.path+'target.js?rand='+encodeURIComponent(Math.random()));})()"},
-    ];
+    // 按钮鼠标中键点击自定义
+    var middleButtonClicked = function(){
+        
+    };
+
+    // Readability 在线版
+    // var READER_TOOL_URL = "javascript:(function(){readStyle='style-newspaper';readSize='size-large';readMargin='margin-wide';_readability_script=document.createElement('SCRIPT');_readability_script.type='text/javascript';_readability_script.src='http://lab.arc90.com/experiments/readability/js/readability.js?x='+(Math.random());document.getElementsByTagName('head')%5B0%5D.appendChild(_readability_script);_readability_css=document.createElement('LINK');_readability_css.rel='stylesheet';_readability_css.href='http://lab.arc90.com/experiments/readability/css/readability.css';_readability_css.type='text/css';_readability_css.media='screen';document.getElementsByTagName('head')%5B0%5D.appendChild(_readability_css);_readability_print_css=document.createElement('LINK');_readability_print_css.rel='stylesheet';_readability_print_css.href='http://lab.arc90.com/experiments/readability/css/readability-print.css';_readability_print_css.media='print';_readability_print_css.type='text/css';document.getElementsByTagName('head')%5B0%5D.appendChild(_readability_print_css);})();";
+    // 其他可选
+    // Instapaper 在线版
+    // javascript:function%20iprl5(){var%20d=document,z=d.createElement('scr'+'ipt'),b=d.body,l=d.location;try{if(!b)throw(0);d.title='(Saving...)%20'+d.title;z.setAttribute('src',l.protocol+'//www.instapaper.com/j/H88Ks3SLLP21?u='+encodeURIComponent(l.href)+'&t='+(new%20Date().getTime()));b.appendChild(z);}catch(e){alert('Please%20wait%20until%20the%20page%20has%20loaded.');}}iprl5();void(0)"}
+    // Readable 在线版
+    // "javascript:(function(){if(document.getElementsByTagName('html').length>0);else{return;}if(document.getElementsByTagName('body').length>0);else{return;}if(window.$readable);else{window.$readable={};window.$readable.path='http://readable-app.appspot.com/';}window.$readable.options={};window.$readable.options.base='better_readability';window.$readable.options.font_family='lucida';window.$readable.options.font_size='16';window.$readable.options.text_line_height='1_625';window.$readable.options.text_align='normal';window.$readable.options.text_image_align='center';window.$readable.options.text_box_width='30_em';window.$readable.options.text_box_align='center';window.$readable.options.text_box_outer_margin='1';window.$readable.options.text_box_inner_margin='2';window.$readable.options.color_theme='off_yellow_off_black';window.$readable.options.background_transparency='90';window.$readable.options.background_transparency_color='from_theme';window.$readable.options.video='strip';if(window.$readable.callScript){window.$readable.callScript();return;}if(document.getElementsByTagName('head').length>0);else{document.getElementsByTagName('html')[0].insertBefore(document.createElement('head'),document.getElementsByTagName('body')[0]);}document.getElementsByTagName('head')[0].appendChild(document.createElement('script')).setAttribute('src',window.$readable.path+'target.js?rand='+encodeURIComponent(Math.random()));})()"
+
+    // var reader_tools = [
+    //     { name: "小说阅读脚本", wrapped_command: "readx" },
+    //     { name: "Evernote Clealy", command: function(){ window.__readable_by_evernote.readable_by_evernote__button__call();} },
+    //     { name: "Readability 脚本版", wrapped_command: "X_readability" },
+    //     // 在线版
+    //     { name: "Readability 在线版", url: "javascript:(function(){readStyle='style-newspaper';readSize='size-large';readMargin='margin-wide';_readability_script=document.createElement('SCRIPT');_readability_script.type='text/javascript';_readability_script.src='http://lab.arc90.com/experiments/readability/js/readability.js?x='+(Math.random());document.getElementsByTagName('head')%5B0%5D.appendChild(_readability_script);_readability_css=document.createElement('LINK');_readability_css.rel='stylesheet';_readability_css.href='http://lab.arc90.com/experiments/readability/css/readability.css';_readability_css.type='text/css';_readability_css.media='screen';document.getElementsByTagName('head')%5B0%5D.appendChild(_readability_css);_readability_print_css=document.createElement('LINK');_readability_print_css.rel='stylesheet';_readability_print_css.href='http://lab.arc90.com/experiments/readability/css/readability-print.css';_readability_print_css.media='print';_readability_print_css.type='text/css';document.getElementsByTagName('head')%5B0%5D.appendChild(_readability_print_css);})();"},
+    //     { name: "Instapaper 在线版", url: "javascript:function%20iprl5(){var%20d=document,z=d.createElement('scr'+'ipt'),b=d.body,l=d.location;try{if(!b)throw(0);d.title='(Saving...)%20'+d.title;z.setAttribute('src',l.protocol+'//www.instapaper.com/j/H88Ks3SLLP21?u='+encodeURIComponent(l.href)+'&t='+(new%20Date().getTime()));b.appendChild(z);}catch(e){alert('Please%20wait%20until%20the%20page%20has%20loaded.');}}iprl5();void(0)"},
+    //     { name: "Readable 在线版", url: "javascript:(function(){if(document.getElementsByTagName('html').length>0);else{return;}if(document.getElementsByTagName('body').length>0);else{return;}if(window.$readable);else{window.$readable={};window.$readable.path='http://readable-app.appspot.com/';}window.$readable.options={};window.$readable.options.base='better_readability';window.$readable.options.font_family='lucida';window.$readable.options.font_size='16';window.$readable.options.text_line_height='1_625';window.$readable.options.text_align='normal';window.$readable.options.text_image_align='center';window.$readable.options.text_box_width='30_em';window.$readable.options.text_box_align='center';window.$readable.options.text_box_outer_margin='1';window.$readable.options.text_box_inner_margin='2';window.$readable.options.color_theme='off_yellow_off_black';window.$readable.options.background_transparency='90';window.$readable.options.background_transparency_color='from_theme';window.$readable.options.video='strip';if(window.$readable.callScript){window.$readable.callScript();return;}if(document.getElementsByTagName('head').length>0);else{document.getElementsByTagName('html')[0].insertBefore(document.createElement('head'),document.getElementsByTagName('body')[0]);}document.getElementsByTagName('head')[0].appendChild(document.createElement('script')).setAttribute('src',window.$readable.path+'target.js?rand='+encodeURIComponent(Math.random()));})()"},
+    // ];
 
     //var EXAMPLE_AUTO_SITE_TEXT = function () {/*
     //    http://www.cnbeta.com/articles/*.htm
@@ -60,7 +73,6 @@ if (typeof window.autoReader != "undefined") {
         },
 
         init: function() {
-
             ns.style = addStyle(css);
 
             // addon-bar, urlbar-icons, nav-bar, PersonalToolbar
@@ -118,8 +130,13 @@ if (typeof window.autoReader != "undefined") {
                 label: "autoReader",
                 onclick: "if (event.button != 2) autoReader.iconClick(event);",
                 context: "autoReader-menupopup",
-                tooltiptext: "左键启用禁用阅读器，中键进入阅读模式，右键弹出菜单"
+                tooltiptext: "左键调用阅读工具，右键弹出菜单",
+                image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABOUlEQVQ4jZ2TsUrDUBSGvxvzAg7qJA5BdBARI1ishYJ26uZLOBQtUpEMjhUr6KAgqC/gC7ipIKSCoiKOQTI4dnQ1N7kOkpomuZb6w4Fz7v3/w38O9wqlFAAV56UKbABzwBj56ACvQPO6Zd8DCKUUK9uP+4CjEeng3B4uHohyvV0FrgYUA4RAwYyCoPYPMcAQ0DAjKe30jXu+mmGX1m8yZwqKRijlaCglyYhhWRaWZXWbpnmRlONG9JP0RBIjy8fdvHNXy3DNKAi0Q/q+3+MGIM3/00EsijFstzLcviPMr1123eRx+zZI1p9vu7k76KB/upmZU7VnRFI+p7vOVC5+l5ZTJ+JJTJdPl4A2IHQuNPgCZoVSiqnSyQ6wB5gDiOueu3km4u88WThaALaAIjChEX4ALtB8f2h4AN/8SQfIa3maJAAAAABJRU5ErkJggg=="
             }));
+
+            setTimeout(function(icon){
+                icon.removeAttribute("image");
+            }, 100, ns.icon);
 
             var xml = '\
                 <menupopup id="autoReader-menupopup" onpopupshowing="autoReader.onPopupShowing();">\
@@ -195,49 +212,63 @@ if (typeof window.autoReader != "undefined") {
 
                 var wrappedJS = win.wrappedJSObject;
 
-                // if (wrappedJS.readx) {
-                //     wrappedJS.readx();
-                // } else if (window.__readable_by_evernote) {
-                //     window.__readable_by_evernote.readable_by_evernote__button__call();
-                // } else if (wrappedJS.X_readability) {
-                //     wrappedJS.X_readability();
-                // } else {
-                //      window.loadURI(reader_tools[0].url);
-                // }
+                var other_launch = function(){
 
-                for (var i = 0; i < reader_tools.length; i++) {
-                    let cmd = reader_tools[i].wrapped_command;
-                    if(cmd && wrappedJS[cmd.split(".")[0]]){
-                        wrappedJS[cmd]();
-                        return;
+                    if (window.__readable_by_evernote) {
+                        window.__readable_by_evernote.readable_by_evernote__button__call();
+                    } else if (wrappedJS.X_readability) {
+                        wrappedJS.X_readability();
+                    } else {
+                        // gBrowser.loadURI(READER_TOOL_URL);
                     }
+                };
 
-                    cmd = reader_tools[i].command;
-                    if(cmd){
-                        try{
-                            cmd();
-                        }catch(e){
-                            continue;
+                if (wrappedJS.readx) {  // 小说阅读脚本
+                    wrappedJS.readx();
+                    // 如果小说阅读脚本没调用成功，则调用
+                    setTimeout(function(){
+                        var bodyName = win.document.body.getAttribute("name");
+                        if(!bodyName || bodyName != "MyNovelReader"){
+                            other_launch();
                         }
-                        return;
-                    }
-
-                    if(reader_tools[i].url){
-                        window.loadURI(reader_tools[i].url);
-                        return;
-                    }
+                    }, 500);
+                    return;
                 }
+
+                other_launch();
+
+                // for (var i = 0; i < reader_tools.length; i++) {
+                //     let cmd = reader_tools[i].wrapped_command;
+                //     if(cmd && wrappedJS[cmd]){
+                //         wrappedJS[cmd]();
+                //         return;
+                //     }
+
+                //     cmd = reader_tools[i].command;
+                //     if(cmd){
+                //         try{
+                //             cmd();
+                //         }catch(e){
+                //             continue;
+                //         }
+                //         return;
+                //     }
+
+                //     if(reader_tools[i].url){
+                //         window.loadURI(reader_tools[i].url);
+                //         return;
+                //     }
+                // }
 
             }, timer || 0);
         },
         iconClick: function(event){
-            if(event.target.id != BUTTON_ID) return;
-
+            // if(event.target.id != BUTTON_ID) return;
             if (!event || !event.button) {
                 autoReader.launch();
                 // ns.toggle();
             } else if (event.button == 1) {
-
+                middleButtonClicked();
             }
         },
         toggle: function() {

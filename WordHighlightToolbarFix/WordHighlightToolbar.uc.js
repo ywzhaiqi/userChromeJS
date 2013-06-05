@@ -42,7 +42,7 @@ var enableBooklink = true;  // 百度搜索的 booklink.me 不要高亮
 var wmap = new WeakMap();
 
 window.gWHT = {
-	DEBUG: true,
+	DEBUG: false,
     delayUrl: "developer\\.mozilla\\.org/.*/docs/",  //需要延长的站点正则
     delayTime: 3000,  // 单位毫秒
 	SITEINFO: [

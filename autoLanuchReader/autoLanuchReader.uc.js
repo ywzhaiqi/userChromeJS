@@ -5,7 +5,8 @@
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
-// @version        0.0.3
+// @version        0.0.4
+// @note           2013/06/06 ver0.004 调用小说脚本失败后，再次调用其它工具。clealy 后台加载网页的支持
 // @note           2013/06/04 ver0.003 修复诸多bug
 // @note           2013/06/03 ver0.002 改用 Overlay
 // @note           2013/06/02 ver0.001 js创建按钮
@@ -84,10 +85,12 @@ if (typeof window.autoReader != "undefined") {
 
             // addEventListener
             gBrowser.mPanelContainer.addEventListener('DOMContentLoaded', this, true);
+
             window.addEventListener('unload', this, false);
         },
         uninit: function() {
             gBrowser.mPanelContainer.removeEventListener('DOMContentLoaded', this, true);
+
             window.removeEventListener('unload', this, false);
 
             ["AUTO_START"].forEach(function(name) {
@@ -105,9 +108,13 @@ if (typeof window.autoReader != "undefined") {
         handleEvent: function(event) {
             switch (event.type) {
                 case "DOMContentLoaded":
-                    if (this.AUTO_START) {
-                        this.autoLaunch(event.target.defaultView);
-                    }
+                    if (this.AUTO_START && event.originalTarget instanceof HTMLDocument) {
+                        var win = event.originalTarget.defaultView;
+                        if (win.frameElement) {
+                            return;
+                        }
+                        this.autoLaunch(win);
+                      }
                     break;
                 case "unload":
                     this.uninit(event);
@@ -215,7 +222,9 @@ if (typeof window.autoReader != "undefined") {
                 var other_launch = function(){
 
                     if (window.__readable_by_evernote) {
-                        window.__readable_by_evernote.readable_by_evernote__button__call();
+                        // window.__readable_by_evernote.readable_by_evernote__button__call();
+                        __readable_by_evernote__launch(win.document);
+
                     } else if (wrappedJS.X_readability) {
                         wrappedJS.X_readability();
                     } else {
@@ -328,6 +337,80 @@ if (typeof window.autoReader != "undefined") {
         }
 
         ns.icon.setAttribute("state", newState);
+    }
+
+    // 代码来自 __readable_by_evernote.__readable_by_evernote__launch
+    function __readable_by_evernote__launch(doc){
+        var
+            _d = doc,
+            _b = _d.getElementsByTagName('body')[0],
+            _o = _d.getElementById('__readable_extension_definitions'),
+            _l = _d.createElement('script')
+        ;
+
+        //  create, if not present
+
+        //  ======================
+
+        if (_o);
+        else
+        {
+
+            _o = _d.createElement('dl');
+
+            _o.setAttribute('style', 'display: none;');
+
+            _o.setAttribute('id', '__readable_extension_definitions');
+
+            _b.appendChild(_o);
+
+        }
+
+        //  set options
+
+        //  ===========
+
+        var
+            _options = __readable_by_evernote.__get_saved__options(),
+
+            _vars = __readable_by_evernote.__get_saved__vars(),
+
+            _translations = __readable_by_evernote.__get_translations(),
+
+
+            __definition_items_html = __readable_by_evernote.__get__stuffAsDefinitionItemsHTML
+
+            ({
+
+                'option': _options,
+
+                'var': _vars,
+
+                'translation': _translations
+
+            })
+        ;
+
+
+
+        _o.innerHTML = __definition_items_html;
+        
+
+        //  launch in context
+
+        //  =================
+
+        _l.setAttribute('src', 'chrome://readable-by-evernote/content/js/__bookmarklet_to_inject.js');
+
+        _l.className = 'bookmarklet_launch';
+
+        _b.appendChild(_l);
+
+        //  custom events
+
+        //  =============
+
+        __readable_by_evernote.__add_custom_events_handler();
     }
 
     function debug() {

@@ -1,19 +1,19 @@
 // ==UserScript==
 // @name           autoLanuchReader.uc.js
-// @description    自动启用 小说阅读脚本 或 Evernote Clealy 或 Readability
+// @description    自动启用 小说阅读脚本 或 Evernote clearly 或 Readability
 // @author         ywzhaiqi
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
 // @version        0.0.4
-// @note           2013/06/06 ver0.004 调用小说脚本失败后，再次调用其它工具。clealy 后台加载网页的支持
+// @note           2013/06/06 ver0.004 调用小说脚本失败后，再次调用其它工具。clearly 后台加载网页的支持
 // @note           2013/06/04 ver0.003 修复诸多bug
 // @note           2013/06/03 ver0.002 改用 Overlay
 // @note           2013/06/02 ver0.001 js创建按钮
 // ==/UserScript==
 
 if (typeof window.autoReader != "undefined") {
-    window.autoReader.unint();
+    window.autoReader.uninit();
     delete window.autoReader;
 }
 
@@ -24,39 +24,16 @@ if (typeof window.autoReader != "undefined") {
         
     };
 
-    // Readability 在线版
-    // var READER_TOOL_URL = "javascript:(function(){readStyle='style-newspaper';readSize='size-large';readMargin='margin-wide';_readability_script=document.createElement('SCRIPT');_readability_script.type='text/javascript';_readability_script.src='http://lab.arc90.com/experiments/readability/js/readability.js?x='+(Math.random());document.getElementsByTagName('head')%5B0%5D.appendChild(_readability_script);_readability_css=document.createElement('LINK');_readability_css.rel='stylesheet';_readability_css.href='http://lab.arc90.com/experiments/readability/css/readability.css';_readability_css.type='text/css';_readability_css.media='screen';document.getElementsByTagName('head')%5B0%5D.appendChild(_readability_css);_readability_print_css=document.createElement('LINK');_readability_print_css.rel='stylesheet';_readability_print_css.href='http://lab.arc90.com/experiments/readability/css/readability-print.css';_readability_print_css.media='print';_readability_print_css.type='text/css';document.getElementsByTagName('head')%5B0%5D.appendChild(_readability_print_css);})();";
-    // 其他可选
-    // Instapaper 在线版
-    // javascript:function%20iprl5(){var%20d=document,z=d.createElement('scr'+'ipt'),b=d.body,l=d.location;try{if(!b)throw(0);d.title='(Saving...)%20'+d.title;z.setAttribute('src',l.protocol+'//www.instapaper.com/j/H88Ks3SLLP21?u='+encodeURIComponent(l.href)+'&t='+(new%20Date().getTime()));b.appendChild(z);}catch(e){alert('Please%20wait%20until%20the%20page%20has%20loaded.');}}iprl5();void(0)"}
-    // Readable 在线版
-    // "javascript:(function(){if(document.getElementsByTagName('html').length>0);else{return;}if(document.getElementsByTagName('body').length>0);else{return;}if(window.$readable);else{window.$readable={};window.$readable.path='http://readable-app.appspot.com/';}window.$readable.options={};window.$readable.options.base='better_readability';window.$readable.options.font_family='lucida';window.$readable.options.font_size='16';window.$readable.options.text_line_height='1_625';window.$readable.options.text_align='normal';window.$readable.options.text_image_align='center';window.$readable.options.text_box_width='30_em';window.$readable.options.text_box_align='center';window.$readable.options.text_box_outer_margin='1';window.$readable.options.text_box_inner_margin='2';window.$readable.options.color_theme='off_yellow_off_black';window.$readable.options.background_transparency='90';window.$readable.options.background_transparency_color='from_theme';window.$readable.options.video='strip';if(window.$readable.callScript){window.$readable.callScript();return;}if(document.getElementsByTagName('head').length>0);else{document.getElementsByTagName('html')[0].insertBefore(document.createElement('head'),document.getElementsByTagName('body')[0]);}document.getElementsByTagName('head')[0].appendChild(document.createElement('script')).setAttribute('src',window.$readable.path+'target.js?rand='+encodeURIComponent(Math.random()));})()"
-
-    // var reader_tools = [
-    //     { name: "小说阅读脚本", wrapped_command: "readx" },
-    //     { name: "Evernote Clealy", command: function(){ window.__readable_by_evernote.readable_by_evernote__button__call();} },
-    //     { name: "Readability 脚本版", wrapped_command: "X_readability" },
-    //     // 在线版
-    //     { name: "Readability 在线版", url: "javascript:(function(){readStyle='style-newspaper';readSize='size-large';readMargin='margin-wide';_readability_script=document.createElement('SCRIPT');_readability_script.type='text/javascript';_readability_script.src='http://lab.arc90.com/experiments/readability/js/readability.js?x='+(Math.random());document.getElementsByTagName('head')%5B0%5D.appendChild(_readability_script);_readability_css=document.createElement('LINK');_readability_css.rel='stylesheet';_readability_css.href='http://lab.arc90.com/experiments/readability/css/readability.css';_readability_css.type='text/css';_readability_css.media='screen';document.getElementsByTagName('head')%5B0%5D.appendChild(_readability_css);_readability_print_css=document.createElement('LINK');_readability_print_css.rel='stylesheet';_readability_print_css.href='http://lab.arc90.com/experiments/readability/css/readability-print.css';_readability_print_css.media='print';_readability_print_css.type='text/css';document.getElementsByTagName('head')%5B0%5D.appendChild(_readability_print_css);})();"},
-    //     { name: "Instapaper 在线版", url: "javascript:function%20iprl5(){var%20d=document,z=d.createElement('scr'+'ipt'),b=d.body,l=d.location;try{if(!b)throw(0);d.title='(Saving...)%20'+d.title;z.setAttribute('src',l.protocol+'//www.instapaper.com/j/H88Ks3SLLP21?u='+encodeURIComponent(l.href)+'&t='+(new%20Date().getTime()));b.appendChild(z);}catch(e){alert('Please%20wait%20until%20the%20page%20has%20loaded.');}}iprl5();void(0)"},
-    //     { name: "Readable 在线版", url: "javascript:(function(){if(document.getElementsByTagName('html').length>0);else{return;}if(document.getElementsByTagName('body').length>0);else{return;}if(window.$readable);else{window.$readable={};window.$readable.path='http://readable-app.appspot.com/';}window.$readable.options={};window.$readable.options.base='better_readability';window.$readable.options.font_family='lucida';window.$readable.options.font_size='16';window.$readable.options.text_line_height='1_625';window.$readable.options.text_align='normal';window.$readable.options.text_image_align='center';window.$readable.options.text_box_width='30_em';window.$readable.options.text_box_align='center';window.$readable.options.text_box_outer_margin='1';window.$readable.options.text_box_inner_margin='2';window.$readable.options.color_theme='off_yellow_off_black';window.$readable.options.background_transparency='90';window.$readable.options.background_transparency_color='from_theme';window.$readable.options.video='strip';if(window.$readable.callScript){window.$readable.callScript();return;}if(document.getElementsByTagName('head').length>0);else{document.getElementsByTagName('html')[0].insertBefore(document.createElement('head'),document.getElementsByTagName('body')[0]);}document.getElementsByTagName('head')[0].appendChild(document.createElement('script')).setAttribute('src',window.$readable.path+'target.js?rand='+encodeURIComponent(Math.random()));})()"},
-    // ];
-
-    //var EXAMPLE_AUTO_SITE_TEXT = function () {/*
-    //    http://www.cnbeta.com/articles/*.htm
-    //    http://www.zhuzhudao.com/txt/*
-    //*/}.toString().replace("function () {/*", "").replace("*/}", "").trim();
-
     var AUTO_SITE_TEXT = "";
     var AUTO_START = true;
     var BUTTON_ID = "autoReaderButton";
+    var DEBUG = false;
 
     let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
     if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
 
     var ns = window.autoReader = {
         auto_sites_reg: [],
-        currentMatch_siteText: "",
 
         get prefs() {
             delete ns.prefs;
@@ -81,14 +58,14 @@ if (typeof window.autoReader != "undefined") {
 
             ns.loadSetting();
 
-            ns.handleAutoSiteText();
-
             // addEventListener
             gBrowser.mPanelContainer.addEventListener('DOMContentLoaded', this, true);
 
             window.addEventListener('unload', this, false);
         },
         uninit: function() {
+            ns.style.parentNode.removeChild(ns.style);
+
             gBrowser.mPanelContainer.removeEventListener('DOMContentLoaded', this, true);
 
             window.removeEventListener('unload', this, false);
@@ -125,7 +102,7 @@ if (typeof window.autoReader != "undefined") {
         makeIcon: function(_toolbarId) {
             var _toolbar = $(_toolbarId);
             if(!_toolbar){
-                throw("autoLaunchReader.uc.js 没有工具栏ID");
+                throw("autoLaunchReader.uc.js 工具栏ID 不存在");
             }
 
             ns.icon = _toolbar.appendChild($C("toolbarbutton", {
@@ -143,7 +120,7 @@ if (typeof window.autoReader != "undefined") {
 
             setTimeout(function(icon){
                 icon.removeAttribute("image");
-            }, 100, ns.icon);
+            }, 200, ns.icon);
 
             var xml = '\
                 <menupopup id="autoReader-menupopup" onpopupshowing="autoReader.onPopupShowing();">\
@@ -177,7 +154,6 @@ if (typeof window.autoReader != "undefined") {
                 try{
                     ns[name] = ns.prefs.getBoolPref(name);
                 }catch(e) {}
-
             }, ns);
 
             ["AUTO_SITE_TEXT"].forEach(function(name) {
@@ -201,19 +177,23 @@ if (typeof window.autoReader != "undefined") {
         autoLaunch: function(win) {
             var locationHref = win.location.href;
 
+            debug("检验地址: " + locationHref);
+
             var sites = this.auto_sites_reg;
-            this.currentMatch_siteText = "";
 
             for (var i = 0; i < sites.length; i++) {
                 if (new RegExp(sites[i]).test(locationHref)) {
-                    this.currentMatch_siteText = sites[i];
-                    this.launch(win);
-                    break;
+                    return this.launch(win);
                 }
             }
         },
         launch: function(win, timer) {
-            win = win || getFocusedWindow();
+            var isAutoLaunch = false;
+            if(win){
+                isAutoLaunch = true;
+            }else{
+                win = getFocusedWindow();
+            }
 
             win.setTimeout(function() {
 
@@ -222,13 +202,17 @@ if (typeof window.autoReader != "undefined") {
                 var other_launch = function(){
 
                     if (window.__readable_by_evernote) {
-                        // window.__readable_by_evernote.readable_by_evernote__button__call();
-                        __readable_by_evernote__launch(win.document);
-
+                        if(isAutoLaunch){
+                            __readable_by_evernote__launch(win.document);
+                            debug("后台加载 __readable_by_evernote__launch")
+                        }else{
+                            __readable_by_evernote.__readable_by_evernote__launch();
+                        }
                     } else if (wrappedJS.X_readability) {
                         wrappedJS.X_readability();
                     } else {
                         // gBrowser.loadURI(READER_TOOL_URL);
+                        run_readability_online(win.document);
                     }
                 };
 
@@ -246,36 +230,11 @@ if (typeof window.autoReader != "undefined") {
 
                 other_launch();
 
-                // for (var i = 0; i < reader_tools.length; i++) {
-                //     let cmd = reader_tools[i].wrapped_command;
-                //     if(cmd && wrappedJS[cmd]){
-                //         wrappedJS[cmd]();
-                //         return;
-                //     }
-
-                //     cmd = reader_tools[i].command;
-                //     if(cmd){
-                //         try{
-                //             cmd();
-                //         }catch(e){
-                //             continue;
-                //         }
-                //         return;
-                //     }
-
-                //     if(reader_tools[i].url){
-                //         window.loadURI(reader_tools[i].url);
-                //         return;
-                //     }
-                // }
-
             }, timer || 0);
         },
         iconClick: function(event){
-            // if(event.target.id != BUTTON_ID) return;
             if (!event || !event.button) {
                 autoReader.launch();
-                // ns.toggle();
             } else if (event.button == 1) {
                 middleButtonClicked();
             }
@@ -293,11 +252,7 @@ if (typeof window.autoReader != "undefined") {
             var tabWindow;
 
             if (tabWindow = window.gBrowser.selectedTab.linkedBrowser.contentWindow) {
-                var value = this.currentMatch_siteText;
-                if(!value){
-                    value = tabWindow.location.href;
-                }
-                return $('autoReader-autosite-textbox').value = value;
+                return $('autoReader-autosite-textbox').value = tabWindow.location.href;
             }
         },
         showSettingDialog: function(xulBase64) {
@@ -413,9 +368,29 @@ if (typeof window.autoReader != "undefined") {
         __readable_by_evernote.__add_custom_events_handler();
     }
 
-    function debug() {
-        Application.console.log(Array.slice(arguments));
-    };
+    function run_readability_online(document) {
+        readStyle = 'style-newspaper';
+        readSize = 'size-large';
+        readMargin = 'margin-wide';
+        _readability_script = document.createElement('SCRIPT');
+        _readability_script.type = 'text/javascript';
+        _readability_script.src = 'http://lab.arc90.com/experiments/readability/js/readability.js?x=' + (Math.random());
+        document.getElementsByTagName('head')[0].appendChild(_readability_script);
+        _readability_css = document.createElement('LINK');
+        _readability_css.rel = 'stylesheet';
+        _readability_css.href = 'http://lab.arc90.com/experiments/readability/css/readability.css';
+        _readability_css.type = 'text/css';
+        _readability_css.media = 'screen';
+        document.getElementsByTagName('head')[0].appendChild(_readability_css);
+        _readability_print_css = document.createElement('LINK');
+        _readability_print_css.rel = 'stylesheet';
+        _readability_print_css.href = 'http://lab.arc90.com/experiments/readability/css/readability-print.css';
+        _readability_print_css.media = 'print';
+        _readability_print_css.type = 'text/css';
+        document.getElementsByTagName('head')[0].appendChild(_readability_print_css);
+    }
+
+    function debug() { if(DEBUG) Application.console.log(Array.slice(arguments)); }
 
     function $(id) document.getElementById(id);
 

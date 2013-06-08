@@ -42,7 +42,7 @@ var isUrlbar = false;  // 放置的位置，true为地址栏，false为附加组
 
 // 以下 設定が無いときに利用する
 var useiframe = true;  // 启用 iframe 加载下一页的总开关。
-var IMMEDIATELY_PAGER_NUM = 1;  // 立即加载的页数
+var IMMEDIATELY_PAGER_NUM = 0;  // 立即加载的页数
 var loadImmediatelyTime = 500;  // 立即加载延迟的时间（ms）
 
 var FORCE_TARGET_WINDOW = true;
@@ -126,10 +126,8 @@ var MY_SITEINFO = [
 var MICROFORMAT = [
 	// {
 	// 	url        : '^https?://.',
-	// 	nextLink   : '//a[contains(text(), "下一页")] | //a[contains(text(), "下一章")] | //a[contains(text(), "下页")] | //a[contains(text(), "下章")]',
-	// 	pageElement: "id('htmlContent') | id('chapter_content') | id('chapterContent') | //*[@class='novel_content'] |\
- //            //*[@class='noveltext'] | id('booktext') | id('BookText') | id('oldtext') | id('a_content') | id('contents') |\
- //            id('content') | //*[@class='content']"
+	// 	nextLink   : 'auto;',
+	// 	pageElement: "//body/*"
 	// },
 	// {
 	// 	url        : '^https?://.',
@@ -158,7 +156,7 @@ let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
 
 if (typeof window.uAutoPagerize != 'undefined') {
-	window.uAutoPagerize.theEnd();
+	window.uAutoPagerize.destroy();
 }
 
 
@@ -234,7 +232,7 @@ var ns = window.uAutoPagerize = {
     get IMMEDIATELY_PAGER_NUM() IMMEDIATELY_PAGER_NUM,
     set IMMEDIATELY_PAGER_NUM(num){
         num = parseInt(num, 10);
-        if (!num) return num;
+        if (!num && (num != 0)) return num;
         let m = $("uAutoPagerize-IMMEDIATELY_PAGER_NUM");
         if (m) m.setAttribute("label", '立即加载' + (IMMEDIATELY_PAGER_NUM = num) + '页');
         return num;
@@ -609,9 +607,13 @@ var ns = window.uAutoPagerize = {
                 tooltiptext: "disable",
                 onclick: "if (event.button != 2) uAutoPagerize.iconClick(event);",
                 context: "uAutoPagerize-popup",
-                style: "list-style-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAAAQCAYAAACBSfjBAAAA2klEQVRYhe2WwYmGMBhE390+0kCOwZLswQK82YAg2Ict2IBdeJ3/FHcW9oewnoRv4N0yGB4TECLPs22bHIBlWeQAzPMsp/a7q5MDkM4kB6DsRc7PDaTfQEqnHIBSdjm1fXWXHIAznXIA9rLLub+esxyA4zjkfDsXAkNgCHy/wMjDtK5tHEc5td+6tn7t5dz9xrX1/Sqn9lvXtvarnNpvXdtfLzUEhsAQ+H6BkYdpXdswDHJqv3Vtecpy7n7j2nKe5NR+69qmPMmp/da1ff2NCYEhMAS+WmDk//kA2XH2W9CWRjQAAAAASUVORK5CYII=);"
+                image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAQElEQVR42mNgoAbg/sb9HxmDxNTuq/1HxiAx64PW/5HxcDKAYkCsbbaLbf8j4+FkAMWAWNuMe4z/I+PhZAAlAADWnzKwMlmELQAAAABJRU5ErkJggg=="
             }));
         }
+
+        setTimeout(function(icon){
+        	icon.removeAttribute("image");
+        }, 200, ns.icon);
 
         var xml = '\
             <menupopup id="uAutoPagerize-popup"\
@@ -817,7 +819,7 @@ function AutoPager(doc, info, nextLink) {
 AutoPager.prototype = {
 	req: null,
 	pageNum: 1,
-    immediatelyPageNum: IMMEDIATELY_PAGER_NUM,
+    immediatelyPageNum: 0,
 	_state: 'disable',
 	remove: [],
 	get state() this._state,
@@ -1083,13 +1085,15 @@ AutoPager.prototype = {
 		if (this.isXML) {
 			htmlDoc = new DOMParser().parseFromString(str, "application/xml");
 		} else {
-			// thx! http://pc12.2ch.net/test/read.cgi/software/1253771697/478
-			htmlDoc = this.doc.cloneNode(false);
-			htmlDoc.appendChild(htmlDoc.importNode(this.documentElement, false));
-			var range = this.doc.createRange();
-			//range.selectNodeContents(this.body);
-			htmlDoc.documentElement.appendChild(range.createContextualFragment(str));
-			range.detach();
+            htmlDoc = new DOMParser().parseFromString(str, "text/html");
+
+			// // thx! http://pc12.2ch.net/test/read.cgi/software/1253771697/478
+			// htmlDoc = this.doc.cloneNode(false);
+			// htmlDoc.appendChild(htmlDoc.importNode(this.documentElement, false));
+			// var range = this.doc.createRange();
+			// //range.selectNodeContents(this.body);
+			// htmlDoc.documentElement.appendChild(range.createContextualFragment(str));
+			// range.detach();
 		}
 		this.win.documentFilters.forEach(function(i) { i(htmlDoc, this.requestURL, this.info) }, this);
 

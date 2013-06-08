@@ -11,15 +11,9 @@
             return;
         }
 
-        // 有小说阅读脚本的逃过
-        if(content.wrappedJSObject.readx){
-            return;
-        }
-
         if (event.target.nodeName.match(/input|textarea|select/i)){
             return;
         }
-
 
         var node = event.target;
         while (node && node.nodeName != "BODY")
@@ -31,17 +25,22 @@
             isFrame = (win.top != win)
         ;
 
-        if(isFrame){
+        // 有小说阅读脚本的逃过
+        if(content.wrappedJSObject.readx && doc.body.getAttribute("name") == "MyNovelReader"){
             return;
         }
 
-        if(content.scrollMaxY <= content.scrollY){
-            nextPage.next(true);
+        if(isFrame){
+
+        }else{
+            if(content.scrollMaxY <= content.scrollY){
+                nextPage.next(true);
+            }
         }
 
     }, false);
 
-    function debug(){
-        content.console.log.apply(this, arguments);
+    function debug(arg){
+        content.console.log("[space_nextpage] " + arg);
     }
 })();

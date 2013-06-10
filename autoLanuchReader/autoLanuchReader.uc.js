@@ -140,6 +140,9 @@ if (typeof window.autoReader != "undefined") {
                     </hbox>\
                     <menuitem id="autoReader-menuitem-preferences" label="设置自动启用的站点"\
                             oncommand="autoReader.showSettingDialog();" />\
+                    <menuseparator/>\
+                    <menuitem label="Evernote Clearly" oncommand="__readable_by_evernote.readable_by_evernote__button__call(event);" />\
+                    <menuitem label="小说阅读脚本" oncommand="if(content.wrappedJSObject.readx) content.wrappedJSObject.readx();" />\
                 </menupopup>\
             ';
 

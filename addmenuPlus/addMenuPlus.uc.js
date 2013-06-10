@@ -710,16 +710,50 @@ window.addMenu = {
 			}
 			return addresses;
 		}
-		function img2base64(imgsrc){
-			if(typeof imgsrc == 'undefined') return "";
+		function img2base64(imgsrc) {
+			if (typeof imgsrc == 'undefined') return "";
 
-            var iconImage = new ImageConverter(imgsrc);
-            var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
-            while ( !iconImage.iscompleted ) {
-                thread.processNextEvent(true);
-            }
-            return iconImage.Database64;
+			const NSURI = "http://www.w3.org/1999/xhtml";
+			var img = new Image();
+			var that = this;
+			var canvas,
+				isCompleted = false;
+			img.onload = function() {
+				var width = this.naturalWidth,
+					height = this.naturalHeight;
+				canvas = document.createElementNS(NSURI, "canvas");
+				canvas.width = width;
+				canvas.height = height;
+				var ctx = canvas.getContext("2d");
+				ctx.drawImage(this, 0, 0);
+				isCompleted = true;
+			};
+			img.onerror = function() {
+				Components.utils.reportError("Count not load: " + imgsrc);
+				isCompleted = true;
+			};
+			img.src = imgsrc;
+
+			var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
+			while (!isCompleted) {
+				thread.processNextEvent(true);
+			}
+
+			var data = canvas ? canvas.toDataURL("image/png") : "";
+			canvas = null;
+			return data;
 		}
+		// 离线状态下，但会让 base64 变长
+		// function img2base64(imgsrc){
+		// 	if(typeof imgsrc == 'undefined') return "";
+
+  //           var iconImage = new ImageConverter(imgsrc);
+  //           var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
+  //           while ( !iconImage.iscompleted ) {
+  //               thread.processNextEvent(true);
+  //           }
+  //           return iconImage.Database64;
+		// }
 	},
 	getSelection: function(win) {
 		// from getBrowserSelection Fx19

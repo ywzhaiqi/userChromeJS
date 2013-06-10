@@ -53,9 +53,9 @@
 
 var moveButton = {
     buttons:[
-        { id: "autoReaderButton", bar: "PersonalToolbar", pos: 1 },
-        { id: "translatorButton",  insertAfter: "jsoff-statusbar" },
-        { id: "ScrapBookStatusPanel", insertBefore: "scriptish-button" },
+        // { id: "autoReaderButton", bar: "PersonalToolbar", pos: 1 },
+        // { id: "translatorButton",  insertAfter: "jsoff-statusbar" },
+        // { id: "ScrapBookStatusPanel", insertBefore: "scriptish-button" },
     ],
 
     interval: 200, // 0.2秒间隔

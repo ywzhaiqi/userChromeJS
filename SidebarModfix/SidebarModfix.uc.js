@@ -500,24 +500,23 @@ if (!window.SidebarMod) {
         },
         addEventListener: function(){
             var sidebarTitle = document.getElementById('sidebar-title');
-            if(sidebarTitle){
-                sidebarTitle.addEventListener("click", function(e){
-                    if(e.button == 1){
-                        openSidebarURL();
-                    }
-                }, false);
-            }
+            sidebarTitle.addEventListener("click", function(e){
+                if(e.button == 1){
+                    openSidebarURL();
+                }
+            }, false);
 
             function openSidebarURL(){
                 var sidebar = document.getElementById('sidebar');
-                if (sidebar.contentDocument){
-                    var webPanel = sidebar.contentDocument.getElementById("web-panels-browser");
-                    if(webPanel && webPanel.contentDocument){
-                        var url = webPanel.contentDocument.URL;
-                        if(!url) return;
-                        gBrowser.selectedTab = gBrowser.addTab(url);
-                    }
+                var webPanel = sidebar.contentDocument.getElementById("web-panels-browser");
+                var url;
+                if(webPanel){
+                    url = webPanel.contentDocument.URL;
+                }else{
+                    url = sidebar.getAttribute("src");
                 }
+                if(!url) return;
+                gBrowser.selectedTab = gBrowser.addTab(url);
             }
         },
 		init: function () {
@@ -550,7 +549,7 @@ if (!window.SidebarMod) {
 					height: 0;\
 					border-top: 4px solid transparent;\
 					border-bottom: 4px solid transparent;\
-					border-left: 4px solid #4B5660;\
+					border-left: 2px solid #4B5660;\
 				}\
 				\
 				#sidebar-box-arrow:not(.right) {\
@@ -558,7 +557,7 @@ if (!window.SidebarMod) {
 					height: 0;\
 					border-top: 4px solid transparent;\
 					border-bottom: 4px solid transparent;\
-					border-right: 4px solid #4B5660;\
+					border-right: 2px solid #4B5660;\
 				}\
 			}\
 			');

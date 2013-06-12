@@ -141,8 +141,9 @@ if (typeof window.autoReader != "undefined") {
                     <menuitem id="autoReader-menuitem-preferences" label="设置自动启用的站点"\
                             oncommand="autoReader.showSettingDialog();" />\
                     <menuseparator/>\
-                    <menuitem label="Evernote Clearly" oncommand="__readable_by_evernote.readable_by_evernote__button__call(event);" />\
-                    <menuitem label="小说阅读脚本" oncommand="if(content.wrappedJSObject.readx) content.wrappedJSObject.readx();" />\
+                    <menuitem label="Evernote Clearly" oncommand="autoReader.launch_clearly();" />\
+                    <menuitem label="Readability 中文版" oncommand="autoReader.launch_readability_cn();" />\
+                    <menuitem label="小说阅读脚本" oncommand="autoReader.launch_myNovelReader();" />\
                 </menupopup>\
             ';
 
@@ -215,7 +216,6 @@ if (typeof window.autoReader != "undefined") {
                         wrappedJS.X_readability();
                     } else {
                         // gBrowser.loadURI(READER_TOOL_URL);
-                        run_readability_online(win.document);
                     }
                 };
 
@@ -235,6 +235,22 @@ if (typeof window.autoReader != "undefined") {
 
             }, timer || 0);
         },
+        launch_clearly: function(){
+            __readable_by_evernote.readable_by_evernote__button__call();
+        },
+        launch_readability_cn: function(){
+            if(content.wrappedJSObject.X_readability){
+                content.wrappedJSObject.X_readability();
+            }
+        },
+        launch_myNovelReader: function(){
+            if(content.wrappedJSObject.readx){
+                content.wrappedJSObject.readx();
+            }
+        },
+        // launch_readability_online: function(){
+        //     run_readability_online(content.document);
+        // },
         iconClick: function(event){
             if (!event || !event.button) {
                 autoReader.launch();
@@ -369,28 +385,6 @@ if (typeof window.autoReader != "undefined") {
         //  =============
 
         __readable_by_evernote.__add_custom_events_handler();
-    }
-
-    function run_readability_online(document) {
-        readStyle = 'style-newspaper';
-        readSize = 'size-large';
-        readMargin = 'margin-wide';
-        _readability_script = document.createElement('SCRIPT');
-        _readability_script.type = 'text/javascript';
-        _readability_script.src = 'http://lab.arc90.com/experiments/readability/js/readability.js?x=' + (Math.random());
-        document.getElementsByTagName('head')[0].appendChild(_readability_script);
-        _readability_css = document.createElement('LINK');
-        _readability_css.rel = 'stylesheet';
-        _readability_css.href = 'http://lab.arc90.com/experiments/readability/css/readability.css';
-        _readability_css.type = 'text/css';
-        _readability_css.media = 'screen';
-        document.getElementsByTagName('head')[0].appendChild(_readability_css);
-        _readability_print_css = document.createElement('LINK');
-        _readability_print_css.rel = 'stylesheet';
-        _readability_print_css.href = 'http://lab.arc90.com/experiments/readability/css/readability-print.css';
-        _readability_print_css.media = 'print';
-        _readability_print_css.type = 'text/css';
-        document.getElementsByTagName('head')[0].appendChild(_readability_print_css);
     }
 
     function debug() { if(DEBUG) Application.console.log(Array.slice(arguments)); }

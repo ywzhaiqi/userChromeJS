@@ -1085,15 +1085,13 @@ AutoPager.prototype = {
 		if (this.isXML) {
 			htmlDoc = new DOMParser().parseFromString(str, "application/xml");
 		} else {
-            htmlDoc = new DOMParser().parseFromString(str, "text/html");
-
-			// // thx! http://pc12.2ch.net/test/read.cgi/software/1253771697/478
-			// htmlDoc = this.doc.cloneNode(false);
-			// htmlDoc.appendChild(htmlDoc.importNode(this.documentElement, false));
-			// var range = this.doc.createRange();
-			// //range.selectNodeContents(this.body);
-			// htmlDoc.documentElement.appendChild(range.createContextualFragment(str));
-			// range.detach();
+			// thx! http://pc12.2ch.net/test/read.cgi/software/1253771697/478
+			htmlDoc = this.doc.cloneNode(false);
+			htmlDoc.appendChild(htmlDoc.importNode(this.documentElement, false));
+			var range = this.doc.createRange();
+			//range.selectNodeContents(this.body);
+			htmlDoc.documentElement.appendChild(range.createContextualFragment(str));
+			range.detach();
 		}
 		this.win.documentFilters.forEach(function(i) { i(htmlDoc, this.requestURL, this.info) }, this);
 

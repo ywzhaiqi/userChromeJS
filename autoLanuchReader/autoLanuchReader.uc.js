@@ -174,7 +174,13 @@ if (typeof window.autoReader != "undefined") {
             auto_sites.forEach(function(line) {
                 line = line.trim();
                 if (line) {
-                    ns.auto_sites_reg.push(wildcardToRegExpStr(line));
+                    var reg;
+                    if(line.search(/^re;/i) == 0){
+                        reg = new RegExp(line.slice(3), "i");
+                    }else{
+                        reg = wildcardToRegExpStr(line);
+                    }
+                    ns.auto_sites_reg.push(reg);
                 }
             });
         },

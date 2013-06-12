@@ -29,6 +29,8 @@ userChromeJS for Firefox
  - [MyNovelReader](MyNovelReader)，小说阅读uc版（原创），已弃用，请用 [小说阅读GM版](https://userscripts.org/scripts/show/165951)（原创）和[autoLanuchReader](autoLanuchReader)。
  - [rebuild_userChrome](rebuild_userChrome)，脚本管理器（菜单修改版）。
  - [SidebarModfix](SidebarModfix)，侧边栏增强（修改版）。
+ - [simpleAppButton](simpleAppButton)，简易启动应用程序按钮，左中右3键分别启动3个程序。
+ - [Space_nextpage](Space_nextpage)，空格键页面底部翻页（调用nextPage.uc.xul），默认设置小说阅读脚本启用后禁用。
  - [stylishEdit](stylishEdit)，为 Stylish 增加外部编辑器等（修复版）。
  - [uAutoPagerize](uAutoPagerize)，中文规则增强版。
  - [uc\_google\_translator](uc_google_translator)，google 翻译脚本（修改版）。
@@ -44,6 +46,7 @@ userChromeJS for Firefox
  - [newDownload.uc.js](newDownload.uc.js)，增加下载按钮右键新建下载，此为单一功能，上面有整合版（修改版）。
  - [nextpage.uc.xul](nextpage.uc.xul)，下一页。
  - [OpenLinkinNewTabwithRightClick.uc.js](OpenLinkinNewTabwithRightClick.uc.js)，右键在新标签页打开链接，修改自`openlinkinnewtabwithleftdoubleclick.uc.js`。
+ - [openLinkTabThirdPart.uc.js](openLinkTabThirdPart.uc.js)，域名第三方新标签页打开，否则当前标签页打开。
  - [SnapLinksMod.uc.xul](SnapLinksMod.uc.xul)，自用版，无右键菜单（修改版）。
  - [speedupErrorConsole.uc.js](speedupErrorConsole.uc.js)，加速错误控制台。
  - [statusbarButtonScrapbook.uc.js](statusbarButtonScrapbook.uc.js)，更改 Scrapbook 状态栏图标为鼠标中键打开侧边栏。

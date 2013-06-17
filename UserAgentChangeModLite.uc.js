@@ -46,7 +46,7 @@ var ucjs_UAChanger = {
 			url : "https?://(?:mybank1?|b2c1)\\.icbc\\.com\\.cn/",
 			Name : "Firefox10.0"
 		},{
-			url : "http://vod\\.kankan\\.com/v/",
+			url : "http://vod\\.kankan\\.com/",
 			Name : "Safari - Mac"
 		}, //直接可以看kankan视频，无需高清组件
 

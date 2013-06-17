@@ -233,7 +233,7 @@ window.gWHT = {
                 
                 setTimeout(function(self, doc, win){
                 	self.fixAutoPage(doc, win);
-                }, 2000, this, doc, win)
+                }, 1000, this, doc, win)
 
 				break;
 			case "pageshow":
@@ -308,7 +308,7 @@ window.gWHT = {
         }, delay, this);
     },
     fixAutoPage: function(doc, win){
-    	if(!doc) return;
+    	if(!checkDoc(doc)) return;
     	var _bodyHeight = doc.body.clientHeight;
         // 创建观察者对象
         var observer = new win.MutationObserver(function(mutations){

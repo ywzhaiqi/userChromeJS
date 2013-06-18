@@ -52,7 +52,7 @@ userChromeJS for Firefox
  - [statusbarButtonScrapbook.uc.js](statusbarButtonScrapbook.uc.js)，更改 Scrapbook 状态栏图标为鼠标中键打开侧边栏。
  - [textLink.uc.js](textLink.uc.js)，双击打开文字链接。
  - [UserAgentChangeModLite.uc.js](UserAgentChangeModLite.uc.js)，UA切换（修改版）。
- - [viewMenuInScriptishPopup.uc.js](viewMenuInScriptishPopup.uc.js)，为 Scriptish 扩展增加 "为本站搜索脚本" 功能。
+ - [findScriptForScriptish.uc.js](findScriptForScriptish.uc.js)，为 Scriptish 扩展增加 "为本站搜索脚本" 功能。
 
 
 ## 单文件说明

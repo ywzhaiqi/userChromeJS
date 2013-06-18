@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name           findScriptForScriptish.uc.js
+// @name           findScriptForGreasemonkeyOrScriptish.uc.js
 // @namespace      ywzhaiqi@gmail.com
-// @description    给 Scriptish 添加 "为本站搜索脚本" 功能。
+// @description    给 Greasemonkey、Scriptish 添加 "为本站搜索脚本" 功能。
 // @include        main
 // @charset        utf-8
 // @compatibility  Firefox 4.0+
@@ -31,6 +31,12 @@ var findScriptForScriptish = {
 	            document.createElement("menuseparator"),
 	            scriptishShow.nextSibling
 	        );	
+		}
+
+		// Greasemonkey
+		var GM_popup = document.querySelector("#greasemonkey-tbb menupopup");
+		if(GM_popup){
+			GM_popup.insertBefore(menuitem, GM_popup.children[3]);
 		}
 	},
 	getFocusedWindow: function () {

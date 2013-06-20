@@ -1,4 +1,4 @@
-autoLanuchReader.uc.js
+autoLaunchReader.uc.js
 ======================
 
 通过点击按钮调用阅读扩展或脚本进行阅读，也可通过添加地址自动调用。个人 小说阅读脚本和 Evernote Clearly 配合使用。

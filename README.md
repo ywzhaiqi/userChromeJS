@@ -23,7 +23,7 @@ userChromeJS for Firefox
 ## 说明
 
  - [addmenuPlus](addmenuPlus)，增加修改 Firefox 菜单（修改版）。
- - [autoLanuchReader](autoLanuchReader)，自动启用阅读器（原创）。
+ - [autoLaunchReader](autoLaunchReader)，自动启用阅读器（原创）。
  - [ExternalEditor](ExternalEditor)，输入框右键添加 `用外部编辑器打开` 功能（修改版）。
  - [moveButton](moveButton)，移动或克隆按钮/菜单到任意位置（原创）。
  - [MyNovelReader](MyNovelReader)，小说阅读uc版（原创），已弃用，请用 [小说阅读GM版](https://userscripts.org/scripts/show/165951)（原创）和[autoLanuchReader](autoLanuchReader)。

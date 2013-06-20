@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name           autoLanuchReader.uc.js
+// @name           autoLaunchReader.uc.js
 // @description    自动启用 小说阅读脚本 或 Evernote clearly 或 Readability
 // @author         ywzhaiqi
 // @namespace      ywzhaiqi@gmail.com
@@ -120,7 +120,7 @@ if (typeof window.autoReader != "undefined") {
 
             setTimeout(function(icon){
                 icon.removeAttribute("image");
-            }, 200, ns.icon);
+            }, 500, ns.icon);
 
             var xml = '\
                 <menupopup id="autoReader-menupopup" onpopupshowing="autoReader.onPopupShowing();">\
@@ -433,3 +433,21 @@ if (typeof window.autoReader != "undefined") {
 }\
 ');
 
+
+(function(){
+
+function updateToolbar() {
+    var toolbars = document.querySelectorAll("toolbar");
+    Array.slice(toolbars).forEach(function(toolbar) {
+        var currentset = toolbar.getAttribute("currentset");
+        if (currentset.split(",").indexOf("autoReaderButton") < 0) return;
+        toolbar.currentSet = currentset;
+        try {
+            BrowserToolboxCustomizeDone(true);
+        } catch (ex) {}
+    });
+}
+
+updateToolbar();
+
+})();

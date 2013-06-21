@@ -42,11 +42,16 @@ var ns = window.thunderLixian = {
 	handleEvent: function(event){
 		switch(event.type){
 			case 'DOMContentLoaded':
-				var win = event.target.defaultView;
+				var doc = event.target;
+				var win = doc.defaultView;
 				if(win.location.hostname == "dynamic.cloud.vip.xunlei.com"){
 					var timer = 0;
-					var checkButton = setInterval(function(win){
-						if(win.document.getElementById("TLE_batch_getbtn")){
+					var checkButton = setInterval(function(win, doc){
+						if(!checkDoc(doc)){
+							return clearInterval(checkButton);
+						}
+
+						if(doc.getElementById("TLE_batch_getbtn")){
 							clearInterval(checkButton);
 							ns.addListener(win);
 						}
@@ -54,7 +59,7 @@ var ns = window.thunderLixian = {
 						if(timer > 50){
 							clearInterval(checkButton);
 						}
-					}, 200, win);
+					}, 200, win, doc);
 				}
 				break;
 		}
@@ -111,6 +116,14 @@ function saveFile(data) {
 	foStream.close();
 
 	alerts("IDM导出文件路径", file.path);
+}
+
+function checkDoc(doc) {
+	if (!(doc instanceof HTMLDocument)) return false;
+	if (!window.mimeTypeIsTextBased(doc.contentType)) return false;
+	if (!doc.body || !doc.body.hasChildNodes()) return false;
+	if (doc.body instanceof HTMLFrameSetElement) return false;
+	return true;
 }
 
 function alerts(title, info){

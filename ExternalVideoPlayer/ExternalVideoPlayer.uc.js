@@ -1,11 +1,13 @@
 // ==UserScript==
 // @name           ExternalVideoPlayer.uc.js
-// @description    youku、qiyi 等调用外部播放器
+// @description    调用外部播放器播放网络视频。
 // @author         ywzhaiqi
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
-// @version        0.0.2
+// @version        0.0.3
+// @note           youku、悦台、网易视频、优米等调用外部播放器播放。土豆、奇艺等不支持外部播放的新页面打开 flvcd 网址。
+// @note           2013/06/22 ver0.003 
 // @note           2013/06/21 ver0.002 修正几个错误
 // @note           2013/06/17 ver0.001 init
 // ==/UserScript==
@@ -33,6 +35,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 		FILE_NAME: "externalVideoPlayer.asx",
 		_menuItemId: "external-video-player",
 		_menuItem: null,
+		_notSupportd: false,
 
 		init: function(){
 			this.addMenuItem();
@@ -74,11 +77,20 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 			}
 		},
 		isValidLocation: function(){
-			// tudou 没法用外置播放器看
-			// qiyi 由于网络限制，只能用硕鼠下载
-			if(content.location.hostname.match(/youku|qiyi|umiwi|v\.163\.com|yinyuetai|funshion/)){
+
+			var hostname = content.location.hostname;
+			ns._notSupportd = false;
+			if(hostname.match(/youku|yinyuetai|ku6|umiwi|sina|163|56|joy|v\.qq|letv|baidu|wasu|pps|kankan\.xunlei|tangdou/)){
 				return true;
 			}
+
+			// tudou 没法用外置播放器看，其它由于网络限制，只能用硕鼠下载
+			if(hostname.match(/tudou|qiyi|v\.sohu\.com|v\.pptv/)){
+				ns._notSupportd = true;
+				return true;
+			}
+
+			// funshion 不支持？
 
 			return false;
 		},
@@ -88,6 +100,11 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
 			var flvcdUrl = 'http://www.flvcd.com/parse.php?kw=' + encodeURIComponent(url) + 
 				'&flag=&format=' + format;
+
+			if(ns._notSupportd){
+				gBrowser.addTab(flvcdUrl);
+				return;
+			}
 
 			request(flvcdUrl, this.requestLoaded);
 		},
@@ -115,7 +132,11 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 				'</entry>\n\n';
 
 			urls.forEach(function(url, i){
-				var data = { title: title + "-" + (i + 1), url: url };
+				var titleNum = (urls.length > 1) ? "-" + (i + 1) : "";
+				var data = { 
+					title: title + titleNum, 
+					url: url 
+				};
 				asxText += ns.nano(item_tpl, data);
 			});
 			asxText += "</asx>";
@@ -131,7 +152,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
 			var converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].
 			                createInstance(Ci.nsIScriptableUnicodeConverter);
-			converter.charset = "UTF-8";
+			converter.charset = "gbk";
 			var istream = converter.convertToInputStream(data);
 
 			// The last argument (the callback) is optional.

@@ -5,9 +5,9 @@
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
-// @version        0.0.3
+// @version        0.0.4
 // @note           youku、悦台、网易视频、优米等调用外部播放器播放。土豆、奇艺等不支持外部播放的新页面打开 flvcd 网址。
-// @note           2013/06/22 ver0.003 
+// @note           2013/06/22 ver0.003 增加了大量的站点，增加了二级菜单清晰度的选择。
 // @note           2013/06/21 ver0.002 修正几个错误
 // @note           2013/06/17 ver0.001 init
 // ==/UserScript==
@@ -20,10 +20,16 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 (function(){
 
 	// 播放器路径
-	var PLAYER_PATH = "D:\\Program Files\\Potplayer15b_37776_with_Real\\PotPlayerMini.exe";
+	var PLAYER_PATH = "D:\\Program Files\\Potplayer\\PotPlayerMini.exe";
 	// 默认清晰度
 	var default_format = "normal";  // high  super
+	// 下载设置
+	var IDM_PATH = "";
 
+
+	// youku 视频地址一段时间后失效，所以 cache 有问题。
+	var useCache = false;
+	var DEBUG = false;
 
 	let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 	Components.utils.import("resource://gre/modules/FileUtils.jsm");
@@ -32,17 +38,20 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 	var ns = window.externalVideoPlayer = {
 		PLAYER_PATH: PLAYER_PATH,
 		default_format: default_format,
-		FILE_NAME: "externalVideoPlayer.asx",
-		_menuItemId: "external-video-player",
-		_menuItem: null,
-		_notSupportd: false,
+		FILE_NAME: "externalVideoPlayer",
+		_menu: null,
+		_notSupported: false,
+		_noPlayer: false,
+		_video_path_cache: {},
 
 		init: function(){
+
 			this.addMenuItem();
+
 		},
 		uninit: function(){
-			if(this._menuItem){
-				this._menuItem.parentNode.removeChild(this._menuItem);
+			if(this._menu){
+				this._menu.parentNode.removeChild(this._menu);
 			}
 			$("contentAreaContextMenu").removeEventListener("popupshowing", this, false);
 		},
@@ -50,43 +59,96 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 			switch(event.type){
 				case "popupshowing":
 					if (event.target != event.currentTarget) return;
-					this._menuItem.hidden = !this.isValidLocation();
+					this._menu.hidden = !this.isValidLocation();
 					if(gContextMenu.onLink){
-						this._menuItem.setAttribute("label", "用外部播放器播放当前链接");
+						this._menu.setAttribute("label", "用外部播放器播放当前链接");
 					}else{
-						this._menuItem.setAttribute("label", "用外部播放器播放当前页面");
+						this._menu.setAttribute("label", "用外部播放器播放当前页面");
 					}
 					break;
 			}
 		},
 		addMenuItem: function(){
-			var menuItem = document.createElement("menuitem");
-			menuItem.setAttribute("id", this._menuItemId);
-			menuItem.setAttribute("oncommand", "externalVideoPlayer.onCommand(event)");
+			var menu, menupopup, menuitem;
+			
+			menu = $C("menu", {
+				id: "external-video-player",
+				tooltiptext: "直接点击播放",
+				label: "用外部播放器播放当前页面"		
+			});
+			menu.addEventListener("click", function(event){
+				if(event.target == menu){
+					event.stopPropagation();
+					externalVideoPlayer.run();
+				}
+			}, false);
+
+			menupopup = $C("menupopup", {});
+
+			menuitem = $C("menuitem", {
+				label: "播放（普通）",
+				oncommand: "event.stopPropagation();externalVideoPlayer.run('normal')",
+			});
+			menupopup.appendChild(menuitem);
+
+			menuitem = $C("menuitem", {
+				label: "播放（高清）",
+				oncommand: "event.stopPropagation();externalVideoPlayer.run('high')",
+			});
+			menupopup.appendChild(menuitem);
+
+			menuitem = $C("menuitem", {
+				label: "播放（超清）",
+				oncommand: "event.stopPropagation();externalVideoPlayer.run('super')",
+			});
+			menupopup.appendChild(menuitem);
+
+			menupopup.appendChild($C("menuseparator", {}));
+
+			menuitem = $C("menuitem", {
+				label: "打开 Flvcd 的解析链接",
+				oncommand: "event.stopPropagation();externalVideoPlayer.run(null, 'open')",
+			});
+			menupopup.appendChild(menuitem);
+
+			// menuitem = $C("menuitem", {
+			// 	label: "下载（内置）",
+			// 	oncommand: "event.stopPropagation();externalVideoPlayer.run(null, 'download_normal')",
+			// });
+			// menupopup.appendChild(menuitem);
+
+			// menuitem = $C("menuitem", {
+			// 	label: "下载（IDM）",
+			// 	oncommand: "event.stopPropagation();externalVideoPlayer.run(null, 'download_IDM')",
+			// });
+			// menupopup.appendChild(menuitem);
+
+			// menuitem = $C("menuitem", {
+			// 	label: "下载（Aria2）",
+			// 	oncommand: "event.stopPropagation();externalVideoPlayer.run(null, 'download_aria2')",
+			// });
+			// menupopup.appendChild(menuitem);
+
+			menu.appendChild(menupopup);
+			this._menu = menu;
 
 			var contextMenu = $("contentAreaContextMenu");
-			this._menuItem = contextMenu.insertBefore(menuItem, contextMenu.firstChild);
-
+			contextMenu.insertBefore(menu, contextMenu.firstChild);
 			contextMenu.addEventListener("popupshowing", this, false);
-		},
-		onCommand: function(event){
-			if(gContextMenu.onLink){
-				this.run(gContextMenu.linkURL);
-			}else{
-				this.run();
-			}
+
 		},
 		isValidLocation: function(){
 
+			ns._notSupported = false;
+
 			var hostname = content.location.hostname;
-			ns._notSupportd = false;
 			if(hostname.match(/youku|yinyuetai|ku6|umiwi|sina|163|56|joy|v\.qq|letv|baidu|wasu|pps|kankan\.xunlei|tangdou/)){
 				return true;
 			}
 
 			// tudou 没法用外置播放器看，其它由于网络限制，只能用硕鼠下载
 			if(hostname.match(/tudou|qiyi|v\.sohu\.com|v\.pptv/)){
-				ns._notSupportd = true;
+				ns._notSupported = true;
 				return true;
 			}
 
@@ -94,91 +156,165 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
 			return false;
 		},
-		run: function(url, format){
-			url = url || content.location.href;
-			format = format || ns.default_format;
+		run: function(format, type){
+			var url;
+			if(gContextMenu.onLink){
+				url = gContextMenu.linkURL;
+			}else{
+				url = content.location.href;
+			}
 
-			var flvcdUrl = 'http://www.flvcd.com/parse.php?kw=' + encodeURIComponent(url) + 
-				'&flag=&format=' + format;
+			var flvcdUrl = 'http://www.flvcd.com/parse.php?kw=' + encodeURIComponent(url);
+			if(format){
+				flvcdUrl += '&format=' + format;
+			}
 
-			if(ns._notSupportd){
+			if(ns._notSupported || type == 'open'){
+				return ns.openFlvcd(flvcdUrl);
+			}
+
+			if(useCache && flvcdUrl in ns._video_path_cache){
+				var videoPath = ns._video_path_cache[flvcdUrl];
+				var videoFile = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
+				videoFile.initWithPath(videoPath);
+				ns.launch(videoFile);
+			}else{
+				request(flvcdUrl, ns.requestLoaded, type);
+				ns._requestUrl = flvcdUrl;
+			}
+		},
+		openFlvcd: function(flvcdUrl){
+			flvcdUrl = flvcdUrl || ns._requestUrl;
+			if(flvcdUrl){
 				gBrowser.addTab(flvcdUrl);
+			}
+		},
+		requestLoaded: function(doc, type){
+			var elem = doc.querySelectorAll(".mn.STYLE4")[2];
+			if(!elem){
+				ns.openFlvcd();
 				return;
 			}
 
-			request(flvcdUrl, this.requestLoaded);
-		},
-		requestLoaded: function(doc){
-			var elem = doc.querySelectorAll(".mn.STYLE4")[2];
-			if(!elem) return;
-
 			var title = doc.querySelector('input[name="name"]').getAttribute("value");
-
 			var links = elem.querySelectorAll("a");
-			var videoUrls = [];
-			for (var i = 0; i < links.length; i++) {
-				videoUrls.push(links[i].href);
+
+			var list = [];
+			var length = links.length;
+			if(length == 0){
+				return ns.openFlvcd();
+			}else if(length == 1){
+				list.push({
+					title: title,
+					url: links[0].href
+				});
+			}else{
+				for (var i = 0; i < links.length; i++) {
+					list.push({
+						title: title + "-" + (i + 1),
+						url: links[i].href
+					});
+				}
 			}
 
-			ns.createVideoList(videoUrls, title);
+			switch(type){
+				case "download_normal":
+					ns.download_normal(list);
+					break;
+				case "download_IDM":
+					ns.download_IDM(list);
+					break;
+				case "download_aria2":
+					ns.download_aria2(list);
+					break;
+				default:
+					// 没法播放？
+					if(ns.PLAYER_PATH.match(/mplayer\.exe/)){
+						ns.saveAndRun_txt(list);
+						debug("mplayer: saveAndRun_txt");
+					}else{
+						ns.saveAndRun_asx(list);
+					}
+			}
 		},
-		createVideoList: function(urls, title){
-			title = title || "";
-
-			var asxText = '<asx version = "3.0" >\n\n';
+		saveAndRun_txt: function(list){
+			var text = "";
+			list.forEach(function(file, i){
+				text += file.url + "\n";
+			});
+			var file = ns.saveList(ns.FILE_NAME + ".txt", text);
+			ns.initPlayer();
+			ns.launch(file);
+		},
+		saveAndRun_asx: function(list){
+			var text = '<asx version = "3.0" >\n\n';
 			var item_tpl = '<entry>\n' +
 				'	<title>{title}</title>\n' + 
 				'	<ref href = "{url}" />\n' +
 				'</entry>\n\n';
 
-			urls.forEach(function(url, i){
-				var titleNum = (urls.length > 1) ? "-" + (i + 1) : "";
-				var data = { 
-					title: title + titleNum, 
-					url: url 
-				};
-				asxText += ns.nano(item_tpl, data);
+			list.forEach(function(file){
+				text += ns.nano(item_tpl, {
+					title: file.title, 
+					url: file.url
+				});
 			});
-			asxText += "</asx>";
 
-			ns.saveAndRun(asxText);
-		
+			text += "</asx>";
+
+			var file = ns.saveList(ns.FILE_NAME + ".asx", text);
+			ns.initPlayer();
+			ns.launch(file);
 		},
-		saveAndRun: function(data){
-			var tmpfile = FileUtils.getFile("TmpD", [ns.FILE_NAME]);
+		saveList: function(name, data){
+			var tmpfile = FileUtils.getFile("TmpD", [name]);
 			tmpfile.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
 			
-			var ostream = FileUtils.openSafeFileOutputStream(tmpfile)
+			var suConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
+			suConverter.charset = 'gbk';
+			data = suConverter.ConvertFromUnicode(data);
 
-			var converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].
-			                createInstance(Ci.nsIScriptableUnicodeConverter);
-			converter.charset = "gbk";
-			var istream = converter.convertToInputStream(data);
+			var foStream = Cc['@mozilla.org/network/file-output-stream;1'].createInstance(Ci.nsIFileOutputStream);
+			foStream.init(tmpfile, 0x02 | 0x08 | 0x20, 0664, 0);
+			foStream.write(data, data.length);
+			foStream.close();
 
-			// The last argument (the callback) is optional.
-			NetUtil.asyncCopy(istream, ostream, function(status) {
-			  	if (!Components.isSuccessCode(status)) {
-			    	// Handle error!
-			    	return;
-			  	}
+			return tmpfile;
+		},
+		initPlayer: function(){
+			if(ns.PLAYER_PATH){
+				var _playerFile = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
+				_playerFile.initWithPath(ns.PLAYER_PATH);
+				if(_playerFile.exists() && _playerFile.isExecutable()){
+					ns._playerProcess = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
+					ns._playerProcess.init(_playerFile);
+					return;
+				}
+			}
 
-			  	// Data has been written to the file.
-			  	var playerFile = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
-			  	var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
-
-			  	try{
-			  		playerFile.initWithPath(ns.PLAYER_PATH);
-
-			  		if(playerFile.exists() && playerFile.isExecutable()){
-			  			process.init(playerFile);
-			  			process.run(false, [tmpfile.path], 1);
-			  		}else{
-			  			tmpfile.launch();
-			  		}
-			  	}catch(e) {
-			  		tmpfile.launch();
-			  	}
+			ns._noPlayer = true;
+		},
+		// 系统自带下载，文件名没法改？
+		download_normal: function(filelist){
+			filelist.forEach(function(file, i){
+				window.saveURL(file.url, file.title, null, null, true, null, document);
 			});
+		},
+		download_IDM: function(filelist){
+
+		},
+		download_aria2: function(filelist){
+
+		},
+		launch: function(file){
+			if(ns._noPlayer){
+				file.launch();
+			}else{
+				ns._playerProcess.run(false, [file.path], 1);
+			}
+
+			ns._video_path_cache[ns._requestUrl] = file.path;
+			ns._requestUrl = null;
 		},
 		_regex: /\{([\w\.]*)\}/g,
 		nano: function(template, data) {
@@ -193,12 +329,17 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 		},
 	};
 
-	ns.init();
 
-	function debug(arg) { content.console.log(arg); }
+	function debug(arg) { if(DEBUG) content.console.log(arg); }
 	function $(id) document.getElementById(id);
 
-	function request(url, callback){
+	function $C(name, attr) {
+		var el = document.createElement(name);
+		if (attr) Object.keys(attr).forEach(function(n) el.setAttribute(n, attr[n]));
+		return el;
+	}
+
+	function request(url, callback, arg){
 		debug("Request: " + url);
 		var xhr = new XMLHttpRequest();
 		xhr.onreadystatechange = function(){
@@ -206,7 +347,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 			var text = this.responseText;
 			var doc = new DOMParser().parseFromString(text, "text/html");
 			debug("Get doc");
-			callback(doc);
+			callback(doc, arg);
 		};
 		xhr.overrideMimeType("text/html;charset=gbk");
 		xhr.open("GET", url, true);
@@ -214,3 +355,6 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 	}
 
 })();
+
+
+window.externalVideoPlayer.init();

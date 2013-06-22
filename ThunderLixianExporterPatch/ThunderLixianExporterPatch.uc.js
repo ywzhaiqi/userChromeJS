@@ -95,15 +95,18 @@ var ns = window.thunderLixian = {
 
 var file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
 
-try{
-	var download_dir = Services.prefs.getCharPref("browser.download.dir");
-	var idm_export_path = download_dir + "\\" + idm_export_name;
-	file.initWithPath(idm_export_path);
-}catch(ex){
-	file = FileUtils.getFile("DfltDwnld", [idm_export_name]);
+function initFile(){
+	try{
+		var download_dir = Services.prefs.getComplexValue("browser.download.dir", Ci.nsISupportsString).data;
+		var idm_export_path = download_dir + "\\" + idm_export_name;
+		file.initWithPath(idm_export_path);
+	}catch(ex){
+		file = FileUtils.getFile("DfltDwnld", [idm_export_name]);
+	}
 }
 
 function saveFile(data) {
+	initFile();
 	file.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
 
 	var suConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);

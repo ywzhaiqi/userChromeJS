@@ -35,3 +35,4 @@ ExternalVideoPlayer.uc.js
 
  - 脚本内 `PLAYER_PATH` 为播放器路径。如果为空或调用失败，则会打开 .asx 文件。
  - 脚本内 `default_format` 为默认清晰度选择。
+ - 选择高清或超清在线播放可能会卡，从而造成体验糟糕。

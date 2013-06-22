@@ -10,5 +10,5 @@ ThunderLixianExporterPatch.uc.js
 
 ### 说明
 
- - 导出路径为 config 中的 browser.download.dir
+ - 导出路径为 firefox 下载保存的文件夹（即 config 中的 browser.download.dir）
  - 导出名字为 idm.ef2、idm-1.ef2、idm-2.ef2....

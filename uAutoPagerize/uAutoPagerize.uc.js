@@ -36,7 +36,7 @@
 // Released under the GPL license
 // http://www.gnu.org/copyleft/gpl.html
 
-var isUrlbar = false;  // 放置的位置，true为地址栏，false为附加组件栏（可移动按钮）
+window.window.isUrlbar = false;  // 放置的位置，true为地址栏，false为附加组件栏（可移动按钮）
 
 (function(css) {
 
@@ -418,8 +418,7 @@ var ns = window.uAutoPagerize = {
 		// 还得加上nextLink，不加上的话会查找下一页链接 2 次，特别是加了自动查找功能后
 		var index = -1, info, nextLink;
 
-		// 这个范围有些大，每次都得检测 2 次。先不加上 |com\.hk
-		if (/\bgoogle\.(?:com|co\.jp)$/.test(win.location.host)) {
+		if (/\bgoogle\.(?:com|co\.jp|com\.hk)$/.test(win.location.host)) {
 			if (!timer || timer < 400) timer = 400;
 			win.addEventListener("hashchange", function(event) {
 				if (!win.ap) {
@@ -588,7 +587,7 @@ var ns = window.uAutoPagerize = {
 	},
     makeButton: function(){
 
-        if(isUrlbar){
+        if(window.isUrlbar){
             ns.icon = $('urlbar-icons').appendChild($C("image", {
                 id: "uAutoPagerize-icon",
                 state: "disable",
@@ -626,17 +625,18 @@ var ns = window.uAutoPagerize = {
                           autoCheck="true"\
                           checked="'+ AUTO_START +'"\
                           oncommand="uAutoPagerize.toggle(event);"/>\
+                <menuitem label="重新配置"\
+                          accesskey="r"\
+                          oncommand="uAutoPagerize.loadSetting(true);"/>\
+                <menuitem label="更新规则"\
+                          oncommand="uAutoPagerize.resetSITEINFO_NLF();"/>\
+                <!-- <menuitem label="更新原版规则"\
+                           oncommand="uAutoPagerize.resetSITEINFO();"/> -->\
+                <menuseparator/>\
                 <menuitem label="立即加载' + IMMEDIATELY_PAGER_NUM + '页"\
                           id="uAutoPagerize-IMMEDIATELY_PAGER_NUM"\
                           tooltiptext="左键立即加载，右键设置页数"\
                           onclick="uAutoPagerize.immediatelyItemClicked(event);"/>\
-                <menuitem label="重载配置文件"\
-                          accesskey="r"\
-                          oncommand="uAutoPagerize.loadSetting(true);"/>\
-                <menuitem label="重置站点信息(SP)"\
-                          oncommand="uAutoPagerize.resetSITEINFO_NLF();"/>\
-                <menuitem label="重置站点信息(官方)"\
-                          oncommand="uAutoPagerize.resetSITEINFO();"/>\
                 <menuseparator/>\
                 <menuitem label="新标签打开链接"\
                           id="uAutoPagerize-FORCE_TARGET_WINDOW"\
@@ -2234,7 +2234,7 @@ window.uAutoPagerize.init();
         }
     };
 
-    if(!isUrlbar){
+    if(!window.isUrlbar){
         updateToolbar.runOnce();
     }
 

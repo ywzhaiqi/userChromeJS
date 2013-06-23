@@ -27,3 +27,9 @@ ExternalVideoPlayer.uc.js
  - 脚本内 `PLAYER_PATH` 为播放器路径。如果为空或调用失败，则会打开 .asx 文件。
  - 脚本内 `default_format` 为默认清晰度选择。
  - youku 高清或超清在线播放有时候可能很卡，不入网页上直接 flash 播放。
+
+### 更新
+
+ - 2013年6月22日
+ 	- 增加二级菜单清晰度的选择
+ 	- 完善修改代码

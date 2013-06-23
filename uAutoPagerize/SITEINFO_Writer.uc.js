@@ -133,7 +133,9 @@ window.siteinfo_writer = {
 				if (aupPopup)
 				{
 					// aupPopup.appendChild(document.createElement("menuseparator")).setAttribute("class", "sw-add-element");
-					aupPopup.appendChild(menuitem.cloneNode(false));
+					let newMenuItem = menuitem.cloneNode(false);
+					newMenuItem.setAttribute("id", "sw-popup-menuitem");
+					aupPopup.appendChild(newMenuItem);
 				}
 			}, 2000);
 

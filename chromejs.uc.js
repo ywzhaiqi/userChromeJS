@@ -4,6 +4,6 @@ location == "chrome://browser/content/browser.xul" && (function(){
 	try{
 		eval("urlbar.handleCommand="+ urlbar.handleCommand.toString(
 		    ).replace("var url = this.value;", "var url = this.value;" + 
-		    "if(url.indexOf('chromejs') == 0) return eval(url.slice(9));"));
+		    "if(url.indexOf('chromejs:') == 0) return eval(url.slice(9));"));
 	}catch(e) {}
 })();

@@ -21,23 +21,23 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
 	// 播放器路径
 	var PLAYER_PATH = "D:\\Program Files\\Potplayer\\PotPlayerMini.exe";
-	// 默认清晰度
-	var default_format = "normal";  // high super supper2
-	// 下载设置
-	var IDM_PATH = "D:\\Program Files\\Internet Download Manager\\IDMan.exe";
 
+	// 默认清晰度到 flvcd 网站设置。
 
-	// youku 视频地址一段时间后失效，所以 cache 有问题。
-	var useCache = false;
-	var DEBUG = false;
 
 	let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 	Components.utils.import("resource://gre/modules/FileUtils.jsm");
 	Components.utils.import("resource://gre/modules/NetUtil.jsm");
 
+	// 下载设置，
+	var IDM_PATH = "D:\\Program Files\\Internet Download Manager\\IDMan.exe";
+
+	// youku 视频地址一段时间后失效，所以 cache 有问题。
+	var useCache = false;
+	var DEBUG = false;
+
 	var ns = window.externalVideoPlayer = {
 		PLAYER_PATH: PLAYER_PATH,
-		default_format: default_format,
 		FILE_NAME: "externalVideoPlayer",
 		_menu: null,
 		_notSupported: false,
@@ -45,9 +45,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 		_video_path_cache: {},
 
 		init: function(){
-
 			this.addMenuItem();
-
 		},
 		uninit: function(){
 			if(this._menu){
@@ -145,7 +143,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 			ns._notSupported = false;
 
 			var hostname = content.location.hostname;
-			if(hostname.match(/youku|yinyuetai|ku6|umiwi|sina|163|56|joy|v\.qq|letv|baidu|wasu|pps|kankan\.xunlei|tangdou/)){
+			if(hostname.match(/youku|yinyuetai|ku6|umiwi|sina|163|56|joy|v\.qq|letv|baidu|wasu|pps|kankan\.xunlei|tangdou|acfun\.tv|bilibili\.tv/)){
 				return true;
 			}
 
@@ -159,6 +157,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
 			return false;
 		},
+		// format: normal high super supper2
 		run: function(format, type){
 			var url;
 			if(gContextMenu.onLink){
@@ -231,7 +230,11 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 					ns.download_aria2(list);
 					break;
 				default:
-					ns.saveAndRun_asx(list);
+					if(ns.PLAYER_PATH.match(/\\mplayer\.exe/)){
+						ns.run_mplayer(list);
+					}else{
+						ns.saveAndRun_asx(list);
+					}
 			}
 		},
 		saveAndRun_asx: function(list){
@@ -263,6 +266,14 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 			var file = ns.saveList(ns.FILE_NAME + ".txt", text);
 			ns.initPlayer();
 			ns.launch(file);
+		},
+		run_mplayer: function(list){
+			var args = [];
+			list.forEach(function(info){
+				args.push(info.url);
+			});
+
+			ns.exec(ns.PLAYER_PATH, args);
 		},
 		saveList: function(name, data){
 			var tmpfile = FileUtils.getFile("TmpD", [name]);

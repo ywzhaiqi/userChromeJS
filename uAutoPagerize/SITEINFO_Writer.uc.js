@@ -34,7 +34,6 @@ window.siteinfo_writer = {
 				      <toolbarbutton label="查看规则(SP)" oncommand="siteinfo_writer.toSuperPreLoaderFormat();"/>\
 				      <toolbarbutton id="sw-curpage-info" label="读取当前页面规则" oncommand="siteinfo_writer.getCurPageInfo();"/>\
 				      <toolbarbutton label="从剪贴板读取规则" oncommand="siteinfo_writer.readFromClipboard();"/>\
-				      <toolbarbutton label="选取AutoPager规则" oncommand="siteinfo_writer.getInfoFromAutoPager();"/>\
 				      <toolbarbutton id="sw-launch" label="启动规则" tooltiptext="启动uAutoPagerize" oncommand="siteinfo_writer.launch();"/>\
 				      <spacer flex="1"/>\
 				      <toolbarbutton class="tabs-closebutton" oncommand="siteinfo_writer.hide();"/>\
@@ -100,6 +99,8 @@ window.siteinfo_writer = {
 	      </overlay>';
     	overlay = "data:application/vnd.mozilla.xul+xml;charset=utf-8," + encodeURI(overlay);
     	window.userChrome_js.loadOverlay(overlay, window.siteinfo_writer);
+
+    	this.addListener();
 	},
 	observe : function (aSubject, aTopic, aData) {
 		if (aTopic == "xul-overlay-merged")
@@ -152,6 +153,52 @@ window.siteinfo_writer = {
 		}
 	},
 	uninit : function ()  {
+		this.removeListener();
+	},
+	addListener: function() {
+		gBrowser.mPanelContainer.addEventListener('DOMContentLoaded', this, true);
+	},
+	removeListener: function() {
+		gBrowser.mPanelContainer.removeEventListener('DOMContentLoaded', this, true);
+	},
+	handleEvent: function(event){
+		switch(event.type){
+			case "DOMContentLoaded":
+				var doc = event.target,
+					win = doc.defaultView,
+					self = this;
+				if(win.location.hostname == 'ap.teesoft.info'){
+					this.addStyle(doc, ".install{ display: block !important; }");
+					this.fixAutoPagerBug(doc);
+
+					// 点击 install 自动安装
+					var evt = doc.createEvent("Events");
+				    doc.addEventListener(evt, function(event){
+				    	var ids = event.target.textContent;
+				    	self.requestInfoFromAP(ids);
+				    }, false);
+				}
+				break;
+		}
+	},
+	// autopager 查询网站 install(a36122) 没有引号的错误。
+	fixAutoPagerBug: function(doc){
+		var link, links, onclick;
+		links = doc.querySelectorAll("a.install");
+		for (var i = links.length - 1; i >= 0; i--) {
+			link = links[i]; 
+			onclick = link.getAttribute("onclick").replace(/install\((\w+)\)/, "install('$1')");
+			link.setAttribute("onclick", onclick);
+		}
+	},
+	addStyle: function(doc, css) {
+		var heads = doc.getElementsByTagName('head');
+		if (heads.length > 0) {
+			var node = doc.createElement('style');
+			node.type = 'text/css';
+			node.innerHTML = css;
+			heads[0].appendChild(node);
+		}
 	},
 	pps: function(event) {
 		event.currentTarget.removeEventListener(event.type, arguments.callee, false);
@@ -173,6 +220,8 @@ window.siteinfo_writer = {
 			e.parentNode.removeChild(e);
 		})
 		this.style.parentNode.removeChild(this.style);
+
+		this.uninit();
 	},
 	setUrl: function() {
 		this.url.value = "^" + content.location.href.replace(/[()\[\]{}|+.,^$?\\]/g, '\\$&');
@@ -272,37 +321,50 @@ window.siteinfo_writer = {
 				.replace(/\\\//g, '/');
 		}
 	},
-	getInfoFromAutoPager: function(){
-		if (this._inspect)
-			this._inspect.uninit();
+	requestInfoFromAP: function(ids){
+		var url;
+		// json 格式
+		if(ids.indexOf('a') == 0){
+			url = "http://wedata.net/items/" + ids.slice(1) + ".json"
+		}else{
+			url = "http://www.teesoft.info/autopager/down/" + ids;
+		}
+
+		log("Request: " + url);
+		var xhr = new XMLHttpRequest();
 		var self = this;
-
-		this._inspect = new Inspector(content, function(xpathArray) {
-			if (xpathArray.length) {
-				var elem = getFirstElementByXPath(xpathArray[0], content.document);
-				if(elem && elem.href && elem.href.match(/www\.teesoft\.info\/autopager\/down/)){
-					var xhr = new XMLHttpRequest();
-					xhr.onload = function() {
-						self.readFromAutoPager(xhr.responseXML);
-					};
-					xhr.open("GET", elem.href);
-					xhr.responseType = "document";
-					xhr.send();
-				}
-			}
-			self._inspect = null;
-		});
+		xhr.onload = function(){
+			self.parseInfoFromAP(xhr);
+		};
+		xhr.open("GET", url, true);
+		xhr.send(null);
 	},
-	readFromAutoPager: function(xml){
-		var site = getFirstElementByXPath("/autopager/site", xml);
+	parseInfoFromAP: function(xhr){
+		if(this.container.hidden == true){
+			this.container.hidden = false;
+		}
 
-		var urlPattern = getFirstElementByXPath("//urlPattern", site).textContent;
-		var urlIsRegex = getFirstElementByXPath("//urlIsRegex", site).textContent;
-		this.url.value = (urlIsRegex == 'false') ? wildcardToRegExpStr(urlPattern) : urlPattern;
+		if(xhr.responseXML){
+			log("parseInfoFromAP: XML");
+			var xml = xhr.responseXML.documentElement;
+			var site = getFirstElementByXPath("/autopager/site", xml);
 
-		this.siteName.value = getFirstElementByXPath("//desc", site).textContent.replace("AutoPager rule for ", "");
-		this.nextLink.value = getFirstElementByXPath("//linkXPath", site).textContent;
-		this.pageElement.value = getFirstElementByXPath("//contentXPath", site).textContent;
+			var urlPattern = getFirstElementByXPath("//urlPattern", site).textContent;
+			var urlIsRegex = getFirstElementByXPath("//urlIsRegex", site).textContent;
+			this.url.value = (urlIsRegex == 'false') ? wildcardToRegExpStr(urlPattern) : urlPattern;
+
+			this.siteName.value = getFirstElementByXPath("//desc", site).textContent.replace("AutoPager rule for ", "");
+			this.nextLink.value = getFirstElementByXPath("//linkXPath", site).textContent;
+			this.pageElement.value = getFirstElementByXPath("//contentXPath", site).textContent;
+		}else{
+			log("parseInfoFromAP: JSON");
+			var info = JSON.parse(xhr.responseText);
+
+			this.siteName.value = info.name;
+			this.url.value = info.data.url;
+			this.nextLink.value = info.data.nextLink;
+			this.pageElement.value = info.data.pageElement;
+		}
 	},
 	readFromClipboard: function(){
 		var dataStr = readFromClipboard();
@@ -665,7 +727,7 @@ Inspector.prototype = {
 
 
 
-function log(){ Application.console.log($A(arguments)); }
+function log(arg){ Application.console.log("[SITEINFO_Writer] " + arg); }
 function $(id) document.getElementById(id);
 function $A(arr) Array.slice(arr);
 function $C(name, attr) {

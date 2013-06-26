@@ -38,13 +38,11 @@ const CLASS_INDEX = PREFIX + 'index';
 const EVENT_RESPONSE = 'RESPONSE_' + UID;
 
 var GET_KEYWORD = true;
-var enableBooklink = true;  // 百度搜索的 booklink.me 不要高亮
+var enableBooklink = true;  // 来自 booklink.me 的百度搜索不要高亮。
 var wmap = new WeakMap();
 
 window.gWHT = {
 	DEBUG: false,
-    delayUrl: "developer\\.mozilla\\.org/.*/docs/",  //需要延长的站点正则
-    delayTime: 3000,  // 单位毫秒
 	SITEINFO: [
 		/**
 			url     URL。正規表現。keyword, input が無い場合は $1 がキーワードになる。
@@ -229,7 +227,7 @@ window.gWHT = {
 				// HTMLDocument じゃない場合
 				if (!checkDoc(doc)) return;
 
-                this.delayLaunch(doc);
+                this.delayLaunch(doc, win);
                 
                 setTimeout(function(self, doc, win){
                 	self.fixAutoPage(doc, win);
@@ -290,22 +288,28 @@ window.gWHT = {
 		}
 	},
 
-    delayLaunch: function(doc){
+    delayLaunch: function(doc, win){
 
         if(enableBooklink && doc.URL.indexOf("baidu.com") > -1 && doc.referrer.indexOf("booklink.me") > -1){
             return;
         }
 
+        var self = this;
         var keywords = this.GET_KEYWORD ? this.getKeyword(this.SITEINFO, doc) : [];
 
-        var delay = 0;
-        if(new RegExp(this.delayUrl).test(doc.URL)){
-            delay = this.delayTime;
-            debug("delay ", delay);
+        var SyntaxHighlighter = win.wrappedJSObject.SyntaxHighlighter;
+        if(typeof SyntaxHighlighter != "undefined"){
+        	doc.addEventListener("load", function(){
+        		setTimeout(function(){
+        			self.launch(doc, keywords);
+        		}, 500);
+        		doc.removeEventListener("load", arguments.callee, false);
+        	}, false);
+
+        	return;
         }
-        setTimeout(function(self){
-            self.launch(doc, keywords);
-        }, delay, this);
+
+        this.launch(doc, keywords);
     },
     fixAutoPage: function(doc, win){
     	if(!checkDoc(doc)) return;

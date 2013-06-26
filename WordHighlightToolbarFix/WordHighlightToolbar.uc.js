@@ -299,11 +299,11 @@ window.gWHT = {
 
         var SyntaxHighlighter = win.wrappedJSObject.SyntaxHighlighter;
         if(typeof SyntaxHighlighter != "undefined"){
-        	doc.addEventListener("load", function(){
+        	win.addEventListener("load", function(){
         		setTimeout(function(){
         			self.launch(doc, keywords);
         		}, 500);
-        		doc.removeEventListener("load", arguments.callee, false);
+        		win.removeEventListener("load", arguments.callee, false);
         	}, false);
 
         	return;

@@ -2,7 +2,7 @@
 uAutoPagerize 中文规则版
 ========================
 
- - 增加了 Super\_preloader.db 的规则的支持，几乎完美兼容该规则，能自动查找下一页，支持 `css;`、函数、地址栏递增等多种方式。
+ - 增加了 Super\_preloader.db 的规则的支持，几乎完美兼容该规则，支持 'auto;'、`css;`、函数、地址栏递增等多种方式。
  - 能下载更新 Super\_preloader.db 的规则，cache文件名为 uSuper_preloader.db.js（Chrome目录下）
  - 增加了可添加和更新他人规则的功能，能分享规则。
  - 增加了iframe的支持，一些特殊网站：如起点等已经可用。
@@ -20,7 +20,7 @@ uAutoPagerize 中文规则版
 
  - uAutoPagerize.uc.js（必须），脚本文件。
  - _uAutoPagerize.js（必须），自己的配置文件。
- - ITEINFO_Write.uc（非必要），辅助查找工具（修改版），在 AutoPager Rules 网站点击 install 后自动读取规则并弹出对话框。
+ - SITEINFO_Write.uc（非必要），辅助查找工具（修改版），在 AutoPager Rules 网站点击 install 后自动读取规则并弹出对话框。
  - AutoPagerizeFindHighlight.uc.js（辅助，非必要）。google搜索等下一页高亮的修正。使用我修改过的 WordHighlightToolbar.uc.js 则不需要。
 
 ## 使用注意

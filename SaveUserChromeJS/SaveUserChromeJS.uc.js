@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           SaveUserChromeJS.uc.js
 // @author         ywzhaiqi
-// @description    保存UC脚本。
+// @description    像 Greasemonkey 一样保存 uc脚本
 // @include        main
 // @charset        UTF-8
 // ==/UserScript==
@@ -45,7 +45,7 @@ window.saveUserChromeJS = {
 				// Show the scriptish install banner if the user is navigating to a .user.js
 				// file in a top-level tab.
 				if (safeWin === safeWin.top && RE_USERCHROME_JS.test(safeWin.location.href) && !RE_CONTENTTYPE.test(safeWin.document.contentType)) {
-					setTimeout(function(self){
+					safeWin.setTimeout(function(self){
 						self.showInstallBanner(
 							gBrowser.getBrowserForDocument(safeWin.document));
 					}, 500, this);
@@ -56,9 +56,6 @@ window.saveUserChromeJS = {
 				if (win) this.saveScript();
 				break;
 		}
-	},
-	installCurrentScript: function(){
-		this.saveScript();
 	},
 	showInstallBanner: function(browser) {
 		// var notificationBox = gBrowser.getNotificationBox(browser);
@@ -84,7 +81,6 @@ window.saveUserChromeJS = {
 				callback: this.saveScript.bind(this)
 			}
 		]);
-		Application.console.log("appendNotification")
 	},
 	saveScript: function() {
 		var win = this.getFocusedWindow();

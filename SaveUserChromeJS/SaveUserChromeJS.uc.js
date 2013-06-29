@@ -56,27 +56,17 @@ var ns = window.saveUserChromeJS = {
 				if(win.location.hostname == 'github.com'){
 					this.addButton_github(doc);
 
-					// github 用了html5 history pushstate
-
-					// var $ = win.wrappedJSObject.jQuery;
-					// alert("on pjax:success start");
-					// $(doc).on("pjax:success", function(){
-					// 	alert("pjax:success");
-					// 	// ns.addButton_github(doc);
-					// });
-					// alert("on pjax:success end");
-
-					// 没找到好方法，暂用这个
-					win.setTimeout(function(){
-						var observer = new window.MutationObserver(function(mutations) {
-							win.setTimeout(function(){
-								log("mutations")
-								ns.addButton_github(doc);
-							}, 500);  
-						});
-
-						observer.observe(doc.body, {childList: true, subtree: true})
-					}, 1000);
+					// github 用了 history.pushstate, 需要加载页面后重新添加按钮
+					script = 'var $ = unsafeWindow.jQuery;\
+						$(document).on("pjax:success", function(){\
+							addButton_github(document);\
+						});';
+					let sandbox = new Cu.Sandbox(win, {sandboxPrototype: win});
+					sandbox.unsafeWindow = win.wrappedJSObject;
+					sandbox.document     = win.document;
+					sandbox.window       = win;
+					sandbox.addButton_github = ns.addButton_github;
+					Cu.evalInSandbox(script, sandbox);
 				}
 				break;
 			case "popupshowing":
@@ -107,6 +97,7 @@ var ns = window.saveUserChromeJS = {
 							gBrowser.getBrowserForDocument(safeWin.document));
 					}, 500, this);
 				}
+
 				break;
 			case "install-userChromeJS":
 				let win = this.getMostRecentWindow("navigator:browser");
@@ -213,7 +204,7 @@ var ns = window.saveUserChromeJS = {
 		fp.open(callbackObj);
 	},
 	// 使用
-	// self.runScript({
+	// ns.runScript({
 	// 	url: "file:" + fp.file.path,
 	// 	charset: scriptCharset || "UTF-8"
 	// });

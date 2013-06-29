@@ -57,6 +57,15 @@ var ns = window.saveUserChromeJS = {
 					this.addButton_github(doc);
 
 					// github 用了html5 history pushstate
+
+					// var $ = win.wrappedJSObject.jQuery;
+					// alert("on pjax:success start");
+					// $(doc).on("pjax:success", function(){
+					// 	alert("pjax:success");
+					// 	// ns.addButton_github(doc);
+					// });
+					// alert("on pjax:success end");
+
 					// 没找到好方法，暂用这个
 					win.setTimeout(function(){
 						var observer = new window.MutationObserver(function(mutations) {
@@ -116,8 +125,7 @@ var ns = window.saveUserChromeJS = {
 		return this._menuitem = menuitem;
 	},
 	showInstallBanner: function(browser) {
-		// var notificationBox = gBrowser.getNotificationBox(browser);
-		var notificationBox = gBrowser.getNotificationBox();
+		var notificationBox = gBrowser.getNotificationBox(browser);
 		var greeting = "This is a userChrome script. Click install to start using it.";
 		var btnLabel = "install";
 
@@ -136,7 +144,7 @@ var ns = window.saveUserChromeJS = {
 				label: btnLabel,
 				accessKey: "I",
 				popup: null,
-				callback: this.saveScript.bind(this)
+				callback: this.saveCurrentScript
 			}
 		]);
 	},
@@ -161,9 +169,11 @@ var ns = window.saveUserChromeJS = {
 
 		rawBtn.parentNode.insertBefore(installBtn, rawBtn);
 	},
+	saveCurrentScript: function(event){
+		ns.saveScript();
+	},
 	saveScript: function(url) {
-		var self = this;
-		var win = this.getFocusedWindow();
+		var win = ns.getFocusedWindow();
 
 		var doc, name, scriptCharset;
 		if(!url){
@@ -184,7 +194,7 @@ var ns = window.saveUserChromeJS = {
 		fp.init(window, "", Ci.nsIFilePicker.modeSave);
 		fp.appendFilter("*." + extension, "*.uc.js;*.uc.xul");
 		fp.appendFilters(Ci.nsIFilePicker.filterAll);
-		fp.displayDirectory = this.SCRIPTS_FOLDER; // nsILocalFile
+		fp.displayDirectory = ns.SCRIPTS_FOLDER; // nsILocalFile
 		fp.defaultExtension = extension;
 		fp.defaultString = filename;
 		var callbackObj = {
@@ -198,20 +208,19 @@ var ns = window.saveUserChromeJS = {
 					.getInterface(Ci.nsIWebNavigation)
 					.QueryInterface(Ci.nsILoadContext);
 				wbp.saveURI(uri, null, uri, null, null, fp.file, loadContext);
-
-				// self.runScript({
-				// 	url: "file:" + fp.file.path,
-				// 	charset: scriptCharset || "UTF-8"
-				// });
 			}
 		}
 		fp.open(callbackObj);
 	},
+	// 使用
+	// self.runScript({
+	// 	url: "file:" + fp.file.path,
+	// 	charset: scriptCharset || "UTF-8"
+	// });
 	runScript: function(script){
 		let context = {};
 		Services.scriptloader.loadSubScript(script.url, context, script.charset);
 	},
-
 	getFocusedWindow: function() {
 		var win = document.commandDispatcher.focusedWindow;
 		return (!win || win == window) ? content : win;

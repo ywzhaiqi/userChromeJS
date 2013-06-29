@@ -7,3 +7,9 @@ SaveUserChromeJS.uc.js
  - 在符合的链接上右键增加 `Install userChromeJS...` 菜单。
  - 在 GitHub 符合的页面增加 `Install` 按钮。
  - 注意：保存完后需要手动重启。
+
+![安装提示条](isntall_banner.png)
+
+![右键菜单](menuitem.png)
+
+![github 安装按钮](github_install.png)

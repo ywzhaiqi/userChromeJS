@@ -57,7 +57,7 @@ var ns = window.saveUserChromeJS = {
 					this.addButton_github(doc);
 
 					// github 用了 history.pushstate, 需要加载页面后重新添加按钮
-					script = 'var $ = unsafeWindow.jQuery;\
+					var script = 'var $ = unsafeWindow.jQuery;\
 						$(document).on("pjax:success", function(){\
 							addButton_github(document);\
 						});';
@@ -126,7 +126,7 @@ var ns = window.saveUserChromeJS = {
 		for (var i = 0, child; child = notificationBox.childNodes[i]; i++)
 			if (child.getAttribute("value") == "install-userChromeJS")
 				notificationBox.removeNotification(child);
-				
+
 		var notification = notificationBox.appendNotification(
 			greeting,
 			"install-userChromeJS",
@@ -173,7 +173,7 @@ var ns = window.saveUserChromeJS = {
 			name = /\/\/\s*@name\s+(.*)/i.exec(doc.body.textContent);
 			scriptCharset = /\/\/\s*@charset\s+(.*)/i.exec(doc.body.textContent);
 		}
-		
+
 		name = name && name[1] ? name[1] : url.split("/").pop();
 		var filename = name.replace(/\.uc\.(js|xul)$|$/i, ".uc.$1").replace(/\s/g, '_').toLowerCase();
 		// extension

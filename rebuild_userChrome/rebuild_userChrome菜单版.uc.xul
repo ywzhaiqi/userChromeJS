@@ -64,6 +64,7 @@
         // editor: "C:\\Program Files\\hidemaru\\hidemaru.exe",
         // editor: "/usr/bin/gedit",
         // --- config ---
+
         _statusDisplay: null,
         get statusDisplay() {
             if (!this._statusDisplay) this._statusDisplay = document.getElementById('status-bar') || document.getElementById('statusbar-display');
@@ -78,192 +79,19 @@
 
         handleEvent: function(event) {
             switch (event.type) {
-                case 'dragover':
-                    this.dragover(event);
-                    break;
-                case 'drop':
-                    this.drop(event);
-                    break;
                 case 'unload':
                     this.uninit();
                     break;
             }
         },
-
         init: function() {
             window.addEventListener("unload", this, false);
-            if ("nsDragAndDrop" in window && this.statusDisplay) {
-                this.statusDisplay.addEventListener('dragover', function(event) {
-                    nsDragAndDrop.dragOver(event, userChromejs.dndObserver);
-                }, true);
-                this.statusDisplay.addEventListener('dragdrop', function(event) {
-                    nsDragAndDrop.drop(event, userChromejs.dndObserver);
-                }, true);
-            } else if (this.addonbar) {
-                this.addonbar.addEventListener('dragover', this, true);
-                this.addonbar.addEventListener('drop', this, true);
-            }
+
             this.addPrefListener(userChromejs.readLaterPrefListener); // 登録処理
         },
         uninit: function() {
-            if ("nsDragAndDrop" in window && this.statusDisplay) {
-                this.statusDisplay.removeEventListener('dragover', function(event) {
-                    nsDragAndDrop.dragOver(event, userChromejs.dndObserver);
-                }, true);
-                this.statusDisplay.removeEventListener('dragdrop', function(event) {
-                    nsDragAndDrop.drop(event, userChromejs.dndObserver);
-                }, true);
-            } else if (this.addonbar) {
-                this.addonbar.removeEventListener('dragover', this, true);
-                this.addonbar.removeEventListener('drop', this, true);
-            }
             this.removePrefListener(userChromejs.readLaterPrefListener); // 登録解除
         },
-
-        dragover: function(event) {
-            var dragService = Cc["@mozilla.org/widget/dragservice;1"].getService(Ci.nsIDragService);
-            var dragSession = dragService.getCurrentSession();
-            var supportedTypes = ["text/x-moz-url", "text/unicode", "application/x-moz-file"];
-            for each(var type in supportedTypes) {
-                if (event.dataTransfer.types.contains(type)) {
-                    var data = event.dataTransfer.getData(type);
-                    var url = (/^\s*(.*?)\s*$/m.test(data)) ? RegExp.$1 : null;
-                    if (/(\.uc\.js|\.uc\.xul|\.uc\.xul\.txt)$/.test(url)) {
-                        dragSession.canDrop = true;
-                        event.preventDefault();
-                        return;
-                    }
-                }
-            }
-        },
-
-        drop: function(event) {
-            var dragService = Cc["@mozilla.org/widget/dragservice;1"].getService(Ci.nsIDragService);
-            var dragSession = dragService.getCurrentSession();
-            var supportedTypes = ["text/x-moz-url", "text/unicode", "application/x-moz-file"];
-            for each(var type in supportedTypes) {
-                if (event.dataTransfer.types.contains(type)) {
-                    var data = event.dataTransfer.getData(type);
-                    this.dndObserver.onDrop(event, {
-                        data: data
-                    }, dragSession);
-                    return;
-                }
-            }
-        },
-
-        dragDropSecurityCheck: function dragDropSecurityCheck(event, dragSession, url) {
-            if (!url) return false;
-
-            // need to do a security check to make
-            // sure the source document can load the dropped URI.
-            url = url.replace(/^\s*|\s*$/g, '');
-
-            if (url.indexOf('chrome://') == 0 || url.indexOf('file://') == 0) return url;
-
-            // urlSecurityCheck
-            try {
-                urlSecurityCheck(url, gBrowser.contentPrincipal, Ci.nsIScriptSecurityManager.DISALLOW_INHERIT_PRINCIPAL);
-            } catch (e) {
-                event.stopPropagation();
-                //throw 'Drop of ' + url + ' denied.';
-                return false;
-            }
-            return url;
-        },
-
-        dndObserver: {
-            getSupportedFlavours: function() {
-                var flavours = new FlavourSet();
-                flavours.appendFlavour("text/x-moz-url");
-                flavours.appendFlavour("text/unicode");
-                flavours.appendFlavour("application/x-moz-file");
-                return flavours;
-            },
-            onDragOver: function(evt, flavour, session) {},
-            onDrop: function(evt, dropdata, session) {
-                var fname;
-                evt.stopPropagation();
-                evt.preventDefault();
-                if (dropdata.data != "") {
-                    //ステータスバーの左1/3にドロップしたか
-                    var target = evt.target;
-                    while (target) {
-                        if (target == userChromejs.statusDisplay || target == userChromejs.addonbar) break;
-                        target = target.parentNode;
-                    }
-                    if (!target) return;
-                    if (evt.screenX > target.boxObject.screenX + target.boxObject.width / 3) return;
-
-                    //saveFolderModokiが必要
-                    if (!saveFolderModoki) return;
-                    //ドロップしたurl
-                    var url = (/^\s*(.*?)\s*$/m.test(dropdata.data)) ? RegExp.$1 : null;
-                    //保存ホルダ nsIFile
-                    var folder = Components.classes["@mozilla.org/file/directory_service;1"].getService(Components.interfaces.nsIProperties)
-                        .get("UChrm", Components.interfaces.nsIFile);
-                    //デフォルトのファイル名
-                    if (/(.*)\n?(.*)?/m.test(dropdata.data)) fname = RegExp.$2 ? RegExp.$2 : "";
-                    //データスキームか
-                    if (/(^data:text\/javascript(;.*)?,?)|(^data:application\/x-javascript(;.*)?,?)/.test(url)) {
-                        // urlSecurityCheck は saveFolderModoki.directSaveLinkで実施している
-                        saveScript(url, fname, folder);
-                    } else {
-                        //リンクか
-                        if (!/(^h?ttps?:\/\/)|(^ftp:\/\/)/.test(url)) return;
-                        if (/^h?.?.p(s?):(.+)$/i.test(url)) {
-                            url = "http" + RegExp.$1 + ':' + RegExp.$2;
-                            if (!RegExp.$2) return null;
-                            fname = url.match(/.+\/(.+)$/)[1];
-                        }
-                        fname = fname.replace(/\.uc\.xul\.txt$/, '.uc.xul');
-                        //スクリプトファイルか?
-                        if (/(\.uc\.js|\.uc\.xul|\.uc\.xul\.txt)$/.test(url)) {
-                            if (typeof gBrowser.dragDropSecurityCheck == 'function') gBrowser.dragDropSecurityCheck(evt, session, url);
-                            else {
-                                userChromejs.dragDropSecurityCheck(evt, session, url)
-                            }
-                            saveScript(url, fname, folder);
-                        }
-                    }
-                }
-
-                function saveScript(url, fname, folder) {
-                    //ファイルピッカによりnsIFile決定
-                    var aFile = getFolderPath(fname, folder)
-                    if (!aFile) return;
-                    //フォルダパス
-                    folder = aFile.path.replace(aFile.leafName, '');
-                    //nsILocalFileのフォルダ
-                    var aFolder = saveFolderModoki.initFileWithPath(folder);
-                    if (!aFolder) return;
-                    //リンクを保存
-                    saveFolderModoki.directSaveLink(null, url, aFile.leafName, gBrowser.currentURI, aFolder);
-                }
-
-                function getFolderPath(fname, folder) {
-                    //ファイルピッカにより保存先決定
-                    var fp = Components.classes['@mozilla.org/filepicker;1'].createInstance(Components.interfaces.nsIFilePicker);
-                    fp.init(window, "Save script As", fp.modeSave);
-                    fp.appendFilter("Script Files", "*.uc.js; *.uc.xul");
-                    if (/\.uc\.js$/.test(fname)) {
-                        fp.defaultExtension = "uc.js";
-                        fp.defaultString = fname;
-                    } else if (/\.uc\.xul$/.test(fname)) {
-                        fp.defaultExtension = "uc.xul";
-                        fp.defaultString = fname;
-                    } else {
-                        fp.defaultExtension = "uc.js";
-                        fp.defaultString = fname + ".uc.js";
-                    }
-                    fp.displayDirectory = folder;
-                    if (fp.show() == fp.returnCancel || !fp.file) return;
-                    //nsIFile
-                    return fp.file;
-                }
-            }
-        },
-
         rebuild: function() {
             var flag = this.getPref("userChrome.enable.reuse", 'bool', true);
             this.setPref("userChrome.enable.reuse", 'bool', false);
@@ -606,10 +434,6 @@
         },
     }
     userChromejsScriptOptionsMenu.run();
-
-// <menupopup id="menu_ToolsPopup" idxxxx="contentAreaContextMenu">
-// <menupopup id="appmenuPrimaryPane" idxxxx="contentAreaContextMenu">
-// <menu id="userChromejs_script_options_Menu" label="UC用户脚本设置"
 
 })();
 

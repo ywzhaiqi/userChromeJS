@@ -278,8 +278,6 @@ window.addMenu = {
 		else openUILink(uri.spec, event);
 	},
 	exec: function(path, arg){
-        path = this.handleRelativePath(path);
-
 		var file    = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
 		var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
 		try {
@@ -483,6 +481,10 @@ window.addMenu = {
 				if (condition)
 					obj.condition = condition;
 			}
+
+            if(obj.exec){
+                obj.exec = this.handleRelativePath(obj.exec);
+            }
 		}
 
 		// obj を属性にする
@@ -592,7 +594,8 @@ window.addMenu = {
 			} catch (e) {
 				return;
 			}
-			if (!aFile.exists() || !aFile.isExecutable()) {
+			// if (!aFile.exists() || !aFile.isExecutable()) {
+            if (!aFile.exists()) {
 				menu.setAttribute("disabled", "true");
 			} else {
 				let fileURL = Services.io.getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler).getURLSpecFromFile(aFile);

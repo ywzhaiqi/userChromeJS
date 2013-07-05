@@ -21,7 +21,7 @@ if (typeof window.autoReader != "undefined") {
 
     // 按钮鼠标中键点击自定义
     var middleButtonClicked = function(){
-        
+
     };
 
     var AUTO_SITE_TEXT = "";
@@ -65,6 +65,7 @@ if (typeof window.autoReader != "undefined") {
         },
         uninit: function() {
             ns.style.parentNode.removeChild(ns.style);
+            ns.icon.parentNode.removeChild(ns.icon);
 
             gBrowser.mPanelContainer.removeEventListener('DOMContentLoaded', this, true);
 
@@ -374,7 +375,7 @@ if (typeof window.autoReader != "undefined") {
 
 
         _o.innerHTML = __definition_items_html;
-        
+
 
         //  launch in context
 

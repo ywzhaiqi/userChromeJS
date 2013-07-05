@@ -8,6 +8,9 @@
 
 (function() {
 
+// 保存完毕后是否加载脚本？仅支持 .uc.js，且只能加载主界面的脚本。
+var autoRunScript = true;
+
 
 let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
@@ -200,39 +203,51 @@ var ns = window.saveUserChromeJS = {
 			done: function(res) {
 				if (res != fp.returnOK && res != fp.returnReplace) return;
 
-				var wbp = Cc["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"].createInstance(Ci.nsIWebBrowserPersist);
-				wbp.persistFlags = wbp.PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION;
+                var persist = Cc["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"].createInstance(Ci.nsIWebBrowserPersist);
+                persist.persistFlags = persist.PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION;
 
-                var uri;
+                var obj_URI;
                 if(doc && fileExt != 'xul'){
-                    uri = doc.documentURIObject;
+                    obj_URI = doc.documentURIObject;
                 }else{
-                    uri = Services.io.newURI(url, null, null);
+                    obj_URI = Services.io.newURI(url, null, null);
                 }
 
-				var loadContext = win.QueryInterface(Ci.nsIInterfaceRequestor)
-					.getInterface(Ci.nsIWebNavigation)
-					.QueryInterface(Ci.nsILoadContext);
-				wbp.saveURI(uri, null, uri, null, null, fp.file, loadContext);
+                if(autoRunScript && fileExt == 'js'){
+                    persist.progressListener = {
+                        onProgressChange: function(aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress) {
+                            if(aCurSelfProgress == aMaxSelfProgress){
+                                setTimeout(function(){
+                                    ns.handleSavedScript(fp.file, charset);
+                                }, 100);
+                            }
+                        },
+                        onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) { }
+                    };
+                }
 
-                // // TODO： 需要保存完毕后调用。
-                // if(fileExt == 'js'){
-                //     setTimeout(function(){
-                //         ns.handleSavedScript(fp.file, charset);
-                //     }, 500);
-                // }
+                persist.saveURI(obj_URI, null, null, null, "", fp.file, null);
 			}
 		};
 		fp.open(callbackObj);
 	},
+    // 只支持 us.js，且仅只能载入一次。
     handleSavedScript: function(file, charset){
         window.userChrome_js.getScripts();
 
         var dir = file.parent.leafName;
         if(dir.toLowerCase() == 'chrome' || (dir in window.userChrome_js.arrSubdir)){
+
             let context = {};
             Services.scriptloader.loadSubScript( "file:" + file.path, context, charset || "UTF-8");
-            alert("重新加载了脚本");
+            // alert("重新加载了脚本");
+        }
+
+        function flushCache(file) {
+            if (file)
+                 Services.obs.notifyObservers(file, "flush-cache-entry", "");
+            else
+                 Services.obs.notifyObservers(null, "startupcache-invalidate", "");
         }
     },
 	getFocusedWindow: function() {

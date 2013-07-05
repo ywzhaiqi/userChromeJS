@@ -8,8 +8,8 @@
 
 (function() {
 
-// 保存完毕后是否加载脚本？仅支持 .uc.js，且只能加载主界面的脚本。
-var autoRunScript = true;
+// 保存完毕后是否加载脚本？仅支持 .uc.js，一些脚本有问题。
+var autoRunScript = false;
 
 
 let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;

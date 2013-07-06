@@ -32,51 +32,26 @@ var ns = window.saveUserChromeJS = {
 
 	init: function() {
 		Services.obs.addObserver(this, "content-document-global-created", false);
-		Services.obs.addObserver(this, "install-userChromeJS", false);
 
-		gBrowser.mPanelContainer.addEventListener('DOMContentLoaded', this, true);
-
-		this.createMenuitem();
-
-		var contextMenu = $("contentAreaContextMenu");
-		contextMenu.insertBefore(this._menuitem, contextMenu.firstChild);
+        // add contentAreaContextMenu
+        var contextMenu = $("contentAreaContextMenu");
+        var menuitem = this.createMenuitem();
+		contextMenu.insertBefore(menuitem, contextMenu.firstChild);
 		contextMenu.addEventListener("popupshowing", this, false);
+
+        this._menuitem = menuitem;
 	},
 	uninit: function(){
 		Services.obs.removeObserver(this, "content-document-global-created");
-		Services.obs.removeObserver(this, "install-userChromeJS");
 
-		gBrowser.mPanelContainer.removeEventListener('DOMContentLoaded', this, true);
+        if(this._menuitem){
+            this._menuitem.parentNode.removeChild(this._menuitem);
+        }
+
+        $("contentAreaContextMenu").removeEventListener("popupshowing", this, false);
 	},
 	handleEvent: function(event){
 		switch(event.type){
-			case "DOMContentLoaded":
-				var doc = event.target;
-				var win = doc.defaultView;
-				if(win != win.parent) return;
-				if(!checkDoc(doc)) return;
-
-				if(win.location.hostname == 'github.com'){
-					this.addButton_github(doc);
-
-					// github 用了 history.pushstate, 需要加载页面后重新添加按钮
-					var script = '\
-                        (function(){\
-                            var $ = unsafeWindow.jQuery;\
-                            if(!$) return;\
-                            $(document).on("pjax:success", function(){\
-                                addButton_github(document);\
-                            });\
-                        })();\
-                    ';
-					let sandbox = new Cu.Sandbox(win, {sandboxPrototype: win});
-					sandbox.unsafeWindow = win.wrappedJSObject;
-					sandbox.document     = win.document;
-					sandbox.window       = win;
-					sandbox.addButton_github = ns.addButton_github;
-					Cu.evalInSandbox(script, sandbox);
-				}
-				break;
 			case "popupshowing":
 				if (event.target != event.currentTarget) return;
 				if(gContextMenu.onLink){
@@ -103,16 +78,20 @@ var ns = window.saveUserChromeJS = {
 				// Show the scriptish install banner if the user is navigating to a .user.js
 				// file in a top-level tab.
 				if (safeWin === safeWin.top && RE_USERCHROME_JS.test(lhref) && !RE_CONTENTTYPE.test(safeWin.document.contentType)) {
-                    safeWin.setTimeout(function(self){
-						self.showInstallBanner(
-							gBrowser.getBrowserForDocument(safeWin.document));
-					}, 500, this);
+                    safeWin.setTimeout(function(){
+						ns.showInstallBanner(gBrowser.getBrowserForDocument(safeWin.document));
+					}, 500);
 				}
 
-				break;
-			case "install-userChromeJS":
-				let win = this.getMostRecentWindow("navigator:browser");
-				if (win) this.saveScript();
+                if(safeWin.location.hostname == 'github.com'){
+                    safeWin.addEventListener("DOMContentLoaded", function(){
+                        ns.github_addButton(safeWin.document);
+
+                        // github 用了 history.pushstate, 需要加载页面后重新添加按钮
+                        ns.github_addListener(safeWin);
+                    }, false);
+                }
+
 				break;
 		}
 	},
@@ -124,7 +103,7 @@ var ns = window.saveUserChromeJS = {
 			oncommand: "saveUserChromeJS.saveScript(gContextMenu.linkURL)"
 		});
 
-		return this._menuitem = menuitem;
+		return menuitem;
 	},
 	showInstallBanner: function(browser) {
 		var notificationBox = gBrowser.getNotificationBox(browser);
@@ -150,7 +129,7 @@ var ns = window.saveUserChromeJS = {
 			}
 		]);
 	},
-	addButton_github: function(doc){
+	github_addButton: function(doc){
 		if(doc.getElementById("uc-install-button")) return;
 
 		var rawBtn = doc.getElementById("raw-url");
@@ -162,7 +141,7 @@ var ns = window.saveUserChromeJS = {
 		var installBtn = doc.createElement("a");
 		installBtn.setAttribute("id", "uc-install-button");
 		installBtn.setAttribute("class", "minibutton");
-		installBtn.setAttribute("href", "#");
+		installBtn.setAttribute("href", downURL);
 		installBtn.innerHTML = "Install";
 		installBtn.addEventListener("click", function(event){
 			event.preventDefault();
@@ -171,22 +150,39 @@ var ns = window.saveUserChromeJS = {
 
 		rawBtn.parentNode.insertBefore(installBtn, rawBtn);
 	},
+    github_addListener: function(win){
+        var script = '\
+            (function(){\
+                var $ = unsafeWindow.jQuery;\
+                if(!$) return;\
+                $(document).on("pjax:success", function(){\
+                    github_addButton(document);\
+                });\
+            })();\
+        ';
+        let sandbox = new Cu.Sandbox(win, {sandboxPrototype: win});
+        sandbox.unsafeWindow = win.wrappedJSObject;
+        sandbox.document     = win.document;
+        sandbox.window       = win;
+        sandbox.github_addButton = ns.github_addButton;
+        Cu.evalInSandbox(script, sandbox);
+    },
 	saveCurrentScript: function(event){
 		ns.saveScript();
 	},
 	saveScript: function(url) {
-		var win = ns.getFocusedWindow();
+        var win = ns.getFocusedWindow();
 
 		var doc, name, fileName, fileExt, charset;
 		if(!url){
 			url = win.location.href;
 			doc = win.document;
-			name = /\/\/\s*@name\s+(.*)/i.exec(doc.body.textContent);
-			charset = /\/\/\s*@charset\s+(.*)/i.exec(doc.body.textContent);
+			name = doc.body.textContent.match(/\/\/\s*@name\s+(.*)/i);
+			charset = doc.body.textContent.match(/\/\/\s*@charset\s+(.*)/i);
 		}
 
 		name = name && name[1] ? name[1] : decodeURIComponent(url.split("/").pop());
-        fileName = name.replace(/\.uc\.(js|xul)$|$/i, ".uc.$1").replace(/\s/g, '_').toLowerCase();
+        fileName = name.replace(/\.uc\.(js|xul)$|$/i, ".uc.$1").replace(/\s/g, '_');
 		fileExt = name.match(/\.uc\.(js|xul)$/i);
         fileExt = fileExt && fileExt[1] ? fileExt[1] : "js";
         charset = charset && charset[1] ? charset[1] : "UTF-8";
@@ -242,13 +238,12 @@ var ns = window.saveUserChromeJS = {
             Services.scriptloader.loadSubScript( "file:" + file.path, context, charset || "UTF-8");
             // alert("重新加载了脚本");
         }
-
-        function flushCache(file) {
-            if (file)
-                 Services.obs.notifyObservers(file, "flush-cache-entry", "");
-            else
-                 Services.obs.notifyObservers(null, "startupcache-invalidate", "");
-        }
+    },
+    flushCache: function (file) {
+        if (file)
+             Services.obs.notifyObservers(file, "flush-cache-entry", "");
+        else
+             Services.obs.notifyObservers(null, "startupcache-invalidate", "");
     },
 	getFocusedWindow: function() {
 		var win = document.commandDispatcher.focusedWindow;

@@ -8,8 +8,11 @@
 
 (function() {
 
-// 保存完毕后是否加载脚本？仅支持 .uc.js，一些脚本有问题。
-var autoRunScript = false;
+// 保存完毕是否启用通知？
+var notificationsAfterInstall = true;
+
+// 保存完毕是否加载脚本（无需启动）？仅支持 .uc.js，一些脚本有问题。
+var runWithoutRestart = true;
 
 
 let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
@@ -209,12 +212,17 @@ var ns = window.saveUserChromeJS = {
                     obj_URI = Services.io.newURI(url, null, null);
                 }
 
-                if(autoRunScript && fileExt == 'js'){
+                if(notificationsAfterInstall){
                     persist.progressListener = {
                         onProgressChange: function(aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress) {
                             if(aCurSelfProgress == aMaxSelfProgress){
                                 setTimeout(function(){
-                                    ns.handleSavedScript(fp.file, charset);
+                                    ns.showInstallMessage({
+                                        fileExt: fileExt,
+                                        fileName: fileName,
+                                        file: fp.file,
+                                        charset: charset
+                                    });
                                 }, 100);
                             }
                         },
@@ -227,8 +235,54 @@ var ns = window.saveUserChromeJS = {
 		};
 		fp.open(callbackObj);
 	},
-    // 只支持 us.js，且仅只能载入一次。
-    handleSavedScript: function(file, charset){
+    showInstallMessage: function(info){
+        var isRun = (info.fileExt == "js");
+
+        var mainAction;
+        if(runWithoutRestart && isRun){
+            mainAction = {
+                label: "立即运行（可能有问题，重启即可）",
+                accessKey: "R",
+                callback: function(){
+                    ns.runScript(info.file, info.charset);
+                }
+            };
+        }else{
+            mainAction = {
+                label: "立即重启",
+                accessKey: "R",
+                callback: ns.restartApp
+            };
+        }
+
+        var showedMsg = ns.popupNotification({
+            id: "userchromejs-install-popup-notification",
+            message: "'" + info.fileName + "' 安装完毕",
+            mainAction: mainAction,
+            options: {
+                removeOnDismissal: true,
+                persistWhileVisible: true
+            }
+        });
+    },
+    popupNotification: function(details){
+        var win = ns.getMostRecentWindow();
+        if (win && win.PopupNotifications) {
+            win.PopupNotifications.show(
+                win.gBrowser.selectedBrowser,
+                details.id,
+                details.message,
+                "",
+                details.mainAction,
+                null /* secondary action */ ,
+                details.options);
+            return true;
+        }
+
+        return false;
+    },
+    // 只支持 us.js
+    runScript: function(file, charset){
         window.userChrome_js.getScripts();
 
         var dir = file.parent.leafName;
@@ -236,7 +290,6 @@ var ns = window.saveUserChromeJS = {
 
             let context = {};
             Services.scriptloader.loadSubScript( "file:" + file.path, context, charset || "UTF-8");
-            // alert("重新加载了脚本");
         }
     },
     flushCache: function (file) {
@@ -261,7 +314,33 @@ var ns = window.saveUserChromeJS = {
 	      .QueryInterface(Ci.nsIInterfaceRequestor)
 	      .getInterface(Ci.nsIDOMWindow)
 	      .QueryInterface(Ci.nsIDOMChromeWindow);
-	}
+	},
+    restartApp: function() {
+        const appStartup = Components.classes["@mozilla.org/toolkit/app-startup;1"].getService(Components.interfaces.nsIAppStartup);
+
+        // Notify all windows that an application quit has been requested.
+        var os = Components.classes["@mozilla.org/observer-service;1"].getService(Components.interfaces.nsIObserverService);
+        var cancelQuit = Components.classes["@mozilla.org/supports-PRBool;1"].createInstance(Components.interfaces.nsISupportsPRBool);
+        os.notifyObservers(cancelQuit, "quit-application-requested", null);
+
+        // Something aborted the quit process.
+        if (cancelQuit.data) return;
+
+        // Notify all windows that an application quit has been granted.
+        os.notifyObservers(null, "quit-application-granted", null);
+
+        // Enumerate all windows and call shutdown handlers
+        var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"].getService(Components.interfaces.nsIWindowMediator);
+        var windows = wm.getEnumerator(null);
+        var win;
+        while (windows.hasMoreElements()) {
+            win = windows.getNext();
+            if (("tryToClose" in win) && !win.tryToClose()) return;
+        }
+        let XRE = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime);
+        if (typeof XRE.invalidateCachesOnRestart == "function") XRE.invalidateCachesOnRestart();
+        appStartup.quit(appStartup.eRestart | appStartup.eAttemptQuit);
+    }
 };
 
 

@@ -107,6 +107,12 @@ window.gWHT = {
 			icon.setAttribute("state", bool ? "enable" : "disable");
 			icon.setAttribute("tooltiptext", bool ? "enable" : "disable");
 		}
+
+        var menuitem = $(PREFIX + "menuitem");
+        if(menuitem){
+            menuitem.setAttribute("checked", bool);
+        }
+
 		return GET_KEYWORD = bool;
 	},
 
@@ -114,13 +120,23 @@ window.gWHT = {
 		this.xulstyle = addStyle(CSS);
 
         // urlbar-icons  addon-bar
-		var icon = $("status-bar").appendChild(document.createElement("image"));
-		icon.setAttribute("id", PREFIX + "icon");
-		icon.setAttribute("class", PREFIX + "icon");
-		// icon.setAttribute("onclick", "gWHT.GET_KEYWORD = !gWHT.GET_KEYWORD");
-        icon.setAttribute("onclick", "gWHT.iconClick(event);");
-		icon.setAttribute("context", "");
-		icon.setAttribute("style", "padding: 0px 2px;");
+		// var icon = $("status-bar").appendChild(document.createElement("image"));
+		// icon.setAttribute("id", PREFIX + "icon");
+		// icon.setAttribute("class", PREFIX + "icon");
+		// // icon.setAttribute("onclick", "gWHT.GET_KEYWORD = !gWHT.GET_KEYWORD");
+  //       icon.setAttribute("onclick", "gWHT.iconClick(event);");
+		// icon.setAttribute("context", "");
+		// icon.setAttribute("style", "padding: 0px 2px;");
+
+        var menuitem = document.createElement("menuitem");
+        menuitem.setAttribute("id", PREFIX + "menuitem");
+        menuitem.setAttribute("label", "Word Highlight Toolbar");
+        menuitem.setAttribute("type", "checkbox");
+        menuitem.setAttribute("checked", "true");
+        menuitem.setAttribute("autoCheck", "false");
+        menuitem.setAttribute("oncommand", "gWHT.GET_KEYWORD = !gWHT.GET_KEYWORD");
+        var ins = document.getElementById("devToolsSeparator");
+        ins.parentNode.insertBefore(menuitem, ins);
 
 		var bb = document.getElementById("appcontent");
 		var container = bb.appendChild(document.createElement("hbox"));
@@ -197,7 +213,7 @@ window.gWHT = {
 		this.prefs.setBoolPref("GET_KEYWORD", this.GET_KEYWORD);
 	},
 	destroy: function() {
-		[PREFIX + "icon", PREFIX + "box", PREFIX + "highlight"].forEach(function(id){
+		[PREFIX + "icon", PREFIX + "menuitem", PREFIX + "box", PREFIX + "highlight"].forEach(function(id){
 			var elem = $(id);
 			if (elem) elem.parentNode.removeChild(elem);
 		}, this);
@@ -228,7 +244,7 @@ window.gWHT = {
 				if (!checkDoc(doc)) return;
 
                 this.delayLaunch(doc, win);
-                
+
                 setTimeout(function(self, doc, win){
                 	self.fixAutoPage(doc, win);
                 }, 1000, this, doc, win)
@@ -324,10 +340,10 @@ window.gWHT = {
                 setTimeout(function(){
                     gWHT.recoveryToolbar();
                 }, 200);
-                
+
             }
         });
-        observer.observe(doc, {childList: true, subtree: true});
+        observer.observe(doc.body, {childList: true, subtree: true});
     },
     iconClick: function(event){
         if (event.target != $(CLASS_ICON)) return;

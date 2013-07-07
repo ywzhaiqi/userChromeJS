@@ -182,7 +182,11 @@ var ns = window.saveUserChromeJS = {
 			doc = win.document;
 			name = doc.body.textContent.match(/\/\/\s*@name\s+(.*)/i);
 			charset = doc.body.textContent.match(/\/\/\s*@charset\s+(.*)/i);
-		}
+		}else{
+            if(url.match(/^https?:\/\/github\.com\/\w+\/\w+\/blob\//)){
+                url = url.replace("/blob/", "/raw/");
+            }
+        }
 
 		name = name && name[1] ? name[1] : decodeURIComponent(url.split("/").pop());
         fileName = name.replace(/\.uc\.(js|xul)$|$/i, ".uc.$1").replace(/\s/g, '_');
@@ -238,7 +242,7 @@ var ns = window.saveUserChromeJS = {
     showInstallMessage: function(info){
         var isRun = (info.fileExt == "js");
 
-        var mainAction;
+        var mainAction, secondActions;
         if(runWithoutRestart && isRun){
             mainAction = {
                 label: "立即运行（可能有问题，重启即可）",
@@ -247,18 +251,25 @@ var ns = window.saveUserChromeJS = {
                     ns.runScript(info.file, info.charset);
                 }
             };
+            secondActions = [{
+                label: "立即重启",
+                accessKey: "R",
+                callback: ns.restartApp
+            }];
         }else{
             mainAction = {
                 label: "立即重启",
                 accessKey: "R",
                 callback: ns.restartApp
             };
+            secondActions = null;
         }
 
         var showedMsg = ns.popupNotification({
             id: "userchromejs-install-popup-notification",
             message: "'" + info.fileName + "' 安装完毕",
             mainAction: mainAction,
+            secondActions: secondActions,
             options: {
                 removeOnDismissal: true,
                 persistWhileVisible: true
@@ -274,7 +285,7 @@ var ns = window.saveUserChromeJS = {
                 details.message,
                 "",
                 details.mainAction,
-                null /* secondary action */ ,
+                details.secondActions,
                 details.options);
             return true;
         }
@@ -284,6 +295,9 @@ var ns = window.saveUserChromeJS = {
     // 只支持 us.js
     runScript: function(file, charset){
         window.userChrome_js.getScripts();
+        if(window.userChromeManager){
+            window.userChromeManager.rebuildScripts();
+        }
 
         var dir = file.parent.leafName;
         if(dir.toLowerCase() == 'chrome' || (dir in window.userChrome_js.arrSubdir)){

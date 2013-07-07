@@ -1,7 +1,7 @@
 uSuper_preloader.uc.js
 ======================
 
-基于 NLF 的 Super_preloader（版本 2.0.22）修改而来的 uc脚本。
+基于 NLF 的 Super_preloader（版本 2.0.22）修改而来的 uc脚本。感谢作者 NFL，同时也感谢规则更新者。 [Super\_preloader.db 超级翻页规则 个人更新版](http://www.kafan.cn/forum.php?mod=viewthread&tid=1235297)
 
 ## 特性
 

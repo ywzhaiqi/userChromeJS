@@ -5,11 +5,11 @@
 // @description    迅雷离线直接导出IDM.ef2，需配合 ThunderLixianExporter.use.js 使用。
 // @include        main
 // @charset        UTF-8
-// @version        0.0.1
-// @note           
+// @version        0.0.2
+// @note
 // ==/UserScript==
 
-/** 
+/**
  * ThunderLixianExporter.use.js 下载地址
  * http://binux.github.io/ThunderLixianExporter/master/ThunderLixianExporter.user.js
  */
@@ -34,32 +34,18 @@ Cu.import("resource://gre/modules/FileUtils.jsm");
 var ns = window.thunderLixian = {
 
 	init: function(){
-		gBrowser.mPanelContainer.addEventListener('DOMContentLoaded', this, true);
+		gBrowser.mPanelContainer.addEventListener('load', this, true);
 	},
 	uninit: function(){
-		gBrowser.mPanelContainer.removeEventListener('DOMContentLoaded', this, true);
+		gBrowser.mPanelContainer.removeEventListener('load', this, true);
 	},
 	handleEvent: function(event){
 		switch(event.type){
-			case 'DOMContentLoaded':
+			case 'load':
 				var doc = event.target;
 				var win = doc.defaultView;
-				if(win.location.hostname == "dynamic.cloud.vip.xunlei.com"){
-					var timer = 0;
-					var checkButton = setInterval(function(win, doc){
-						if(!checkDoc(doc)){
-							return clearInterval(checkButton);
-						}
-
-						if(doc.getElementById("TLE_batch_getbtn")){
-							clearInterval(checkButton);
-							ns.addListener(win);
-						}
-						timer++;
-						if(timer > 50){
-							clearInterval(checkButton);
-						}
-					}, 200, win, doc);
+				if(win && win.location.hostname == "dynamic.cloud.vip.xunlei.com"){
+                    ns.addListener(win);
 				}
 				break;
 		}
@@ -70,7 +56,7 @@ var ns = window.thunderLixian = {
 
 		var link = win.document.createElement("a");
 		link.innerHTML = "直接导出IDM文件";
-		link.setAttribute("href", "#");
+		link.setAttribute("href", "javascript:void(0);");
 		batch_getbtn.insertBefore(link, batch_getbtn.children[1]);
 
 		link.addEventListener("click", function(){

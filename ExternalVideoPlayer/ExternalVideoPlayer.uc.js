@@ -22,30 +22,31 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 	// 播放器路径
 	var PLAYER_PATH = "D:\\Program Files\\Potplayer\\PotPlayerMini.exe";
 
-	// 默认清晰度到 flvcd 网站设置。
+	// 清晰度: normal high super supper2
 
-
-	let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-	Components.utils.import("resource://gre/modules/FileUtils.jsm");
-	Components.utils.import("resource://gre/modules/NetUtil.jsm");
-
-	// 下载设置，
+	// 下载设置
 	var IDM_PATH = "D:\\Program Files\\Internet Download Manager\\IDMan.exe";
+
 
 	// youku 视频地址一段时间后失效，所以 cache 有问题。
 	var useCache = false;
 	var DEBUG = false;
 
+	let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+	Components.utils.import("resource://gre/modules/FileUtils.jsm");
+
 	var ns = window.externalVideoPlayer = {
 		PLAYER_PATH: PLAYER_PATH,
 		FILE_NAME: "externalVideoPlayer",
 		_menu: null,
-		_notSupported: false,
+		_canPlay: true,
 		_noPlayer: false,
 		_video_path_cache: {},
 
 		init: function(){
+
 			this.addMenuItem();
+
 		},
 		uninit: function(){
 			if(this._menu){
@@ -68,7 +69,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 		},
 		addMenuItem: function(){
 			var menu, menupopup, menuitem;
-			
+
 			menu = $C("menu", {
 				id: "external-video-player",
 				label: "用外部播放器播放当前页面",
@@ -140,16 +141,16 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 		},
 		isValidLocation: function(){
 
-			ns._notSupported = false;
+			ns._canPlay = true;
 
 			var hostname = content.location.hostname;
-			if(hostname.match(/youku|yinyuetai|ku6|umiwi|sina|163|56|joy|v\.qq|letv|baidu|wasu|pps|kankan\.xunlei|tangdou|acfun\.tv|bilibili\.tv/)){
+			if(hostname.match(/youku|yinyuetai|ku6|umiwi|sina|163|56|joy|v\.qq|letv|(tieba|mv|zhangmen)\.baidu|wasu|pps|kankan\.xunlei|tangdou|taiyuan\.acfun\.tv|www\.bilibili\.tv/)){
 				return true;
 			}
 
 			// tudou 没法用外置播放器看，其它由于网络限制，只能用硕鼠下载
 			if(hostname.match(/tudou|qiyi|v\.sohu\.com|v\.pptv/)){
-				ns._notSupported = true;
+				ns._canPlay = false;
 				return true;
 			}
 
@@ -157,10 +158,9 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
 			return false;
 		},
-		// format: normal high super supper2
 		run: function(format, type){
 			var url;
-			if(gContextMenu.onLink){
+			if(gContextMenu && gContextMenu.onLink){
 				url = gContextMenu.linkURL;
 			}else{
 				url = content.location.href;
@@ -171,7 +171,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 				flvcdUrl += '&format=' + format;
 			}
 
-			if(ns._notSupported || type == 'open'){
+			if(!ns._canPlay || type == 'open'){
 				return ns.openFlvcd(flvcdUrl);
 			}
 
@@ -181,7 +181,13 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 				videoFile.initWithPath(videoPath);
 				ns.launch(videoFile);
 			}else{
-				request(flvcdUrl, ns.requestLoaded, type);
+                getHTML(flvcdUrl, function(){
+                    if(this.readyState == 4 && this.status == 200){
+                            ns.requestLoaded(this.response, type);
+                    }else{
+                        throw new Error(this.statusText);
+                    }
+                }, "gbk");
 				ns._requestUrl = flvcdUrl;
 			}
 		},
@@ -192,20 +198,22 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 			}
 		},
 		requestLoaded: function(doc, type){
-			var elem = doc.querySelectorAll(".mn.STYLE4")[2];
-			if(!elem){
-				ns.openFlvcd();
-				return;
+            log("requestLoaded")
+
+			var content = doc.querySelectorAll(".mn.STYLE4")[2];
+			if(!content){
+				return ns.openFlvcd();
 			}
 
 			var title = doc.querySelector('input[name="name"]').getAttribute("value");
-			var links = elem.querySelectorAll("a");
+			var links = content.querySelectorAll("a");
 
 			var list = [];
-			var length = links.length;
-			if(length == 0){
-				return ns.openFlvcd();
-			}else if(length == 1){
+			var len = links.length;
+			if(len == 0){
+				ns.openFlvcd();
+				return;
+			}else if(len == 1){
 				list.push({
 					title: title,
 					url: links[0].href
@@ -240,14 +248,14 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 		saveAndRun_asx: function(list){
 			var text = '<asx version = "3.0" >\n\n';
 			var item_tpl = '<entry>\n' +
-				'	<title>{title}</title>\n' + 
+				'	<title>{title}</title>\n' +
 				'	<ref href = "{url}" />\n' +
 				'</entry>\n\n';
 
-			list.forEach(function(file){
+			list.forEach(function(info){
 				text += ns.nano(item_tpl, {
-					title: file.title, 
-					url: file.url
+					title: info.title,
+					url: info.url
 				});
 			});
 
@@ -260,8 +268,8 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 		// mplayer txt 格式没法播放？
 		saveAndRun_txt: function(list){
 			var text = "";
-			list.forEach(function(file, i){
-				text += file.url + "\n";
+			list.forEach(function(info, i){
+				text += info.url + "\n";
 			});
 			var file = ns.saveList(ns.FILE_NAME + ".txt", text);
 			ns.initPlayer();
@@ -274,11 +282,12 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 			});
 
 			ns.exec(ns.PLAYER_PATH, args);
+			ns._playerProcess.run(false, args, args.length);
 		},
 		saveList: function(name, data){
 			var tmpfile = FileUtils.getFile("TmpD", [name]);
 			tmpfile.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
-			
+
 			var suConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
 			suConverter.charset = 'gbk';
 			data = suConverter.ConvertFromUnicode(data);
@@ -313,7 +322,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 		download_IDM: function(filelist){
 			filelist.forEach(function(file, i){
 				var title_gbk = ns.convert_to_gbk(ns.safe_title(file.title));
-				ns.exec(IDM_PATH, ["/a", "/d", file.url, "/f", title_gbk]);
+				ns.exec(IDM_PATH, ["/a", "/d", file.url, "/f", title_gbk], true);
 			});
 		},
 		download_aria2: function(filelist){
@@ -326,11 +335,12 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 				ns._playerProcess.run(false, [file.path], 1);
 			}
 
-			ns._video_path_cache[ns._requestUrl] = file.path;
+			// ns._video_path_cache[ns._requestUrl] = file.path;
 			ns._requestUrl = null;
 		},
-		exec: function(path, args){
-	        path = this.handleRelativePath(path);
+		exec: function(path, args, blocking){
+	        path = ns.handleRelativePath(path);
+	        blocking = typeof(blocking) == 'undefined' ? false : blocking;
 
 			var file    = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
 			var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
@@ -339,12 +349,11 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
 	            if (!file.exists()) {
 	                Cu.reportError('File Not Found: ' + path);
-	                return;
 	            }
 
 	            if (file.isExecutable()) {
 	                process.init(file);
-	                process.run(false, args, args.length);
+	                process.run(blocking, args, args.length);
 	            } else {
 	                file.launch();
 	            }
@@ -385,7 +394,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 	};
 
 
-	function debug(arg) { if(DEBUG) content.console.log(arg); }
+	function log(arg) { Application.console.log("[ExternalVideoPlayer]" + arg); }
 	function $(id) document.getElementById(id);
 
 	function $C(name, attr) {
@@ -394,20 +403,15 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 		return el;
 	}
 
-	function request(url, callback, arg){
-		debug("Request: " + url);
-		var xhr = new XMLHttpRequest();
-		xhr.onreadystatechange = function(){
-			if(this.readyState != 4) return;
-			var text = this.responseText;
-			var doc = new DOMParser().parseFromString(text, "text/html");
-			debug("Get doc");
-			callback(doc, arg);
-		};
-		xhr.overrideMimeType("text/html;charset=gbk");
-		xhr.open("GET", url, true);
-		xhr.send(null);
-	}
+    function getHTML(url, callback, charset){
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", url, true);
+        xhr.responseType = "document";
+        xhr.onload = callback;
+        if(charset)
+            xhr.overrideMimeType("text/html; charset=" + charset);
+        xhr.send(null);
+    }
 
 })();
 

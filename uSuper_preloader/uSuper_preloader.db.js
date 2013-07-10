@@ -17,7 +17,8 @@ var prefs={
 			s_ease:2																			,//淡入淡出效果 0：淡入 1：淡出 2：淡入淡出
 			s_FPS:60																			,//帧速.(单位:帧/秒)
 			s_duration:333																,//动画持续时长.(单位:毫秒);
-	debug:true,  //debug,firefox打开firebug切换到错误控制台,chrome打开自带调试工具,opera打开dragonfly切换到命令行.
+	// uSuper_preloader 已弃用 debug 参数
+    debug: false,  //debug,firefox打开firebug切换到错误控制台,chrome打开自带调试工具,opera打开dragonfly切换到命令行.
 	someValue:''						,//显示在翻页导航最右边的一个小句子..-_-!!..Powered by Super_preloader隐藏了
 	DisableI:true																			,//只在顶层窗口加载JS..提升性能..如果开启了这项,那么DIExclude数组有效,里面的网页即使不在顶层窗口也会加载....
 	arrowKeyPage:true																	,//允许使用 左右方向键 翻页..
@@ -38,44 +39,44 @@ var sep_icons={
 
 //悬浮窗的状态颜色.
 var FWKG_color={
-	loading:'#8B00E8',//读取中状态
-	prefetcher:'#5564AF',//预读状态
-	autopager:'#038B00',//翻页状态
-	Apause:'#B7B700',//翻页状态(暂停).
-	Astop:'#A00000',//翻页状态(停止)(翻页完成,或者被异常停止.)(无法再开启)
-	dot:'#00FF05',//读取完后,会显示一个小点,那么小点的颜色.
+	loading:'#8B00E8',  //读取中状态
+	prefetcher:'#5564AF',  //预读状态
+	autopager:'#038B00',  //翻页状态
+	Apause:'#B7B700',  //翻页状态(暂停).
+	Astop:'#A00000',  //翻页状态(停止)(翻页完成,或者被异常停止.)(无法再开启)
+	dot:'#00FF05',  //读取完后,会显示一个小点,那么小点的颜色.
 };
 
 //黑名单,在此网页上禁止加载..3个项.分别是:名字,启用,网站正则..
 var blackList=[
-	['中关村首页',false,/^http:\/\/www\.zol\.com\.cn\/(?:#.*)?$/i],
-	['Gmail',true,/mail\.google\.com/i],
-	['Google reader',true,/google\.com\/reader\//i],
-	['优酷视频播放页面',true,/http:\/\/v\.youku\.com\//i],
+	// ['中关村首页',false, /^http:\/\/www\.zol\.com\.cn\/(?:#.*)?$/i],
+	['Gmail', true, /mail\.google\.com/i],
+	['Google reader', true, /google\.com\/reader\//i],
+	['优酷视频播放页面', true, /http:\/\/v\.youku\.com\//i],
 ];
 
 //在以下网站上允许在非顶层窗口上加载JS..比如猫扑之类的框架集网页.
 var DIExclude=[
-	['猫扑帖子',true,/http:\/\/dzh\.mop\.com\/[a-z]{3,6}\/\d{8}\/.*\.shtml$/i],
+	['猫扑帖子', true, /http:\/\/dzh\.mop\.com\/[a-z]{3,6}\/\d{8}\/.*\.shtml$/i],
 ];
 
 //////////////////////////---------------规则-------////////////////
 //翻页所要的站点信息.
 //高级规则的一些默认设置..如果你不知道是什么..请务必不要修改(删除)它.此修改会影响到所有高级规则...
 var SITEINFO_D={
-	enable:true							,//启用
+	enable:true					,//启用
 	useiframe:false				,//(预读)是否使用iframe..
 	viewcontent:false			,//查看预读的内容,显示在页面的最下方.
 	autopager:{
-		enable:true						,//启用自动翻页...
-		manualA:false				,//手动翻页.
+		enable:true				,//启用自动翻页...
+		manualA:false			,//手动翻页.
 		useiframe:false			,//(翻页)是否使用iframe..
-			iloaded:false			,//是否在iframe完全load后操作..否则在DOM完成后操作
-			itimeout:0						,//延时多少毫秒后,在操作..
-		remain:1							,//剩余页面的高度..是显示高度的 remain 倍开始翻页..
-		maxpage:99						,//最多翻多少页..
-		ipages:[false,2]			,//立即翻页,第一项是控制是否在js加载的时候立即翻第二项(必须小于maxpage)的页数,比如[true,3].就是说JS加载后.立即翻3页.
-		separator:true				//显示翻页导航..(推荐显示.)
+			iloaded:false		,//是否在iframe完全load后操作..否则在DOM完成后操作
+			itimeout:0			,//延时多少毫秒后,在操作..
+		remain:1				,//剩余页面的高度..是显示高度的 remain 倍开始翻页..
+		maxpage:99				,//最多翻多少页..
+		ipages:[false,2]		,//立即翻页,第一项是控制是否在js加载的时候立即翻第二项(必须小于maxpage)的页数,比如[true,3].就是说JS加载后.立即翻3页.
+		separator:true			//显示翻页导航..(推荐显示.)
 	}
 };
 
@@ -218,14 +219,14 @@ var SITEINFO=[
 		}
 	},
 	{siteName:'百度贴吧帖子',
-		url:/^http:\/\/tieba\.baidu\.com\/p/i,
-		siteExample:'http://tieba.baidu.com/p/918674650',
-		nextLink:'id("thread_theme_3")/descendant::a[text()="下一页"]',
-		autopager:{
-			useiframe:true,
-			pageElement:'//div[@class="left_section"]',
-		}
-	},
+        url:/^http:\/\/tieba\.baidu\.com\/p/i,
+        siteExample:'http://tieba.baidu.com/p/2329092914',
+        nextLink:'//li[@class="l_pager pager_theme_3"]/descendant::a[text()="下一页"]',
+        autopager:{
+            useiframe:true,
+            pageElement:'//div[@class="left_section"]',
+        }
+    },
     {siteName:'百度吧内搜索',
         url:/^http:\/\/tieba\.baidu\.com\/f\/search/i,
         siteExample:'http://tieba.baidu.com/f/search/',
@@ -262,22 +263,33 @@ var SITEINFO=[
         exampleUrl: 'http://hi.baidu.com/gelida',
     },
     {siteName: '淘宝',
-        url: '^http://.*\\.taobao\\.com/.*$',
-        nextLink: '//a[@class="page-next"]',
+        // s|wt
+        url: '^https?://\\w+.taobao\\.com/',
+        nextLink: '//a[@class="page-next"] | //a[text()="下一页"] | //a[descendant::b[text()="下一页"]]',
         autopager: {
             useiframe: true,
-            iloaded: true,
-            pageElement: '//div[@class="tb-content"] | //div[@class="content"]/div/article[@class="con"]',
+            pageElement: 'css;#content, .tb-content, .choices-item, article.con, .list-designer-conter, .col-left',
         }
     },
     {
-        siteName: 'tmall',
+        siteName: '天猫搜索列表',
         url : '^http://list\\.tmall\\.com/search_product\\.htm',
         nextLink : '//a[@class="ui-page-next"]',
-        pageElement : 'id("J_ItemList")',
-        insertBefore : '',
-        exampleUrl : 'http://list.tmall.com/search_product.htm?spm=3.1000473.332931.1.IYk3dO&q=&area_code=310000&sort=s&style=g&vmarket=0&from=sn_1_cat-qp&active=1&cat=50024400'
+        autopager: {
+            useiframe: true,
+            pageElement: 'id("J_ItemList")'
+        }
     },
+    {   // 不支持 hash 变化？
+        siteName: '天猫评价',
+        url : '^http://detail\\.tmall\\.com/item\\.htm',
+        nextLink : '//a[@class="rate-paginator"]/a[text()="下一页>>"]',
+        hashchange: true,
+        autopager: {
+            pageElement: '.rate-grid'
+        }
+    },
+
     {siteName: '优酷全部视频',
         url: '^http://(?:www|u)\\.youku\\.com/',
         nextLink: '//a[em/@class="ico_next"] | //a[@title="下一页"]',
@@ -1012,15 +1024,6 @@ var SITEINFO=[
 			pageElement:'//div[@id="postlist"]',
 		}
 	},
-	{siteName:'九尾网',
-		url:/joowii\.com\/arc/i,
-		siteExample:'http://www.joowii.com/arc/ysyl/ssgx/2012/0905/125571.html',
-		nextLink:'auto;',
-		autopager:{
-			useiframe:true,
-			pageElement:'//div[@class="article"]',
-		}
-	},
 	{siteName:'游民星空',
 		url:/http:\/\/www\.gamersky\.com/i,
 		siteExample:'http://www.gamersky.com/news/201207/206490.shtml',
@@ -1231,7 +1234,7 @@ var SITEINFO=[
 		siteExample:'http://www.verycd.com/search/folders/opera',
 		nextLink:'//ul[@class="page"]//a[contains(text(),"下一页")][@href]',
 		autopager:{
-			// useiframe:true,
+			useiframe:true,
 			pageElement:'//ul[@id="resultsContainer"]',
 		}
 	},
@@ -1333,8 +1336,8 @@ var SITEINFO=[
 		}
 	},
 	{siteName:'178漫画',
-		url:/^http:\/\/manhua\.178\.com\/.+\.shtml/i,
-		siteExample:'http://manhua.178.com/lansechumoshi/15794.shtml',
+		url:/^http:\/\/(?:manhua\.178\.com|www\.dmzj\.com)\/.+\.shtml/i,
+		siteExample:'http://www.dmzj.com/meishidefulu/16613-2.shtml',
 		nextLink:'//div[@class="pages2"]/descendant::a[text()="下一页"]',
 		autopager:{
 			pageElement:'//div[@class="inner_img"]',
@@ -1558,12 +1561,13 @@ var SITEINFO=[
 			replaceE:'//textarea[@name="atc_content"]/ancestor::div[@id="div940_2"]',
 		},
 	},
-    {siteName : '水木社区',
-       url : '^http://www\\.newsmth\\.net/nForum.*',
-       nextLink : '//a[@title="下一页"]',
-       pageElement : '//div[@class="b-content"] | //div[@class="b-content corner"]',
-       exampleUrl : 'http://www.newsmth.net/nForum/#!board/TouHou'
-    },
+    // {siteName : '水木社区',
+    //     url : '^http://www\\.newsmth\\.net/nForum.*',
+    //     nextLink : '//a[@title="下一页"]',
+    //     hashchange: true,
+    //     pageElement : '//div[@class="b-content"] | //div[@class="b-content corner"]',
+    //     exampleUrl : 'http://www.newsmth.net/nForum/#!board/TouHou'
+    // },
     {siteName: 'BookLink.Me:最有爱的小说搜索引擎',
         url: '^http://booklink\\.me/charpter\\.php\\?.*',
         nextLink: '//a[text()="下一页"]',
@@ -1624,6 +1628,14 @@ var SITEINFO=[
         nextLink: '//a[@rel="next"]',
         pageElement: "id(\"mainbar questions\")//div[contains(concat(\" \",@class,\" \"),\" question-summary \")]|id(\"answers\")/div[@class=\"pager-answers\"][1]/following-sibling::*[./following-sibling::div[@class=\"pager-answers\"]]",
     },
+    {siteName: 'AutoPager Rules',
+        url: /^http:\/\/ap\.teesoft\.info\//i,
+        exampleUrl: 'http://ap.teesoft.info/?exp=0&url=http%3A%2F%2Fbbs.kafan.cn%2Fforum-215-1.html',
+        nextLink: 'id("apRulesForm:rulesTable:Next")',
+        autopager: {
+            pageElement: 'id("apRulesForm:rulesTable")',
+        }
+    },
 ];
 
 //统配规则..用来灭掉一些DZ.或者phpwind论坛系统..此组规则..优先级自动降为最低..
@@ -1643,8 +1655,8 @@ var SITEINFO_TP=[
 		preLink:'//div[@class="pages" or @class="pg"]/descendant::a[@class="prev"][@href]',
 		nextLink:'//div[@class="pages" or @class="pg"]/descendant::a[@class="next" or @class="nxt"][@href] | //div[@class="p_bar"]/descendant::a[text()="››"]',
 		autopager:{
-			// useiframe:true,
-			// 	iloaded:false,
+			useiframe:true,
+				iloaded:false,
 			pageElement:'//div[@id="postlist"] | //form[@method="post"][@name]',
 		}
 	},

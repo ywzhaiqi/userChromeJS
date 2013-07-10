@@ -9,17 +9,87 @@ uSuper_preloader.uc.js
  - 增加对 noscript 的支持
  - 精简了代码，去掉了其它浏览器的兼容等
  - 如果数据文件有修改会自动载入
+ - 默认 Ctrl + 长按鼠标左键 暂停翻页，修改如下
 
 ## 使用说明
 
- - uSuper_preloader.uc.js 脚本文件
- - uSuper_preloader.db.js 数据库文件
+ - uSuper_preloader.uc.js 脚本文件，放在uc脚本管理器指定目录下
+ - uSuper_preloader.db.js 设置、站点配置文件，放在下面的默认路径中，如果没有 local 文件夹新建一个
 
-     - 须放在下面的默认路径中，兼容原数据文件。
-     - 默认路径为 Chrome 目录下的 `Local\uSuper_preloader.db.js`（可在代码里更改）。
-     - 删除了无用的数据，只保留了必须的。
-     - 增加了一些站点配置。
+     - 默认路径为 Chrome 目录下的 `Local\uSuper_preloader.db.js`（可在代码里更改）
+     - 删除了无用的数据，只保留了必须的
+     - 增加了一些站点配置
+     - 兼容原数据文件
 
-## TODO
+## 鼠标手势调用
 
- - 保存设置后无需刷新页面
+图标总开关
+
+    uSuper_preloader.toggle();
+
+上一页
+
+    (function() {
+        var document = content.document;
+        var event = document.createEvent('HTMLEvents');
+        event.initEvent('superPreloader.back', true, false);
+        document.dispatchEvent(event);
+    })();
+
+下一页
+
+    (function() {
+        var document = content.document;
+        var event = document.createEvent('HTMLEvents');
+        event.initEvent('superPreloader.go', true, false);
+        document.dispatchEvent(event);
+    })();
+
+下滚一页（不同上面，只有加载了下一页才有效）
+
+    if(content.window.uSuper_preloader)
+        content.window.uSuper_preloader.goNext();
+
+上滚一页（同上）
+
+    if(content.window.uSuper_preloader)
+        content.window.uSuper_preloader.goPre();
+
+滚到页面顶部（仅仅比自带的多了个平滑滚动）
+
+    if(content.window.uSuper_preloader)
+        content.window.uSuper_preloader.goTop();
+
+滚到页面底部（仅仅比自带的多了个平滑滚动）
+
+    if(content.window.uSuper_preloader)
+        content.window.uSuper_preloader.goBottom();
+
+
+### 修改暂停翻页为鼠标左键双击
+
+uSuper_preloader.db.js 文件中
+
+    Pbutton:[0,0,0]                                                             ,//需要按住的键.....0: 不按住任何键;1: shift鍵;2: ctrl鍵; 3: alt鍵;(同时按3个键.就填 1 2 3)(一个都不按.就填 0 0 0)
+    mouseA:false                                                                     ,//按住鼠标左键..否则.双击;
+
+### 关于自动更新
+
+ - 如果自动更新则自己的设置没法保留。确实需要的话用 bat 命令下载更新。
+
+### 乱码问题
+
+修改 `profile\chrome\userChrome.js`，加上UTF-8参数
+
+    try {
+      if (script.charset)
+        Cc["@mozilla.org/moz/jssubscript-loader;1"].getService(Ci.mozIJSSubScriptLoader)
+                 .loadSubScript(script.url + "?" + this.getLastModifiedTime(script.file),
+                                doc.defaultView, script.charset);
+      else
+        Cc["@mozilla.org/moz/jssubscript-loader;1"].getService(Ci.mozIJSSubScriptLoader)
+                 .loadSubScript(script.url + "?" + this.getLastModifiedTime(script.file),
+                                doc.defaultView, 'UTF-8');
+    }catch(ex) {
+      this.error(script.filename, ex);
+    }

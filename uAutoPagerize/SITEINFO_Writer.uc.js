@@ -41,56 +41,56 @@ window.siteinfo_writer = {
 				    <grid id="sw-grid">\
 				      <columns>\
 				        <column />\
-				        <column flex="1"/>\
 				        <column />\
+				        <column flex="1"/>\
 				        <column />\
 				      </columns>\
 				      <rows>\
 				        <row>\
 				          <label value="siteName" />\
+                          <toolbarbutton class="inspect"\
+                                         tooltiptext="提取网站名称"\
+                                         oncommand="siteinfo_writer.siteName.value = content.document.title;"/>\
 				          <textbox id="sw-siteName"/>\
-				          <hbox />\
-				          <toolbarbutton class="inspect"\
-				                         tooltiptext="提取网站名称"\
-				                         oncommand="siteinfo_writer.siteName.value = content.document.title;"/>\
+                          <hbox />\
 				        </row>\
 				        <row>\
 				          <label value="url" />\
+                          <toolbarbutton class="inspect"\
+                                         tooltiptext="提取地址"\
+                                         oncommand="siteinfo_writer.setUrl();"/>\
 				          <textbox id="sw-url" oninput="siteinfo_writer.onInput(event);"/>\
-				          <hbox />\
-				          <toolbarbutton class="inspect"\
-				                         tooltiptext="提取地址"\
-				                         oncommand="siteinfo_writer.setUrl();"/>\
+                          <hbox />\
 				        </row>\
 				        <row>\
 				          <label value="nextLink" />\
+                          <toolbarbutton class="inspect"\
+                                         tooltiptext="提取XPath"\
+                                         oncommand="siteinfo_writer.inspect(\'nextLink\');"/>\
 				          <textbox id="sw-nextLink" multiline="true"/>\
 				          <toolbarbutton class="check"\
 				                         tooltiptext="测试XPath"\
 				                         oncommand="siteinfo_writer.xpathTest(\'nextLink\');"/>\
-				          <toolbarbutton class="inspect"\
-				                         tooltiptext="提取XPath"\
-				                         oncommand="siteinfo_writer.inspect(\'nextLink\');"/>\
 				        </row>\
 				        <row>\
 				          <label value="pageElement" />\
+                          <toolbarbutton class="inspect"\
+                                         tooltiptext="提取XPath"\
+                                         oncommand="siteinfo_writer.inspect(\'pageElement\');"/>\
 				          <textbox id="sw-pageElement" multiline="true"/>\
 				          <toolbarbutton class="check"\
 				                         tooltiptext="测试XPath"\
 				                         oncommand="siteinfo_writer.xpathTest(\'pageElement\');"/>\
-				          <toolbarbutton class="inspect"\
-				                         tooltiptext="提取XPath"\
-				                         oncommand="siteinfo_writer.inspect(\'pageElement\');"/>\
 				        </row>\
 				        <row>\
 				          <label value="insertBefore" />\
+                          <toolbarbutton class="inspect"\
+                                         tooltiptext="提取XPath"\
+                                         oncommand="siteinfo_writer.inspect(\'insertBefore\');"/>\
 				          <textbox id="sw-insertBefore"/>\
 				          <toolbarbutton class="check"\
 				                         tooltiptext="测试XPath"\
 				                         oncommand="siteinfo_writer.xpathTest(\'insertBefore\');"/>\
-				          <toolbarbutton class="inspect"\
-				                         tooltiptext="提取XPath"\
-				                         oncommand="siteinfo_writer.inspect(\'insertBefore\');"/>\
 				        </row>\
 				      </rows>\
 				    </grid>\
@@ -168,9 +168,11 @@ window.siteinfo_writer = {
 					win = doc.defaultView,
 					self = this;
 				if(win.location.hostname == 'ap.teesoft.info'){
-					this.addStyle(doc, ".install{ display: block !important; }");
-					this.fixAutoPagerBug(doc);
+					this.addStyle(doc, ".install{ display: block !important; }\
+                        #need-ap { display: none !important;  }");
+					// this.fixAutoPagerBug(doc);
 
+                    var doc = win.wrappedJSObject.document;
 					// 点击 install 自动安装
 					var evt = doc.createEvent("Events");
 				    doc.addEventListener(evt, function(event){
@@ -186,7 +188,7 @@ window.siteinfo_writer = {
 		var link, links, onclick;
 		links = doc.querySelectorAll("a.install");
 		for (var i = links.length - 1; i >= 0; i--) {
-			link = links[i]; 
+			link = links[i];
 			onclick = link.getAttribute("onclick").replace(/install\((\w+)\)/, "install('$1')");
 			link.setAttribute("onclick", onclick);
 		}
@@ -258,15 +260,15 @@ window.siteinfo_writer = {
 		}
 	},
 	toSuperPreLoaderFormat: function() {
-		var spdb = "\t{\n";
-		spdb += "\t\tsiteName    : '" + this.siteName.value + "',\n";
-		spdb += "\t\turl         : /" + this.url.value.replace(/\//g, "\\\/") + "/i,\n";
-		spdb += "\t\tsiteExample : '" + content.location.href + "',\n";
-		spdb += "\t\tnextLink    : '" + this.nextLink.value + "',\n";
+		var spdb = "\t{";
+		spdb += "siteName: '" + this.siteName.value + "',\n";
+		spdb += "\t\turl: /" + this.url.value.replace(/\//g, "\\\/") + "/i,\n";
+		spdb += "\t\texampleUrl: '" + content.location.href + "',\n";
+		spdb += "\t\tnextLink: '" + this.nextLink.value + "',\n";
 		spdb += "\t\tautopager: {\n";
-		spdb += "\t\t\tuseiframe   : true,\n";
-		spdb += "\t\t\tpageElement : '" + this.pageElement.value + "',\n";
-		if ( this.insertBefore.value != '' ) {spdb += "\t\t\tHT_insert   : ['" + this.insertBefore.value + "', 1],\n";}
+		// spdb += "\t\t\tuseiframe: true,\n";
+		spdb += "\t\t\tpageElement: '" + this.pageElement.value + "',\n";
+		if ( this.insertBefore.value != '' ) {spdb += "\t\t\tHT_insert: ['" + this.insertBefore.value + "', 1],\n";}
 		spdb += "\t\t}\n";
 		spdb += "\t},";
 		var r=confirm("翻页规则(SuperPreLoader格式)（按OK键将其复制到剪贴板）："+'\n\n' + spdb);
@@ -704,7 +706,7 @@ Inspector.prototype = {
 				xpath += '['+ x.join(" and ") +']';
 		}
 
-/*
+        /*
 		var attrs = elem.attributes;
 		var arr = [];
 		for (var i = 0, len = attrs.length; i < len; i++) {
@@ -713,7 +715,7 @@ Inspector.prototype = {
 			var value = attrs[i].nodeValue;
 			arr[arr.length] = '@' + name + '="' + value + '"';
 		};
-*/
+        */
 		var arr = [
 			"@"+ x.nodeName +'="'+ x.nodeValue +'"'
 				for each(x in $A(elem.attributes))

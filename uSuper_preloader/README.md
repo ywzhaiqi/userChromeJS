@@ -70,8 +70,8 @@ uSuper_preloader.uc.js
 
 uSuper_preloader.db.js 文件
 
-    Pbutton:[0,0,0]                                                             ,//需要按住的键.....0: 不按住任何键;1: shift鍵;2: ctrl鍵; 3: alt鍵;(同时按3个键.就填 1 2 3)(一个都不按.就填 0 0 0)
-    mouseA:false                                                                     ,//按住鼠标左键..否则.双击;
+    Pbutton:[0,0,0]        ,//需要按住的键.....0: 不按住任何键;1: shift鍵;2: ctrl鍵; 3: alt鍵;(同时按3个键.就填 1 2 3)(一个都不按.就填 0 0 0)
+    mouseA:false           ,//按住鼠标左键..否则.双击;
 
 ### 修改按钮或菜单显示方式
 

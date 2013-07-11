@@ -1645,8 +1645,8 @@ var SITEINFO_TP=[
 		preLink:'//div[@class="pages" or @class="pg"]/descendant::a[@class="prev"][@href]',
 		nextLink:'//div[@class="pages" or @class="pg"]/descendant::a[@class="next" or @class="nxt"][@href] | //div[@class="p_bar"]/a[@class="p_curpage"]/following-sibling::a[@class="p_num"]',
 		autopager:{
-			// useiframe:true,
-			// 	iloaded:false,
+			useiframe:true,
+				iloaded:false,
 			pageElement:'//form[@method="post"][@name] | //div[@id="postlist"]',
 		}
 	},

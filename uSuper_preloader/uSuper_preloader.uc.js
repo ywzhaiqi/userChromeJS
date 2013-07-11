@@ -12,6 +12,14 @@
 // super_preloader.db 存放的位置，相对路径，Chrome 目录下
 var DB_FILE_NAME = "Local\\uSuper_preloader.db.js";
 
+// 1 按钮, 2 菜单, 0 无
+// 按钮ID: uSuper_preloader-icon
+// 菜单ID: uSuper_preloader-menuitem, 可用 rebulid_userChrome 移动统一管理
+var append_type = 1;
+
+var APPEND_BUTTON = 1;
+var APPEND_MENU_ITEM = 2;
+var APPEND_NONE = 0;
 
 var AUTO_START = true;
 var DEBUG = false;
@@ -56,35 +64,41 @@ var ns = window.uSuper_preloader = {
 
     init: function(){
 
-        // addon-bar, nav-bar, urlbar-icons
-        this.addIcon('addon-bar');
-
         this.load_DB();
+
+        if(!this.db)
+            return alerts("uSuper_preloader.db.js", "数据文件有错误");
+
         // 设置初始时间
         this.isModified();
 
-        if(this.db){
-            gBrowser.mPanelContainer.addEventListener('DOMContentLoaded', this, true);
-            window.addEventListener('unload', this, false);
-        }else{
-            alerts("uSuper_preloader.db.js", "数据文件有错误");
-        }
+        gBrowser.mPanelContainer.addEventListener('DOMContentLoaded', this, true);
 
-        ["AUTO_START", "DEBUG"].forEach(function(name) {
-            try {
-                ns[name] = ns.prefs.getBoolPref(name);
-            } catch (e) {}
-        }, ns);
+        if(append_type != APPEND_NONE){
+            // addon-bar, nav-bar, urlbar-icons
+            this.addIconOrMenuitem('addon-bar');
+
+            window.addEventListener('unload', this, false);
+
+            ["AUTO_START", "DEBUG"].forEach(function(name) {
+                try {
+                    ns[name] = ns.prefs.getBoolPref(name);
+                } catch (e) {}
+            }, ns);
+        }
     },
     uninit: function(){
         gBrowser.mPanelContainer.removeEventListener('DOMContentLoaded', this, true);
-        window.removeEventListener('unload', this, false);
 
-        ["AUTO_START", "DEBUG"].forEach(function(name) {
-            try {
-                ns.prefs.setBoolPref(name, ns[name]);
-            } catch (e) {}
-        }, ns);
+        if(append_type != APPEND_NONE){
+            window.removeEventListener('unload', this, false);
+
+            ["AUTO_START", "DEBUG"].forEach(function(name) {
+                try {
+                    ns.prefs.setBoolPref(name, ns[name]);
+                } catch (e) {}
+            }, ns);
+        }
 
         var ids = ["uSuper_preloader-icon", "uSuper_preloader-popup"];
         for (let [, id] in Iterator(ids)) {
@@ -107,15 +121,38 @@ var ns = window.uSuper_preloader = {
                 break;
         }
     },
-    addIcon: function(appendBarId){
-        ns.icon = $(appendBarId).appendChild($C("toolbarbutton", {
-            id: "uSuper_preloader-icon",
-            class: "toolbarbutton-1",
-            type: "context",
-            onclick: "if (event.button != 2) uSuper_preloader.iconClick(event);",
-            context: "uSuper_preloader-popup",
-            image: BUTTON_IMG_ENABLE
-        }));
+    addIconOrMenuitem: function(appendBarId){
+        if(append_type == APPEND_NONE){
+            return;
+        }else if(append_type == APPEND_BUTTON){
+            ns.icon = $(appendBarId).appendChild($C("toolbarbutton", {
+                id: "uSuper_preloader-icon",
+                class: "toolbarbutton-1",
+                type: "context",
+                onclick: "if (event.button != 2) uSuper_preloader.iconClick(event);",
+                context: "uSuper_preloader-popup",
+                image: BUTTON_IMG_ENABLE
+            }));
+        }else if(append_type == APPEND_MENU_ITEM){
+            let ins = $("webDeveloperMenu");
+            let menuitem = $C("menuitem", {
+                id: "uSuper_preloader-menuitem",
+                label: "uSuper_preloader 开关",
+                class: "menuitem-iconic",
+                image: BUTTON_IMG_ENABLE
+            });
+            menuitem.addEventListener("click", function(event){
+                if(event.button == 0){
+                    uSuper_preloader.iconClick(event);
+                }else if(event.button == 2){
+                    event.preventDefault();
+                    $("uSuper_preloader-popup").openPopup(
+                        menuitem, "after_start", -1, -1, false, false);
+                }
+            }, false);
+
+            ns.icon = ins.parentNode.insertBefore(menuitem, ins);
+        }
 
         var xml = '\
             <menupopup id="uSuper_preloader-popup"\
@@ -892,30 +929,6 @@ Super_preloader.prototype = {
             }
 
 
-            var noticeDiv;
-            var noticeDivto;
-            var noticeDivto2;
-
-            function notice(html_txt) {
-                if (!noticeDiv) {
-                    var div = document.createElement('div');
-                    noticeDiv = div;
-                    div.style.cssText = self.noticeDiv_style;
-                    document.body.appendChild(div);
-                }
-                window.clearTimeout(noticeDivto);
-                window.clearTimeout(noticeDivto2);
-                noticeDiv.innerHTML = html_txt;
-                noticeDiv.style.display = 'block';
-                noticeDiv.style.opacity = '0.96';
-                noticeDivto2 = window.setTimeout(function() {
-                    noticeDiv.style.opacity = '0';
-                }, 1666);
-                noticeDivto = window.setTimeout(function() {
-                    noticeDiv.style.display = 'none';
-                }, 2000);
-            }
-
             var manualDiv;
 
             function manualAdiv() {
@@ -1163,7 +1176,7 @@ Super_preloader.prototype = {
                 };
                 if (paged >= SSS.a_maxpage) {
                     C.log('到达所设定的最大翻页数', SSS.a_maxpage);
-                    notice('<b>状态</b>:' + '到达所设定的最大翻页数:<b style="color:red">' + SSS.a_maxpage + '</b>');
+                    self.notice('<b>状态</b>:' + '到达所设定的最大翻页数:<b style="color:red">' + SSS.a_maxpage + '</b>');
                     removeL();
                     return;
                 };
@@ -1222,11 +1235,11 @@ Super_preloader.prototype = {
                     if (prefs.stop_ipage) ipagesmode = false;
                     if (pause) {
                         floatWO.updateColor('Apause');
-                        notice('<b>状态</b>:' + '自动翻页<span style="color:red!important;"><b>暂停</b></span>.');
+                        self.notice('<b>状态</b>:' + '自动翻页<span style="color:red!important;"><b>暂停</b></span>.');
                     } else {
                         floatWO.updateColor('autopager');
                         floatWO.CmodeIcon('hide');
-                        notice('<b>状态</b>:' + '自动翻页<span style="color:red!important;"><b>启用</b></span>.');
+                        self.notice('<b>状态</b>:' + '自动翻页<span style="color:red!important;"><b>启用</b></span>.');
                     };
                     scroll();
                 };
@@ -1284,7 +1297,7 @@ Super_preloader.prototype = {
                     if (value > 0) {
                         ipagesmode = true;
                         ipagesnumber = value + paged;
-                        notice('<b>状态</b>:' + '当前已翻页数量:<b>' + paged + '</b>,' + '连续翻页到第<b style="color:red!important;">' + ipagesnumber + '</b>页.');
+                        self.notice('<b>状态</b>:' + '当前已翻页数量:<b>' + paged + '</b>,' + '连续翻页到第<b style="color:red!important;">' + ipagesnumber + '</b>页.');
                         if (SSS.a_manualA) insertedIntoDoc();
                         scroll();
                     };
@@ -2269,12 +2282,37 @@ Super_preloader.prototype = {
     },
     xmlhttpRequest: function (link, callback) {
         this.log("GM_xmlhttpRequest: " + link);
+        var charset = this.doc.characterSet;
         GM_xmlhttpRequest({
             menth: "GET",
             url: link,
-            overrideMimeType: 'text/html; charset=' + this.doc.characterSet,
+            overrideMimeType: 'text/html; charset=' + charset,
             onload: callback
         }, this.win);
+    },
+    noticeDiv: null,
+    noticeDivto: null,
+    noticeDivto2: null,
+    notice: function(html_txt) {
+        var self = this;
+
+        if (!self.noticeDiv) {
+            var div = self.doc.createElement('div');
+            self.noticeDiv = div;
+            div.style.cssText = self.noticeDiv_style;
+            self.doc.body.appendChild(div);
+        }
+        window.clearTimeout(self.noticeDivto);
+        window.clearTimeout(self.noticeDivto2);
+        self.noticeDiv.innerHTML = html_txt;
+        self.noticeDiv.style.display = 'block';
+        self.noticeDiv.style.opacity = '0.96';
+        self.noticeDivto2 = window.setTimeout(function() {
+            self.noticeDiv.style.opacity = '0';
+        }, 1666);
+        self.noticeDivto = window.setTimeout(function() {
+            self.noticeDiv.style.display = 'none';
+        }, 2000);
     },
     floatWindowStyle: '\
         #sp-fw-container {\
@@ -2528,7 +2566,7 @@ Super_preloader.prototype = {
             float:none!important;\
             top:0!important;\
             left:0!important;\
-            z-index:1000!important;\
+            /*z-index:1000!important;*/\
             min-width:366px!important;\
             width:auto!important;\
             text-align:center!important;\
@@ -2879,6 +2917,7 @@ function GM_xmlhttpRequest(obj, win) {
     });
 
     if(obj.overrideMimeType) req.overrideMimeType(obj.overrideMimeType);
+
     var c = 0;
     var timer = setInterval(function() { if(req.readyState == 1 || ++c > 100) { clearInterval(timer); req.send(obj.data || null); } },10);
 }

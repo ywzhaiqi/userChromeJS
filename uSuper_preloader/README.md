@@ -68,10 +68,19 @@ uSuper_preloader.uc.js
 
 ### 修改暂停翻页为鼠标左键双击
 
-uSuper_preloader.db.js 文件中
+uSuper_preloader.db.js 文件
 
     Pbutton:[0,0,0]                                                             ,//需要按住的键.....0: 不按住任何键;1: shift鍵;2: ctrl鍵; 3: alt鍵;(同时按3个键.就填 1 2 3)(一个都不按.就填 0 0 0)
     mouseA:false                                                                     ,//按住鼠标左键..否则.双击;
+
+### 修改按钮或菜单显示方式
+
+uSuper_preloader.uc.js 文件
+
+    // 1 按钮, 2 菜单, 0 无
+    // 按钮ID: uSuper_preloader-icon
+    // 菜单ID: uSuper_preloader-menuitem, 可用 rebulid_userChrome 移动统一管理
+    var append_type = 1;
 
 ### 关于自动更新
 

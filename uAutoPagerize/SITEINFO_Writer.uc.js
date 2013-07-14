@@ -170,7 +170,7 @@ window.siteinfo_writer = {
 				if(win.location.hostname == 'ap.teesoft.info'){
 					this.addStyle(doc, ".install{ display: block !important; }\
                         #need-ap { display: none !important;  }");
-					// this.fixAutoPagerBug(doc);
+					this.fixAutoPagerBug(doc);
 
                     var doc = win.wrappedJSObject.document;
 					// 点击 install 自动安装
@@ -465,8 +465,15 @@ window.siteinfo_writer = {
 	xpathTest: function(aType) {
 		var textbox = this[aType]
 		if (!textbox || !textbox.value) return;
+
+        var selector = textbox.value;
 		try {
-			var elements = getElementsByXPath(textbox.value, content.document);
+            var elements;
+            if(selector.startsWith("css;")){
+                elements = content.document.querySelectorAll(selector.slice(4));
+            }else{
+                elements = getElementsByXPath(selector, content.document);
+            }
 		} catch (e) {
 			alert(e);
 		}

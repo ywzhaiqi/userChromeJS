@@ -27,7 +27,7 @@ uSuper_preloader.uc.js
 
     uSuper_preloader.toggle();
 
-上一页
+上一页 （原脚本的方式）
 
     (function() {
         var document = content.document;
@@ -36,7 +36,7 @@ uSuper_preloader.uc.js
         document.dispatchEvent(event);
     })();
 
-下一页
+下一页（原脚本的方式）
 
     (function() {
         var document = content.document;
@@ -45,15 +45,54 @@ uSuper_preloader.uc.js
         document.dispatchEvent(event);
     })();
 
-下滚一页（不同上面，只有加载了下一页才有效）
 
-    if(content.window.uSuper_preloader)
-        content.window.uSuper_preloader.goNext();
+上一页（新增的，如果不存在则调用 nextPage.uc.xul）
 
-上滚一页（同上）
+    var node = FireGestures.sourceNode;
+    var doc = node.ownerDocument || getBrowser().contentDocument;
+    var win = doc.defaultView;
 
-    if(content.window.uSuper_preloader)
-        content.window.uSuper_preloader.goPre();
+    if(win.uSuper_preloader)
+        return win.uSuper_preloader.back();
+
+    if(window.nextPage)
+        nextPage.next();
+
+下一页（新增的，如果不存在则调用 nextPage.uc.xul）
+
+    var node = FireGestures.sourceNode;
+    var doc = node.ownerDocument || getBrowser().contentDocument;
+    var win = doc.defaultView;
+
+    if(win.uSuper_preloader)
+        return win.uSuper_preloader.go();
+
+    if(window.nextPage)
+        nextPage.next(true);
+
+
+下滚一页（没有则调用 FireGestures 滚动到底部或 ScrollPageDown）
+
+    var node = FireGestures.sourceNode;
+    var doc = node.ownerDocument || getBrowser().contentDocument;
+    var win = doc.defaultView;
+
+    if(win.uSuper_preloader)
+        return win.uSuper_preloader.goNext(win);
+
+    FireGestures._performAction(event, "FireGestures:ScrollBottom");
+
+上滚一页（没有则调用 FireGestures 滚动到顶部或 ScrollPageUp）
+
+    var node = FireGestures.sourceNode;
+    var doc = node.ownerDocument || getBrowser().contentDocument;
+    var win = doc.defaultView;
+
+    if(win.uSuper_preloader)
+        return win.uSuper_preloader.goPre(win);
+
+    FireGestures._performAction(event, "FireGestures:ScrollTop");
+
 
 滚到页面顶部（仅仅比自带的多了个平滑滚动）
 

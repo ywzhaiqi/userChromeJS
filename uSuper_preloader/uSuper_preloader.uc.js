@@ -100,7 +100,7 @@ var ns = window.uSuper_preloader = {
             }, ns);
         }
 
-        var ids = ["uSuper_preloader-icon", "uSuper_preloader-popup"];
+        var ids = ["uSuper_preloader-icon", "uSuper_preloader-popup", "uSuper_preloader-menuitem"];
         for (let [, id] in Iterator(ids)) {
             let e = document.getElementById(id);
             if (e) e.parentNode.removeChild(e);
@@ -206,15 +206,16 @@ var ns = window.uSuper_preloader = {
         var data = loadText(this.DB_File);
         if (!data) return false;
         var sandbox = new Cu.Sandbox( new XPCNativeWrapper(window) );
-        sandbox.db = null;
 
-        // 如果是原版，需要去除包裹的函数
-        data = data.replace("(function(){", "").replace("})();", "");
+        // 如果是原版，去除部分内容
+        data = data.replace("(function(){", "")
+            .replace(/浏览器检测\.开始\.[\s\S]+\.浏览器检测\.结束/, "")
+            .replace(/function xToString\(x\)\{\/\/任何转字符串[\s\S]+/, "");
 
         try {
             Cu.evalInSandbox(data, sandbox, '1.8');
         } catch (e) {
-            alerts('uSuper_preloader.db', '数据文件有错误');
+            alerts('uSuper_preloader.db 有错误', e);
             return log('load error.', e);
         }
 
@@ -273,7 +274,21 @@ var ns = window.uSuper_preloader = {
             this.load_DB(true);
         }
 
-        new Super_preloader(win, win.document, ns.db);
+        var timer = 0;
+        if(/\bgoogle\.com(\.hk)?$/.test(win.location.host)){
+            timer = 1000;
+            // TODO： 运行2次，有错误
+            // win.addEventListener("hashchange", function(event) {
+            //     win.setTimeout(function(){
+            //         win.console.log("Hashchanged", win.location.href);
+            //         new Super_preloader(win, win.document, ns.db);
+            //     }, timer);
+            // }, false);
+        }
+
+        win.setTimeout(function(){
+            new Super_preloader(win, win.document, ns.db);
+        }, timer);
     },
     search: function(){
         // 如果焦点在 开发工具，则得到的地址错误
@@ -357,22 +372,14 @@ Super_preloader.prototype = {
         var self = this;
 
         //引用console对象的部分函数.
-        var C = {
-            log: function(){
-                if(DEBUG) {
-                    var console = window.console;
-                    var log = Function.prototype.bind.call(console.log, console);
-                    log.apply(console, arguments);
-                }
-            },
-            err: function(){
-                if(DEBUG){
-                    var console = window.console;
-                    var log = Function.prototype.bind.call(console.error, console);
-                    log.apply(console, arguments);
-                }
-            }
-        };
+        var C = {};
+        if(DEBUG){
+            C.log = window.console.log;
+            C.err = window.console.error;
+        }else{
+            C.log = function(){};
+            C.err = function(){};
+        }
 
         //如果是取出下一页使用的iframe window
         if (window.name == 'superpreloader-iframe') {
@@ -425,7 +432,6 @@ Super_preloader.prototype = {
             style: null,
             div: null
         };
-
 
         function floatWindow() {
             floatWO.style = self.addStyle(self.floatWindowStyle);
@@ -540,7 +546,7 @@ Super_preloader.prototype = {
                     value.a_ipages = [gl(a_ipages_0), (isNaN(t_a_ipages_1) ? SSS.a_ipages[1] : (t_a_ipages_1 >= 1 ? t_a_ipages_1 : 1))];
                     value.a_separator = gl(a_separator);
                 }
-                //alert(xToString(value));
+                // alert(xToString(value));
                 SSS.savedValue[SSS.sedValueIndex] = value;
 
                 saveValue('spfwset', xToString(SSS.savedValue));
@@ -660,9 +666,9 @@ Super_preloader.prototype = {
             }
         }
 
-        var Tween = this.Tween,
-            TweenM = this.TweenM,
-            TweenEase = this.TweenEase;
+        var Tween = self.Tween,
+            TweenM = self.TweenM,
+            TweenEase = self.TweenEase;
 
         function sp_transition(start, end) {
             var TweenF = sp_transition.TweenF;
@@ -755,9 +761,7 @@ Super_preloader.prototype = {
 
         //autopager
         var autoPO = {
-            startipages: nullFn,
-            successful: false,
-            insertPointP: null
+            startipages: nullFn
         };
 
         function autopager(SSS, floatWO) {
@@ -1099,7 +1103,7 @@ Super_preloader.prototype = {
                 for (i = scripts.length - 1; i >= 0; i--) {
                     scripts_x = scripts[i];
                     scripts_x.parentNode.removeChild(scripts_x);
-                };
+                }
                 if (SSS.filter) { //功能未完善.
                     //alert(SSS.filter);
                     var nodes = []
@@ -1111,7 +1115,7 @@ Super_preloader.prototype = {
                         nodes_x = nodes[i];
                         nodes_x.parentNode.removeChild(nodes_x);
                     };
-                };
+                }
                 var imgs;
                 if (SSS.a_useiframe && !SSS.a_iloaded) {
                     imgs = getAllElements('css;img[src]', fragment); //收集所有图片
@@ -1154,11 +1158,11 @@ Super_preloader.prototype = {
                 paged += 1;
                 if (ipagesmode && paged >= ipagesnumber) {
                     ipagesmode = false;
-                };
+                }
                 floatWO.loadedIcon('hide');
                 if (manualDiv) {
                     manualDiv.style.display = 'none';
-                };
+                }
                 if (goNextImg[0]) goNextImg[0].src = _sep_icons.next;
 
                 //alert(SSS.nextLink)
@@ -1173,13 +1177,13 @@ Super_preloader.prototype = {
                     };
                 } else {
                     nextlink = null;
-                };
+                }
                 if (paged >= SSS.a_maxpage) {
                     C.log('到达所设定的最大翻页数', SSS.a_maxpage);
                     self.notice('<b>状态</b>:' + '到达所设定的最大翻页数:<b style="color:red">' + SSS.a_maxpage + '</b>');
                     removeL();
                     return;
-                };
+                }
                 var delayiframe = function(fn) {
                     window.setTimeout(fn, 199);
                 };
@@ -1301,9 +1305,7 @@ Super_preloader.prototype = {
                         if (SSS.a_manualA) insertedIntoDoc();
                         scroll();
                     };
-                },
-                successful: true,
-                insertPointP: insertPointP ? insertPointP : insertPoint
+                }
             };
         }
 
@@ -1477,19 +1479,7 @@ Super_preloader.prototype = {
                 C.log('找到匹配当前站点的规则:', SII, '是第', i + 1, '规则');
                 nextlink = getElement(SII.nextLink || 'auto;');
                 if (!nextlink) {
-                    // TODO 特殊站点 hashchange
-                    // 天猫评价、水木社区
-                    // if(SII.hashchange){
-                    //     C.log("无法找到下一页链接，添加 hashchange 事件，JS执行停止");
-                    //     window.addEventListener("hashchange", function(event) {
-                    //         C.log("触发 hashchange 事件");
-                    //         new Super_preloader(window, document, db);
-                    //     }, false);
-                    //     return;
-                    // }
-
                     C.log('无法找到下一页链接,跳过规则:', SII, '继续查找其他规则');
-
                     continue;
                 }
                 //alert(nextlink);
@@ -1632,15 +1622,15 @@ Super_preloader.prototype = {
             C.log('加载设置');
             //saveValue('spfwset','');//清除设置.
             var savedValue = getValue('spfwset');
-            //alert(savedValue);
+            // alert(savedValue);
             if (savedValue) {
-                try {
+                try{
                     savedValue = eval(savedValue);
-                } catch (e) {
+                }catch(e){
                     saveValue('spfwset', '');  //有问题的设置,被手动修改过?,清除掉,不然下次还是要出错.
                 }
             }
-            //alert(savedValue instanceof Array);
+            // alert(savedValue instanceof Array);
             if (savedValue) {
                 SSS.savedValue = savedValue;
                 var savedValue_x;
@@ -1695,60 +1685,67 @@ Super_preloader.prototype = {
             }
         }
 
-        // 如果成功，注册调用命令
-        if(autoPO.successful){
-            window.uSuper_preloader = {};
+        // 调用命令
+        window.uSuper_preloader = {
+            go: superPreloader.go,  // 下一页调用函数，结合 nextPage.uc.xul 一起使用
+            back: superPreloader.back,
+            goTop: function(win){
+                win = win || window;
+                scrollIt(win.scrollY, 0);
+            },
+            goBottom: function(win){
+                win = win || window;
+                var doc = win.document;
+                scrollIt(win.scrollY, Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight));
+            },
+            goPre: function(win){
+                win = win || window;
 
-            window.uSuper_preloader.goTop = function(){
-                scrollIt(window.scrollY, 0);
-            };
+                var [prevSepTop,] = getSeparators(win);
+                if(prevSepTop)
+                    scrollIt(win.scrollY, prevSepTop + win.scrollY - 6);
+                else
+                    this.goTop(win);
+            },
+            goNext: function(win){
+                win = win || window;
 
-            window.uSuper_preloader.goBottom = function(){
-                scrollIt(window.scrollY, Math.max(document.documentElement.scrollHeight, document.body.scrollHeight));
-            };
+                var [, nextSepTop] = getSeparators(win);
+                if(nextSepTop)
+                    scrollIt(win.scrollY, nextSepTop + win.scrollY - 6);
+                else
+                    this.goBottom(win);
+            }
+        };
 
-            // 找到窗口视野内 2个分隔条的高度，可能为 undefined
-            function getSeparators(){
-                var separators = document.querySelectorAll(".sp-separator");
-                var viewportHeight = window.innerHeight;
-                var documentHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+        // 找到窗口视野内 2个分隔条的高度，可能为 undefined
+        function getSeparators(win){
+            win = win || window;
+            var doc = win.document;
 
-                // 得到一个数组
-                var heightArr = [- window.scrollY];
-                for (var i = 0; i < separators.length; i++) {
-                    heightArr.push(separators[i].getBoundingClientRect().top);
-                }
-                heightArr.push(documentHeight - window.scrollY);
+            var separators = doc.querySelectorAll(".sp-separator");
+            var viewportHeight = win.innerHeight;
+            var documentHeight = Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight);
 
-                // 查找
-                for (var i = 0; i < heightArr.length; i++) {
-                    if(heightArr[i] > viewportHeight){
-                        if(heightArr[i - 1] > 0){
-                            return [heightArr[i - 2], heightArr[i]];
-                        }else{
-                            return [heightArr[i - 1], heightArr[i]];
-                        }
+            // 得到一个数组
+            var heightArr = [- win.scrollY];
+            for (var i = 0; i < separators.length; i++) {
+                heightArr.push(separators[i].getBoundingClientRect().top);
+            }
+            heightArr.push(documentHeight);
+
+            // 查找
+            for (var i = 0; i < heightArr.length; i++) {
+                if(heightArr[i] > viewportHeight){
+                    if(heightArr[i - 1] > 0){
+                        return [heightArr[i - 2], heightArr[i]];
+                    }else{
+                        return [heightArr[i - 1], heightArr[i]];
                     }
                 }
-
-                return [];
             }
 
-            window.uSuper_preloader.goPre = function(){
-                var [prevSepTop,] = getSeparators();
-                if(prevSepTop)
-                    scrollIt(window.scrollY, prevSepTop + window.scrollY - 6);
-                else
-                    this.goTop();
-            };
-
-            window.uSuper_preloader.goNext = function(){
-                var [, nextSepTop] = getSeparators();
-                if(nextSepTop)
-                    scrollIt(window.scrollY, nextSepTop + window.scrollY - 6);
-                else
-                    this.goBottom();
-            };
+            return [];
         }
 
         //css 获取单个元素
@@ -2302,15 +2299,15 @@ Super_preloader.prototype = {
             div.style.cssText = self.noticeDiv_style;
             self.doc.body.appendChild(div);
         }
-        window.clearTimeout(self.noticeDivto);
-        window.clearTimeout(self.noticeDivto2);
+        self.win.clearTimeout(self.noticeDivto);
+        self.win.clearTimeout(self.noticeDivto2);
         self.noticeDiv.innerHTML = html_txt;
         self.noticeDiv.style.display = 'block';
         self.noticeDiv.style.opacity = '0.96';
-        self.noticeDivto2 = window.setTimeout(function() {
+        self.noticeDivto2 = self.win.setTimeout(function() {
             self.noticeDiv.style.opacity = '0';
         }, 1666);
-        self.noticeDivto = window.setTimeout(function() {
+        self.noticeDivto = self.win.setTimeout(function() {
             self.noticeDiv.style.display = 'none';
         }, 2000);
     },

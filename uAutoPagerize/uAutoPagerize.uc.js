@@ -579,7 +579,7 @@ var ns = window.uAutoPagerize = {
 			if (info) {
 				win.ap = new AutoPager(win.document, info, nextLink);
 			}else{
-				debug("没有找到当前站点的配置: " + win.location.href);
+                debug("下一页链接：" + nextLink);
 			}
 
 			updateIcon();
@@ -767,47 +767,51 @@ var ns = window.uAutoPagerize = {
 	gototop: function(){
 		content.window.scroll(content.window.scrollX, 0);
 	},
+    gotobottom: function(){
+        var win = content.window;
+        var doc = content.document;
+        win.scroll(win.scrollX, Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight));
+    },
 	gotoprev: function(){
-		var positions = ns.getCurPostion();
-		content.window.scroll(content.window.scrollX, positions[0]);
+        var win = content.window;
+
+        var [prevSepTop,] = this.getSeparators(win);
+		win.scroll(win.scrollY, prevSepTop + win.scrollY - 6);
 	},
 	gotonext: function(){
-		var positions = ns.getCurPostion();
-		content.window.scroll(content.window.scrollX, positions[1]);
+        var win = content.window;
+
+        var [, nextSepTop] = this.getSeparators(win);
+        win.scroll(win.scrollY, nextSepTop + win.scrollY - 6);
 	},
-	gotobottom: function(){
-		var win = content.window;
-		var doc = content.document;
-		win.scroll(win.scrollX, Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight));
-	},
-	getCurPostion: function(){
-		var doc = content.document,
-			scrollY = content.window.scrollY;
+    // 找到窗口视野内前后2个分隔条的位置
+    getSeparators: function(win){
+        var doc = win.document;
 
-		var pos,
-			previous = 0,
-			bottom = Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight);
+        var separators = doc.querySelectorAll(".autopagerize_link");
+        var viewportHeight = win.innerHeight;
+        var documentHeight = Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight);
 
-		var fix = 0;  // 加入导航栏的情况，未完善的
+        // 得到一个数组
+        var heightArr = [- win.scrollY];
+        for (var i = 0; i < separators.length; i++) {
+            heightArr.push(separators[i].getBoundingClientRect().top);
+        }
+        heightArr.push(documentHeight);
 
-		var links = getElementsByXPath('//a[@class="autopagerize_link"]', doc);
-		for (var i = 0; i < links.length; i++) {
-			pos = scrollY + parseInt(links[i].getBoundingClientRect().top);
+        // 查找
+        for (var i = 0; i < heightArr.length; i++) {
+            if(heightArr[i] > viewportHeight){
+                if(heightArr[i - 1] > 0){
+                    return [heightArr[i - 2], heightArr[i]];
+                }else{
+                    return [heightArr[i - 1], heightArr[i]];
+                }
+            }
+        }
 
-			// content.console.log(i + ": " + previous + " <= " +  scrollY + " <= " +  pos);
-			if(scrollY >= previous && scrollY <= pos){
-				if(scrollY == pos){
-					pos = links[i+1] ? (scrollY + links[i+1].getBoundingClientRect().top) : bottom;
-					return [previous + fix, pos + fix]
-				}
-				return [previous + fix, pos + fix]
-			}
-
-			previous = pos;
-		};
-
-		return [previous, bottom]
-	}
+        return [];
+    }
 };
 
 var cplink; // hrefInc 函数用
@@ -1151,7 +1155,7 @@ AutoPager.prototype = {
 			this.state = 'terminated';
 		}else{
             this.immediatelyPageNum--;
-            this.loadImmediately();
+            // this.loadImmediately();
         }
 
 		var ev = this.doc.createEvent('Event');

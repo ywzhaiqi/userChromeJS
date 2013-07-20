@@ -45,13 +45,12 @@ var isUrlbar = false;
 // 数据库的位置
 var NLF_DB_FILENAME =  "uSuper_preloader.db.js";
 
-// 是否启用 iframe 加载下一页
-var useiframe = true;
 
 var FORCE_TARGET_WINDOW = true;
 var BASE_REMAIN_HEIGHT = 600;
 var MAX_PAGER_NUM = -1;   //默认最大翻页数， -1表示无限制
-var IMMEDIATELY_PAGER_NUM = 3;  // 立即加载的默认页数
+var IMMEDIATELY_PAGER_NUM = 3;  // 立即加载的页数
+var useiframe = true;  // 是否启用 iframe 加载下一页
 var DEBUG = true;
 var AUTO_START = true;
 var SCROLL_ONLY = false;
@@ -280,8 +279,6 @@ var ns = window.uAutoPagerize = {
             } catch (e) {}
         }, ns);
 
-        ns.IMMEDIATELY_PAGER_NUM = $("uAutoPagerize-immedialate-pages").value;
-
         ["BASE_REMAIN_HEIGHT", "MAX_PAGER_NUM", "IMMEDIATELY_PAGER_NUM"].forEach(function(name) {
             try {
                 ns.prefs.setIntPref(name, ns[name]);
@@ -289,6 +286,8 @@ var ns = window.uAutoPagerize = {
         }, ns);
 	},
 	theEnd: function() {
+        ns.IMMEDIATELY_PAGER_NUM = $("uAutoPagerize-immedialate-pages").value;
+
 		var ids = ["uAutoPagerize-icon", "uAutoPagerize-popup"];
 		for (let [, id] in Iterator(ids)) {
 			let e = document.getElementById(id);
@@ -534,7 +533,12 @@ var ns = window.uAutoPagerize = {
 			win.ap = null;
 			miscellaneous.forEach(function(func){ func(doc, locationHref); });
 			var index = -1;
+
 			if (!info) [, info, nextLink] = ns.getInfo(ns.MY_SITEINFO, win);
+
+            // 第二检测 Super_preloader.db 的数据库
+            if(!info) [index, info, nextLink] = ns.getInfo(ns.SITEINFO_NLF, win);
+
 			if (info) {
 				if (info.requestFilter)
 					win.requestFilters.push(info.requestFilter.bind(win));
@@ -557,11 +561,6 @@ var ns = window.uAutoPagerize = {
 					doc.getElementsByTagName("head")[0].appendChild(style);
 				}
 			}
-
-			// 第二检测 Super_preloader.db 的数据库
-			// var s = new Date().getTime();
-			if(!info) [index, info, nextLink] = ns.getInfo(ns.SITEINFO_NLF, win);
-			// debug(index + 'th/' + (new Date().getTime() - s) + 'ms');
 
 			// var s = new Date().getTime();
 			if (!info) [index, info, nextLink] = ns.getInfo(ns.SITEINFO, win);
@@ -1121,11 +1120,18 @@ AutoPager.prototype = {
 		if (this.isXML) {
 			htmlDoc = new DOMParser().parseFromString(str, "application/xml");
 		} else {
-            htmlDoc = this.doc.implementation.createHTMLDocument('AutoPagerize');
+            htmlDoc = this.doc.cloneNode(false);
+            htmlDoc.appendChild(htmlDoc.importNode(this.documentElement, false));
             var range = this.doc.createRange();
-            range.selectNodeContents(this.body);
-            htmlDoc.body.appendChild(range.createContextualFragment(str));
+            //range.selectNodeContents(this.body);
+            htmlDoc.documentElement.appendChild(range.createContextualFragment(str));
             range.detach();
+
+            // htmlDoc = this.doc.implementation.createHTMLDocument('AutoPagerize');
+            // var range = this.doc.createRange();
+            // range.selectNodeContents(this.body);
+            // htmlDoc.body.appendChild(range.createContextualFragment(str));
+            // range.detach();
 		}
 		this.win.documentFilters.forEach(function(i) { i(htmlDoc, this.requestURL, this.info) }, this);
 
@@ -1181,7 +1187,7 @@ AutoPager.prototype = {
 		// if (!ns.SCROLL_ONLY)
 		// 	this.scroll();
 		if (!url) {
-			debug('nextLink not found. requestLoad(). ', this.info.nextLink, htmlDoc);
+			debug('nextLink not found. requestLoad(). ', this.info.nextLink);
 			this.state = 'terminated';
 		}
 
@@ -1472,7 +1478,7 @@ AutoPager.prototype = {
 		}
 
 		log('getCacheCallback:' + url);
-	}
+}
 
 	function getCacheErrorCallback(url) {
 		log('getCacheErrorCallback:' + url);
@@ -1539,137 +1545,129 @@ var NLF = {
 			}
 		},
 	},
-	autoGetLink: function(doc,win){
-		if(!NLF.autoMatch.keyMatch)return;
-		if(!NLF.parseKWRE.done){
-			NLF.parseKWRE();
-			NLF.parseKWRE.done=true;
-		};
+	autoGetLink: function(doc, win) {
+        if (!NLF.autoMatch.keyMatch) return;
+        if (!NLF.parseKWRE.done) {
+            NLF.parseKWRE();
+            NLF.parseKWRE.done = true;
+        }
 
-		var startTime=new Date();
+        var startTime = new Date();
 
-		var _nextPageKey=NLF.nextPageKey;
-		var _nPKL=NLF.nextPageKey.length;
-		var _getFullHref=NLF.getFullHref;
-		var _getAllElementsByXpath=getElementsByXPath;
-		var _Number=Number;
-		var cplink = cplink || win.location.href;
-		var _domain_port=cplink.match(/https?:\/\/([^\/]+)/)[1];//端口和域名,用来验证是否跨域.
-		var alllinks=doc.links;
-		var alllinksl=alllinks.length;
+        var _nextPageKey = NLF.nextPageKey;
+        var _nPKL = _nextPageKey.length;
+        var _getAllElementsByXpath = getElementsByXPath;
+        var cplink = cplink || win.location.href;
+        var _domain_port = cplink.match(/https?:\/\/([^\/]+)/)[1]; //端口和域名,用来验证是否跨域.
+        var alllinks = doc.links;
+        var alllinksl = alllinks.length;
 
-		var curLHref=cplink;
-		var _nextlink;
+        var curLHref = cplink;
+        var _nextlink;
 
-		var DCEnable=NLF.autoMatch.digitalCheck;
-		var DCRE=/^\s*\D{0,1}(\d+)\D{0,1}\s*$/;
+        var DCEnable = NLF.autoMatch.digitalCheck;
+        var DCRE = /^\s*\D{0,1}(\d+)\D{0,1}\s*$/;
 
-		var i,a,ahref,atext,numtext;
-		var aP,initSD,searchD=1,preS1,preS2,searchedD,pSNText,preSS,nodeType;
-		var nextS1,nextS2,nSNText,nextSS;
-		var aimgs,j,jj,aimg_x,xbreak,k,keytext;
+        var i, a, ahref, atext, numtext;
+        var aP, initSD, searchD = 1,
+            preS1, preS2, searchedD, pSNText, preSS, nodeType;
+        var nextS1, nextS2, nSNText, nextSS;
+        var aimgs, j, jj, aimg_x, xbreak, k, keytext;
 
-		function finalCheck(a,type){
-			//C.log(a);
-			var ahref=a.getAttribute('href');//在chrome上当是非当前页面文档对象的时候直接用a.href访问,不返回href
-			ahref=_getFullHref(ahref, doc);//从相对路径获取完全的href;
+        function finalCheck(a, type) {
+            var ahref = a.href;
 
-			// debug([ahref, _domain_port].join("\n"))
-			//3个条件:http协议链接,非跳到当前页面的链接,非跨域
-			if(/^https?:/i.test(ahref) && ahref.replace(/#.*$/,'')!=curLHref && ahref.match(/https?:\/\/([^\/]+)/)[1]==_domain_port){
-				debug((type=='pre'? '上一页' : '下一页')+'匹配到的关键字为:',atext);
-				return a;//返回对象A
-				//return ahref;
-			};
-		};
+            //3个条件:http协议链接,非跳到当前页面的链接,非跨域
+            if (/^https?:/i.test(ahref) && ahref.replace(/#.*$/, '') != curLHref && ahref.match(/https?:\/\/([^\/]+)/)[1] == _domain_port) {
+                debug((type == 'pre' ? '上一页' : '下一页') + '匹配到的关键字为:', atext);
+                return a; //返回对象A
+            }
+        }
 
-		debug('全文档链接数量:',alllinksl);
+        debug('全文档链接数量:', alllinksl);
 
-		for(i=0;i<alllinksl;i++){
-			if(_nextlink)break;
-			a=alllinks[i];
-			if(!a)continue;//undefined跳过
-			//links集合返回的本来就是包含href的a元素..所以不用检测
-			//if(!a.hasAttribute("href"))continue;
-			atext=a.textContent;
-			if(atext){
-				if(DCEnable){
-					numtext=atext.match(DCRE);
-					if(numtext){//是不是纯数字
-						//C.log(numtext);
-						numtext=numtext[1];
-						aP=a;
-						initSD=0;
+        for (i = 0; i < alllinksl; i++) {
+            if (_nextlink) break;
+            a = alllinks[i];
+            if (!a) continue; //undefined跳过
+            atext = a.textContent;
+            if (atext) {
+                if (DCEnable) {
+                    numtext = atext.match(DCRE);
+                    if (numtext) { //是不是纯数字
+                        //C.log(numtext);
+                        numtext = numtext[1];
+                        aP = a;
+                        initSD = 0;
 
-						if(!_nextlink){
-							preS1=a.previousSibling;
-							preS2=a.previousElementSibling;
+                        if (!_nextlink) {
+                            preS1 = a.previousSibling;
+                            preS2 = a.previousElementSibling;
 
+                            while (!(preS1 || preS2) && initSD < searchD) {
+                                aP = aP.parentNode;
+                                if (aP) {
+                                    preS1 = aP.previousSibling;
+                                    preS2 = aP.previousElementSibling;
+                                };
+                                initSD++;
+                            };
+                            searchedD = initSD > 0 ? true : false;
 
-							while(!(preS1 || preS2) && initSD<searchD){
-								aP=aP.parentNode;
-								if(aP){
-									preS1=aP.previousSibling;
-									preS2=aP.previousElementSibling;
-								};
-								initSD++;
-							};
-							searchedD=initSD>0? true : false;
+                            if (preS1 || preS2) {
+                                pSNText = preS1 ? preS1.textContent.match(DCRE) : '';
+                                if (pSNText) {
+                                    preSS = preS1;
+                                } else {
+                                    pSNText = preS2 ? preS2.textContent.match(DCRE) : '';
+                                    preSS = preS2;
+                                };
+                                if (pSNText) {
+                                    pSNText = pSNText[1];
+                                    //C.log(pSNText)
+                                    if (Number(pSNText) == Number(numtext) - 1) {
+                                        nodeType = preSS.nodeType;
+                                        if (nodeType == 3 || (nodeType == 1 && (searchedD ? _getAllElementsByXpath('./descendant-or-self::a[@href]', preSS, doc).snapshotLength == 0 : (!preSS.hasAttribute('href') || preSS.href == curLHref)))) {
+                                            _nextlink = finalCheck(a, 'next');
+                                        }
+                                        continue;
+                                    }
+                                }
+                            }
+                        }
 
-							if(preS1 || preS2){
-								pSNText=preS1? preS1.textContent.match(DCRE) : '';
-								if(pSNText){
-									preSS=preS1;
-								}else{
-									pSNText=preS2? preS2.textContent.match(DCRE) : '';
-									preSS=preS2;
-								};
-								if(pSNText){
-									pSNText=pSNText[1];
-									//C.log(pSNText)
-									if(_Number(pSNText)==_Number(numtext)-1){
-										nodeType=preSS.nodeType;
-										if(nodeType==3 || (nodeType==1 && (searchedD? _getAllElementsByXpath('./descendant-or-self::a[@href]',preSS,doc).snapshotLength==0 : (!preSS.hasAttribute('href') || _getFullHref(preSS.getAttribute('href'), doc)==curLHref)))){
-											_nextlink=finalCheck(a,'next');
-										};
-										continue;
-									};
-								};
-							};
-						};
+                        continue;
+                    };
+                }
+            } else {
+                atext = a.title;
+            }
+            if (!atext) {
+                aimgs = a.getElementsByTagName('img');
+                for (j = 0, jj = aimgs.length; j < jj; j++) {
+                    aimg_x = aimgs[j];
+                    atext = aimg_x.alt || aimg_x.title;
+                    if (atext) break;
+                }
+            }
+            if (!atext) continue;
+            if (!_nextlink) {
+                xbreak = false;
+                for (k = 0; k < _nPKL; k++) {
+                    keytext = _nextPageKey[k];
+                    if (!(keytext.test(atext))) continue;
+                    _nextlink = finalCheck(a, 'next');
+                    xbreak = true;
+                    break;
+                }
+                if (xbreak || _nextlink) continue;
+            }
+        }
 
-						continue;
-					};
-				};
-			}else{
-				atext=a.title;
-			};
-			if(!atext){
-				aimgs=a.getElementsByTagName('img');
-				for(j=0,jj=aimgs.length;j<jj;j++){
-					aimg_x=aimgs[j];
-					atext=aimg_x.alt || aimg_x.title;
-					if(atext)break;
-				};
-			};
-			if(!atext)continue;
-			if(!_nextlink){
-				xbreak=false;
-				for(k=0;k<_nPKL;k++){
-					keytext=_nextPageKey[k];
-					if(!(keytext.test(atext)))continue;
-					_nextlink=finalCheck(a,'next');
-					xbreak=true;
-					break;
-				};
-				if(xbreak || _nextlink)continue;
-			};
-		};
+        debug('搜索链接数量:', i, '耗时:', new Date() - startTime, '毫秒')
 
-		debug('搜索链接数量:',i,'耗时:',new Date()-startTime,'毫秒')
-
-		return _nextlink;
-	},
+        return _nextlink;
+    },
 	parseKWRE: function(){
 		function modifyPageKey(name,pageKey,pageKeyLength){
 			function strMTE(str){
@@ -1716,17 +1714,9 @@ var NLF = {
 		}
 
 		//转成正则.
-		// prePageKey=modifyPageKey('previous',prePageKey,prePageKey.length);
 		NLF.nextPageKey=modifyPageKey('next', NLF.nextPageKey, NLF.nextPageKey.length);
 	},
-	getFullHref: function(href, doc){
-		if(typeof href!='string') href=href.getAttribute('href');
-		var a=doc.createElement('a');
-		a.href=href;
-		return a.href;
-	},
 	hrefInc: function(obj,doc,win){
-
 		var _cplink = cplink || win.location.href;
 		_cplink = _cplink.replace(/#.*$/,''); //url 去掉hash
 

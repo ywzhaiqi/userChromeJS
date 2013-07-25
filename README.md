@@ -22,28 +22,38 @@ userChromeJS for Firefox
 
 ## 说明
 
+文件夹
+
  - [addmenuPlus](addmenuPlus)，增加修改 Firefox 菜单（修改版）。
  - [autoLaunchReader](autoLaunchReader)，自动启用阅读器（原创）。
  - [ExternalEditor](ExternalEditor)，输入框右键添加 `用外部编辑器打开` 功能（修改版）。
+ - [ExternalVideoPlayer](ExternalVideoPlayer)，调用外部播放器播放网络视频（原创）。
  - [moveButton](moveButton)，移动或克隆按钮/菜单到任意位置（原创）。
  - [MyNovelReader](MyNovelReader)，小说阅读uc版（原创），已弃用，请用 [小说阅读GM版](https://userscripts.org/scripts/show/165951)（原创）和[autoLanuchReader](autoLanuchReader)。
  - [rebuild_userChrome](rebuild_userChrome)，脚本管理器（菜单修改版）。
+ - [SaveUserChromeJS](SaveUserChromeJS)，像 Greasemonkey 一样保存 uc脚本（原创）。
  - [SidebarModfix](SidebarModfix)，侧边栏增强（修改版）。
  - [simpleAppButton](simpleAppButton)，简易启动应用程序按钮，左中右3键分别启动3个程序。
  - [Space_nextpage](Space_nextpage)，空格键页面底部翻页（调用nextPage.uc.xul），默认设置小说阅读脚本启用后禁用。
  - [stylishEdit](stylishEdit)，为 Stylish 增加外部编辑器等（修复版）。
- - [uAutoPagerize](uAutoPagerize)，中文规则增强版。
+ - [ThunderLixianExporterPatch](ThunderLixianExporterPatch)，迅雷离线直接导出 IDM.ef2（原创）。
+ - [uAutoPagerize](uAutoPagerize)，中文规则增强版（大幅修改版）。
  - [uc\_google\_translator](uc_google_translator)，google 翻译脚本（修改版）。
+ - [uSuper_preloader](uSuper_preloader)，基于 Super_preloader GM脚本修改而来。
  - [viewSourceModoki](viewSourceModoki)，右键菜单增加 `View Source With: All、Document、css、js`。
  - [WordHighlightToolbarFix](WordHighlightToolbarFix)，搜索高亮（修改版）。
+
+单文件
+
+ - [chromejs.uc.js](chromejs.uc.js)，在地址栏运行uc代码，例：打开书签 `chromejs:PlacesCommandHook.showPlacesOrganizer('AllBookmarks');`
  - [copybookmark.uc.js](copybookmark.uc.js)，书签右键复制标题链接（修改版）。
  - [downloadPlus.uc.js](downloadPlus.uc.js)，多个下载脚本整合版。
  - [ExportHTMLFolderMod.uc.xul](ExportHTMLFolderMod.uc.xul)，书签右键 `导出到HTML`（修改版）。
+ - [findScriptForGreaemonkeyOrScriptish.uc.js](findScriptForGreaemonkeyOrScriptish.uc.js)，为 Greasemonkey 或 Scriptish 扩展增加 "为本站搜索脚本" 功能。
  - [IME-Colors.uc.js](IME-Colors.uc.js)，输入框聚焦时变色。
  - [JSCSS_Highlight.uc.js](JSCSS_Highlight.uc.js)，在浏览器中打开的 js、css、ahk 代码着色。
  - [JSOff.uc.xul](JSOff.uc.xul)，js开关，图标在状态栏。
  - [MoreToolsMenu.uc.js](MoreToolsMenu.uc.js)，拆分工具菜单为2个。
- - [newDownload.uc.js](newDownload.uc.js)，增加下载按钮右键新建下载，此为单一功能，上面有整合版（修改版）。
  - [nextpage.uc.xul](nextpage.uc.xul)，下一页。
  - [OpenLinkinNewTabwithRightClick.uc.js](OpenLinkinNewTabwithRightClick.uc.js)，右键在新标签页打开链接，修改自`openlinkinnewtabwithleftdoubleclick.uc.js`。
  - [openLinkTabThirdPart.uc.js](openLinkTabThirdPart.uc.js)，域名第三方新标签页打开，否则当前标签页打开。
@@ -52,7 +62,6 @@ userChromeJS for Firefox
  - [statusbarButtonScrapbook.uc.js](statusbarButtonScrapbook.uc.js)，更改 Scrapbook 状态栏图标为鼠标中键打开侧边栏。
  - [textLink.uc.js](textLink.uc.js)，双击打开文字链接。
  - [UserAgentChangeModLite.uc.js](UserAgentChangeModLite.uc.js)，UA切换（修改版）。
- - [findScriptForGreaemonkeyOrScriptish.uc.js](findScriptForGreaemonkeyOrScriptish.uc.js)，为 Greasemonkey 或 Scriptish 扩展增加 "为本站搜索脚本" 功能。
 
 
 ## 单文件说明

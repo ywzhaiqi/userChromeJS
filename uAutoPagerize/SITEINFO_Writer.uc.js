@@ -4,7 +4,7 @@
 // @namespace      http://d.hatena.ne.jp/Griever/
 // @author         Griever
 // @modified       ywzhaiqi
-// @update         2013-7-23
+// @update         2013-7-24
 // @include        main
 // @compatibility  Firefox 5 - firefox 23a1
 // @charset        UTF-8
@@ -37,7 +37,8 @@ window.siteinfo_writer = {
 				      <toolbarbutton id="sw-curpage-info" label="读取当前页面规则" oncommand="siteinfo_writer.getCurPageInfo();"/>\
 				      <toolbarbutton label="从剪贴板读取规则" oncommand="siteinfo_writer.readFromClipboard();"/>\
 				      <toolbarbutton id="sw-launch" label="启动规则" tooltiptext="启动uAutoPagerize" oncommand="siteinfo_writer.launch();"/>\
-				      <checkbox id="sw-useiframe" label="useiframe" checked="false"/>\
+                      <checkbox id="sw-useiframe" label="useiframe" checked="false"/>\
+                      <toolbarbutton label="重置" oncommand="siteinfo_writer.show(true);"/>\
                       <spacer flex="1"/>\
 				      <toolbarbutton class="tabs-closebutton" oncommand="siteinfo_writer.hide();"/>\
 				    </hbox>\
@@ -144,31 +145,39 @@ window.siteinfo_writer = {
             this.useiframe = $("sw-useiframe");
             this.insertBefore = $("sw-insertBefore");
 
-            this.nextLink.addEventListener("popupshowing", siteinfo_writer.pps, false);
-            this.pageElement.addEventListener("popupshowing", siteinfo_writer.pps, false);
-            this.insertBefore.addEventListener("popupshowing", siteinfo_writer.pps, false);
+            this.nextLink.addEventListener("popupshowing", siteinfo_writer.textboxPopupShowing, false);
+            this.pageElement.addEventListener("popupshowing", siteinfo_writer.textboxPopupShowing, false);
+            this.insertBefore.addEventListener("popupshowing", siteinfo_writer.textboxPopupShowing, false);
 
-            this.nextLink.setAttribute("tooltiptext", '例：auto; 或 css;a#pnnext 或 //a[@id="pnnext"]');
+            this.nextLink.setAttribute("tooltiptext", '例：auto; 或 css;a#pnnext 或 //a[@id="pnnext"] 或 //div[@id="footlink"]/descendant::a[text()="下一页"]');
             this.pageElement.setAttribute("tooltiptext", '例：css;#ires 或 //div[@id="ires"]');
         }
 	},
 	uninit : function ()  {
 		gBrowser.mPanelContainer.removeEventListener('DOMContentLoaded', this, true);
 	},
+    destroy: function() {
+        $A(document.getElementsByClassName("sw-add-element")).forEach(function(e){
+            e.parentNode.removeChild(e);
+        })
+        this.style.parentNode.removeChild(this.style);
+
+        this.uninit();
+    },
 	handleEvent: function(event){
 		switch(event.type){
 			case "DOMContentLoaded":
 				var doc = event.target,
-					win = doc.defaultView,
-					self = this;
+					win = doc.defaultView;
 				if(win.location.hostname == 'ap.teesoft.info'){
-					this.addStyle(doc, ".install{ display: block !important; }\
+					addContentStyle(doc, ".install{ display: block !important; }\
                         #need-ap { display: none !important;  }");
 					this.fixAutoPagerBug(doc);
 
                     // 点击 install 自动安装
                     doc = win.wrappedJSObject.document;
 					var evt = doc.createEvent("Events");
+                    var self = this;
 				    doc.addEventListener(evt, function(event){
 				    	var ids = event.target.textContent;
 				    	self.requestInfoFromAP(ids);
@@ -177,7 +186,7 @@ window.siteinfo_writer = {
 				break;
 		}
 	},
-	pps: function(event) {
+	textboxPopupShowing: function(event) {
         event.currentTarget.removeEventListener(event.type, arguments.callee, false);
         var popup = event.originalTarget;
         var type = event.currentTarget.id.replace("sw-", "");
@@ -194,30 +203,59 @@ window.siteinfo_writer = {
             oncommand: "siteinfo_writer.contains2class('" + type + "');",
         }));
 	},
-	destroy: function() {
-		$A(document.getElementsByClassName("sw-add-element")).forEach(function(e){
-			e.parentNode.removeChild(e);
-		})
-		this.style.parentNode.removeChild(this.style);
+	show: function(reset) {
+        let info;
+        if(!reset && content.ap && content.ap.info)
+            info = content.ap.info;
+        else
+            info = {
+                siteName: content.document.title,
+                nextLink: "auto;",
+                pageElement: "css;",
+                useiframe: false,
+                insertBefore: "",
+            };
 
-		this.uninit();
-	},
-	setUrl: function() {
-		this.url.value = "^" + content.location.href.replace(/[()\[\]{}|+.,^$?\\]/g, '\\$&');
-		this.url.className = "";
-	},
-	show: function() {
-		this.setUrl();
-		this.siteName.value = content.document.title;
-		this.nextLink.value = "auto;";
-		this.pageElement.value = "css;";
-        this.useiframe.checked = false;
-		this.insertBefore.value = "";
+        this.setAllValue(info);
+        this.setUrl();
 		this.container.hidden = false;
 	},
 	hide: function() {
 		this.container.hidden = true;
 	},
+    setUrl: function() {
+        this.url.value = "^" + content.location.href.replace(/[()\[\]{}|+.,^$?\\]/g, '\\$&');
+        this.url.className = "";
+    },
+    setAllValue: function(info){
+        this.siteName.value = info.siteName || info.name || content.document.title;
+        this.nextLink.value = info.nextLink || "";
+        this.pageElement.value = info.pageElement || "";
+        this.useiframe.checked = info.useiframe || false;
+        this.insertBefore.value = info.insertBefore || "";
+
+        if(info.url){  // 转为字符串
+            let url = info.url;
+            let type = typeof(url);
+            let urlValue;
+            switch(type){
+                case "object":
+                    urlValue = String(url).replace(/^\//, '').replace(/\/[img]*$/, '').replace(/\\\//g, '/');
+                    break;
+                case "string":
+                    if(url.match(/^\/(.*)\/[igm]?$/))
+                        urlValue = RegExp.$1.replace(/\\\/\\\//g, '\/\/');
+                    else
+                        urlValue = url.replace(/\\\//g, '/').replace(/\\\\/g, '\\');
+                    break;
+            }
+
+            if(!urlValue)
+                urlValue = "^" + content.location.href.replace(/[()\[\]{}|+.,^$?\\]/g, '\\$&');
+
+            this.url.value = urlValue;
+        }
+    },
 	toJSON: function() {
 		var json = "\t{";
 		json += "name: '" + this.siteName.value + "',\n";
@@ -286,8 +324,29 @@ window.siteinfo_writer = {
 
 				let menuitem = document.createElement("menuitem");
 				menuitem.setAttribute("label", label);
-				menuitem.setAttribute("oncommand", "siteinfo_writer.setValueFromCurPage(" + i + ")");
+                menuitem.setAttribute("tooltiptext", "右键点击复制");
+                menuitem.setAttribute("siteinfo_num", i);
+				// menuitem.setAttribute("oncommand", "siteinfo_writer.setValueFromCurPage(" + i + ")");
 				self.popup.appendChild(menuitem);
+
+                // 设置当前页面的 info 为粗体
+                if(content.ap && content.ap.info){
+                    let infoC = content.ap.info;
+                    if(info.url == infoC.url && info.nextLink == infoC.nextLink && info.pageElement == infoC.pageElement)
+                        menuitem.setAttribute("class", "sw-highlight-info");
+                }
+
+                menuitem.addEventListener("click", function(e){
+                    var num = e.target.getAttribute("siteinfo_num");
+                    var info = self.curPageInfos[num];
+
+                    if(e.button == 0){
+                        self.setValueFromCurPage(info);
+                    }else if (e.button == 2){
+                        copyToClipboard(siteInfoToString(info));
+                        alert("该站点信息已经复制");
+                    }
+                });
 			}
 			self.popup.openPopup($("sw-curpage-info"), "before_after");
 		}
@@ -297,19 +356,8 @@ window.siteinfo_writer = {
 			info = this.curPageInfos[info];
 		}
 
-		this.siteName.value = info.siteName || info.site || info.name || content.document.title;
-		this.nextLink.value = info.nextLink;
-		this.pageElement.value = info.pageElement;
-        this.useiframe.checked = info.useiframe || false;
-		this.insertBefore.value = info.insertBefore || "";
-
-		let url = info.url;
-		if(typeof url == 'string'){
-			this.url.value = url.replace(/\\\//g, '/').replace(/\\\\/g, '\\');
-		}else{
-			this.url.value = String(url).replace(/^\//, '').replace(/\/[img]*$/, '')
-				.replace(/\\\//g, '/');
-		}
+        this.setAllValue(info);
+        this.urlTest();
 	},
     // autopager 查询网站 install(a36122) 没有引号的错误。
     fixAutoPagerBug: function(doc){
@@ -319,15 +367,6 @@ window.siteinfo_writer = {
             link = links[i];
             onclick = link.getAttribute("onclick").replace(/install\((\w+)\)/, "install('$1')");
             link.setAttribute("onclick", onclick);
-        }
-    },
-    addStyle: function(doc, css) {
-        var heads = doc.getElementsByTagName('head');
-        if (heads.length > 0) {
-            var node = doc.createElement('style');
-            node.type = 'text/css';
-            node.innerHTML = css;
-            heads[0].appendChild(node);
         }
     },
 	requestInfoFromAP: function(ids){
@@ -369,34 +408,26 @@ window.siteinfo_writer = {
 			log("parseInfoFromAP: JSON");
 			var info = JSON.parse(xhr.responseText);
 
-			this.siteName.value = info.name;
-			this.url.value = info.data.url;
-			this.nextLink.value = info.data.nextLink;
-			this.pageElement.value = info.data.pageElement;
+            this.setAllValue({
+                name: info.name,
+                url: info.data.url,
+                nextLink: info.data.nextLink,
+                pageElement: info.data.pageElement
+            });
 		}
 	},
 	readFromClipboard: function(){
 		var dataStr = readFromClipboard();
 		if(dataStr){
-			var data = this.parseInfo(dataStr);
-			if(data){
-				var url;
-				if(data.url.match(/^\/(.*)\/[igm]?$/)){
-					url = RegExp.$1.replace(/\\\/\\\//g, '\/\/');
-				}else{
-					url = data.url.replace(/\\\\/g, '\\');
-				}
-				this.url.value = url;
-				this.siteName.value = data.siteName || data.name;
-				this.nextLink.value = data.nextLink;
-				this.pageElement.value = data.pageElement;
-				this.insertBefore.value = data.insertBefore || '';
+			var info = this.parseStringInfo(dataStr);
+			if(info){
+                this.setAllValue(info);
 			}else{
 				alert("剪贴板的数据格式不正确");
 			}
 		}
 	},
-	parseInfo: function(str) {
+	parseStringInfo: function(str) {
 	    var lines = str.split(/\r\n|\r|\n/)
 	    var re = /(^[^:]*?):(.*)$/
 	    var strip = function(str) {
@@ -437,6 +468,9 @@ window.siteinfo_writer = {
 		if (!i.url || !i.nextLink || !i.pageElement)
 			return alert("指定的值无效");
 
+        if(this.useiframe.checked)
+            i.useiframe = true;
+
 		let [index, nextLink, pageElement] = uAutoPagerize.getInfo([i], content);
 
 		if (index === 0) {
@@ -456,7 +490,7 @@ window.siteinfo_writer = {
 		if (this._inspect)
 			this._inspect.uninit();
 		var self = this;
-		this._inspect = new Inspector(content, function(xpathArray) {
+		this._inspect = new Inspector(content, aType, function(xpathArray) {
 			if (xpathArray.length) {
 				let range = document.createRange();
 				range.selectNodeContents(self.popup);
@@ -485,7 +519,7 @@ window.siteinfo_writer = {
             if(selector.startsWith("css;")){
                 selector = selector.slice(4);
                 if(selector)
-                    elements = doc.querySelectorAll(selector.slice(4));
+                    elements = doc.querySelectorAll(selector);
                 else
                     return alert("css; 后面不能为空");
             }else if(autoGetLink && selector.trim() == "auto;"){
@@ -501,7 +535,7 @@ window.siteinfo_writer = {
             return alert(e);
 		}
 
-        if(elements){
+        if(elements && elements[0]){
             elements[0].scrollIntoView();
         }else{
             return alert("没有找到元素");
@@ -581,9 +615,10 @@ window.siteinfo_writer = {
 
 window.siteinfo_writer.init();
 
-function Inspector(aWindow, aCallback) {
+function Inspector(aWindow, aType, aCallback) {
 	this.win = aWindow;
 	this.doc = this.win.document;
+    this.type = aType;
 	this.callback = aCallback;
 	this.init();
 }
@@ -662,13 +697,17 @@ Inspector.prototype = {
 		obj.self_class       = this.getElementXPath(current, this.ATTR_CLASS);
 		obj.self_attr        = this.getElementXPath(current, this.ATTR_NOT_CLASSID);
 		obj.self_full        = this.getElementXPath(current, this.ATTR_FULL);
-		obj.self_text        = this.getElementXPath(current, this.TEXT);
 		obj.ancestor_classid = obj.self_classid;
 		obj.ancestor_id      = obj.self_id;
 		obj.ancestor_class   = obj.self_class;
 		obj.ancestor_attr    = obj.self_attr;
 		obj.ancestor_full    = obj.self_full;
-		obj.ancestor_text    = obj.self_text;
+
+        if(this.type == "nextLink"){
+            // TODO: descendant
+            obj.self_text        = this.getElementXPath(current, this.TEXT);
+            obj.ancestor_text    = obj.self_text;
+        }
 
 		var hasId = current.getAttribute("id");
 		for (let [i, elem] in Iterator(nodes)) {
@@ -679,11 +718,16 @@ Inspector.prototype = {
 				obj.ancestor_classid = this.getElementXPath(elem, this.ATTR_CLASSID) + "/" + obj.ancestor_classid;
 				obj.ancestor_id = this.getElementXPath(elem, this.ATTR_ID) + "/" + obj.ancestor_id;
 				obj.ancestor_full = this.getElementXPath(elem, this.ATTR_FULL) + "/" + obj.ancestor_full;
-				obj.ancestor_text = this.getElementXPath(elem, this.ATTR_ID) + "/" + obj.ancestor_text;
+                if(this.type == "nextLink"){
+				    obj.ancestor_text = this.getElementXPath(elem, this.ATTR_ID) + "/" + obj.ancestor_text;
+                }
 			}
 			obj.ancestor_class = this.getElementXPath(elem, this.ATTR_NOT_CLASS) + "/" + obj.ancestor_class;
 			obj.ancestor_attr = this.getElementXPath(elem, this.ATTR_NOT_CLASSID) + "/" + obj.ancestor_attr;
 		}
+
+        // var p = content.console.log;
+        // p(obj);
 
 		for (let [key, val] in Iterator(obj)) {
 			if (val.substr(0, 4) !== 'id("')
@@ -874,6 +918,31 @@ function readFromClipboard() {
 	return url;
 }
 
+function copyToClipboard(sData){
+    Components.classes["@mozilla.org/widget/clipboardhelper;1"].getService(Components.interfaces.nsIClipboardHelper).copyString(sData);
+}
+
+function siteInfoToString (obj) {
+    var str = '{\n';
+    for (var p in obj) {
+        if (obj.hasOwnProperty(p)) {
+            str += "    " + p + ': ' + obj[p] + ',\n';
+        }
+    }
+    str += '},';
+    return str;
+}
+
+function addContentStyle(doc, css) {
+    var heads = doc.getElementsByTagName('head');
+    if (heads.length > 0) {
+        var node = doc.createElement('style');
+        node.type = 'text/css';
+        node.innerHTML = css;
+        heads[0].appendChild(node);
+    }
+}
+
 })('\
 \
 #sw-grid row > label {\
@@ -905,7 +974,7 @@ function readFromClipboard() {
   #sw-popup > * {\
   max-width: none !important;\
 }\
-#sw-launch{\
+#sw-launch, .sw-highlight-info{\
 	font-weight: 700;\
 }\
 #sw-grid row { height: 30px; }\

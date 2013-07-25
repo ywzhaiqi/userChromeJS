@@ -6,7 +6,7 @@ uAutoPagerize 中文规则版
 
 基于 [Griever 的 uAutoPagerize](https://github.com/Griever/userChromeJS/tree/master/uAutoPagerize) 修改，参考了 [Super\_preloader](http://userscripts.org/scripts/show/84937)
 
- - 新增 [Super\_preloader.db](https://userscripts.org/scripts/show/142198) 规则的支持，几乎完美兼容该规则，支持 'auto;'、`css;`、函数、地址栏递增等多种方式
+ - 新增 [Super\_preloader.db](https://userscripts.org/scripts/show/142198) 规则的支持，几乎完美兼容该规则，支持 `auto;`、`css;`、函数、地址栏递增等多种方式
  - 能下载更新 Super\_preloader.db 的规则，文件名为 `uSuper_preloader.db.js`（Chrome目录下）
  - 新增 **本人维护的规则**，也可添加多个他人规则
  - 新增 **iframe加载下一页**（浏览器级，只启用JavaScript），以便支持一些特殊网站：如起点或漫画网站

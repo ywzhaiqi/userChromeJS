@@ -1302,7 +1302,8 @@ AutoPager.prototype = {
 		p.setAttribute('class', 'autopagerize_page_info');
 		p.innerHTML = separatorHTML ? separatorHTML :
                 '<a class="autopagerize_link" target="_blank" href="' +
-                this.requestURL.replace(/&/g, '&amp;') + '"> 第 ' + (++this.pageNum) + ' 页  </a> ';
+                this.requestURL.replace(/&/g, '&amp;') + '"> 第 <font color="red">' +
+                (++this.pageNum) + '</font> 页  </a> ';
 
 		if (!this.isFrame) {
 			// var o = p.insertBefore(this.doc.createElement('div'), p.firstChild);

@@ -44,9 +44,11 @@
 // 放置的位置，true为地址栏，false为附加组件栏（可移动按钮）
 var isUrlbar = false;
 
-var DB_FILENAME_CN =  "uSuper_preloader.db.js";  // 中文数据库的位置
-var DB_FILENAME_JSON = "uAutoPagerize.json";        // 原版数据库位置
-var ORIGINAL_SITEINFO = true;  // false 为禁用原版规则，true 为启用
+// 原版规则是否启用？略大，但很多站点都可以翻页
+var ORIGINAL_SITEINFO = true;
+
+var DB_FILENAME_CN =  "uSuper_preloader.db.js";   // 中文数据库的位置
+var DB_FILENAME_JSON = "uAutoPagerize.json";      // 原版数据库位置
 
 
 var FORCE_TARGET_WINDOW = true;
@@ -59,14 +61,12 @@ var XHR_TIMEOUT = 30 * 1000;
 
 // 新增的
 var MAX_PAGER_NUM = -1;           // 默认最大翻页数， -1表示无限制
-var IMMEDIATELY_PAGER_NUM = 3;    // 立即加载的页数
-var USE_IFRAME = true;  // 是否启用 iframe 加载下一页（浏览器级别，默认只允许JavaScript，在 createIframe 中可设置其它允许）
+var IMMEDIATELY_PAGER_NUM = 3;    // 立即加载的初始页数
+var USE_IFRAME = true;  // 是否启用 iframe 加载下一页（浏览器级，默认只允许JavaScript，在 createIframe 中可设置其它允许）
 var USE_FORCE_NEXT_PAGE = true;  // 是否启用强制拼接？
+var PRE_NEXT_PAGE = true;  // 提前预读下一页..就是翻完第1页,立马预读第2页,翻完第2页,立马预读第3页..(大幅加快翻页快感-_-!!)
 
-// 有问题：跟立即加载冲突，iframe 方式有错误
-var APLUS = false;  // 提前预读下一页..就是翻完第1页,立马预读第2页,翻完第2页,立马预读第3页..(大幅加快翻页快感-_-!!)
-
-var SITEINFO_NLF_IMPORT_URLS = [
+var SITEINFO_CN_IMPORT_URLS = [
 	//Super_preloader 的翻页规则更新地址
 	"http://simpleu.googlecode.com/svn/trunk/scripts/Super_preloader.db.js",
 
@@ -135,7 +135,7 @@ var autoMatch = {
     sfwordl:{//关键字后面的字符限定.
         next:{//下一页关键字后面的字符
             enable:true,
-            maxSubfix:3,
+            maxSubfix: 3,
             character:[' ','　',']','］','>','﹥','›','»','>>','』','」','】',')','→']
         }
     }
@@ -158,13 +158,12 @@ if (typeof window.uAutoPagerize != 'undefined') {
 	window.uAutoPagerize.destroy();
 }
 
-
 var ns = window.uAutoPagerize = {
 	INCLUDE_REGEXP : /./,
 	EXCLUDE_REGEXP : /^$/,
 	MICROFORMAT    : MICROFORMAT.slice(),
 	MY_SITEINFO    : MY_SITEINFO.slice(),
-	SITEINFO_NLF   : [],
+	SITEINFO_CN    : [],
 	SITEINFO       : [],
     FORCE_SITEINFO : FORCE_SITEINFO,
 
@@ -178,11 +177,11 @@ var ns = window.uAutoPagerize = {
 		delete this.file;
 		return this.file = aFile;
 	},
-	get file_NLF() {
+	get file_cn() {
 		var aFile = Services.dirsvc.get('UChrm', Ci.nsILocalFile);
 		aFile.appendRelativePath(DB_FILENAME_CN);
-		delete this.file_NLF;
-		return this.file_NLF = aFile;
+		delete this.file_cn;
+		return this.file_cn = aFile;
 	},
 	get INCLUDE() INCLUDE,
 	set INCLUDE(arr) {
@@ -255,6 +254,12 @@ var ns = window.uAutoPagerize = {
 		if (m) m.setAttribute("checked", SCROLL_ONLY = !!bool);
 		return bool;
 	},
+    get PRE_NEXT_PAGE() PRE_NEXT_PAGE,
+    set PRE_NEXT_PAGE(bool) {
+        let m = $("uAutoPagerize-PRE_NEXT_PAGE");
+        if (m) m.setAttribute("checked", PRE_NEXT_PAGE = !!bool);
+        return bool;
+    },
 
 	init: function() {
 		ns.style = addStyle(css);
@@ -263,7 +268,7 @@ var ns = window.uAutoPagerize = {
         if(USE_FORCE_NEXT_PAGE)
             ns.popupMenu.addEventListener("popupshowing", this.showForcePageMenu, false);
 
-		["DEBUG", "AUTO_START", "FORCE_TARGET_WINDOW", "SCROLL_ONLY"].forEach(function(name) {
+		["DEBUG", "AUTO_START", "FORCE_TARGET_WINDOW", "SCROLL_ONLY", "PRE_NEXT_PAGE"].forEach(function(name) {
 			try {
 				ns[name] = ns.prefs.getBoolPref(name);
 			} catch (e) {}
@@ -277,8 +282,8 @@ var ns = window.uAutoPagerize = {
 		if (!getCache())
 			requestSITEINFO();
 
-        if(!ns.loadSetting_NLF())
-            ns.requestSITEINFO_NLF();
+        if(!ns.loadSetting_cn())
+            ns.requestSITEINFO_CN();
 
 		ns.INCLUDE = INCLUDE;
 		ns.EXCLUDE = EXCLUDE;
@@ -289,7 +294,7 @@ var ns = window.uAutoPagerize = {
 	uninit: function() {
 		ns.removeListener();
 
-        ["DEBUG", "AUTO_START", "FORCE_TARGET_WINDOW", "SCROLL_ONLY"].forEach(function(name) {
+        ["DEBUG", "AUTO_START", "FORCE_TARGET_WINDOW", "SCROLL_ONLY", "PRE_NEXT_PAGE"].forEach(function(name) {
             try {
                 ns.prefs.setBoolPref(name, ns[name]);
             } catch (e) {}
@@ -419,7 +424,7 @@ var ns = window.uAutoPagerize = {
                 <menuitem label="载入配置" accesskey="r"\
                           oncommand="uAutoPagerize.loadSetting(true);"/>\
                 <menuitem label="更新中文规则"\
-                          oncommand="uAutoPagerize.resetSITEINFO_NLF();"/>\
+                          oncommand="uAutoPagerize.resetSITEINFO_CN();"/>\
                 <menuitem label="更新原版规则" hidden="' + !ORIGINAL_SITEINFO + '" \
                           oncommand="uAutoPagerize.resetSITEINFO();"/>\
                 <menuseparator/>\
@@ -433,6 +438,13 @@ var ns = window.uAutoPagerize = {
                           id="uAutoPagerize-force_nextpage" hidden="' + !USE_FORCE_NEXT_PAGE + '" \
                           oncommand="uAutoPagerize.forcePageToggle();" />\
                 <menuseparator/>\
+                <menuitem label="提前预读下一页"\
+                          tooltiptext="翻完第1页,立马预读第2页,翻完第2页,立马预读第3页..(大幅加快翻页快感-_-!!)"\
+                          id="uAutoPagerize-PRE_NEXT_PAGE"\
+                          type="checkbox"\
+                          autoCheck="false"\
+                          checked="'+ PRE_NEXT_PAGE +'"\
+                          oncommand="uAutoPagerize.PRE_NEXT_PAGE = !uAutoPagerize.PRE_NEXT_PAGE;"/>\
                 <menuitem label="新标签打开链接"\
                           id="uAutoPagerize-FORCE_TARGET_WINDOW"\
                           type="checkbox"\
@@ -496,6 +508,11 @@ var ns = window.uAutoPagerize = {
 			ns.INCLUDE = sandbox.INCLUDE;
 		if (sandbox.EXCLUDE)
 			ns.EXCLUDE = sandbox.EXCLUDE;
+
+        ns.MY_SITEINFO.forEach(function(i){
+            i.type = 'my';
+        });
+
 		if (isAlert)
 			alerts('uAutoPagerize', '配置文件已经重新载入');
 
@@ -549,25 +566,9 @@ var ns = window.uAutoPagerize = {
         var hashchange = false;
 
 		if (/\bgoogle\.(?:com|co\.jp|com\.hk)$/.test(win.location.host)) {
+            // 已经移到外置规则，便于更新
 			if (!timer || timer < 400) timer = 400;
             hashchange = true;
-
-			// Google Video
-			var datas = [];
-			var docFil = function(newDoc) {
-				var x = getFirstElementByXPath('//script/text()[contains(self::text(), "data:image/jpeg")]', newDoc);
-				if (!x) return;
-				datas = x.nodeValue.match(/data:image\/jpeg\;base64\,[A-Za-z0-9/+]+(?:\\x3d)*/g) || [];
-			};
-			var dfrFil = function(df) {
-				datas.forEach(function(d, i){
-					var elem = df.querySelector('#vidthumb' + (i+1) + ', .vidthumb' + (i+1));
-					if (!elem) return;
-					elem.src = d.replace(/\\x3d/g, "=");
-				});
-			};
-			win.documentFilters.push(docFil);
-			win.fragmentFilters.push(dfrFil);
 		}else if (/^https?:\/\/(?:images|www)\.google(?:\.[^.\/]{2,3}){1,2}\/(images\?|search\?.*tbm=isch)/.test(locationHref)) {
 			// Google Image
 			[, info] = ns.getInfo(ns.MY_SITEINFO, win);
@@ -617,12 +618,12 @@ var ns = window.uAutoPagerize = {
 			win.ap = null;
 			miscellaneous.forEach(function(func){ func(doc, locationHref); });
 			var index = -1;
-            // var startTime = new Date().getTime();
+            var startTime = new Date().getTime();
 
 			if (!info) [, info, nextLink] = ns.getInfo(ns.MY_SITEINFO, win);
 
             // 第二检测 Super_preloader.db 的数据库
-            if(!info) [index, info, nextLink] = ns.getInfo(ns.SITEINFO_NLF, win);
+            if(!info) [index, info, nextLink] = ns.getInfo(ns.SITEINFO_CN, win);
 
 			if (info) {
 				if (info.requestFilter)
@@ -648,7 +649,6 @@ var ns = window.uAutoPagerize = {
 			}
 
 			if (!info) [index, info, nextLink] = ns.getInfo(ns.SITEINFO, win);
-			// debug(index + 'th/' + (new Date().getTime() - startTime) + 'ms');
 
 			if (!info) [, info, nextLink] = ns.getInfo(ns.MICROFORMAT, win);
 
@@ -662,7 +662,12 @@ var ns = window.uAutoPagerize = {
 
 			if (info) {
 				win.ap = new AutoPager(win.document, info, nextLink);
-			}
+                let infoType = info.type ? "[" + info.type + "]" : "";
+                debug("找到匹配当前站点的规则: 是" + infoType + '第' + (index + 1) + '规则',
+                    "耗时: "+ (new Date().getTime() - startTime) + 'ms');
+			}else{
+                // debug("没有找到规则");
+            }
 
 			updateIcon();
 		}, timer||0);
@@ -690,7 +695,7 @@ var ns = window.uAutoPagerize = {
 		}
 	},
 	getInfo: function (list, win) {
-		if (!list) list = ns.MY_SITEINFO.concat(ns.SITEINFO_NLF, ns.SITEINFO);
+		if (!list) list = ns.MY_SITEINFO.concat(ns.SITEINFO_CN, ns.SITEINFO);
 		if (!win)  win  = content;
 		var doc = win.document;
 		var locationHref = doc.location.href;
@@ -725,7 +730,7 @@ var ns = window.uAutoPagerize = {
 	},
 	getInfoFromURL: function (url, list) {
 		if (!url) url = content.location.href;
-		var list = ns.MY_SITEINFO.concat(ns.SITEINFO_NLF, ns.SITEINFO);
+		var list = ns.MY_SITEINFO.concat(ns.SITEINFO_CN, ns.SITEINFO);
 		return list.filter(function(info, index, array) {
 			try {
 				var exp = info.url_regexp || Object.defineProperty(info, "url_regexp", {
@@ -736,6 +741,11 @@ var ns = window.uAutoPagerize = {
 			} catch(e){ }
 		});
 	},
+    isInfoEqual: function (info1, info2){
+        // info1.type == info2.type
+        if(info1.url == info2.url && info1.nextLink == info2.nextLink && info1.pageElement == info2.pageElement)
+            return true;
+    },
     immediatelyStart: function(){
         var pages = $("uAutoPagerize-immedialate-pages").value;
 
@@ -805,22 +815,23 @@ var ns = window.uAutoPagerize = {
         var keyword = encodeURIComponent(content.location.href);
         gBrowser.selectedTab = gBrowser.addTab('http://ap.teesoft.info/?exp=0&url=' + keyword);
     },
-	gototop: function(){
-		content.window.scroll(content.window.scrollX, 0);
+	gototop: function(win){
+        if(!win) win = content.window;
+		win.scroll(win.scrollX, 0);
 	},
-    gotobottom: function(){
-        var win = content.window;
-        var doc = content.document;
+    gotobottom: function(win){
+        if(!win) win = content.window;
+        var doc = win.document;
         win.scroll(win.scrollX, Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight));
     },
-	gotoprev: function(){
-        var win = content.window;
+	gotoprev: function(win){
+        if(!win) win = content.window;
 
         var [prevSepTop,] = this.getSeparators(win);
 		win.scroll(win.scrollY, prevSepTop + win.scrollY - 6);
 	},
-	gotonext: function(){
-        var win = content.window;
+	gotonext: function(win){
+        if(!win) win = content.window;
 
         var [, nextSepTop] = this.getSeparators(win);
         win.scroll(win.scrollY, nextSepTop + win.scrollY - 6);
@@ -854,6 +865,14 @@ var ns = window.uAutoPagerize = {
         return [];
     },
     autoGetLink: autoGetLink
+};
+
+//分页导航的4个图标:
+var sep_icons={
+    top: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAFeElEQVRIia2SfTAUeBjHf0Y1N6QmnepuulMqlxjvL2u9HFteViHvjs45bxPJrti8lV2JU0pUwpVBiWtJaL1Op0hSs15WtrwUSfJulUovl+/9gZlTrqm7npnPH88fv8/3N/N9CPmMoR/d4kE5oL73c9588hgcpFrXjeS95ouKoLxPwfeLyo1iDbb/2Z8x2fA2F81vL6J25A+oRGza+UXk1Cgd69L+5Mlrr5JQ8fQoKp4moO71aVQNZ0wphsl7/y85JVLL8lLfkZdFL0KRJ2Lh4ng4CsYjkC8KQ8VkLCoGU98pha33/E9y7X3a27i9sS/OPfPC6WE3ZIx6IHPUC1mj3sgc9Ub6yK/gPmeAN5D0TpWz3uvz5JHqNtndUS/Thncgqc8BJ/udkDzoBLbAGqx6M5wanN6PD9ghS+SNgr7DU/oJcn6fJFeJULJJbQ+aPPbYFnHd2xDfY40jj6wR122JI/VMxNUywLlnhqOPrXCk1xpxPRZIGdiBzK5QGJ/47uMh6wJX2xxu8Z6Mvk/H/rYt4HSYIqrTFOx2Exyo9UH7VBm6cRVR13wQ2mKE6C5TRD8wBbtjMw532+DYXS+Ypq30mVf+jd9y27CbdpOhQhr2NOmDdccQIUJDBLfog13jgYa/zuPa81RUP/8dd1GI/VUeYDToIuyeIUKFBghu1QO7zQJRjbZTFmek5nYiE7DU0b9m85s9AgP483XAbNZFoEAXfrc1EVr1M6rfJKH4GQeXxw+CNx4D3tMYNLw7i7ArbvC5qYbgO3oIuqMPRrMuwlrNsfc2HbY5S/yMOGQBkWZ85bk5XeGhS7HOgMMljR6nIo0e50L1h85FmsMhV9xQ+oqNrDFvZI/5I1fEQK6IiVwREzmi3bj+9gRCKt3gzqOOeVZq93hV6vR6VWr37q4yHnTlyffbXZAMJNK7yRK5uGVLleNXSs5CLImEP/cnYcFECJIHHZE65Iq0YVekDe/A6ZFp0oZdkTLihMpXcdhT4tIt6UdWGSXLLJ5lC3fZUqt0IvVhGZZEIrDQg5c9wkD8Iysc67VDYp8dkp7YIal/Lol9tkjos0bhMzbCr7jcWsMiqz5+o5ZEwofrwEvp80BUpwli7lsgtssCv3VbIK5nfmK76YjpMkP6E38wy81vKXPIivnlpkTSIcu4JP6BM0JaDREupCGijYb97TREdtDA7pyGc3+a2T2yg4Z9bcaIaDNCYtcv8C2j3lA7TmQ++PmWFOWSiFY6dvG1ENBIAbOZgkABBcEtVLBaqWAJqdh7dy4sIRXBrboIbNEBU6ANpoACjnA73HkKN+izIQvdiDYlcd31YL4ZfOuo2HVTD7tv6SGAbzDFaKDCl6+GXY1q8G9Ug3/TXPwaVcFo0kWowASsRhqCGmgIbjBBZJMDXC/LtVidW2BCVodI0LVPfM82SF4faJAsN82pDTv1T65uCaijwbNeCe51G+FRr/AB7vXy2FVvCHrmOsHWLFk/q2zZoO05skH2eWuDbC9+y3bMl7L8174VDy0q8rlqAJcaeTheXQvn6veRg2O1LDyrKVBLkMj7+PXMM2oJUsVu5RSYl8nAtFQa5mXLQS//eoblMC+XxuZSKThVqEAnSfqTAsS4Qs4i7lDyYkKImPmZDTz7YhVo5otDnUugmU+gNYPmDCpcgq1FP8A+S6OAgIgJBgSSfD5/ISFE7AM7V8hZVDLEWVU2Fq9cOXH8Rxeu1nn7Qg2o5ohD+TyBSg6B6j/JJdiUTUAvUMDOS2YZDyZr9Tsnbit2TtTIzIS8F8B1EOcOcRYXDYavLB6PXmtyZs0hm3wtKGYugEIGwaZMAsVMAsWsGTIJ5DMITC5shM1ZpYNNorI1gomKFfwnlyW4XK74rPdvf1R3JFxfQEwAAAAASUVORK5CYII='
+    ,bottom: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAFlElEQVRIia2SezQUWBzHb0d19pA6KdXuaVdUNnE88hqTsUx5jELeFmut16nxGBPyKjNWrCKhhJVjlLQNCY08TlvpIXUGjUwpZZKEPEulx+a7fzBnj7LtttvnnM8f94/7uff87iVkCj6fLyN8fFpWNFa7pGWkeoX9EY3d5ifWQLWAQJ1HoF44JY9gLY9ArYBAnTcb9qX6MD+8Yk/laIJyRX/MUv4T7jw+31mGvI9QKJzTMXZRsWPsuvr98cvGW09ZFjDK1LC2iED7OIF28V9qFRNoHiPQLpaBU7ku3Pn6x+rGMr+rHk7RrHrCXcYXc+d+cAAhZJZQKJwj6hPJEZBZToW6ZZsqvoUWn0CvdFL9KfVKCdbxCfRKZeBUqQWrw6sFhJBZ/CdZ86bis2Y6YBqGGQolrrVa2HBGHlY1CmDULAKjZjEYNYthVb0IFmcUYFWtCK8aCnTS5Cv/Mfg+OmmyJb71FLjUK8GtXgVu9crTdDmvDPeLqgg4T4P6nrkVfxtyKZW3cTj5FcepRDlsS7FSmG2RUtimQiUmg7dSFNhoAu9GVfg0qn2gd8Ma+DZqIKSBDuODy1tph1ZvpWWpsCddxTY48A1neaQsg9genW3ucVqlNa7FGeFN5ghroiOimY4okTlYLUZgNmsjqEVnus06CGzWwTahDlhNVIQIaRPB19Yj8Op6bGugIlxoCUr6yktzvIgBIYQQRiZR9BaoXeGKtyBUREGoyADsVkOEtxkhQkzFjlvTjRBTEdFGRXgrFWwRBaE3KAhppiBQqI/YNgY2ZmtWERsiO33mmURxWzX1Snrnj4htN8XOdjPE3aWD0zEp996k0nXcXTp23aEjtp2OGDEdkW0mSLnvBudCsypiQeRmfA9NLlkSWmN1Lf9xEBI7LZEkYSC5y3pGf5FYI6nTGon3rBHfYY7sHh8E8J0FH9z8fVZEkGUxZ92vlT/jIK3HDuk9DsjodZzuY0ek9zhif7cjUh7aomiQBXa5z8xx23wiv5G/cIFpluI8qXJMsmx7lbuk7lUysgddkTvggbxBT+QNeiJ3wBO5Ax7IeeKBrH4XlI1FIoj/vZjYEFnNlKVyUlWSFy5QCCbzieMJObaHQLU3+JxZv1+dQbdfnWG3b51Bl7eAOhxZ54VLbw+geCQYx0dCp2ShaDgIhcP+OPOKg8izXnCr0BtwK1/3wLVCt8v5lG6Xe6Vh34Z8tQcKrC98iSmXzHYons/ccZ2B6DYrsG4YIeymMcJvrkfAVR1En/VC07sjEDxNhGA0EadHd6PyGRf1bzIQde4HMK/rgS0yQugNIwQJDbFdREPQxQ1vFEMWuEwblfVheb/4ZocJTrs1wtvWI0pMQ/RtE7CajLDrnA9uoRz1z3/Fhec5aPrjGDgXfRDeaoxIsQkibppge4sxosR0RF91HP+Suchhxge2yF0asP+WH/ZK7MG5uwEJ9y2Q0GmBqFZTxF8IgATncWeiGj9fDgDnjjniOyzAvWuBXe0bkXCPgb2t/uMr2cvtP/qLzA58zeR1RiG7zxPJXdZI7bbDvke24N62RPJlFlIbQ5EssUHqQzukdNkhWbIZ+x85IOdO2LhWrMbH41KM01SYZT17JwpH/JHZ54isflcc6ndFRKMlOCI7ZPW74mCvKzJ6nJE74IkiSfxLg7h1/y4uRZu7yk/Ql/GO/5yF/MGfwBvyR+GQP3hDfigY8kHegBeOPvMDvzvphcFOg82fFJeiEb3Kt7Y/513teBJKR6JRNhqLk6MxKBmJQMWLKJzqSX1JidO3+U9xKerRqv7nBgomGl7nofZpGmqf7sOFVxk405s1To03tPtfcSlasWu3Xh78DTfenkTT2+P4vbdg3DSJtuWzxKVo7lTbJhypQMNgyWvaburnufn7UH5et4Oxb6PPp+z5E0+0dyQjouurAAAAAElFTkSuQmCC'
+    ,up: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAEw0lEQVRIia3SezSUaRwH8MclsZTUljrRhSkmjAxGLjMVjt1KzaJWF21na6bbSTK6GNoaaR1r3O0Ui8Vqs8ZGI+UQti21Z5liSKm2y6B1iUViKvLdP2Y6m9rdg/qd8/njfZ/zfr/nPb+HkDHMihj3rUuO0Q+O5ZtRD/O4E/taZ94LabcEtMPUXR80fFkE87Py1gzF9cEc1A6eQWXnT7AOXbTzg4Q7hTmwL7SKFJeeJ6CkNwYlvbG49iIVFU8yhi34C7nvFb7kiP3qgsfRA5L+YOR1H8CZnhDk94Ti524+ShQRKGlPfmXJp2wbVzjjMMNT3BzRn/2Ug9QnXyCjaysyuzjI6uIis4uL9M4vIX4WgKK2hFeLBRTO2MKP0L1OPQwbSHnih4TH6/Btqy9E7UonVETtvkhs80FWNxf5j6OGXWJNdo8q3DrU0iv5TpAirsUbkQ89IZSzEd3ERnQzGzEta0aIbmYjUr4SJ9v8kPkgGMuTjP+/xDTQyCuqjqsI/2MFvmp0h+CuB8LueSD8vgfCH3jg+FvCHyjPjt51Q9RDL8Td4sAjxXD7v4bP2j3Nm/+bjyK4wRW8GhccqGfhUAMLwbdY4N9mIaSRhZA7LISqhNxRvuPfZiG4gYn9N51xtHElwm54D69MmzRyJ9P36n++57LbS56MiT1SB+yrdUSgzBH+N+yxt4aBfTKlwLqR9skYCJDZY3+9M4LqXRBQ6wj+zU9xsGoFvE9P3r1MQDTJ1ADtbW7p1EcbCx3a1hXYyn0ltvL1Z+mPNhbZdwRWuWJ7FQ3cKivsqLbCDulI3GoLBEiXYlfZ0q5tpQw5p9ShmVPKaPavWN6+qWhhq0+ubiCZ6k8mm0Qa6NOEhrqvEUKItVD/0M5fmdhylYpNVyjYXLkAfleVNqtsqjQB94ojHJM+3k8IIctE0/Vecxcb6K9JJ5P+c+E2MTo8ThkTPuVz4XVxNrzLjeFd8YZyI7DLZmFLBQOO8QZ7RnVF3xxroQ7Pt8gGzhIdOBVowUUyEUyJNpiF2mAWToSLRAuMAgJ2kTmWJEzxH0eBLm+txAb0XE0sziGwyf0HXcUyh2DV2fco8Mm3Ay1bExY/EFhlE1idIqC9wTyL4JM8Khhx08ZeYBWpw2OL7UBN14RZGoF5uhL1e5V0AtM0AtfTZmDEjeMPLCJ1eKt+pINyUhMmJwhMTxJQkgkoKSrJBHNFBE4ZJrCN1ht7AeUY4blnWmNuoiaMEgiMEwnmvGVWPIFNsjEWfK0+9gLb2ClBdqJ5MIqdgNmxBEZx6jCKU4dxvAaM4zUwJ15D+SzUGfUO1MQNAi1xh0iPEKIWVOIbbMifCZNj8wepEWaDFpHUIctvLIdoUbShxVHWg3ShzUs7od3gDP4MCMr28giImqxNpiuVSicQQtTeSRc3CLTOdwhmFv8lpJX2JS4t7kzyy5ULI87IE1Lym5JyJPIT54qavrt4vimttLglU1LcnH3qYstpUXlLbrist2z9fUWly72+Kot7fZenq0reKhCv0xB3CPQk7SGGhT3h8y/0RS+q6I13+OVZovul/uTVVwdS114byNzw+0D2huqBXJ/rz/M8ZYpC15v9hfZ1T8+Z13QXz5P1lcyQ/nnuI7FYrPE692+Bd9V75+hCGQAAAABJRU5ErkJggg=='
+    ,down: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAE1klEQVRIia3SaVBTVwAF4MviVlBUquiYuGBQIpBIgCBIIiKT1jUVtLhgnWpilTEi4ELAajCWoQQIS6NQoUChUkIFgygDArUKdopxCYhrXQJYFqGICFFRT3+QjIU6tlDPzPfnzbxz3tz7CNFHqVSaqP84+YGmq2TilY7i6TVPTtpe6y500egKvS49y1t2sSfX97eerLUXejLWVvUcXXW2O3n5z08TvSs6411Pd8XMKXwsnaFqCbNStkrMlcrVJmRg1Gr1sDtd5ybc6aq2u6ur9NB0lq0pb8yVnmk8pihuyMoubsxQnapPLS2q//aMSnv4ZH59Us5xbUJKrlYWWdyW5F/albig+E8Z41SrZJKyTjL8HwOEECO1Wj1M06wxIyBGkrIdwRPFE+Esc+5lyRxfzI1m9jKiGS/tv7Z/aRdFf0mPnN1rfXBGr5V4EkJK/EIJIUbKVoW5vtzobQP9wpZbiqiyUaDIjTE13gRUPYrcGBS5MabEEVDihsFZMR1OcWND/rVwYGy+MhY5JlMxOZ5gamJ/1EQCSgLBtERTeGcwQTtIggc94BRjLnJPt8Y0BQEtmYCWopdMMPMIgfVhAtoRUyz9gQW7qFGDH2DLx4q8js3GzFQCehoB/bs+tml9ZqcS0NNMwVc6w2FoA5aij/LosM0kYGS/4ZBN4JBFYPc9ASPLFL75zmDKzAY/MC9hrGjpCVvY5xCwcvs4/s3cHAJWrilWqRyHPsAvsgW7gMBDNRycwhHgFI4ERzUSHqoRcC8YjvmqUfArcgRTNoQjcosft31jBRv8ssnwKafAp4L6RjkVK89MgW/5NAjKOHCMfcfAijQy2ls5zsJTMcHcgBBC3JI+3CU874b1ldbYUGWDDVU28NfbUGmD9edp2FhFx9ZfOGDKLPYSQghDZmVmYB01zmK8iIwhvrlmQeuLZjWJKha2CErZDYJS14bNpWzttrIF7YHqBRBetMMXaof+LjpAWO2ALdUMBFV7YV2RS+uaE6wHfion7eoCJ+26QtfmRWn0B+MDR24mnhJi6nNsTMCe6sUQX/sYgVfdEFLrgV218xGoccFODRtBNf3t1PTZcYUN0WUXBGncsPOqG7arXRGs4WD7uUUvJuyw+LTfUS1JHS2IuOzz+sDNJdh1bT5C6zgQ3+Ai7CYXYbe4CNcLu9X3THyDi9DrXOyt42J3LRfBVzwQWucF8a++uskBlj5vvQ9eitUW+XUBou+vxIHbiyC9y4P0Hg+HBpDe40F6l4eIOzxIbvPw5U1vSH9fjOgaoW5mEGXlO/+ehUnUgIx7oTjS7I8o7RLENPAR27iin5gGPmLq+ZBp+Yi6vwzyRh8k3wrRMcPt311uiEecdUD+w+jXmR1CJDb7QtHih8N6Cr1vmvyQ8HA1Uh75I/t+RA97P+u/lRsyV0ITFDUnvFI+DURa2+fIaBcis12IjHYB0ts34eijz5D1RABlQ2Q3ex972aDKDbEX0zaXtCS/KtFF4qcOMfIfh+P44zDkdeyGqjsUBQ9jeubtd1k+pHJD7MSzhBWP0l9feH4UJZ1xKOmMxdlnCTjdpNC5R7jy/1e5IczwOVsr237E1d7juNSbg/KmdJ1nJOeT91JuCGMffZu6Q4ULbXnPOYfc38+XD8y8g6w9i2O9Nw3mnb8AgDHVe54drcYAAAAASUVORK5CYII='
 };
 
 // Class
@@ -929,7 +948,7 @@ AutoPager.prototype = {
 		if (this.getScrollHeight() == this.win.innerHeight)
 			this.body.style.minHeight = (this.win.innerHeight + 1) + 'px';
 
-        if(APLUS){
+        if(PRE_NEXT_PAGE){
             this.win.setTimeout(function(self){
                 self.doRequest();
             }, 199, this);
@@ -953,11 +972,12 @@ AutoPager.prototype = {
 			var style = this.doc.getElementById("uAutoPagerize-style");
 			if (style)
 				style.parentNode.removeChild(style);
+
+            if(this.separatorStyle)
+                this.separatorStyle.parentNode.removeChild(this.separatorStyle);
 		}
 
-		for (var i = this.remove.length - 1; i >= 0; i--) {
-			this.remove[i]();
-		}
+        this.tmpDoc = null;
 
 		this.win.ap = null;
 		updateIcon();
@@ -1008,7 +1028,7 @@ AutoPager.prototype = {
 	scroll : function(){
 		if (this.state !== 'enable' || !ns.AUTO_START) return;
 		var remain = this.getScrollHeight() - this.win.innerHeight - this.win.scrollY;
-		if (remain < this.remainHeight) {
+		if (remain < this.remainHeight || this.ipagesMode) {
             if(this.tmpDoc){
                 this.loaded(this.tmpDoc);
             }else{
@@ -1090,20 +1110,18 @@ AutoPager.prototype = {
 
         let browser = gBrowser.getBrowserForDocument(this.doc);
         if(!browser.uAutoPagerizeIframe){
-            let frame = createIframe();
-            browser.uAutoPagerizeIframe = frame;
+            let iframe = createIframe();
+            browser.uAutoPagerizeIframe = iframe;
 
             let onload = function(event){
                 self.iframeLoad.apply(self, [event]);
             };
             if(this.info.iloaded){
-                frame.addEventListener("load", onload , true);
+                iframe.addEventListener("load", onload , true);
             }else{
-                frame.addEventListener("DOMContentLoaded", onload, true);
+                iframe.addEventListener("DOMContentLoaded", onload, true);
             }
         }
-
-        if (browser.uAutoPagerizeIframe.src == this.requestURL) return;
 
         //两个地址都要改?mdc是按照第二个写的,真正有效的也是第二个,第一个是以后用来比较用的
         browser.uAutoPagerizeIframe.src = this.requestURL;
@@ -1133,20 +1151,32 @@ AutoPager.prototype = {
 		}
 		this.win.documentFilters.forEach(function(i) { i(htmlDoc, this.requestURL, this.info) }, this);
 
-        if(APLUS){
-            this.tmpDoc = htmlDoc;
-            this.scroll();
-            this.state = 'enable';
-        }else{
-            this.loaded(htmlDoc);
-        }
+        this.beforeLoaded(htmlDoc);
 	},
     iframeLoad: function (event) {
         let doc = event.originalTarget;
         if (doc.location.href == "about:blank" || doc.defaultView.frameElement)
             return;
 
-        if(APLUS){
+        this.beforeLoaded(doc);
+    },
+    ipagesMode: false,
+    ipaged: 0,
+    ipagesNumber: 0,
+    loadImmediately: function(num){
+        num = parseInt(num, 10);
+        if(num <= 0) return;
+
+        debug("准备立即载入" + num + "页");
+
+        this.ipagesMode = true;
+        this.ipaged = 0;
+        this.ipagesNumber = num;
+
+        this.scroll();
+    },
+    beforeLoaded: function(doc){
+        if(PRE_NEXT_PAGE && !this.ipagesMode){
             this.tmpDoc = doc;
             this.scroll();
             this.state = 'enable';
@@ -1206,28 +1236,27 @@ AutoPager.prototype = {
         ev.initEvent('GM_AutoPagerizeNextPageLoaded', true, false);
         this.doc.dispatchEvent(ev);
 
+        this.afterLoaded();
+	},
+    afterLoaded: function(){
+        this.tmpDoc = null;
+
         // 立即加载n页
-        this.paged += 1;
-        if(this.paged < this.immediatelyPageNum){
-            if(this.tmpDoc){
-                this.loaded(this.tmpDoc);
-            }else{
-                this.doRequest();
-            }
+        this.ipaged += 1;
+        if(this.ipagesMode && this.ipaged >= this.ipagesNumber){
+            this.ipagesMode = false;
         }
 
-        this.tmpDoc = null;
-        if(APLUS){
+        if(this.ipagesMode || PRE_NEXT_PAGE){
             if(this.iframeMode){
-                // 延时点
-                this.win.setTimeout(function(self){
+                this.win.setTimeout(function(self){  // 延时点
                     self.doRequest.apply(self, null);
                 }, 199, this);
             }else{
                 this.doRequest();
             }
         }
-	},
+    },
 	addPage : function(htmlDoc, page, separatorHTML){
 		var fragment = this.doc.createDocumentFragment();
 		page.forEach(function(i) { fragment.appendChild(i); });
@@ -1241,21 +1270,46 @@ AutoPager.prototype = {
 			fragment.appendChild(div);
 		}
 
-		var hr = this.doc.createElement('hr');
-		hr.setAttribute('class', 'autopagerize_page_separator');
-		hr.setAttribute('style', 'clear: both;');
-		var p  = this.doc.createElement('p');
-		p.setAttribute('class', 'autopagerize_page_info');
-		p.setAttribute('style', 'clear: both;');
+        // 添加分割条样式
+        if(!this.separatorStyle){
+            this.separatorStyle = this.addStyle([
+                '.autopagerize_page_info {',
+                    'clear: both;',
+                    'line-height: 20px;',
+                    'background: none repeat scroll 0% 0% rgb(230, 230, 230);',
+                    'text-align: center;',
+                    'margin-top: 10px;',
+                    'margin-bottom: 10px;',
+                '}',
+                '.autopagerize_page_info img {',
+                    'width: 15px;',
+                    'height: 15px;',
+                    'padding: 0px;',
+                    'margin-right: 12px;',
+                    'display: inline-block;',
+                    'vertical-align: middle;',
+                '}',
+                '.autopagerize_link {',
+                    'padding-right: 10px;',
+                '}',
+                '.autopagerize_page_info input {',
+                    'text-align: center;',
+                '}',
+            ].join('\n'));
+        }
 
+		var p  = this.doc.createElement('div');
+		p.setAttribute('class', 'autopagerize_page_info');
 		p.innerHTML = separatorHTML ? separatorHTML :
                 '<a class="autopagerize_link" target="_blank" href="' +
-                this.requestURL.replace(/&/g, '&amp;') + '"> 第 ' + (++this.pageNum) + ' 页: </a> ';
+                this.requestURL.replace(/&/g, '&amp;') + '"> 第 ' + (++this.pageNum) + ' 页  </a> ';
 
 		if (!this.isFrame) {
-			var o = p.insertBefore(this.doc.createElement('div'), p.firstChild);
+			// var o = p.insertBefore(this.doc.createElement('div'), p.firstChild);
+            var o = p.insertBefore(this.doc.createElement('div'), p.firstChild);
 			o.setAttribute('class', 'autopagerize_icon');
 			o.setAttribute('state', 'enable');
+            o.setAttribute('title', "点击启用禁用");
 			o.style.cssText = [
 				'background: ', COLOR['enable'], ';'
 				,'width: .8em;'
@@ -1266,6 +1320,82 @@ AutoPager.prototype = {
 				,'vertical-align: middle;'
 			].join('');
 			o.addEventListener('click', this, false);
+
+            var self = this;
+
+            // 滚到顶部，2层结构
+            var a = p.appendChild($C("a", {
+                title: "滚到顶部",
+                href: "javascript:void(0)"
+            }, this.doc));
+            var i = a.appendChild($C("img", {
+                class: "ap-sp-gotop",
+                src: sep_icons.top,
+            }, this.doc));
+            i.addEventListener('click', function(){
+                ns.gototop(self.win);
+            }, false);
+
+            // 上滚一页
+            a = p.appendChild($C("a", {
+                title: "上滚一页",
+                href: "javascript:void(0)"
+            }, this.doc));
+            i = a.appendChild($C("img", {
+                class: "ap-sp-gopre",
+                src: sep_icons.up,
+            }, this.doc));
+            i.addEventListener('click', function(){
+                ns.gotoprev(self.win);
+            }, false);
+
+            // 下滚一页
+            a = p.appendChild($C("a", {
+                title: "下滚一页",
+                href: "javascript:void(0)"
+            }, this.doc));
+            i = a.appendChild($C("img", {
+                class: "ap-sp-gonext",
+                src: sep_icons.down,
+            }, this.doc));
+            i.addEventListener('click', function(){
+                ns.gotonext(self.win);
+            }, false);
+
+            // 滚到底部
+            a = p.appendChild($C("a", {
+                title: "滚到底部",
+                href: "javascript:void(0)"
+            }, this.doc));
+            i = a.appendChild($C("img", {
+                class: "ap-sp-gobottom",
+                src: sep_icons.bottom,
+            }, this.doc));
+            i.addEventListener('click', function(){
+                ns.gotobottom(self.win);
+            }, false);
+
+            // 立即加载
+            a = p.appendChild($C("a", {
+                title: "点击后立即翻指定的页数",
+                href: "javascript:void(0)"
+            }, this.doc));
+            a.innerHTML = "立即翻";
+            a.addEventListener("click", function(event){
+                var input = event.target.nextSibling;
+                var num = input.value
+                ns.IMMEDIATELY_PAGER_NUM = num;
+                self.loadImmediately(num);
+            }, false);
+            // 输入框
+            i = p.appendChild($C("input",{
+                type: "number",
+                title: "连续翻页的数量",
+                value: IMMEDIATELY_PAGER_NUM,
+                min: "1",
+                size: "1"
+            }, this.doc));
+            p.appendChild(this.doc.createTextNode("页"));
 		}
 
 		var insertParent = this.insertPoint.parentNode;
@@ -1277,7 +1407,6 @@ AutoPager.prototype = {
 				colums += parseInt(col, 10) || 1;
 			}
 			var td = this.doc.createElement('td');
-			td.appendChild(hr);
 			td.appendChild(p);
 			var tr = this.doc.createElement('tr');
 			td.setAttribute('colspan', colums);
@@ -1285,7 +1414,6 @@ AutoPager.prototype = {
 			fragment.insertBefore(tr, fragment.firstChild);
 		} else {
 			fragment.insertBefore(p, fragment.firstChild);
-			fragment.insertBefore(hr, fragment.firstChild);
 		}
 
 		insertParent.insertBefore(fragment, this.insertPoint);
@@ -1309,22 +1437,6 @@ AutoPager.prototype = {
         this.addPage(fragment, [page], html);
 
         this.state = 'terminated';
-    },
-    paged: 0,
-    immediatelyPageNum: 0,
-    loadImmediately: function(num){
-        num = parseInt(num, 10);
-        if(num <= 0) return;
-
-        debug("准备立即载入" + num + "页");
-
-        this.paged = 0;
-        this.immediatelyPageNum = num;
-        if(this.tmpDoc){
-            this.loaded(this.tmpDoc);
-        }else{
-            this.doRequest();
-        }
     },
 	getNextURL : function(doc) {
 		var nextLink = doc instanceof HTMLElement ?
@@ -1386,7 +1498,7 @@ AutoPager.prototype = {
 	initIcon: function() {
 		var div = this.doc.createElement("div");
 		div.setAttribute('id', 'autopagerize_icon');
-		div.setAttribute('class', 'akutopagerize_icon');
+		div.setAttribute('class', 'autopagerize_icon');
 		div.setAttribute('state', this.state);
 		div.style.cssText = [
 			'font-size: 12px;'
@@ -1474,15 +1586,15 @@ function launchAutoPager_org(list, win) {
 // 获取更新 Super_preloader.db
 (function(){
 
-	ns.requestSITEINFO_NLF = requestSITEINFO;
+	ns.requestSITEINFO_CN = requestSITEINFO;
 
-	ns.resetSITEINFO_NLF = function(){
+	ns.resetSITEINFO_CN = function(){
 		if (confirm('确定要重置 Super_preloader 及其它规则吗？'))
-			requestSITEINFO(SITEINFO_NLF_IMPORT_URLS);
+			requestSITEINFO(SITEINFO_CN_IMPORT_URLS);
 	};
 
-	ns.loadSetting_NLF = function(isAlert) {
-		var data = loadText(ns.file_NLF);
+	ns.loadSetting_cn = function(isAlert) {
+		var data = loadText(ns.file_cn);
 		if (!data) return false;
 		var sandbox = new Cu.Sandbox( new XPCNativeWrapper(window) );
 		sandbox.SITEINFO = [];
@@ -1496,7 +1608,7 @@ function launchAutoPager_org(list, win) {
 
 		var list = [];
 		// 加上 MY_SITEINFO
-		for(var i = 0, l = SITEINFO_NLF_IMPORT_URLS.length; i < l; i++){
+		for(var i = 0, l = SITEINFO_CN_IMPORT_URLS.length; i < l; i++){
 			let mSiteInfo = sandbox["MY_SITEINFO_" + i];
 			if(mSiteInfo){
                 mSiteInfo.forEach(function(i){
@@ -1520,7 +1632,7 @@ function launchAutoPager_org(list, win) {
 			});
 		}
 
-		ns.SITEINFO_NLF = list;
+		ns.SITEINFO_CN = list;
 
 		debug("Super_preloader 及其它规则已经载入")
 
@@ -1538,7 +1650,7 @@ function launchAutoPager_org(list, win) {
 		dataStr = "";
 		// debug(" request Super_preloader.db");
 		var xhrStates = {};
-		SITEINFO_NLF_IMPORT_URLS.forEach(function(i) {
+		SITEINFO_CN_IMPORT_URLS.forEach(function(i) {
 			var opt = {
 				method: 'get',
 				url: i,
@@ -1578,9 +1690,9 @@ function launchAutoPager_org(list, win) {
 
 		dataStr += "\n\n" + matches[1].replace("MY_SITEINFO", "MY_SITEINFO_" + finishCount);
 		finishCount += 1;
-		if(finishCount >= SITEINFO_NLF_IMPORT_URLS.length){
+		if(finishCount >= SITEINFO_CN_IMPORT_URLS.length){
 			saveFile(DB_FILENAME_CN, dataStr);
-			ns.loadSetting_NLF();
+			ns.loadSetting_cn();
 			alerts("uAutoPagerize", "中文规则已经更新完毕");
 		}
 
@@ -2161,8 +2273,9 @@ function debug(){ if (ns.DEBUG) Application.console.log('[uAutoPagerize DEBUG] '
 function $(id, doc) (doc || document).getElementById(id);
 
 function $A(arr) Array.slice(arr);
-function $C(name, attr) {
-	var el = document.createElement(name);
+function $C(name, attr, doc) {
+    doc = doc || document;
+	var el = doc.createElement(name);
 	if (attr) Object.keys(attr).forEach(function(n) el.setAttribute(n, attr[n]));
 	return el;
 }

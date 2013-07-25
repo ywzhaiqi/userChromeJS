@@ -42,9 +42,9 @@ uAutoPagerize 中文规则版
 
 ## 文件简介
 
- - uAutoPagerize.uc.js（必须），脚本文件。
- - _uAutoPagerize.js（必须），自己的配置文件。
- - SITEINFO_Write.uc（非必须），规则辅助查找工具（修改版），在 AutoPager Rules 网站点击 install 后自动读取规则并弹出对话框。
+ - [uAutoPagerize.uc.js](uAutoPagerize.uc.js)，脚本文件。
+ - [_uAutoPagerize.js](_uAutoPagerize.js)，自己的配置文件，可设置排除列表，添加规则。
+ - [SITEINFO_Write.uc](SITEINFO_Writer.uc.js)（非必须），规则辅助查找工具（修改版），在 AutoPager Rules 网站点击 install 后自动读取规则并弹出对话框。
  - AutoPagerizeFindHighlight.uc.js（辅助，非必要）。google搜索等下一页高亮的修正。使用我修改过的 WordHighlightToolbar.uc.js 则不需要。
  - AutoPagerize_IDE.js，AutoPagerize的书签工具，暂不可用。
 

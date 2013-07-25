@@ -46,7 +46,13 @@ uAutoPagerize 中文规则版
  - _uAutoPagerize.js（必须），自己的配置文件。
  - SITEINFO_Write.uc（非必须），规则辅助查找工具（修改版），在 AutoPager Rules 网站点击 install 后自动读取规则并弹出对话框。
  - AutoPagerizeFindHighlight.uc.js（辅助，非必要）。google搜索等下一页高亮的修正。使用我修改过的 WordHighlightToolbar.uc.js 则不需要。
- - AutoPagerize_IDE.js，AutoPagerize的书签工具。bookmarklet: <a href='javascript:"https%3A%2F%2Fgithub.com%2Fywzhaiqi%2FuserChromeJS%2Fraw%2Fmaster%2FuAutoPagerize%2FAutoPagerize_IDE.js".replace%28%2F%28%5CS%2B%29%5Cs%2B%28%5CS%2A%29%2F%2Cfunction%28s%2Curl%2Carg%29%7Bs%3Ddocument.createElement%28"script"%29%3Bs.charset%3D"utf-8"%3Bs.src%3Durl%2B"%3Fs%3D"%2BencodeURIComponent%28arg%29%3Bdocument.body.appendChild%28s%29%7D%29%3Bvoid%280%29%3B' onclick="alert('右键添加书签');">AutoPagerize IDE</a>
+ - AutoPagerize_IDE.js，AutoPagerize的书签工具。bookmarklet: <a onclick="alert('右键添加书签');" href='javascript:"https://github.com/ywzhaiqi/userChromeJS/raw/master/uAutoPagerize/AutoPagerize_IDE.js (arg)".replace(/(\S+)\s+(\S*)/, function(s, url, arg) {
+    s = document.createElement("script");
+    s.charset = "utf-8";
+    s.src = url + "?s=" + encodeURIComponent(arg);
+    document.body.appendChild(s)
+});'>AutoPagerize IDE</a>
+
 
 ## 使用注意
 

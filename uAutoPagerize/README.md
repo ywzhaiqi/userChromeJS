@@ -73,6 +73,10 @@ uAutoPagerize 中文规则版
         ,'http://www.google.*/reader/*'
     ];
 
+## 改为极简分隔条
+
+    var SIMPLE_SEPARATOR = true;  // true 极简分隔条，false 多功能分隔条
+
 ## 配合鼠标手势或其它工具调用的代码
 
 启用禁用

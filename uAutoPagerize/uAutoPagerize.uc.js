@@ -46,6 +46,7 @@ var isUrlbar = false;
 
 // 原版规则是否启用？略大，但很多站点都可以翻页
 var ORIGINAL_SITEINFO = true;
+var SIMPLE_SEPARATOR = false;  // true 极简分隔条，false 多功能分隔条
 
 var DB_FILENAME_CN =  "uSuper_preloader.db.js";   // 中文数据库的位置
 var DB_FILENAME_JSON = "uAutoPagerize.json";      // 原版数据库位置
@@ -1342,12 +1343,12 @@ AutoPager.prototype = {
 		}, this);
 	},
     addSeparator: function(endSeparatorHTML){
-        // 添加分割条样式
-        if(!this.separatorStyle){
-            this.separatorStyle = this.addStyle(sep_style);
+        var ralativePageStr;
+        if(SIMPLE_SEPARATOR){
+            ralativePageStr = "";
+        }else{
+            ralativePageStr = this.getRalativePageStr(this.lastRequestURL, this.requestURL, this.nextLink && this.nextLink.href);
         }
-
-        var ralativePageStr = this.getRalativePageStr(this.lastRequestURL, this.requestURL, this.nextLink && this.nextLink.href);
 
         var p  = this.doc.createElement('div');
         p.setAttribute('class', 'autopagerize_page_info');
@@ -1355,6 +1356,11 @@ AutoPager.prototype = {
                 '<a class="autopagerize_link" target="_blank" href="' +
                 this.requestURL.replace(/&/g, '&amp;') + '"> 第 <font color="red">' +
                 (++this.pageNum) + '</font> 页 ' + ralativePageStr + ' </a> ';
+
+        // 添加分割条样式
+        if(!SIMPLE_SEPARATOR && !this.separatorStyle){
+            this.separatorStyle = this.addStyle(sep_style);
+        }
 
         if (!this.isFrame && !endSeparatorHTML) {
             var o = p.insertBefore(this.doc.createElement('div'), p.firstChild);
@@ -1371,6 +1377,10 @@ AutoPager.prototype = {
                 ,'vertical-align: middle;'
             ].join('');
             o.addEventListener('click', this, false);
+
+            if(SIMPLE_SEPARATOR){
+                return p;
+            }
 
             var self = this;
 

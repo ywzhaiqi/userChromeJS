@@ -4,22 +4,23 @@ uAutoPagerize 中文规则版
 
 ### uAutoPagerize.uc.js
 
-基于 [Griever 的 uAutoPagerize](https://github.com/Griever/userChromeJS/tree/master/uAutoPagerize) 修改，参考了 [Super\_preloader](http://userscripts.org/scripts/show/84937)
+基于 [Griever 的 uAutoPagerize](https://github.com/Griever/userChromeJS/tree/master/uAutoPagerize) 修改，参考了 [Super\_preloader](http://userscripts.org/scripts/show/84937)。[卡饭帖子地址](http://bbs.kafan.cn/thread-1555846-1-1.html)
 
  - 新增 [Super\_preloader.db](https://userscripts.org/scripts/show/142198) 规则的支持，几乎完美兼容该规则，支持 `auto;`、`css;`、函数、地址栏递增等多种方式
  - 能下载更新 Super\_preloader.db 的规则，文件名为 `uSuper_preloader.db.js`（Chrome目录下）
- - 新增 **本人维护的规则**，也可添加多个他人规则
- - 新增 **iframe加载下一页**（浏览器级），以便支持一些特殊网站：如起点或漫画网站
+ - 新增 **本人维护的规则**，也可添加多个他人规则。以上所有规则都可通过 `更新中文规则` 更新
+ - 新增 **iframe加载下一页**（浏览器级，默认只启用 JavaScript、Image，节省资源），可以支持一些特殊网站：如起点或漫画网站
  - 新增 **立即加载n页** 功能
  - 新增 **强制拼接** 功能，在没有规则且能通过自动查找找到下一页链接的才可用
  - 新增 **提前预读** 功能，就是翻完第1页,立马预读第2页,翻完第2页,立马预读第3页..(大幅加快翻页快感-_-!!)
  - 新增 **最大翻页数** 的设置
+ - 新增 **实际网页数**，来自 lastDream2013
  - 原官方规则优先级最低，默认启用。略大，但很多网站都可翻页。可设置为禁用 `var ORIGINAL_SITEINFO = false`
  - 默认为可移动按钮，可在 `isUrlbar` 更改，true为地址栏，false为附加组件栏（可移动按钮）
 
 #### 特殊的支持
 
-iframe 加载方式默认只启用 JavaScript、Image，节省资源
+由于下面的修复是通过研究网页代码而来，网页改版可能会造成失效，请反馈
 
  - *百度贴吧* 修复下一页图片的点击放大和回复按钮的可用
  - *Google* 搜索页面修复下一页图片或视频缩略图
@@ -80,21 +81,67 @@ iframe 加载方式默认只启用 JavaScript、Image，节省资源
 
 立即加载3页
 
-    uAutoPagerize.loadImmediately(3);
+    var node = FireGestures.sourceNode;
+    var doc = node.ownerDocument || getBrowser().contentDocument;
+    var win = doc.defaultView;
 
-向下滚一页，否则向下滚一屏（FireGestures代码）。
+    if(win.ap){
+        win.ap.loadImmediately(3);
+    }
 
-	if(content.window.ap){
-		return uAutoPagerize.gotonext();
-	}
-	FireGestures._performAction(event, "FireGestures:ScrollPageDown");
+上一页（无，可调用 nextPage.uc.xul）
 
-向上滚一页，否则向下滚一屏（FireGestures代码）。
+    if(window.nextPage)
+        nextPage.next();
 
-	if(content.window.ap){
-		return uAutoPagerize.gotoprev();
-	}
-	FireGestures._performAction(event, "FireGestures:ScrollPageUp");
+下一页（3合1，如果不存在则调用 nextPage.uc.xul）
+
+    var node = FireGestures.sourceNode;
+    var doc = node.ownerDocument || getBrowser().contentDocument;
+    var win = doc.defaultView;
+
+    if(win.ap){
+        let nextURL = win.ap.nextLink && win.ap.nextLink.href;
+        if(nextURL)
+            win.location = nextURL;
+    }else if(win.uSuper_preloader){
+        win.uSuper_preloader.go();
+    }else if(window.nextPage){
+        nextPage.next(true);
+    }
+
+向下滚一页（4合1）
+
+    var node = FireGestures.sourceNode;
+    var doc = node.ownerDocument || getBrowser().contentDocument;
+    var win = doc.defaultView;
+
+    if(win.ap){
+        uAutoPagerize.gotonext(win);
+    }else if(win.uSuper_preloader){
+        win.uSuper_preloader.goNext();
+    }else if(doc.body.getAttribute("name") == "MyNovelReader"){  // 小说阅读脚本
+        uAutoPagerize.gotonext(win, ".chapter-footer-nav");
+    }else{
+       FireGestures._performAction(event, "FireGestures:ScrollBottom");
+    }
+
+向上滚一页（4合1）
+
+    var node = FireGestures.sourceNode;
+    var doc = node.ownerDocument || getBrowser().contentDocument;
+    var win = doc.defaultView;
+
+    if(win.ap){
+        uAutoPagerize.gotoprev(win);
+    }else if(win.uSuper_preloader){
+        win.uSuper_preloader.goPre();
+    }else if(doc.body.getAttribute("name") == "MyNovelReader"){  // 小说阅读脚本
+        uAutoPagerize.gotoprev(win, ".chapter-footer-nav");
+    }else{
+       FireGestures._performAction(event, "FireGestures:ScrollTop");
+    }
+
 
 ## 站点配置说明
 
@@ -145,32 +192,31 @@ iframe 加载方式默认只启用 JavaScript、Image，节省资源
 
 因为 Google 常用，所以我采用下面的方式，但可能因为网站改版或其他原因而失效，此时改用 `useiframe: true,` 也可解决。
 
-    {name: 'Google搜索',
-            url: '^https?\\:\\/\\/(www|encrypted)\\.google\\..{2,9}\\/(webhp|search|#|$|\\?)',  // url 2种方式：正则和普通 * 号方式
-            nextLink: 'id("pnnext")|id("navbar navcnt nav")//td[span]/following-sibling::td[1]/a|id("nn")/parent::a',
+    {
+        name: 'Google搜索',
+        url: '^https?\\:\\/\\/(www|encrypted)\\.google\\..{2,9}\\/(webhp|search|#|$|\\?)', // url 2种方式：正则和普通 * 号方式
+        nextLink: 'id("pnnext")|id("navbar navcnt nav")//td[span]/following-sibling::td[1]/a|id("nn")/parent::a',
 
-            useiframe: false,   // 是否使用iframe翻页(可选)
-            pageElement: 'css;div#ires',
-            // fix Google image and Video
-            documentFilter: function(doc){
-                var x = doc.evaluate(
-                    '//script/text()[contains(self::text(), "\',\'data:image/jpeg") or contains(self::text(), "\',\'http://")]',
-                    doc,
-                    null,
-                    9,
-                    null).singleNodeValue;
-                if (!x) return;
+        useiframe: false, // 是否使用iframe翻页(可选)
+        pageElement: 'css;div#ires',
+        // fix Google image and Video
+        documentFilter: function(doc) {
+            var x = doc.evaluate('//script/text()[contains(self::text(), "apthumb")]', doc, null, 9, null)
+                    .singleNodeValue;
+            if (!x) return;
 
-                var datas = x.nodeValue.match(/'\w+','data:image\/jpeg\;base64\,[A-Za-z0-9/+]+(?:\\x3d)*/g) ||
-                    x.nodeValue.match(/'\w+','http[^']+'/g) || [];
+            var datas = x.nodeValue.match(/'apthumb\d+','[^']+(?:\\x3d)*/g);
 
-                datas.forEach(function(text){
-                    let [id, data] = text.split("','");
-                    id = id.slice(1);
-                    let m = doc.getElementById(id);
-                    if(m)
-                        m.src = data.replace(/\\x3d/g, "=");
-                });
-            }
-        },
-    }
+            datas.forEach(function(text){
+                let [id, data] = text.split("','");
+                id = id.slice(1);
+                let m = doc.getElementById(id);
+                if(m)
+                    m.src = data.replace(/\\x3d/g, "=");
+            });
+        }
+    },
+
+## TODO
+
+ - 一些图片网站会让 remainHeight 不正确，例如 [www.ceil.me](http://www.ceil.me/)，正常启用 content.ap.remainHeight 为 4443，等网页加载好后启用则为 614。为什么它的内容高度为0？

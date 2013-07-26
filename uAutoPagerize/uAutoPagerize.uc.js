@@ -4,7 +4,7 @@
 // @description    loading next page and inserting into current page.
 // @include        main
 // @modified       ywzhaiqi
-// @update         2013-7-23
+// @update         2013-7-26
 // @compatibility  Firefox 17
 // @charset        UTF-8
 // @version        0.3.0
@@ -62,10 +62,14 @@ var XHR_TIMEOUT = 30 * 1000;
 // 新增的
 var MAX_PAGER_NUM = -1;           // 默认最大翻页数， -1表示无限制
 var IMMEDIATELY_PAGER_NUM = 3;    // 立即加载的初始页数
-var USE_IFRAME = true;  // 是否启用 iframe 加载下一页（浏览器级，默认只允许JavaScript，在 createIframe 中可设置其它允许）
-var USE_FORCE_NEXT_PAGE = true;  // 是否启用强制拼接？
-var PRE_NEXT_PAGE = true;  // 提前预读下一页..就是翻完第1页,立马预读第2页,翻完第2页,立马预读第3页..(大幅加快翻页快感-_-!!)
-var SEPARATOR_RELATIVELY = true;            //分隔符.在使用上滚一页或下滚一页的时候是否保持相对位置..
+var USE_IFRAME = true;            // 是否启用 iframe 加载下一页（浏览器级，默认只允许JavaScript，在 createIframe 中可设置其它允许）
+var USE_FORCE_NEXT_PAGE = true;   // 是否启用强制拼接？
+var PRE_REQUEST_NEXT_PAGE = true;         // 提前预读下一页..就是翻完第1页,立马预读第2页,翻完第2页,立马预读第3页..(大幅加快翻页快感-_-!!)
+var SEPARATOR_RELATIVELY = true;  //分隔符.在使用上滚一页或下滚一页的时候是否保持相对位置..
+
+// 出在自动翻页信息附加显示真实相对页面信息，一般能智能识别出来。如果还有站点不能识别，可以把地址的特征字符串加到下面
+// 最好不要乱加，一些不规律的站点显示出来的数字也没有意义
+var REALPAGE_SITE_PATTERN = ['search?', 'search_', 'forum', 'thread'];
 
 var SITEINFO_CN_IMPORT_URLS = [
 	//Super_preloader 的翻页规则更新地址
@@ -142,13 +146,39 @@ var autoMatch = {
     }
 };
 
-//分页导航的4个图标:
+// 分页导航的4个图标
 var sep_icons={
-    top: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAYAAAA71pVKAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADhSURBVDhPY6AYcOxQ/U8qhmqlUDM2IHhW+7/gOQiGChEHBM9r/xe6qQvHgheINIAfaKPAdd3/AjeQMJDPT8gFvGe0/vNd1fnPdw0LBoqD5KFKUQHnFpX/XIfU/3Of0/rPc0UbA4PEQfKc21RQDWAuF/vPXCvxn7VPBhySXJeACtEwSBwkD1LHXCGO3QVsCxX+c17QwsAgcagS3IBlhtx/9nOaGBgkDlWCGzBNAzrtlDoGBolDleAGjJNl/jMdByo+gYSBfMYpxGhulvzPuE7xP+MmJQReD+S3ShLWTDxgYAAAT4PRXr7fTekAAAAASUVORK5CYII='
-    ,bottom: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAYAAAA71pVKAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADnSURBVDhPY6AqYGyV/M+4XvE/4yYlBF4H5DdL/ocqwQ0Yp8j8Zzqu/p/pBBIG8hknyxDWzDRN5j/zKXUMDBKHKsENWGbI/Wc/p4mBQeJQJbgB20KF/5wXtDAwSByqBBUwV4j/Z66V+M/aJ/OfY4fqf65LWhgYJA6SB6ljLhdDNYhzm8p/rkPq/7nPaf3nuaKNgUHiIHnOLSrYXcB7Rus/31Wd/3zXsGCgOEgeqhQ74D+n/V/guu5/gRtIGMjnP6tNOMBAQPCC9n+hm7pwLHieSI0wIAh0ARgTshEUkqRiqFYKNZMHGBgAOKbRXkxDAxYAAAAASUVORK5CYII='
-    ,up: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAYAAAA71pVKAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADrSURBVDhPtZFJD8FQFIVbNdVcC0OCIAQtv4+NldjaELH1B0hExNqGCCVi/DXHu/FiqkYtnORL3j333DfkCX+TSy+BL3+Tstag6De4ZU3KRkP4UrmjbC1uEGQnhk4VhM5PsDr47Qb+lYrAoYzA8QPMpz6Pvkoe5+CZFeDVVfj2mgHyqS9Pcq8bSNUIpHoMjlYC7mkenh0LvkE+9Skn1aKfb+DspyFvVQPk84i57L0U6H/fIZ9HzCX1knCsigbI5xFz2brsXcuCAfJ5xFxiOwHbnIUXT7Ba7FgZbsQhDjIQR9kHQ1Y349+HrUsQrrjHr3lSyZOtAAAAAElFTkSuQmCC'
-    ,down: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAYAAAA71pVKAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADzSURBVDhPY6AqYGyV/M+4XvE/4yYlBF4H5DdL/ocqwQ0Yp8j8Zzqu/p/pBBIG8hknyxDWzDRN5j/zKXUMDBKHKsENmGfI/mc9o4GBQeJQJbgBywy5/+znNDEwSByqBDdgW6jwn/OCFgYGiUOVoALmCvH/zLUS/1n7ZP5z7FD9z3VJCwODxEHyIHXM5WKoBnFuU/nPdUj9P/c5rf88V7QxMEgcJM+5RQW7C3jPaP3nu6rzn+8aFgwUB8lDlWIH/Oe0/wtc1/0vcAMJA/n8Z7UJBxgICF7Q/i90UxeOBc8TqREGBIEuAGNibUQHoPiFMqkNGBgAzGqveWcbUd4AAAAASUVORK5CYII='
+    top: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEnSURBVDhPY6AKkFlt+J8cDNVOBQOwAZACwbPa/wXPaf+XWquHXzE6kFql/1/wvPZ/oZu6YCx4Qfu/+Bpd4gwRX6X3nx9os8B13f8CN6AYyOYHukRktTZ+Q8RW6fznPaP1n++qzn++a2gYKAaSE1qthd0QwZka/zm3qPznOqT+n/uc1n+eK9ooGCQGkuPcpvKfb5YqqiFaDTb/mcvF/jPXSvxn7ZP5z7FD9T/XJaAGJAwSA8mB1DBXiP+XqcATJmwLFf5zXtBCwSAxqDRhwDJD7j/7OU0UDBKDShMGTNOATj2ljoJBYlBpwoBxssx/puNATSegGMhmnEKKAc2S/xnXKf5n3KQEweuB7FZJ4g2w6vT9z1Am9p+hUhyCgWyTVjfiDSAeMDAAAJhj4ilBCDLiAAAAAElFTkSuQmCC'
+    ,bottom: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEqSURBVDhPY6AJMGl1+89QJvafoVIcgoFsq07f/1BpwoCxVfI/43rF/4yblCB4HZDdLEmCAVNk/jMdV//PdAKKgWzGyTLEG8A0TeY/8yl1FAwSg0oTBiwz5P6zn9NEwSAxqDRhwLZQ4T/nBS0UDBKDSmMCmQrd/8wV4v+ZayX+s/bJ/OfYofqf65IWCgaJgeRAapjLxf5rNdigGsg3S/U/5zaV/1yH1P9zn9P6z3NFGwWDxEBynFtU/gvO1MDuGqHVWv95z2j957uq85/vGhoGioHkxFbp4A8LkdXa//nPaf8XuK77X+AGFAPZ/Ge1/4uv0iMuIMXX6P4XvKD9X+imLhgLntf+L7VKnzjNMCC1Vu+/INAlgkCbZVYb4tcMUkAOhmqnggHkAwYGAFvC4in4UgSOAAAAAElFTkSuQmCC'
+    ,up: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEqSURBVDhPY6Ap0Fpo919zoc1/KJc0ILPa8L/gWe3/gue0/0ut1SPNEKlV+v8Fz2v/F7qpC8aCF7T/i6/RJc4Q8VV6//mBNgtc1/0vcAOKgWx+oEtEVmvjN0Rslc5/3jNa//mu6vznu4aGgWIgOaHVWtgNEZyp8Z9zi8p/rkPq/7nPaf3nuaKNgkFiIDnObSr/+Wapohqi1WDzn7lc7D9zrcR/1j6Z/xw7VP9zXQJqQMIgMZAcSA1zhfh/mQo8YcK2UOE/5wUtFAwSg0oTBiwz5P6zn9NEwSAxqDRhQLEBTNOAfj2ljoJBYlBpwoBxssx/puNATSegGMhmnEKKAc2S/xnXKf5n3KQEweuB7FZJ4g2w6vT9z1Am9p+hUhyCgWyTVjfiDSAeMDAAAG+OupggV3NXAAAAAElFTkSuQmCC'
+    ,down: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEvSURBVDhPtZBLS8NAFIXz8JWqaVMksWUQlZbYSVMRXElx6c6/o3UhCNKFGzeKaHfZJj5ARFy7UURjEZ+/5jhjp4tRManigQ8u58y9c7nKv2i+uQRlxYay5nRg9cLWMkScLLVZgHoyBfV0usMxqzcLPQzYJdCuXGjXAlarOyT9AG2PQL9xJbgn4mT17U9gMK5IcE/EyfrzgIFgEkabSnBPxF9FGj70hgN9fRz92wRDF2VkHqgE93jG3+irNuhGXR5otsowzkvIXLoYjilGHj0J7vHMOCvBOpj5fpt8RDF6S2E+VWE+f4J5PLPD6s+3GIs8ZGMPuRcfuVcBq7N3Hpywlu6QzqEPq+0h/+Z/YN17KIaz6Zq7Kh7VYLFNLPYzieZ6a+6qEtRBg8XfNaeTorwD6Qm6mCukyg8AAAAASUVORK5CYII='
 };
+// 分页导航的样式
+var sep_style = [
+    '.autopagerize_page_info {',
+        'clear: both;',
+        'line-height: 24px;',
+        'background: none repeat scroll 0% 0% rgb(230, 230, 230);',
+        'text-align: center;',
+        'margin-top: 10px;',
+        'margin-bottom: 10px;',
+    '}',
+    '.autopagerize_page_info img {',
+        'width: 16px;',
+        'height: 16px;',
+        'padding: 0px;',
+        'padding-top: -2px;',
+        'margin-right: 12px;',
+        'display: inline-block;',
+        'vertical-align: middle;',
+    '}',
+    '.autopagerize_link {',
+        'padding-right: 10px;',
+    '}',
+    '.autopagerize_page_info input {',
+        'text-align: center;',
+    '}',
+].join('\n');
 
 var COLOR = {
 	on: '#0f0',
@@ -263,10 +293,10 @@ var ns = window.uAutoPagerize = {
 		if (m) m.setAttribute("checked", SCROLL_ONLY = !!bool);
 		return bool;
 	},
-    get PRE_NEXT_PAGE() PRE_NEXT_PAGE,
-    set PRE_NEXT_PAGE(bool) {
-        let m = $("uAutoPagerize-PRE_NEXT_PAGE");
-        if (m) m.setAttribute("checked", PRE_NEXT_PAGE = !!bool);
+    get PRE_REQUEST_NEXT_PAGE() PRE_REQUEST_NEXT_PAGE,
+    set PRE_REQUEST_NEXT_PAGE(bool) {
+        let m = $("uAutoPagerize-PRE_REQUEST_NEXT_PAGE");
+        if (m) m.setAttribute("checked", PRE_REQUEST_NEXT_PAGE = !!bool);
         return bool;
     },
 
@@ -277,7 +307,7 @@ var ns = window.uAutoPagerize = {
         if(USE_FORCE_NEXT_PAGE)
             ns.popupMenu.addEventListener("popupshowing", this.showForcePageMenu, false);
 
-		["DEBUG", "AUTO_START", "FORCE_TARGET_WINDOW", "SCROLL_ONLY", "PRE_NEXT_PAGE"].forEach(function(name) {
+		["DEBUG", "AUTO_START", "FORCE_TARGET_WINDOW", "SCROLL_ONLY", "PRE_REQUEST_NEXT_PAGE"].forEach(function(name) {
 			try {
 				ns[name] = ns.prefs.getBoolPref(name);
 			} catch (e) {}
@@ -303,7 +333,7 @@ var ns = window.uAutoPagerize = {
 	uninit: function() {
 		ns.removeListener();
 
-        ["DEBUG", "AUTO_START", "FORCE_TARGET_WINDOW", "SCROLL_ONLY", "PRE_NEXT_PAGE"].forEach(function(name) {
+        ["DEBUG", "AUTO_START", "FORCE_TARGET_WINDOW", "SCROLL_ONLY", "PRE_REQUEST_NEXT_PAGE"].forEach(function(name) {
             try {
                 ns.prefs.setBoolPref(name, ns[name]);
             } catch (e) {}
@@ -449,11 +479,11 @@ var ns = window.uAutoPagerize = {
                 <menuseparator/>\
                 <menuitem label="提前预读下一页"\
                           tooltiptext="翻完第1页,立马预读第2页,翻完第2页,立马预读第3页..(大幅加快翻页快感-_-!!)"\
-                          id="uAutoPagerize-PRE_NEXT_PAGE"\
+                          id="uAutoPagerize-PRE_REQUEST_NEXT_PAGE"\
                           type="checkbox"\
                           autoCheck="false"\
-                          checked="'+ PRE_NEXT_PAGE +'"\
-                          oncommand="uAutoPagerize.PRE_NEXT_PAGE = !uAutoPagerize.PRE_NEXT_PAGE;"/>\
+                          checked="'+ PRE_REQUEST_NEXT_PAGE +'"\
+                          oncommand="uAutoPagerize.PRE_REQUEST_NEXT_PAGE = !uAutoPagerize.PRE_REQUEST_NEXT_PAGE;"/>\
                 <menuitem label="新标签打开链接"\
                           id="uAutoPagerize-FORCE_TARGET_WINDOW"\
                           type="checkbox"\
@@ -757,17 +787,16 @@ var ns = window.uAutoPagerize = {
         // info1.type == info2.type
         if(info1.url == info2.url && info1.nextLink == info2.nextLink && info1.pageElement == info2.pageElement)
             return true;
+
+        return false;
     },
     immediatelyStart: function(){
         var pages = $("uAutoPagerize-immedialate-pages").value;
 
-        ns.loadImmediately(pages);
-    },
-    loadImmediately: function(num){
-        num = num || ns.IMMEDIATELY_PAGER_NUM;
+        pages = pages || ns.IMMEDIATELY_PAGER_NUM;
 
         if(content.ap){
-            content.ap.loadImmediately(num);
+            content.ap.loadImmediately(pages);
         }
     },
     showForcePageMenu: function(event){
@@ -827,19 +856,21 @@ var ns = window.uAutoPagerize = {
         var keyword = encodeURIComponent(content.location.href);
         gBrowser.selectedTab = gBrowser.addTab('http://ap.teesoft.info/?exp=0&url=' + keyword);
     },
-	gototop: function(win){
-        if(!win) win = content.window;
-		win.scroll(win.scrollX, 0);
-	},
+    autoGetLink: autoGetLink,
+    gototop: function(win){
+        if(!win) win = content;
+        win.scroll(win.scrollX, 0);
+    },
     gotobottom: function(win){
-        if(!win) win = content.window;
+        if(!win) win = content;
         var doc = win.document;
         win.scroll(win.scrollX, Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight));
     },
-	gotoprev: function(win){
-        if(!win) win = content.window;
+    gotoprev: function(win, sepSelector, insertPoint){
+        if(!win) win = content;
+        if(!sepSelector) sepSelector = ".autopagerize_link"
 
-        var [preDS, , divS] = this.getSeparators(win);
+        var [preDS, , divS] = ns.getSeparators(win, sepSelector, insertPoint);
         divS = divS || 0;
         if(SEPARATOR_RELATIVELY){
             preDS = win.scrollY - (divS - preDS);
@@ -847,12 +878,13 @@ var ns = window.uAutoPagerize = {
             preDS += win.scrollY - 6;
         }
 
-		win.scroll(win.scrollY, preDS);
-	},
-	gotonext: function(win){
-        if(!win) win = content.window;
+        win.scroll(win.scrollY, preDS);
+    },
+    gotonext: function(win, sepSelector, insertPoint){
+        if(!win) win = content;
+        if(!sepSelector) sepSelector = ".autopagerize_link"
 
-        var [, nextDS, divS] = this.getSeparators(win);
+        var [, nextDS, divS] = this.getSeparators(win, sepSelector, insertPoint);
         divS = divS || 0;
         if(SEPARATOR_RELATIVELY){
             nextDS = win.scrollY + (-divS + nextDS);
@@ -861,23 +893,25 @@ var ns = window.uAutoPagerize = {
         }
 
         win.scroll(win.scrollY, nextDS);
-	},
+    },
     // 找到窗口视野内前后2个分隔条的位置
-    getSeparators: function(win){
+    getSeparators: function(win, separatorSelector, insertPoint){
         var doc = win.document;
+        if(!insertPoint)
+            insertPoint = doc.body;
 
-        var separators = doc.querySelectorAll(".autopagerize_link");
-        var viewportHeight = win.innerHeight;
-        var documentHeight = Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight);
+        var separators = doc.querySelectorAll(separatorSelector);
+        var insData = insertPoint.getBoundingClientRect();
 
         // 得到一个数组
-        var heightArr = [- win.scrollY];
+        var heightArr = [insData.top];
         for (var i = 0; i < separators.length; i++) {
             heightArr.push(separators[i].getBoundingClientRect().top);
         }
-        heightArr.push(documentHeight);
+        heightArr.push(insData.bottom);
 
         // 查找
+        var viewportHeight = win.innerHeight;
         for (var i = 0; i < heightArr.length; i++) {
             if(heightArr[i] > viewportHeight){
                 if(heightArr[i - 1] > 0){
@@ -889,9 +923,10 @@ var ns = window.uAutoPagerize = {
         }
 
         return [];
-    },
-    autoGetLink: autoGetLink
+    }
 };
+
+
 
 // Class
 function AutoPager(doc, info, nextLink) {
@@ -960,17 +995,13 @@ AutoPager.prototype = {
 		this.win.addEventListener("pagehide", this, false);
 		this.addListener();
 
-		if (!ns.SCROLL_ONLY)
-			this.scroll();
+		if (!ns.SCROLL_ONLY){
+            this.firstRun = true;
+            this.scroll();
+        }
 
 		if (this.getScrollHeight() == this.win.innerHeight)
 			this.body.style.minHeight = (this.win.innerHeight + 1) + 'px';
-
-        if(PRE_NEXT_PAGE){
-            this.win.setTimeout(function(self){
-                self.doRequest();
-            }, 199, this);
-        }
 	},
 	destroy: function(isRemoveAddPage) {
 		this.state = "disable";
@@ -1071,11 +1102,12 @@ AutoPager.prototype = {
 	},
 	doRequest: function(){
 		if (this.state !== 'enable' || !this.requestURL || this.loadedURLs[this.requestURL]) return;
-		// 最大页数自动停止
-		if(this.pageNum > (MAX_PAGER_NUM - 1) && MAX_PAGER_NUM > 0){
-			this.addEndSeparator();
-			return;
-		}
+
+        // 最大页数自动停止
+        if(this.pageNum > (MAX_PAGER_NUM - 1) && MAX_PAGER_NUM > 0){
+            this.addEndSeparator();
+            return;
+        }
 
         if(this.iframeMode){
             this.iframeRequest();
@@ -1176,25 +1208,16 @@ AutoPager.prototype = {
         if (doc.location.href == "about:blank" || doc.defaultView.frameElement)
             return;
 
+        let win = doc.defaultView;
+        win.scroll(win.scrollX, 99999);  //滚动到底部,针对,某些使用滚动事件加载图片的网站.
+
         this.beforeLoaded(doc);
     },
-    ipagesMode: false,
-    ipaged: 0,
-    ipagesNumber: 0,
-    loadImmediately: function(num){
-        num = parseInt(num, 10);
-        if(num <= 0) return;
-
-        debug("准备立即载入" + num + "页");
-
-        this.ipagesMode = true;
-        this.ipaged = 0;
-        this.ipagesNumber = num;
-
-        this.scroll();
-    },
     beforeLoaded: function(doc){
-        if(PRE_NEXT_PAGE && !this.ipagesMode){
+        if(this.firstRun){
+            this.firstRun = false;
+            this.loaded(doc);
+        }else if(PRE_REQUEST_NEXT_PAGE && !this.ipagesMode){
             this.tmpDoc = doc;
             this.scroll();
             this.state = 'enable';
@@ -1265,7 +1288,7 @@ AutoPager.prototype = {
             this.ipagesMode = false;
         }
 
-        if(this.ipagesMode || PRE_NEXT_PAGE){
+        if(this.ipagesMode || PRE_REQUEST_NEXT_PAGE){
             if(this.iframeMode){
                 this.win.setTimeout(function(self){  // 延时点
                     self.doRequest.apply(self, null);
@@ -1288,57 +1311,66 @@ AutoPager.prototype = {
 			fragment.appendChild(div);
 		}
 
+        var p = this.addSeparator(separatorHTML);
+
+		var insertParent = this.insertPoint.parentNode;
+		if (page[0] && page[0].tagName == 'TR') {
+			var colNodes = getElementsMix('child::tr[1]/child::*[self::td or self::th]', insertParent);
+			var colums = 0;
+			for (var i = 0, l = colNodes.length; i < l; i++) {
+				var col = colNodes[i].getAttribute('colspan');
+				colums += parseInt(col, 10) || 1;
+			}
+			var td = this.doc.createElement('td');
+			td.appendChild(p);
+			var tr = this.doc.createElement('tr');
+			td.setAttribute('colspan', colums);
+			tr.appendChild(td);
+			fragment.insertBefore(tr, fragment.firstChild);
+		} else {
+			fragment.insertBefore(p, fragment.firstChild);
+		}
+
+		insertParent.insertBefore(fragment, this.insertPoint);
+		return page.map(function(pe) {
+			var ev = this.doc.createEvent('MutationEvent');
+			ev.initMutationEvent('AutoPagerize_DOMNodeInserted', true, false,
+			                     insertParent, null,
+			                     this.requestURL, null, null);
+			pe.dispatchEvent(ev);
+			return pe;
+		}, this);
+	},
+    addSeparator: function(endSeparatorHTML){
         // 添加分割条样式
         if(!this.separatorStyle){
-            this.separatorStyle = this.addStyle([
-                '.autopagerize_page_info {',
-                    'clear: both;',
-                    'line-height: 20px;',
-                    'background: none repeat scroll 0% 0% rgb(230, 230, 230);',
-                    'text-align: center;',
-                    'margin-top: 10px;',
-                    'margin-bottom: 10px;',
-                '}',
-                '.autopagerize_page_info img {',
-                    'width: 16px;',
-                    'height: 16px;',
-                    'padding: 0px;',
-                    'margin-right: 12px;',
-                    'display: inline-block;',
-                    'vertical-align: middle;',
-                '}',
-                '.autopagerize_link {',
-                    'padding-right: 10px;',
-                '}',
-                '.autopagerize_page_info input {',
-                    'text-align: center;',
-                '}',
-            ].join('\n'));
+            this.separatorStyle = this.addStyle(sep_style);
         }
 
-		var p  = this.doc.createElement('div');
-		p.setAttribute('class', 'autopagerize_page_info');
-		p.innerHTML = separatorHTML ? separatorHTML :
+        var ralativePageStr = this.getRalativePageStr(this.lastRequestURL, this.requestURL, this.nextLink && this.nextLink.href);
+
+        var p  = this.doc.createElement('div');
+        p.setAttribute('class', 'autopagerize_page_info');
+        p.innerHTML = endSeparatorHTML ? endSeparatorHTML :
                 '<a class="autopagerize_link" target="_blank" href="' +
                 this.requestURL.replace(/&/g, '&amp;') + '"> 第 <font color="red">' +
-                (++this.pageNum) + '</font> 页  </a> ';
+                (++this.pageNum) + '</font> 页 ' + ralativePageStr + ' </a> ';
 
-		if (!this.isFrame) {
-			// var o = p.insertBefore(this.doc.createElement('div'), p.firstChild);
+        if (!this.isFrame && !endSeparatorHTML) {
             var o = p.insertBefore(this.doc.createElement('div'), p.firstChild);
-			o.setAttribute('class', 'autopagerize_icon');
-			o.setAttribute('state', 'enable');
+            o.setAttribute('class', 'autopagerize_icon');
+            o.setAttribute('state', 'enable');
             o.setAttribute('title', "点击启用禁用");
-			o.style.cssText = [
-				'background: ', COLOR['enable'], ';'
-				,'width: .8em;'
-				,'height: .8em;'
-				,'padding: 0px;'
-				,'margin: 0px .4em 0px 0px;'
-				,'display: inline-block;'
-				,'vertical-align: middle;'
-			].join('');
-			o.addEventListener('click', this, false);
+            o.style.cssText = [
+                'background: ', COLOR['enable'], ';'
+                ,'width: .8em;'
+                ,'height: .8em;'
+                ,'padding: 0px;'
+                ,'margin: 0px .4em 0px 0px;'
+                ,'display: inline-block;'
+                ,'vertical-align: middle;'
+            ].join('');
+            o.addEventListener('click', this, false);
 
             var self = this;
 
@@ -1365,7 +1397,7 @@ AutoPager.prototype = {
                 src: sep_icons.up,
             }, this.doc));
             i.addEventListener('click', function(){
-                ns.gotoprev(self.win);
+                ns.gotoprev(self.win, null, self.insertPoint.parentNode);
             }, false);
 
             // 下滚一页
@@ -1378,7 +1410,7 @@ AutoPager.prototype = {
                 src: sep_icons.down,
             }, this.doc));
             i.addEventListener('click', function(){
-                ns.gotonext(self.win);
+                ns.gotonext(self.win, null, self.insertPoint.parentNode);
             }, false);
 
             // 滚到底部
@@ -1434,36 +1466,10 @@ AutoPager.prototype = {
             }, false);
 
             p.appendChild(this.doc.createTextNode("页"));
-		}
+        }
 
-		var insertParent = this.insertPoint.parentNode;
-		if (page[0] && page[0].tagName == 'TR') {
-			var colNodes = getElementsMix('child::tr[1]/child::*[self::td or self::th]', insertParent);
-			var colums = 0;
-			for (var i = 0, l = colNodes.length; i < l; i++) {
-				var col = colNodes[i].getAttribute('colspan');
-				colums += parseInt(col, 10) || 1;
-			}
-			var td = this.doc.createElement('td');
-			td.appendChild(p);
-			var tr = this.doc.createElement('tr');
-			td.setAttribute('colspan', colums);
-			tr.appendChild(td);
-			fragment.insertBefore(tr, fragment.firstChild);
-		} else {
-			fragment.insertBefore(p, fragment.firstChild);
-		}
-
-		insertParent.insertBefore(fragment, this.insertPoint);
-		return page.map(function(pe) {
-			var ev = this.doc.createEvent('MutationEvent');
-			ev.initMutationEvent('AutoPagerize_DOMNodeInserted', true, false,
-			                     insertParent, null,
-			                     this.requestURL, null, null);
-			pe.dispatchEvent(ev);
-			return pe;
-		}, this);
-	},
+        return p;
+    },
     addEndSeparator: function(){
         // debug('page number > :', this.pageNum,  MAX_PAGER_NUM );
         var html = '<a class="autopagerize_link" href="' + this.requestURL.replace(/&/g, '&amp;') +
@@ -1475,6 +1481,89 @@ AutoPager.prototype = {
         this.addPage(fragment, [page], html);
 
         this.state = 'terminated';
+    },
+    // By lastDream2013
+    getRalativePageStr : function (lastUrl, CurrentUrl, NextUrl) {
+        let getRalativePageNumArray = function (lasturl, url) {
+            if (!lasturl || !url) {
+                return [0, 0];
+            }
+
+            var lasturlarray = lasturl.split(/-|\.|\&|\/|=|#/);
+            var urlarray = url.split(/-|\.|\&|\/|=|#/);
+            while (urlarray.length != 0) {
+                let url_info = urlarray.pop(),
+                lasturl_info = lasturlarray.pop();
+                if (url_info != lasturl_info) {
+                    if (/[0-9]+/.test(lasturl_info) && /[0-9]+/.test(url_info))
+                        return [parseInt(lasturl_info), parseInt(url_info)];
+                }
+            }
+            return [0, 0];
+        };
+        //论坛和搜索引擎网页显示实际页面信息
+        var ralativePageNumarray = [];
+        if (NextUrl) {
+            ralativePageNumarray = getRalativePageNumArray(CurrentUrl, NextUrl);
+        } else {
+            ralativePageNumarray = getRalativePageNumArray(lastUrl, CurrentUrl);
+            var ralativeOff = ralativePageNumarray[1] - ralativePageNumarray[0]; //用的上一页的相对信息比较的，要补充差值……
+            ralativePageNumarray[1] = ralativePageNumarray[1] + ralativeOff;
+            ralativePageNumarray[0] = ralativePageNumarray[0] + ralativeOff;
+        }
+
+        var realPageSiteMatch = false;
+        var ralativeOff = ralativePageNumarray[1] - ralativePageNumarray[0];
+        //上一页与下一页差值为1，并最大数值不超过10000(一般论坛也不会超过这么多页……)
+        if (ralativeOff === 1 && ralativePageNumarray[1] < 10000) {
+            realPageSiteMatch = true;
+        }
+        //上一页与下一页差值不为1，但上一页与下一页差值能被上一页与下一面所整除的，有规律的页面
+        if (!realPageSiteMatch && ralativeOff !== 1) {
+            if ((ralativePageNumarray[1] % ralativeOff) == 0 && (ralativePageNumarray[0] % ralativeOff) == 0) {
+                realPageSiteMatch = true;
+            }
+        }
+
+        if (!realPageSiteMatch) { //不满足以上条件，再根据地址特征来匹配
+            for (let sitePattern of REALPAGE_SITE_PATTERN) {
+                if (CurrentUrl.toLocaleLowerCase().indexOf(sitePattern) >= 0) {
+                    realPageSiteMatch = true;
+                    break;
+                }
+            }
+        }
+
+        if (realPageSiteMatch) { //如果匹配就显示实际网页信息
+            if (ralativePageNumarray[1] - ralativePageNumarray[0] > 1) //一般是搜索引擎的第xx - xx项……
+            {
+                var ralativePageStr = ' [ 实际：第 <font color="red">' + ralativePageNumarray[0] + ' - ' + ralativePageNumarray[1] + '</font> 项 ]';
+            } else if ((ralativePageNumarray[1] - ralativePageNumarray[0]) == 1) //一般的翻页数，差值应该是1
+            {
+                var ralativePageStr = ' [ 实际：第 <font color="red">' + ralativePageNumarray[0] + '</font> 页 ]';
+            } else if ((ralativePageNumarray[0] == 0 && ralativePageNumarray[1]) == 0) //找不到的话……
+            {
+                var ralativePageStr = ' [ 实际网页结束 ]';
+            }
+        } else {
+            ralativePageStr = '';
+        }
+        return ralativePageStr;
+    },
+    ipagesMode: false,
+    ipaged: 0,
+    ipagesNumber: 0,
+    loadImmediately: function(num){
+        num = parseInt(num, 10);
+        if(num <= 0) return;
+
+        debug("准备立即载入" + num + "页");
+
+        this.ipagesMode = true;
+        this.ipaged = 0;
+        this.ipagesNumber = num;
+
+        this.scroll();
     },
 	getNextURL : function(doc) {
 		var nextLink = doc instanceof HTMLElement ?
@@ -1532,6 +1621,8 @@ AutoPager.prototype = {
 		var bottom = getElementPosition(this.insertPoint).top ||
 			this.getPageElementsBottom() || Math.round(scrollHeight * 0.8);
 		this.remainHeight = scrollHeight - bottom + ns.BASE_REMAIN_HEIGHT;
+
+        return this.remainHeight;
 	},
 	initIcon: function() {
 		var div = this.doc.createElement("div");
@@ -1811,7 +1902,7 @@ function autoGetLink(doc, win, cplink) {
     var alllinksl = alllinks.length;
 
     var curLHref = cplink;
-    var _nextlink = null;
+    var _nextlink;
 
     var DCEnable = autoMatch.digitalCheck;
     var DCRE = /^\s*\D{0,1}(\d+)\D{0,1}\s*$/;
@@ -1899,6 +1990,7 @@ function autoGetLink(doc, win, cplink) {
             }
         }
         if (!atext) continue;
+
         if (!_nextlink) {
             xbreak = false;
             for (k = 0; k < _nPKL; k++) {
@@ -1914,7 +2006,7 @@ function autoGetLink(doc, win, cplink) {
 
     debug('搜索链接数量:', i, '耗时:', new Date() - startTime, '毫秒')
 
-    return _nextlink;
+    return _nextlink || null;
 }
 // 地址栏递增
 function hrefInc(obj,doc,win){
@@ -2019,7 +2111,7 @@ function createIframe(id) {
     //不append就没有webnavigation
     document.documentElement.appendChild(frame);
     frame.webNavigation.allowAuth = false;  // 安全验证
-    frame.webNavigation.allowImages = false;
+    frame.webNavigation.allowImages = true;
     frame.webNavigation.allowJavascript = true;
     frame.webNavigation.allowMetaRedirects = true;  //重定向之后的文档
     frame.webNavigation.allowPlugins = false;

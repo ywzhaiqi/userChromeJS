@@ -719,15 +719,18 @@ Inspector.prototype = {
 				obj.ancestor_id = this.getElementXPath(elem, this.ATTR_ID) + "/" + obj.ancestor_id;
 				obj.ancestor_full = this.getElementXPath(elem, this.ATTR_FULL) + "/" + obj.ancestor_full;
                 if(this.type == "nextLink"){
-				    obj.ancestor_text = this.getElementXPath(elem, this.ATTR_ID) + "/" + obj.ancestor_text;
+				    obj.ancestor_text = this.getElementXPath(elem, this.ATTR_CLASSID) + "/" + obj.ancestor_text;
                 }
 			}
 			obj.ancestor_class = this.getElementXPath(elem, this.ATTR_NOT_CLASS) + "/" + obj.ancestor_class;
 			obj.ancestor_attr = this.getElementXPath(elem, this.ATTR_NOT_CLASSID) + "/" + obj.ancestor_attr;
 		}
 
-        // var p = content.console.log;
-        // p(obj);
+        if(this.type == "nextLink"){
+            let xpaths = obj.ancestor_text.split("/");
+            if(xpaths.length >= 3)
+                obj.text_descendant = xpaths[0] + "/" + "descendant::" + xpaths[xpaths.length - 1];
+        }
 
 		for (let [key, val] in Iterator(obj)) {
 			if (val.substr(0, 4) !== 'id("')
@@ -769,11 +772,14 @@ Inspector.prototype = {
 		}
 		if(this.TEXT == constant){
 			var text = elem.textContent;
-			if(text.length < 20  && text.match(this.NEXT_REG)){
-				if(text.match(this.NEXT_REG_A)){
-					return elem.nodeName.toLowerCase() + '[text()="' + text + '"]';
-				}
-				return elem.nodeName.toLowerCase() + '[contains(text(), "' + text + '")]';
+			if(text.length < 20){
+                var m = text.match(this.NEXT_REG)
+                if(m){
+                    if(text == m[0] || text.indexOf(">") > 0)
+                        return elem.nodeName.toLowerCase() + '[text()="' + text + '"]';
+                    else
+                        return elem.nodeName.toLowerCase() + '[contains(text(), "' + m[0] + '")]';
+                }
 			}
 			return elem.nodeName.toLowerCase();
 		}

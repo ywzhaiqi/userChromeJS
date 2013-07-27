@@ -1437,7 +1437,6 @@ AutoPager.prototype = {
             o.setAttribute('title', "点击启用禁用");
             o.addEventListener('click', function(){
                 self.stateToggle();
-                ns.toggle();
             }, false);
 
             if(SIMPLE_SEPARATOR || separatorHTML){
@@ -1543,7 +1542,10 @@ AutoPager.prototype = {
                     spage();
             }, false);
 
-            p.appendChild(this.doc.createTextNode("页"));
+            var span = p.appendChild($C("span", {
+                class: "ap-sp-end-span"
+            }, this.doc));
+            span.innerHTML = "页";
         }
 
         return p;

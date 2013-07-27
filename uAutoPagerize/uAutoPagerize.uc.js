@@ -940,16 +940,19 @@ var ns = window.uAutoPagerize = {
 
         var separators = doc.querySelectorAll(separatorSelector);
         var insData = insertPoint.getBoundingClientRect();
+        var viewportHeight = win.innerHeight;
 
         // 得到一个数组
         var heightArr = [insData.top];
         for (var i = 0; i < separators.length; i++) {
             heightArr.push(separators[i].getBoundingClientRect().top);
         }
-        heightArr.push(insData.bottom);
+        if(insData.bottom > viewportHeight)
+            heightArr.push(insData.bottom);
+        else
+            heightArr.push(viewportHeight + 1);
 
         // 查找
-        var viewportHeight = win.innerHeight;
         for (var i = 0; i < heightArr.length; i++) {
             if(heightArr[i] > viewportHeight){
                 if(heightArr[i - 1] > 0){

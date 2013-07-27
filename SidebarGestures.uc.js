@@ -9,7 +9,7 @@ location == "chrome://browser/content/browser.xul" && (function () {
         hideFireContext: false,
         shouldFireContext: false,
         GESTURES: {
-            //后退
+            //鍚庨��
             "L": {
                 name: "\u540e\u9000",
                 cmd: function() {
@@ -17,7 +17,7 @@ location == "chrome://browser/content/browser.xul" && (function () {
                     win.history.back();
                 }
             },
-            //前进
+            //鍓嶈繘
             "R": {
                 name: "\u524d\u8fdb",
                 cmd: function() {
@@ -25,7 +25,7 @@ location == "chrome://browser/content/browser.xul" && (function () {
                     win.history.forward();
                 }
             },
-            //刷新当前页面
+            //鍒锋柊褰撳墠椤甸潰
             "UD": {
                 name: "\u5237\u65b0\u5f53\u524d\u9875\u9762",
                 cmd: function() {

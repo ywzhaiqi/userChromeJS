@@ -858,6 +858,7 @@ var ns = window.uAutoPagerize = {
 
             if(content.ap_nextLink){
                 menu.setAttribute("disabled", "false");
+                menu.setAttribute("checked", "false");
             }else{
                 reset();
             }

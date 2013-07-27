@@ -26,6 +26,7 @@ uAutoPagerize 中文规则版
  - *Google* 搜索页面修复下一页图片或视频缩略图
  - *VeryCD* 搜索页面修复下一页图片
  - *youtube* 搜索页面修复下一页图片
+ - *天涯论坛帖子* 修复下一页只看楼主
  - *抽屉新热榜* 修复下一页图片，推荐、收藏、评论点击
 
 ![按钮图标](按钮图标.png)
@@ -37,6 +38,8 @@ uAutoPagerize 中文规则版
 #### 分页导航
 
 ![分页导航](分页导航.png)
+
+![分页导航2.png](分页导航2.png)
 
 ### SITEINFO_Writer.uc.js
 
@@ -62,6 +65,7 @@ uAutoPagerize 中文规则版
 
  - 如果加载的下一页以图片为主，内存占用会不断加大（文字则完全不受影响）。建议点击 第 XX 页 链接，关闭当前页面，继续阅读。
  - 按钮图标鼠标中建载入自己的配置，右键弹出菜单
+ - Super_preloader 规则和本人维护的规则都存放在 Google code，下载不了规则的请修改 host
 
 ## 添加排除列表
 
@@ -79,26 +83,25 @@ uAutoPagerize 中文规则版
 
 ## 配合鼠标手势或其它工具调用的代码
 
-启用禁用
+#### 启用禁用
 
 	uAutoPagerize.toggle()
 
-立即加载3页
+#### 立即加载3页
 
     var node = FireGestures.sourceNode;
     var doc = node.ownerDocument || getBrowser().contentDocument;
     var win = doc.defaultView;
 
-    if(win.ap){
+    if(win.ap)
         win.ap.loadImmediately(3);
-    }
 
-上一页（无，可调用 nextPage.uc.xul）
+#### 上一页（无，可调用 nextPage.uc.xul）
 
     if(window.nextPage)
         nextPage.next();
 
-下一页（3合1，如果不存在则调用 nextPage.uc.xul）
+#### 下一页（3合1，如果不存在则调用 nextPage.uc.xul）
 
     var node = FireGestures.sourceNode;
     var doc = node.ownerDocument || getBrowser().contentDocument;
@@ -114,23 +117,9 @@ uAutoPagerize 中文规则版
         nextPage.next(true);
     }
 
-向下滚一页（4合1）
+#### 向上滚一页（4合1）
 
-    var node = FireGestures.sourceNode;
-    var doc = node.ownerDocument || getBrowser().contentDocument;
-    var win = doc.defaultView;
-
-    if(win.ap){
-        uAutoPagerize.gotonext(win);
-    }else if(win.uSuper_preloader){
-        win.uSuper_preloader.goNext();
-    }else if(doc.body.getAttribute("name") == "MyNovelReader"){  // 小说阅读脚本
-        uAutoPagerize.gotonext(win, ".chapter-footer-nav");
-    }else{
-       FireGestures._performAction(event, "FireGestures:ScrollBottom");
-    }
-
-向上滚一页（4合1）
+依次查找：uAutoPagerize、uSuper_preloader、小说阅读脚本、FireGestures滚到底部。其中用了通用的查找分隔符的方法
 
     var node = FireGestures.sourceNode;
     var doc = node.ownerDocument || getBrowser().contentDocument;
@@ -146,17 +135,35 @@ uAutoPagerize 中文规则版
        FireGestures._performAction(event, "FireGestures:ScrollTop");
     }
 
+#### 向下滚一页（4合1）
+
+同上
+
+    var node = FireGestures.sourceNode;
+    var doc = node.ownerDocument || getBrowser().contentDocument;
+    var win = doc.defaultView;
+
+    if(win.ap){
+        uAutoPagerize.gotonext(win);
+    }else if(<win class="uSuper_preloade"></win>r){
+        win.uSuper_preloader.goNext();
+    }else if(doc.body.getAttribute("name") == "MyNovelReader"){  // 小说阅读脚本
+        uAutoPagerize.gotonext(win, ".chapter-footer-nav");
+    }else{
+       FireGestures._performAction(event, "FireGestures:ScrollBottom");
+    }
+
 
 ## 站点配置说明
 
     {   name: 'Google搜索',
         url: '^https?\\:\\/\\/(www|encrypted)\\.google\\..{2,9}\\/(webhp|search|#|$|\\?)',  //url 2种方式：正则和普通 * 号方式
-        // url: 'wildc;http*://www\\.google\\.com\\.hk/search*',
+        // url: 'wildc;http*://www.google.com.hk/search*',
 
         nextLink: 'auto;',  // 下一页链接 xpath 或者 CSS选择器 或者 函数返回值(此函数必须使用第一个传入的参数作为document对象) (~~必选~~)
-        //nextLink:'//table[@id="nav"]/descendant::a[last()][parent::td[@class="b"]]',
-        //nextLink:'css;table#nav>tbody>tr>td.b:last-child>a',
-        //nextLink:function(D,W){return D.evaluate('//table[@id="nav"]/descendant::a[last()][parent::td[@class="b"]]',D,null,XPathResult.FIRST_ORDERED_NODE_TYPE,null).singleNodeValue;},
+        //nextLink: '//table[@id="nav"]/descendant::a[last()][parent::td[@class="b"]]',
+        //nextLink: 'css;table#nav>tbody>tr>td.b:last-child>a',
+        //nextLink: function(D,W){return D.evaluate('//table[@id="nav"]/descendant::a[last()][parent::td[@class="b"]]',D,null,XPathResult.FIRST_ORDERED_NODE_TYPE,null).singleNodeValue;},
 
         useiframe:false,   // 是否使用iframe翻页(可选)
         iloaded:false,     // 是否在iframe完全load之后操作..否则在DOM完成后操作(可选)
@@ -168,16 +175,16 @@ uAutoPagerize 中文规则版
 
 ## 高级规则说明
 
-对页面的处理，`this`: 网页window，`this.wrappedJSObject`: 网页window对象
+对原页面或下一页的处理，`this`: 网页window，`this.wrappedJSObject`: 网页window对象，`this.console`: 控制台
 
- - startFilter(win, doc): 对原始网页的处理，这个的前提是能顺利找到 nextLink, pageElement
- - requestFilter(opt): 对 GM_xmlhttpRequest 参数的处理
- - responseFilter(res, requestURL): 对接收到的 response 处理
- - documentFilter(doc, requestURL, info): 对下一页的 document 处理
- - fragmentFilter(fragment, doc, pages): 对用 info.pageElement 找到的 fragment 处理
- - filter(pages): 对添加后的 pages 处理
+ - `startFilter(win, doc)`: 对原页面的处理，这个的前提是能顺利找到 nextLink, pageElement
+ - `requestFilter(opt)`: 对 GM_xmlhttpRequest 参数的处理
+ - `responseFilter(res, requestURL)`: 对接收到的 response 对象处理
+ - `documentFilter(doc, requestURL, info)`: 对下一页的 document 对象处理
+ - `fragmentFilter(fragment, doc, pages)`: 对规则找到的 pageElements 而创建的 fragment 对象处理
+ - `filter(pages)`: 对添加到原网页后的 pages 处理
 
-### 例：verycd 搜索的下一页图片的修复。
+#### 例：verycd 搜索的下一页图片的修复
 
     {name: 'VeryCD搜索页面',
         url: /http:\/\/www\.verycd\.com\/search\/folders.+/i,
@@ -192,7 +199,7 @@ uAutoPagerize 中文规则版
         }
     },
 
-### 例：Google 搜索下一页图片和视频的修复
+#### 例：Google 搜索下一页图片和视频的修复
 
 因为 Google 常用，所以我采用下面的方式，但可能因为网站改版或其他原因而失效，此时改用 `useiframe: true,` 也可解决。
 
@@ -210,7 +217,6 @@ uAutoPagerize 中文规则版
             if (!x) return;
 
             var datas = x.nodeValue.match(/'apthumb\d+','[^']+(?:\\x3d)*/g);
-
             datas.forEach(function(text){
                 let [id, data] = text.split("','");
                 id = id.slice(1);

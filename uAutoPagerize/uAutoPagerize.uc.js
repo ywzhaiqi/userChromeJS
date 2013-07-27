@@ -4,7 +4,7 @@
 // @description    loading next page and inserting into current page.
 // @include        main
 // @modified       ywzhaiqi
-// @update         2013-7-27
+// @update         2013-7-26
 // @compatibility  Firefox 17
 // @charset        UTF-8
 // @version        0.3.0
@@ -654,7 +654,7 @@ var ns = window.uAutoPagerize = {
 
         if(hashchange){
             win.addEventListener("hashchange", function(event) {
-                debug("hashchanged: " + win.location.href);
+                debug("Add Hashchang Event listener" + win.location.href);
                 if (!win.ap) {
                     win.setTimeout(function(){
                         let [index, info] = [-1, null];
@@ -679,6 +679,8 @@ var ns = window.uAutoPagerize = {
             miscellaneous.forEach(function(func){ func(doc, locationHref); });
             var index = -1;
             var startTime = new Date().getTime();
+            debug("---------------------------------------------------------");
+            debug("开始查找规则：" + locationHref);
 
             if (!info) [, info, nextLink] = ns.getInfo(ns.MY_SITEINFO, win);
 
@@ -720,13 +722,16 @@ var ns = window.uAutoPagerize = {
                 }
             }
 
+            let spenTime = "耗时: "+ (new Date().getTime() - startTime) + 'ms。';
             if (info) {
+                debug("  找到匹配当前站点的规则: 是[" + info.type + ']第' + (index + 1) + '规则，' + spenTime +
+                    "开始运行 Autopager");
                 win.ap = new AutoPager(win.document, info, nextLink);
-                let infoType = info.type ? "[" + info.type + "]" : "";
-                debug("找到匹配当前站点的规则: 是" + infoType + '第' + (index + 1) + '规则',
-                    "耗时: "+ (new Date().getTime() - startTime) + 'ms');
             }else{
-                // debug("没有找到规则");
+                let infoLength = ns.MY_SITEINFO.length + ns.SITEINFO_CN.length +
+                                ns.SITEINFO.length + ns.MICROFORMAT.length;
+                debug("  所有规则都没法找到下一页或内容，" + "共查找规则" + infoLength + "个，" + spenTime +
+                    "结束运行");
             }
 
             updateIcon();
@@ -770,18 +775,22 @@ var ns = window.uAutoPagerize = {
                     }).url_regexp;
                 if ( !exp.test(locationHref) ) continue;
 
+                if (info.url.length > 12)
+                    debug("  找到匹配当前站点的规则：[" + (info.type || "") + "]" + "第" + index + "个");
+
                 var nextLink = getElementMix(info.nextLink, doc);
                 if (!nextLink) {
                     // FIXME microformats case detection.
                     // limiting greater than 12 to filter microformats like SITEINFOs.
                     if (info.url.length > 12)
-                        debug('nextLink not found. getInfo(). ', String(info.nextLink));
+                        debug('  nextLink not found.', String(info.nextLink));
                     continue;
                 }
+
                 var pageElement = getElementMix(info.pageElement, doc);
                 if (!pageElement) {
                     if (info.url.length > 12 || (typeof(info.url) !='string'))
-                        debug('pageElement not found.', info.pageElement);
+                        debug('  pageElement not found.', info.pageElement);
                     continue;
                 }
                 return [index, info, nextLink, pageElement];
@@ -877,7 +886,6 @@ var ns = window.uAutoPagerize = {
         var keyword = encodeURIComponent(content.location.href);
         gBrowser.selectedTab = gBrowser.addTab('http://ap.teesoft.info/?exp=0&url=' + keyword);
     },
-    autoGetLink: autoGetLink,
     gototop: function(win){
         if(!win) win = content;
         win.scroll(win.scrollX, 0);
@@ -888,8 +896,12 @@ var ns = window.uAutoPagerize = {
         win.scroll(win.scrollX, Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight));
     },
     gotoprev: function(win, sepSelector, insertPoint){
-        if(!win) win = content;
-        if(!sepSelector) sepSelector = ".autopagerize_link"
+        if(!win)
+            win = content;
+        if(!sepSelector)
+            sepSelector = ".autopagerize_link";
+        if(!insertPoint && win.ap)
+            insertPoint = win.ap.insertPoint.parentNode;
 
         var [preDS, , divS] = ns.getSeparators(win, sepSelector, insertPoint);
         divS = divS || 0;
@@ -902,8 +914,12 @@ var ns = window.uAutoPagerize = {
         win.scroll(win.scrollY, preDS);
     },
     gotonext: function(win, sepSelector, insertPoint){
-        if(!win) win = content;
-        if(!sepSelector) sepSelector = ".autopagerize_link"
+        if(!win)
+            win = content;
+        if(!sepSelector)
+            sepSelector = ".autopagerize_link";
+        if(!insertPoint && win.ap)
+            insertPoint = win.ap.insertPoint.parentNode;
 
         var [, nextDS, divS] = this.getSeparators(win, sepSelector, insertPoint);
         divS = divS || 0;
@@ -919,7 +935,7 @@ var ns = window.uAutoPagerize = {
     getSeparators: function(win, separatorSelector, insertPoint){
         var doc = win.document;
         if(!insertPoint)
-            insertPoint = doc.body;
+            insertPoint = doc.documentElement;
 
         var separators = doc.querySelectorAll(separatorSelector);
         var insData = insertPoint.getBoundingClientRect();
@@ -944,7 +960,9 @@ var ns = window.uAutoPagerize = {
         }
 
         return [];
-    }
+    },
+    autoGetLink: autoGetLink,
+    getElementMix: getElementMix,
 };
 
 
@@ -990,17 +1008,16 @@ AutoPager.prototype = {
         }
 
         this.iframeMode = USE_IFRAME && this.info.useiframe;
-        this.firstRun = true;
 
         var url = this.getNextURL(nextLink ? nextLink : this.doc);
         if ( !url ) {
-            debug("getNextURL returns null.", this.info.nextLink);
+            debug("getNextURL returns null", this.info.nextLink);
             return;
         }
 
         this.setInsertPoint();
         if (!this.insertPoint) {
-            debug("insertPoint not found.", this.info.pageElement);
+            debug("insertPoint not found", this.info.pageElement);
             return;
         }
         this.setRemainHeight();
@@ -1017,7 +1034,7 @@ AutoPager.prototype = {
         this.addListener();
 
         if (!ns.SCROLL_ONLY){
-            this.scroll();
+            this.loadedOnce = this.scroll();
         }
 
         if (this.getScrollHeight() == this.win.innerHeight)
@@ -1025,9 +1042,7 @@ AutoPager.prototype = {
 
         // 第一次提前预读
         if (PRE_REQUEST_NEXT_PAGE && PRE_REQUEST_NEXT_PAGE_FIRST_TIME) {
-            this.win.setTimeout(function(self) {
-                self.doRequest();
-            }, 500, this);
+            this.doRequest();
         }
     },
     destroy: function(isRemoveAddPage) {
@@ -1107,6 +1122,9 @@ AutoPager.prototype = {
             }else{
                 this.doRequest();
             }
+            return true;
+        }else{
+            return false;
         }
     },
     abort: function() {
@@ -1134,7 +1152,9 @@ AutoPager.prototype = {
         }
 
         if(this.iframeMode){
-            this.iframeRequest();
+            this.win.setTimeout(function(self){  // 延时点
+                self.iframeRequest.apply(self, null);
+            }, 199, this);
         }else{
             this.httpRequest();
         }
@@ -1240,8 +1260,8 @@ AutoPager.prototype = {
         this.beforeLoaded(doc);
     },
     beforeLoaded: function(doc){
-        if(this.firstRun){
-            this.firstRun = false;
+        if(this.loadedOnce){
+            this.loadedOnce = false;
             this.loaded(doc);
         }else if(PRE_REQUEST_NEXT_PAGE && !this.ipagesMode){
             this.tmpDoc = doc;
@@ -1252,24 +1272,25 @@ AutoPager.prototype = {
         }
     },
     loaded: function(htmlDoc){
+        // debug("开始载入下一页内容");
         try {
             var page = getElementsMix(this.info.pageElement, htmlDoc);
             var url = this.getNextURL(htmlDoc);
         }
         catch(e){
-            debug("Get page and url Error: ", e);
+            debug("  Get page and url Error: ", e);
             this.state = 'error';
             return;
         }
 
         if (!page || page.length < 1 ) {
-            debug('pageElement not found.', "requestLoad ", this.info.pageElement, htmlDoc.documentElement.innerHTML);
+            debug('  pageElement not found.', this.info.pageElement, htmlDoc.documentElement.innerHTML);
             this.state = 'terminated';
             return;
         }
 
         if (this.loadedURLs[this.requestURL]) {
-            debug('page is already loaded.', this.requestURL, this.info.nextLink);
+            debug('  page is already loaded.', this.requestURL, this.info.nextLink);
             this.state = 'terminated';
             return;
         }
@@ -1282,7 +1303,7 @@ AutoPager.prototype = {
         if (this.insertPoint.compareDocumentPosition(this.doc) >= 32) {
             this.setInsertPoint();
             if (!this.insertPoint) {
-                debug("insertPoint not found.", this.info.pageElement);
+                debug("  insertPoint not found.", this.info.pageElement);
                 this.state = 'terminated';
                 return;
             }
@@ -1295,7 +1316,7 @@ AutoPager.prototype = {
         // if (!ns.SCROLL_ONLY)
         //  this.scroll();
         if (!url) {
-            debug('nextLink not found. requestLoad(). ', this.info.nextLink);
+            debug('  nextLink not found.', this.info.nextLink);
             this.state = 'terminated';
         }
 
@@ -1315,13 +1336,7 @@ AutoPager.prototype = {
         }
 
         if(this.ipagesMode || PRE_REQUEST_NEXT_PAGE){
-            if(this.iframeMode){
-                this.win.setTimeout(function(self){  // 延时点
-                    self.doRequest.apply(self, null);
-                }, 199, this);
-            }else{
-                this.doRequest();
-            }
+            this.doRequest();
         }
     },
     addPage : function(htmlDoc, page, separatorHTML){
@@ -1980,12 +1995,12 @@ function autoGetLink(doc, win, cplink) {
 
         //3个条件:http协议链接,非跳到当前页面的链接,非跨域
         if (/^https?:/i.test(ahref) && ahref.replace(/#.*$/, '') != curLHref && ahref.match(/https?:\/\/([^\/]+)/)[1] == _domain_port) {
-            debug((type == 'pre' ? '上一页' : '下一页') + '匹配到的关键字为:', atext);
+            debug("[autoGetLink] " + (type == 'pre' ? '上一页' : '下一页') + '匹配到的关键字为:', atext);
             return a; //返回对象A
         }
     }
 
-    debug('全文档链接数量:', alllinksl);
+    debug('[autoGetLink] 全文档链接数量：' + alllinksl);
 
     for (i = 0; i < alllinksl; i++) {
         if (_nextlink) break;
@@ -2066,7 +2081,7 @@ function autoGetLink(doc, win, cplink) {
         }
     }
 
-    debug('搜索链接数量:', i, '耗时:', new Date() - startTime, '毫秒')
+    debug('[autoGetLink] 搜索链接数量：' + i, '，耗时：' + (new Date() - startTime) + '毫秒');
 
     return _nextlink || null;
 }
@@ -2343,6 +2358,9 @@ function getCache() {
         if (!cache) return false;
         cache = JSON.parse(cache);
         ns.SITEINFO = cache;
+        ns.SITEINFO.forEach(function(i){
+            i.type = "json";
+        });
         log('Load cacheInfo.');
         return true;
     }catch(e){

@@ -178,15 +178,6 @@ var sep_style = [
 		'margin: 10px 0;',
 		'text-align: center;',
 	'}',
-    '.autopagerize_icon {',
-        'background: ', COLOR['enable'], ';',
-        'width: .8em;',
-        'height: .8em;',
-        'padding: 0px;',
-        'margin: 0px .4em 0px 0px;',
-        'display: inline-block;',
-        'vertical-align: middle;',
-    '}',
 	'.autopagerize_page_info img {',
 		'width: 16px;',
 		'height: 16px;',
@@ -1422,7 +1413,9 @@ AutoPager.prototype = {
             this.separatorStyle = this.addStyle(sep_style);
         }
 
-        var sNextLink = separatorHTML ? separatorHTML : '第 <font color="red">'+ (++this.pageNum) + '</font> 页 ';
+        var sNextLink = separatorHTML ? separatorHTML : '第 ' +
+            (SIMPLE_SEPARATOR ? '' : '<font color="red">') + (++this.pageNum) +
+            (SIMPLE_SEPARATOR ? '' : '</font>') + ' 页 ';
         var sRalativePage = SIMPLE_SEPARATOR ? "" : this.getRalativePageStr();
 
         var p  = this.doc.createElement('div');
@@ -1435,6 +1428,15 @@ AutoPager.prototype = {
             o.setAttribute('class', 'autopagerize_icon');
             o.setAttribute('state', 'enable');
             o.setAttribute('title', "点击启用禁用");
+            o.style.cssText = [
+                'background: ', COLOR['enable'], ';'
+                ,'width: .8em;'
+                ,'height: .8em;'
+                ,'padding: 0px;'
+                ,'margin: 0px .4em 0px 0px;'
+                ,'display: inline-block;'
+                ,'vertical-align: middle;'
+            ].join('');
             o.addEventListener('click', function(){
                 self.stateToggle();
             }, false);

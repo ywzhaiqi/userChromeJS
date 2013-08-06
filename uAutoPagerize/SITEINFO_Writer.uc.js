@@ -774,12 +774,22 @@ window.siteinfo_writer = {
     }
 };
 
+var existingSites
+
 var autopagerXPath = {
     smarttext: "next|>|下一页|下一頁|下一章|下一节|下一篇|下一幅|次を表示",
     discoverytext: "navbar|right_arrow|pagN|page|pages|paging|下页|次页|Volgende|Volg|Verder|Напред|Следва|Næste|Nächste|Naechste|Weiter|Vorwärts|Vorwaerts|Volgende|Continue|Onward|Venonta|Seuraava|Suivant|Prochaine|Επόμενη|Næst|Successive|Successiva|Successivo|Prossima|Prossime|Prossimo|Altra|Altro|次へ|다음|Neste|Dalej|Następna|Następne|Następny|Więcej|Próximo|Înainte|Înaintare|Următor|Următoare|След|Следующая|Siguiente|Próxima|Próximos|Nästa|Sonraki|Devam|İlerle",
     MAXTextLength: 20,
     MAXLevel: 6,
-    existingSites: window.uAutoPagerize.MY_SITEINFO.concat(window.uAutoPagerize.SITEINFO_CN) || [],
+
+    _existingSites: null,
+    get existingSites() {
+        if(this._existingSites == null){
+            this._existingSites = window.uAutoPagerize.MY_SITEINFO.concat(window.uAutoPagerize.SITEINFO_CN) || [];
+        }
+
+        return this._existingSites;
+    },
 
     discoveryLink: function(doc, xpathes) {
         var smarttext = this.smarttext;

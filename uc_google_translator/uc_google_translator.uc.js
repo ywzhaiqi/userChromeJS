@@ -21,6 +21,7 @@ var zol_bod_google_translator = {
     _targetlang: "zh-CN",
     _actionforstatbaricon: 3,
     _showpopuptext: 1,
+	_showoritext : false,
     _timer: null,
 
     onLoad: function() {
@@ -55,7 +56,11 @@ var zol_bod_google_translator = {
         } else {
             this._showpopuptext = this._prefs.getIntPref("showpopuptext");
         }
-
+		if (!this._prefs.prefHasUserValue("showoritext")) {
+			this._prefs.setBoolPref("showoritext", this._showoritext);
+		} else {
+			this._showoritext = this._prefs.getBoolPref("showoritext");
+		}
         var overlay = '\
           <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" \
                    xmlns:html="http://www.w3.org/1999/xhtml"> \
@@ -96,10 +101,15 @@ var zol_bod_google_translator = {
               		                 value="0" \
               		                 onclick = "zol_bod_google_translator.setshowmode(event);"/> \
                          <menuitem id="showspopuptext" \
-                                   label="弹出翻译结果点击可自动复制到剪切板" \
+                                   label="翻译结果点击可自动复制到剪贴板" \
                                    value="1" \
                                    type="checkbox" \
                                    onclick = "zol_bod_google_translator.setshowmode(event);"/> \
+						<menuitem id="showoritext" \
+									label="弹出翻译结果对照显示" \
+									value="' + this._showoritext + '" \
+									type="checkbox" autocheck="true"\
+									onclick = "zol_bod_google_translator.setoridisplay(event);"/> \
                          <menuseparator/> \
                          <menuitem id="translateselected-statusbar-translator" \
                                    label="翻译选定文本" \
@@ -151,9 +161,6 @@ var zol_bod_google_translator = {
         document.getElementById("contentAreaContextMenu").addEventListener("popupshowing", this.showContextMenu, false);
         window.addEventListener("unload", this, false);
 
-        // Not Work. Modifed By ywzhaiqi
-        // var btn = document.getElementById("translatorButton");
-        // MyTools.addMoveButton(btn);
     },
 
     uninit: function() {
@@ -211,10 +218,16 @@ var zol_bod_google_translator = {
     setshowmode: function(event) {
         if (event.button != 0) return;
         this._showpopuptext = event.target.value;
+
         this._prefs.setIntPref("showpopuptext", this._showpopuptext);
         this.showmodeshow();
     },
 
+	setoridisplay : function (event) {
+		if (event.button != 0) return;
+		this._showoritext = !this._showoritext;
+		this._prefs.setBoolPref("showoritext", this._showoritext);
+	},
     showmodeshow: function(event) {
         document.getElementById("showsreplaced").setAttribute('checked', ((document.getElementById("showsreplaced").value != this._showpopuptext) ? false : true));
         document.getElementById("showspopuptext").setAttribute('checked', ((document.getElementById("showspopuptext").value != this._showpopuptext) ? false : true));
@@ -296,16 +309,24 @@ var zol_bod_google_translator = {
         if (this.isValidTextLength(whatToTranslate)) {
             if (document.getElementById('statusbar-translator')) {
                 var statusBarLabel = document.getElementById('statusbar-translator');
-                statusBarLabel.setAttribute("state", "disable");
+                statusBarLabel.setAttribute("state", "enable");
             }
             var cel = this._targetlang;
             var httpRequest = null;
 
             var baseUrl = "http://translate.google.hu/translate_t";
-            var urlParams = "text=" + whatToTranslate + "&hl=" + cel + "&langpair=auto|" + cel + "&tbb=1";
+			var urlParams = "text=" + encodeURIComponent(whatToTranslate) + "&hl=" + cel + "&langpair=auto|" + cel + "&tbb=1";
 
             function removeHTMLTags(mitkell) {
-                var strTagStrippedText = mitkell.replace(/<\/?[^>]+(>|$)/g, "");
+				//var strTagStrippedText = mitkell.replace(/<\/?[^>]+(>|$)/g, "");
+				if (zol_bod_google_translator._showoritext == false) {
+					var strTagStrippedText = mitkell.replace(/<br>/ig, '\n').replace(/(<(.+?)fff\'\">)/ig, "").replace(/<\/[^>]+>/ig, "");
+				} else {
+					var strTagStrippedText = mitkell.replace(/<br>/ig, '\n\n')
+						.replace(/<span title=\"/ig, "")
+						.replace(/\"\sonmouseover[^>]+>/ig, '\n')
+						.replace(/<\/[^>]+>/ig, "");
+				}
                 return strTagStrippedText;
             }
 
@@ -336,17 +357,14 @@ var zol_bod_google_translator = {
                         var tempResz = fieldArray[1].split('<span id=result_box class="long_text">');
                     }
                     var kimenet = tempResz[1].split('</span></div>');
+
                     if (zol_bod_google_translator._showpopuptext != 1) {
                         var focusedWindow = document.commandDispatcher.focusedWindow;
                         var range = focusedWindow.getSelection().getRangeAt(0);
                         range.deleteContents();
-                        range.insertNode(document.createTextNode(kezdospace + removeHTMLTags(kimenet[0]) + vegespace));
+			range.insertNode(document.createTextNode(kezdospace + removeHTMLTags(kimenet[0]) + vegespace));
                     } else {
-                        zol_bod_google_translator.show(kezdospace + removeHTMLTags(kimenet[0]) + vegespace);
-                    }
-                    if (document.getElementById('statusbar-translator')) {
-                        var statbaricon = document.getElementById('statusbar-translator');
-                        statbaricon.setAttribute("state", "enable");
+		    	zol_bod_google_translator.show(kezdospace + removeHTMLTags(kimenet[0]) + vegespace);
                     }
                 }
             }
@@ -363,7 +381,7 @@ var zol_bod_google_translator = {
                     this.show("正在获取翻译结果,请等待...");
             } catch (e) {
                 var statbaricon = document.getElementById('statusbar-translator');
-                statbaricon.setAttribute("state", "enable");
+                statbaricon.setAttribute("state", "disable");
             }
         } else { //ha a kijelolt szoveg hossza <=0 vagy >38000
             var prompts = Components.classes["@mozilla.org/embedcomp/prompt-service;1"]

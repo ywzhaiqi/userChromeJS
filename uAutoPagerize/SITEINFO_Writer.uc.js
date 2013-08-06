@@ -4,12 +4,12 @@
 // @namespace      http://d.hatena.ne.jp/Griever/
 // @author         Griever
 // @modified       ywzhaiqi
-// @update         2013-7-24
+// @update         2013-8-5
 // @include        main
 // @compatibility  Firefox 5 - firefox 23a1
 // @charset        UTF-8
 // @version        下書き1
-// @note           增加下一页中文选择xpath
+// @note           大幅修改以适应 uAutoPagerize 中文规则增强版，移植了 AutoPager 的自动识别功能
 // @note           fix compatibility for firefox 23a1 by lastdream2013
 // @note           まだこれからつくり込む段階
 // @note           ツールメニューから起動する
@@ -17,12 +17,18 @@
 
 (function(css){
 
+let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
+
 if (window.siteinfo_writer) {
 	window.siteinfo_writer.destroy();
 	delete window.siteinfo_writer;
 }
 
 window.siteinfo_writer = {
+    USE_DEVTOOLS: false,  // 默认使用自带开发工具
+    USE_FIREBUG: true,    // 默认使用 Firebug 查看
+
 	init: function() {
       	this.style = addStyle(css);
 
@@ -36,9 +42,15 @@ window.siteinfo_writer = {
 				      <toolbarbutton label="查看规则(SP)" oncommand="siteinfo_writer.toSuperPreLoaderFormat();"/>\
 				      <toolbarbutton id="sw-curpage-info" label="读取当前页面规则" oncommand="siteinfo_writer.getCurPageInfo();"/>\
 				      <toolbarbutton label="从剪贴板读取规则" oncommand="siteinfo_writer.readFromClipboard();"/>\
-				      <toolbarbutton id="sw-launch" label="启动规则" tooltiptext="启动uAutoPagerize" oncommand="siteinfo_writer.launch();"/>\
+				      <toolbarbutton id="sw-discovery" tooltiptext="自动识别" oncommand="siteinfo_writer.discoveryAll(true, true);" />\
+                      <toolbarbutton id="sw-launch" label="启动规则" tooltiptext="启动uAutoPagerize" oncommand="siteinfo_writer.launch();"/>\
                       <checkbox id="sw-useiframe" label="useiframe" checked="false"/>\
-                      <toolbarbutton label="重置" oncommand="siteinfo_writer.show(true);"/>\
+                      <checkbox id="sw-useDevtools" label="使用自带查看器" checked="' + this.USE_DEVTOOLS +'" \
+                            oncommand="siteinfo_writer.USE_DEVTOOLS=!siteinfo_writer.USE_DEVTOOLS" \
+                            hidden="true"/>\
+                      <checkbox id="sw-inspect-by-firebug" label="用Firebug查看" checked="' + this.USE_FIREBUG +'" \
+                            oncommand="siteinfo_writer.USE_FIREBUG=!siteinfo_writer.USE_FIREBUG" \
+                            hidden="' + !window.Firebug + '" />\
                       <spacer flex="1"/>\
 				      <toolbarbutton class="tabs-closebutton" oncommand="siteinfo_writer.hide();"/>\
 				    </hbox>\
@@ -46,28 +58,37 @@ window.siteinfo_writer = {
 				      <columns>\
 				        <column />\
 				        <column />\
+                        <column />\
 				        <column flex="1"/>\
 				        <column />\
+                        <column />\
 				      </columns>\
 				      <rows>\
 				        <row>\
 				          <label value="name" />\
+                          <hbox />\
                           <toolbarbutton class="inspect"\
                                          tooltiptext="提取网站名称"\
                                          oncommand="siteinfo_writer.siteName.value = content.document.title;"/>\
 				          <textbox id="sw-siteName"/>\
                           <hbox />\
+                          <hbox />\
 				        </row>\
 				        <row>\
 				          <label value="url" />\
+                          <hbox />\
                           <toolbarbutton class="inspect"\
                                          tooltiptext="提取地址"\
                                          oncommand="siteinfo_writer.setUrl();"/>\
 				          <textbox id="sw-url" oninput="siteinfo_writer.onInput(event);"/>\
                           <hbox />\
+                          <hbox />\
 				        </row>\
 				        <row>\
 				          <label value="nextLink" />\
+                          <toolbarbutton class="discovery"\
+                                         tooltiptext="自动识别下一页链接"\
+                                         oncommand="siteinfo_writer.discovery(\'nextLink\');"/>\
                           <toolbarbutton class="inspect"\
                                          tooltiptext="提取XPath"\
                                          oncommand="siteinfo_writer.inspect(\'nextLink\');"/>\
@@ -76,9 +97,15 @@ window.siteinfo_writer = {
 				          <toolbarbutton class="check"\
 				                         tooltiptext="测试XPath"\
 				                         oncommand="siteinfo_writer.xpathTest(\'nextLink\');"/>\
+                          <toolbarbutton class="inspect-devtools"\
+                                         tooltiptext="使用Firebug或自带开发工具查看元素"\
+                                         oncommand="siteinfo_writer.inspectMix(\'nextLink\');"/>\
 				        </row>\
 				        <row>\
 				          <label value="pageElement" />\
+                          <toolbarbutton class="discovery"\
+                                         tooltiptext="自动识别内容"\
+                                         oncommand="siteinfo_writer.discovery(\'pageElement\');"/>\
                           <toolbarbutton class="inspect"\
                                          tooltiptext="提取XPath"\
                                          oncommand="siteinfo_writer.inspect(\'pageElement\');"/>\
@@ -87,9 +114,13 @@ window.siteinfo_writer = {
 				          <toolbarbutton class="check"\
 				                         tooltiptext="测试XPath"\
 				                         oncommand="siteinfo_writer.xpathTest(\'pageElement\');"/>\
+                          <toolbarbutton class="inspect-devtools"\
+                                         tooltiptext="使用Firebug或自带开发工具查看元素"\
+                                         oncommand="siteinfo_writer.inspectMix(\'pageElement\');"/>\
 				        </row>\
 				        <row hidden="true">\
 				          <label value="insertBefore" />\
+                          <hbox />\
                           <toolbarbutton class="inspect"\
                                          tooltiptext="提取XPath"\
                                          oncommand="siteinfo_writer.inspect(\'insertBefore\');"/>\
@@ -97,6 +128,9 @@ window.siteinfo_writer = {
 				          <toolbarbutton class="check"\
 				                         tooltiptext="测试XPath"\
 				                         oncommand="siteinfo_writer.xpathTest(\'insertBefore\');"/>\
+                          <toolbarbutton class="inspect-devtools"\
+                                         tooltiptext="使用Firebug或自带开发工具查看元素"\
+                                         oncommand="siteinfo_writer.inspectMix(\'insertBefore\');"/>\
 				        </row>\
 				      </rows>\
 				    </grid>\
@@ -160,7 +194,7 @@ window.siteinfo_writer = {
         $A(document.getElementsByClassName("sw-add-element")).forEach(function(e){
             e.parentNode.removeChild(e);
         })
-        this.style.parentNode.removeChild(this.style);
+        this.style && this.style.parentNode.removeChild(this.style);
 
         this.uninit();
     },
@@ -194,6 +228,11 @@ window.siteinfo_writer = {
         popup.appendChild($C("menuseparator", {}));
 
         popup.appendChild($C("menuitem", {
+            label: '用开发工具查看元素',
+            oncommand: "siteinfo_writer.inspectMix('" + type + "');",
+        }));
+
+        popup.appendChild($C("menuitem", {
             label: '@class="xxx" → contains()',
             oncommand: "siteinfo_writer.class2contains('" + type + "');",
         }));
@@ -208,30 +247,31 @@ window.siteinfo_writer = {
         if(!reset && content.ap && content.ap.info)
             info = content.ap.info;
         else
-            info = {
-                siteName: content.document.title,
-                nextLink: "auto;",
-                pageElement: "css;",
-                useiframe: false,
-                insertBefore: "",
-            };
+            [, info] = uAutoPagerize.getInfo();
 
-        this.setAllValue(info);
-        this.setUrl();
+        if(info){
+            this.setAllValue(info);
+        }else{
+            this.discoveryAll(true, true);
+        }
+
 		this.container.hidden = false;
 	},
 	hide: function() {
 		this.container.hidden = true;
 	},
     setUrl: function() {
-        this.url.value = "^" + content.location.href.replace(/[()\[\]{}|+.,^$?\\]/g, '\\$&');
+        var location = content.location;
+        var url = location.protocol + "//" + location.host + location.pathname;
+
+        this.url.value = "^" + url.replace(/[()\[\]{}|+.,^$?\\]/g, '\\$&');
         this.url.className = "";
     },
     setAllValue: function(info){
         this.siteName.value = info.siteName || info.name || content.document.title;
         this.nextLink.value = info.nextLink || "";
         this.pageElement.value = info.pageElement || "";
-        this.useiframe.checked = info.useiframe || false;
+        this.useiframe.checked = !!info.useiframe;
         this.insertBefore.value = info.insertBefore || "";
 
         if(info.url){  // 转为字符串
@@ -250,10 +290,10 @@ window.siteinfo_writer = {
                     break;
             }
 
-            if(!urlValue)
-                urlValue = "^" + content.location.href.replace(/[()\[\]{}|+.,^$?\\]/g, '\\$&');
-
-            this.url.value = urlValue;
+            if(urlValue)
+                this.url.value = urlValue;
+            else
+                this.setUrl();
         }
     },
 	toJSON: function() {
@@ -344,7 +384,7 @@ window.siteinfo_writer = {
                         self.setValueFromCurPage(info);
                     }else if (e.button == 2){
                         copyToClipboard(siteInfoToString(info));
-                        alert("该站点信息已经复制");
+                        // alert("该站点信息已经复制");
                     }
                 });
 			}
@@ -359,6 +399,7 @@ window.siteinfo_writer = {
         this.setAllValue(info);
         this.urlTest();
 	},
+
     // autopager 查询网站 install(a36122) 没有引号的错误。
     fixAutoPagerBug: function(doc){
         var link, links, onclick;
@@ -416,6 +457,7 @@ window.siteinfo_writer = {
             });
 		}
 	},
+
 	readFromClipboard: function(){
 		var dataStr = readFromClipboard();
 		if(dataStr){
@@ -451,6 +493,7 @@ window.siteinfo_writer = {
 	    }
 	    return isValid(info) ? info : null
 	},
+
 	launch: function() {
 		if(content.ap){
 			var r = confirm("uAutopagerize 已经运行，是否重新启动？");
@@ -478,35 +521,140 @@ window.siteinfo_writer = {
 				content.AutoPagerize.launchAutoPager([i]);
 			else alert("翻页规则语法正确，但uAutoPagerize无法执行，可能uAutoPagerize被禁用或没有安装脚本");
 		} else {
-            if(!nextLink)
-                alert("下一页链接没有找到");
-            else if(!pageElement)
-                alert("页面内容没有找到");
-            else
-                alert("其它错误");
+            alert("下一页链接或页面内容没有找到");
 		}
 	},
 	inspect: function(aType) {
-		if (this._inspect)
-			this._inspect.uninit();
-		var self = this;
-		this._inspect = new Inspector(content, aType, function(xpathArray) {
-			if (xpathArray.length) {
-				let range = document.createRange();
-				range.selectNodeContents(self.popup);
-				range.deleteContents();
-				range.detach();
-				for (let [i, x] in Iterator(xpathArray)) {
-					let menuitem = document.createElement("menuitem");
-					menuitem.setAttribute("label", x);
-					menuitem.setAttribute("oncommand", "siteinfo_writer['"+ aType +"'].value = this.getAttribute('label')");
-					self.popup.appendChild(menuitem);
-				}
-				self.popup.openPopup(self.container, "before_start");
-			}
-			self._inspect = null;
-		});
+        if (this.USE_DEVTOOLS) {
+            gDevToolsBrowser.selectToolCommand(gBrowser, "inspector");
+        } else {
+            if (this._inspect)
+                this._inspect.uninit();
+            var self = this;
+            this._inspect = new Inspector(content, aType, function(items) {
+                if (items.length) {
+                    self.createXPathPopupMenu(items, aType);
+                }
+                self._inspect = null;
+            });
+        }
 	},
+    inspectMix: function(aType) {
+        let xpath;
+        if(aType == "nextLink"){
+            xpath = this.nextLink.value;
+        }else if(aType == "pageElement"){
+            xpath = this.pageElement.value;
+        }else if(aType == "insertBefore"){
+            xpath = this.insertBefore.value;
+        }
+
+        var doc = content.document;
+        try{
+            var elem = getFirstElementByXPath(xpath, doc);
+        }catch(e){
+            return;
+        }
+
+        if(!elem)
+            return;
+
+        if(window.Firebug && this.USE_FIREBUG){
+            Firebug.browserOverlay.startFirebug(function(Firebug){
+                Firebug.Inspector.inspectFromContextMenu(elem);
+            });
+        }else{
+            /*
+             * 有这么变的吗，四个版本，变了三次地址！！！
+             */
+            let devtools = {};
+            let version = Services.appinfo.version.split(".")[0];
+            let DEVTOOLS_URI;
+            if (version >= 24) {
+                DEVTOOLS_URI = "resource://gre/modules/devtools/Loader.jsm";
+                ({devtools} = Cu.import(DEVTOOLS_URI, {}));
+            } else if (version < 24 && version >= 23) {
+                DEVTOOLS_URI = "resource:///modules/devtools/gDevTools.jsm";
+                ({devtools} = Cu.import(DEVTOOLS_URI, {}));
+            } else if (version < 23 && version >= 20) {
+                DEVTOOLS_URI = "resource:///modules/devtools/Target.jsm";
+                devtools = Cu.import(DEVTOOLS_URI, {});
+            } else {
+                return (function (elem, InspectorUI) {
+                    if (InspectorUI.isTreePanelOpen) {
+                        InspectorUI.inspectNode(elem);
+                        InspectorUI.stopInspecting();
+                    } else {
+                        InspectorUI.openInspectorUI(elem);
+                    }
+                })(elem, InspectorUI);
+            }
+            let tt = devtools.TargetFactory.forTab(gBrowser.selectedTab);
+            return gDevTools.showToolbox(tt, "inspector").then((function (elem) {
+                return function(toolbox) {
+                    let inspector = toolbox.getCurrentPanel();
+                    inspector.selection.setNode(elem, "Siteinfo-writer-Inspector");
+                }
+            })(elem));
+        }
+    },
+
+    discoveryResult: null,
+    discoveryAll: function(setValue, test){
+        this.discoveryResult = new autopagerDiscoveryResult(content.document, []);
+
+        if(setValue){
+            var linkXPath = this.discoveryResult.linkXPaths[0];
+            var contentXPath = this.discoveryResult.contentXPaths[0];
+
+            this.setAllValue({
+               nextLink: linkXPath && linkXPath.xpath,
+               pageElement: contentXPath && contentXPath.xpath
+            });
+        }
+
+        if(test){
+            this.xpathTest("pageElement");
+            setTimeout(function(self){
+                self.xpathTest("nextLink");
+            }, 1000, this)
+        }
+    },
+    discovery: function(aType){
+        if(!this.discoveryResult)
+            this.discoveryAll(false, false);
+
+        var items = [];
+        if(aType == 'nextLink'){
+            items  = this.discoveryResult.linkXPaths;
+        }else if(aType == 'pageElement'){
+            items = this.discoveryResult.contentXPaths;
+        }
+
+        this.createXPathPopupMenu(items, aType);
+    },
+    createXPathPopupMenu: function(items, aType){
+        let range = document.createRange();
+        range.selectNodeContents(this.popup);
+        range.deleteContents();
+        range.detach();
+
+        for (let [i, item] in Iterator(items)) {
+            if(item == "-"){
+                this.popup.appendChild(document.createElement("menuseparator"));
+                continue;
+            }
+
+            let menuitem = document.createElement("menuitem");
+            menuitem.setAttribute("label", item.xpath);
+            menuitem.setAttribute("oncommand", "siteinfo_writer['"+ aType +"'].value = this.getAttribute('label');" +
+                "siteinfo_writer.xpathTest('"+ aType +"');");
+            this.popup.appendChild(menuitem);
+        }
+        this.popup.openPopup(this.container, "before_start");
+    },
+
+    toClearElements: [],
 	xpathTest: function(aType) {
 		var textbox = this[aType]
 		if (!textbox || !textbox.value) return;
@@ -541,28 +689,34 @@ window.siteinfo_writer = {
             return alert("没有找到元素");
         }
 
+        var self = this;
+        clearElementsStyle();
+
 		for (let [i, elem] in Iterator(elements)) {
 			if (!("orgcss" in elem))
 				elem.orgcss = elem.style.cssText;
 			elem.style.backgroundImage = "-moz-linear-gradient(magenta, plum)";
 			elem.style.outline = "1px solid magenta";
+            this.toClearElements.push(elem);
 		}
 
-		var self = this;
 		if (this.timer) {
 			clearTimeout(this.timer);
 			this.timer = null;
 		}
-		this.timer = setTimeout(function() {
-			for (let [i, elem] in Iterator(elements)) {
-				if ("orgcss" in elem) {
-					elem.orgcss?
-						elem.style.cssText = elem.orgcss:
-						elem.removeAttribute("style");
-					delete elem.orgcss;
-				}
-			}
-		}, 5000);
+		this.timer = setTimeout(clearElementsStyle, 5000);
+
+        function clearElementsStyle() {
+            for (let [i, elem] in Iterator(self.toClearElements)) {
+                if ("orgcss" in elem) {
+                    elem.orgcss?
+                        elem.style.cssText = elem.orgcss:
+                        elem.removeAttribute("style");
+                    delete elem.orgcss;
+                }
+            }
+            self.toClearElements = [];
+        }
 	},
 	urlTest: function() {
 		var urlValue = this.url.value;
@@ -611,14 +765,981 @@ window.siteinfo_writer = {
 			return '@class="'+ cls.join(' ') +'"';
 		});
 	},
+    getElementXPathes: function(elem){
+        var doc = elem.ownerDocument;
+        var items = [];
+        items = autopagerXPath.discoveryMoreLinks(doc, items, [elem]);
+
+        return items;
+    }
+};
+
+var autopagerXPath = {
+    smarttext: "next|>|下一页|下一頁|下一章|下一节|下一篇|下一幅|次を表示",
+    discoverytext: "navbar|right_arrow|pagN|page|pages|paging|下页|次页|Volgende|Volg|Verder|Напред|Следва|Næste|Nächste|Naechste|Weiter|Vorwärts|Vorwaerts|Volgende|Continue|Onward|Venonta|Seuraava|Suivant|Prochaine|Επόμενη|Næst|Successive|Successiva|Successivo|Prossima|Prossime|Prossimo|Altra|Altro|次へ|다음|Neste|Dalej|Następna|Następne|Następny|Więcej|Próximo|Înainte|Înaintare|Următor|Următoare|След|Следующая|Siguiente|Próxima|Próximos|Nästa|Sonraki|Devam|İlerle",
+    MAXTextLength: 20,
+    MAXLevel: 6,
+    existingSites: window.uAutoPagerize.MY_SITEINFO.concat(window.uAutoPagerize.SITEINFO_CN) || [],
+
+    discoveryLink: function(doc, xpathes) {
+        var smarttext = this.smarttext;
+        var discoverytext = this.discoverytext;
+
+        var url = doc.documentURI;
+        var body = doc.documentElement.innerHTML;
+        var strs = (smarttext + "|" + discoverytext).split("|");
+
+        var texts = "|";
+        var ignoredTexts = "|";
+        for (var k = 0; k < strs.length; ++k)
+            strs[k] = strs[k].toLowerCase().replace(new RegExp(" ", "gm"), "");
+        for (var k = 0; k < strs.length; ++k) {
+            if (strs[k].length == 0)
+                continue;
+            if (texts.indexOf("|" + strs[k] + "|") == -1 && ignoredTexts.indexOf("|" + strs[k] + "|") == -1) {
+                if (body.indexOf(strs[k]) != -1)
+                    texts = texts + strs[k] + "|";
+                else
+                    ignoredTexts = ignoredTexts + strs[k] + "|";
+            }
+        }
+        var tmpPaths = this.convertToXpath(texts);
+
+        var links = [];
+        var item = null;
+        for (var i in tmpPaths) {
+            //get the nodes
+            var urlNodes = this.evaluate(doc, tmpPaths[i]);
+            if (urlNodes != null && urlNodes.length != 0) {
+                for (var level = 1; level < this.MAXLevel; level += 1) {
+                    var items = this.getLinkXPathItemFromNodes(doc, urlNodes, level);
+                    for (var l in items) {
+                        item = items[l];
+                        if (item != null)
+                            this.addItem(doc, links, item);
+                    }
+                }
+            }
+        }
+
+        //try the links next to this page
+        item = new autopagerXPathItem();
+        item.authority = 0.2;
+        item.xpath = "(//a[@href and @href = %href%]/following-sibling::a[1])[translate(text(),'0123456789','')='']";
+        this.addItem(doc, links, item);
+
+        item = new autopagerXPathItem();
+        item.authority = 0.1;
+        item.xpath = "(//a[@href and %href% = concat(%pathname%,@href) ]/following-sibling::a[1])[translate(text(),'0123456789','')='']";
+        this.addItem(doc, links, item);
+
+        item = new autopagerXPathItem();
+        item.authority = 0.1;
+        item.xpath = "(//a[@href and contains(@href , concat(%pathname% , %search%))]/following-sibling::a[1])[translate(text(),'0123456789','')='']";
+        this.addItem(doc, links, item);
+
+        item = new autopagerXPathItem();
+        item.authority = 0.1;
+        item.xpath = "(//a[@href and contains(concat(%pathname% , %search%),@href)]/following-sibling::a[1])[translate(text(),'0123456789','')='']";
+        this.addItem(doc, links, item);
+
+        item = new autopagerXPathItem();
+        item.authority = 0.12;
+        item.xpath = "(//a[@href and contains(@href , %href%)]/following-sibling::a[1])[translate(text(),'0123456789','')='']";
+        this.addItem(doc, links, item);
+
+        item = new autopagerXPathItem();
+        item.authority = 0.1;
+        item.xpath = "(//a[@href and contains(@href , %filename%)]/following-sibling::a[1])[translate(text(),'0123456789','')='']";
+        this.addItem(doc, links, item);
+
+        //try to find the page navigator, then find next links
+        var navBars = this.evaluate(doc, "//*[count(a[text() != '' and translate(text(),'0123456789','')=''])>=2]/a[text() != '' and translate(text(),'0123456789','')='']");
+        if (navBars && navBars.length != 0) {
+            for (var level = 1; level < this.MAXLevel; level += 1) {
+                var paths = this.anaLyzeNavbar(doc, navBars, level);
+                for (var i in paths) {
+                    item = new autopagerXPathItem();
+                    item.authority = (this.MAXLevel / level);
+                    item.xpath = paths[i];
+                    if (item.xpath.indexOf("//input") != -1)
+                        item.authority = item.authority / 2;
+                    this.addItem(doc, links, item);
+                }
+            }
+        }
+
+        item = new autopagerXPathItem();
+        item.xpath = "//*[count(a[text() != '' and translate(text(),'0123456789','')=''])>=2 ]/*[name()='STRONG' or name()='B']/following-sibling::a[1]";
+        item.authority = 4;
+        this.addItem(doc, links, item);
+
+        links = this.mergeXPath(links);
+        var newlinks = [];
+        for (var i = 0; i < links.length; ++i) {
+            if (links[i].authority > 0.005 && links[i].matchCount < 40)
+                newlinks.push(links[i])
+        }
+        links = this.sortItems(newlinks);
+
+        // try the existing site settings
+        links.push("-");  // 添加分隔符
+        Array.slice(this.existingSites).forEach(function(site){
+            var existes = links.filter(function(link){
+                return link.xpath == site.nextLink;
+            });
+            if(existes.length) return;
+
+            var nodes = autopagerXPath.evaluate(doc, site.nextLink);
+            if (nodes != null && nodes.length > 0) {
+                item = new autopagerXPathItem();
+                item.authority = 4;
+                item.xpath = site.nextLink
+                item.matchCount = nodes.length
+                item.existing = true;
+                links.push(item);
+            }
+        });
+
+        return links;
+    },
+    discoveryMoreLinks: function(doc, links, nodes) {
+        for (var level = 1; level < this.MAXLevel; level += 1) {
+            var items = this.getLinkXPathItemFromNodes(doc, nodes, level);
+            for (var i in items) {
+                var item = items[i];
+                if (item != null)
+                    this.addItem(doc, links, item);
+            }
+        }
+        links = this.mergeXPath(links);
+        links = this.sortItems(links);
+        var newLinks = [];
+        //filter it again
+        for (var i = 0; i < links.length; i++) {
+            var item = links[i]
+            if (this.isMatchNodes(doc, item.xpath, nodes))
+                newLinks.push(item);
+        }
+        return newLinks;
+    },
+    discoveryContent: function(doc, xpathes) {
+        var node = doc.body;
+        var url = doc.documentURI;
+        var items = [];
+        var links = [];
+        var item = null;
+
+        var knowLinks = [];
+        xpathes = xpathes || {};
+        for (var n in xpathes) {
+            var site = xpathes[n];
+            //try the existing site settings
+            var nodes = this.evaluate(doc, site.x, true, 10);
+            if (nodes != null && nodes.length > 0) {
+                item = new autopagerXPathItem();
+                item.authority = site.c;
+                item.matchCount = nodes.length
+
+                if (site.x != "//body" && site.x != "//body/*" && site.x != "//body/table") {
+                    nodes = this.evaluate(doc, site.n, true, 2);
+                    if (nodes != null && nodes.length > 0)
+                        item.authority = item.authority * 3;
+                }
+                item.xpath = site.x
+                knowLinks.push(item)
+                //this.addItem(doc,links,item);
+                //site.xpathItem = item
+            }
+        }
+        knowLinks = this.sortItems(knowLinks);
+        for (var i = 0; i < knowLinks.length; i++) {
+            var l = knowLinks[i]
+            var ignore = false;
+            for (var n = 0; n < i; n++) {
+                if (l.xpath == knowLinks[n].xpath) {
+                    ignore = true;
+                    break;
+                }
+            }
+            if (!ignore)
+                this.addItem(doc, links, l);
+        }
+
+        var contentNode = this.discoveryBigContent(node, items);
+        contentNode = this.discoveryBigContent(contentNode, items);
+
+        for (var i in items) {
+            item = items[i];
+            if (item != null)
+                this.addItem(doc, links, item);
+        }
+
+        item = new autopagerXPathItem();
+        item.authority = 1;
+        item.xpath = "//body/*";
+        links.push(item)
+
+        links = this.mergeXPath(links);
+        //get others
+
+        links = this.sortItems(links);
+
+        //try the existing site settings
+        var existingSites = this.existingSites;
+        links.push("-");  // 添加分隔符
+        Array.slice(this.existingSites).forEach(function(site){
+            if(site.pageElement == "//body/*") return;
+
+            var existes = links.filter(function(link){
+                return link.xpath == site.pageElement;
+            });
+            if(existes.length) return;
+
+            var nodes = autopagerXPath.evaluate(doc, site.pageElement, true, 10);
+            if (nodes != null && nodes.length > 0) {
+                item = new autopagerXPathItem();
+                item.authority = 4;
+                item.xpath = site.pageElement
+                item.matchCount = nodes.length
+                item.existing = true;
+                links.push(item);
+            }
+        });
+
+        return links;
+    },
+    discoveryBigContent: function(node, items) {
+        var contentNode = null;
+        var len = 0;
+        for (var i = 0; i < node.childNodes.length; i++) {
+            var child = node.childNodes[i];
+            if (child.nodeType == 1 && child.innerHTML.length > len) {
+                contentNode = child;
+                len = child.innerHTML.length;
+            }
+        }
+        var item = null;
+        for (var level = 1; level < this.MAXLevel; level += 1) {
+
+            item = new autopagerXPathItem();
+            item.xpath = this.getLinkXpathFromNode(node, contentNode, level);
+            item.authority = (this.MAXLevel / level);
+            items.push(item);
+            item = new autopagerXPathItem();
+            item.xpath = this.getXPathForObjectByParent(contentNode, 3, level);
+            item.authority = (this.MAXLevel / level);
+            items.push(item);
+
+        }
+        return contentNode;
+    },
+    isMatchNodes: function(doc, xpath, nodes) {
+        var matchNodes = this.evaluate(doc, xpath);
+        if (matchNodes != null && matchNodes.length > 0) {
+            for (var n = 0; n < nodes.length; n++)
+                for (var i = 0; i < matchNodes.length; i++) {
+                    if (nodes[n].isEqualNode(matchNodes[i]))
+                        return true;
+                }
+        }
+        return false;
+    },
+    sortItems: function(links) {
+        links.sort(function authority(a, b) {
+            if (b.authority == a.authority) {
+                if (a.xpath.length == b.xpath.length)
+                    return a.matchCount - b.matchCount;
+                return a.xpath.length - b.xpath.length;
+            }
+            return b.authority - a.authority;
+        });
+        return links;
+    },
+    modifyAuthoryByDeep: function(item) {
+        var reg = /\/\/|\//g;
+        var count = 0;
+        while (reg.exec(item.xpath)) {
+            count++;
+        }
+        if (count >= 2)
+            count = count / 1.5;
+        else if (count == 0)
+            count = 1;
+        return item.authority / count;
+    },
+    mergeXPath: function(links) {
+        //return links;
+        for (var i = 0; i < links.length; ++i) {
+            var item = links[i];
+            item.authority = this.modifyAuthoryByDeep(item);
+        }
+
+        for (var i = 0; i < links.length; ++i) {
+            var item = links[i];
+            for (var j = i + 1; j < links.length; ++j) {
+                if (links[i].matchCount == links[j].matchCount) {
+                    var left = -1;
+                    var right = -1;
+                    if (this.xpathContain(links[i], links[j])) {
+                        left = j
+                        right = i;
+                    } else if (this.xpathContain(links[j], links[i])) {
+                        left = i
+                        right = j;
+                    }
+                    if (left >= 0) {
+                        if (links[left].authority < links[right].authority)
+                            links[left].authority = links[right].authority;
+                        if (links[right].matchCount > 2)
+                            links[left].authority = links[left].authority + 1 / links[right].matchCount;
+                        else
+                            links[left].authority = links[left].authority + 1;
+                    }
+                }
+            }
+        }
+        var newlinks = [];
+        for (var i = 0; i < links.length; ++i) {
+            if (links[i].xpath.length < 128)
+                newlinks.push(links[i])
+        }
+        return newlinks;
+    },
+    xpathContain: function(item1, item2) {
+        if (item2.xpath.substring(0, 2) == '//') {
+            return item1.xpath.indexOf(item2.xpath.substring(1)) >= 0;
+        }
+        return item1.xpath.indexOf(item2.xpath) >= 0;
+    },
+    addItem: function(doc, links, item) {
+        //ignore
+        if (!item.xpath || item.xpath == "//a")
+            return;
+
+        // autopagerUtils.log("Start " + item.xpath + " " + item.authority);
+        item.authority = this.modifyAuthoryByDeep(item);
+        for (var i in links) {
+            if (links[i].xpath == item.xpath) {
+                if (links[i].matchCount > 1) {
+                    if (item.xpath[0] != item.xpath[item.xpath.length - 1]) {
+                        item.authority = item.authority / item.xpath.length;
+                    }
+                }
+                if (links[i].matchCount > 2)
+                    links[i].authority = links[i].authority + (item.authority / links[i].matchCount);
+                else
+                    links[i].authority = links[i].authority + item.authority;
+                return;
+            }
+        }
+
+        var nodes = this.evaluate(doc, item.xpath);
+        if (nodes != null && nodes.length > 0) {
+            item.matchCount = nodes.length;
+            if (nodes.length > 1) {
+                if (nodes[0] != nodes[nodes.length - 1]) {
+                    item.authority = item.authority / nodes.length;
+                }
+            }
+            if (item.matchCount > 2)
+                item.authority = item.authority / item.matchCount;
+
+
+            //if the xpath use possion, lower it's 'authority
+            if (/\d( )*]/.test(item.xpath.replace("following-sibling\:\:a\[1\]", ""))) {
+                item.authority = item.authority / 2;
+            }
+            links.push(item);
+        }
+        // autopagerUtils.log("End " + item.xpath + " " + item.authority);
+    },
+
+    convertToXpath: function(str, exactlymatch) {
+        var xpaths = new Array();
+        var strs = str.split("|");
+        for (var k = 0; k < strs.length; ++k) {
+            if (!exactlymatch)
+                strs[k] = strs[k].toLowerCase().replace(new RegExp(" ", "gm"), "");
+        }
+        for (var i = 0; i < strs.length; ++i) {
+            if (strs[i].length == 0)
+                continue;
+            this.convertStringToXPath(xpaths, "//a[", "]", strs[i], "", exactlymatch);
+            this.convertStringToXPath(xpaths, "//*[", "][count(a)=1]/a", strs[i], "", exactlymatch);
+            this.convertStringToXPath(xpaths, "//input[(@type='submit' or @type='button' or @type='image') and ", "]", strs[i], "", exactlymatch);
+            this.convertStringToXPath(xpaths, "//*[", "][count(input)=1]/input", strs[i], "", exactlymatch);
+            var chars = this.getChars(str);
+            xpaths.push("//head/link[" + this.xpathEquals("@ref", chars, str) + "]/@href");
+            if (!exactlymatch) {
+                xpaths.push("//head/link[" + this.xpathContains("@ref", chars, str) + "]/@href");
+            }
+        }
+        return xpaths;
+    },
+    xpathContains: function(path, chars, str) {
+        return "contains(translate(normalize-space(" + path + "),'" + chars.toUpperCase() + "', " + "'" + chars + "'),'" + str + "')";
+    },
+    xpathEquals: function(path, chars, str) {
+        return path + "='" + str + "'";
+    },
+    convertStringToXPath: function(xpaths, prefix, subfix, str, dir, exactlymatch) {
+        var chars = this.getChars(str);
+        if (str.length > 0) {
+            xpaths.push(dir + prefix + this.xpathEquals("@id", chars, str) + subfix);
+            xpaths.push(dir + prefix + this.xpathEquals("@rel", chars, str) + subfix);
+            xpaths.push(dir + prefix + this.xpathEquals("@name", chars, str) + subfix);
+            xpaths.push(dir + prefix + this.xpathEquals("@title", chars, str) + subfix);
+            xpaths.push(dir + prefix + this.xpathEquals("@class", chars, str) + subfix);
+            xpaths.push(dir + prefix + this.xpathEquals("img/@src", chars, str) + subfix);
+            xpaths.push(dir + prefix + "img[" + this.xpathEquals("@src", chars, str) + "]" + subfix);
+            xpaths.push(dir + prefix + "img[" + this.xpathEquals("@alt", chars, str) + "]" + subfix);
+            xpaths.push(dir + prefix + this.xpathEquals("text()", chars, str) + subfix);
+            xpaths.push(dir + prefix + "span[" + this.xpathEquals("text()", chars, str) + "]" + subfix);
+            xpaths.push(dir + prefix + "font[" + this.xpathEquals("text()", chars, str) + "]" + subfix);
+            xpaths.push(dir + prefix + "b[" + this.xpathEquals("text()", chars, str) + "]" + subfix);
+            xpaths.push(dir + prefix + "strong[" + this.xpathEquals("text()", chars, str) + "]" + subfix);
+            xpaths.push(dir + prefix + this.xpathEquals("substring(img/@src,string-length(img/@src) - " + str.length + ")", chars, str) + subfix);
+            if (!exactlymatch) {
+                xpaths.push(dir + prefix + this.xpathContains("@id", chars, str) + subfix);
+                xpaths.push(dir + prefix + this.xpathContains("@rel", chars, str) + subfix);
+                xpaths.push(dir + prefix + this.xpathContains("@name", chars, str) + subfix);
+                xpaths.push(dir + prefix + this.xpathContains("@title", chars, str) + subfix);
+                xpaths.push(dir + prefix + this.xpathContains("@class", chars, str) + subfix);
+                xpaths.push(dir + prefix + this.xpathContains("img/@src", chars, str) + subfix);
+                xpaths.push(dir + prefix + "img[" + this.xpathContains("@src", chars, str) + "]" + subfix);
+                xpaths.push(dir + prefix + "img[" + this.xpathContains("@alt", chars, str) + "]" + subfix);
+                xpaths.push(dir + prefix + this.xpathContains("text()", chars, str));
+                xpaths.push(dir + prefix + "span[" + this.xpathContains("text()", chars, str) + "]" + subfix);
+                xpaths.push(dir + prefix + "font[" + this.xpathContains("text()", chars, str) + "]" + subfix);
+                xpaths.push(dir + prefix + "b[" + this.xpathContains("text()", chars, str) + "]" + subfix);
+                xpaths.push(dir + prefix + "strong[" + this.xpathContains("text()", chars, str) + "]" + subfix);
+                xpaths.push(dir + prefix + this.xpathContains("substring(img/@src,string-length(img/@src) - " + str.length + ")", chars, str) + subfix);
+
+            }
+        }
+    },
+    getChars: function(str) {
+        var chars = "";
+        for (var i = 0; i < str.length; ++i) {
+            if (chars.indexOf(str.charAt(i)) == -1) {
+                chars = chars + str.charAt(i);
+            }
+        }
+        return chars;
+    },
+
+    getLinkXPathItemFromNodes: function(node, urlNodes, level) {
+        var items = [];
+        var item = null;
+        //if we only get one node
+        if (urlNodes.length == 1) {
+            item = new autopagerXPathItem();
+            item.xpath = this.getLinkXpathFromNode(node, urlNodes[0], level);
+            item.authority = (this.MAXLevel / level);
+            if (urlNodes[0].tagName != 'A')
+                item.authority = item.authority / 3;
+            items.push(item);
+            item = new autopagerXPathItem();
+            item.xpath = this.getXPathForObjectByParent(urlNodes[0], 3, level);
+            item.authority = (this.MAXLevel / level);
+            if (urlNodes[0].tagName != 'A')
+                item.authority = item.authority / 3;
+            items.push(item);
+
+            var xpath = this.getXPathForObjectBySibling(urlNodes[0], 3, level);
+            if (xpath) {
+                item = new autopagerXPathItem();
+                item.xpath = xpath
+                item.authority = (this.MAXLevel / level);
+                if (urlNodes[0].tagName != 'A')
+                    item.authority = item.authority / 3;
+                items.push(item);
+
+                item = new autopagerXPathItem();
+                item.xpath = xpath
+                // if (item.xpath.substr(-3) != "[1]")
+                //     item.xpath = item.xpath + "[1]"
+                item.authority = (this.MAXLevel / level);
+                if (urlNodes[0].tagName != 'A')
+                    item.authority = item.authority / 3;
+                items.push(item);
+            }
+
+            xpath = this.getXPathForObjectBySibling2(urlNodes[0], 3, level);
+            if (xpath) {
+                item = new autopagerXPathItem();
+                item.xpath = xpath
+                item.authority = (this.MAXLevel / level) + 0.2;
+                if (urlNodes[0].tagName != 'A')
+                    item.authority = item.authority / 3;
+                items.push(item);
+
+                item = new autopagerXPathItem();
+                item.xpath = xpath;
+                if (item.xpath.substr(-3) != "[1]")
+                    item.xpath = item.xpath + "[1]"
+                item.authority = (this.MAXLevel / level) + 0.2;
+                if (urlNodes[0].tagName != 'A')
+                    item.authority = item.authority / 3;
+                items.push(item);
+            }
+
+            item = new autopagerXPathItem();
+            item.xpath = this.getXPathForObjectByPosition(urlNodes[0], 3, level);
+            item.authority = (this.MAXLevel / level) / 1.2;
+            if (urlNodes[0].tagName != 'A')
+                item.authority = item.authority / 3;
+            items.push(item);
+        } else if (urlNodes.length <= 4) {
+            item = new autopagerXPathItem();
+            item.authority = (this.MAXLevel / level);
+            if (urlNodes[0].tagName != 'A')
+                item.authority = item.authority / 3;
+            item.xpath = this.getLinkXpathFromTwoNodes(node, urlNodes[0], urlNodes[1], level);
+            items.push(item);
+        } else // too many links, ignore this
+        {
+            var paths = this.anaLyzeNavbar(node, urlNodes, level);
+            for (var i in paths) {
+                item = new autopagerXPathItem();
+                item.authority = (this.MAXLevel / level);
+                if (urlNodes[0].tagName != 'A')
+                    item.authority = item.authority / 3;
+                item.xpath = paths[i];
+                items.push(item);
+            }
+        }
+        return items;
+    },
+    getLinkXpathFromTwoNodes: function(parents, node1, node2, level) {
+        //find the similar thing in node1 and node2
+        //todo
+        return this.getXPathForObjectByChild(node1, 3, level);
+    },
+    getText: function(x) {
+        if (x.nodeValue != null && String(x.nodeValue) != "")
+            return String(x.nodeValue);
+        if (x.lastChild != null && x.lastChild.nodeValue != null)
+            return String(x.lastChild.nodeValue);
+        return "";
+    },
+    anaLyzeNavbar: function(node, urlNodes, level) {
+        var nodes = [];
+        for (var i = 0; i < urlNodes.length; ++i) {
+            var num = parseInt(autopagerXPath.getText(urlNodes[i]));
+            if (num != NaN) {
+                nodes.push(urlNodes[i]);
+            }
+        }
+
+        nodes.sort(function(x, y) {
+            var txt1 = parseInt(autopagerXPath.getText(x));
+            var txt2 = parseInt(autopagerXPath.getText(y));
+            return txt1 - txt2;
+        });
+        var xpaths = [];
+        for (var i = 0; i < nodes.length - 1; i++) {
+            if (parseInt(this.getText(nodes[i + 1])) == 2 + parseInt(this.getText(nodes[i]))) {
+                var xpath = this.getXPathForObjectByChild(nodes[i + 1], 3, level);
+                if (xpath != null && xpath.length > 0)
+                    xpaths.push(xpath);
+                xpath = this.getXPathForObjectByParent(nodes[i + 1], 3, level);
+                if (xpath != null && xpath.length > 0)
+                    xpaths.push(xpath);
+                xpath = this.getXPathForObjectBySibling(nodes[i + 1], 3, level);
+                if (xpath != null && xpath.length > 0)
+                    xpaths.push(xpath);
+                xpath = this.getXPathForObjectBySibling2(nodes[i + 1], 3, level);
+                if (xpath != null && xpath.length > 0)
+                    xpaths.push(xpath);
+            }
+        }
+        if (xpaths.length == 0 && nodes.length > 0) {
+            var xpath = this.getXPathForObjectBySibling(nodes[0], 3, level);
+            if (xpath != null && xpath.length > 0)
+                xpaths.push(xpath);
+            xpath = this.getXPathForObjectBySibling2(nodes[0], 3, level);
+            if (xpath != null && xpath.length > 0)
+                xpaths.push(xpath);
+        }
+        return xpaths;
+    },
+    getLinkXpathFromNode: function(parents, node, level) {
+        return this.getXPathForObjectByChild(node, 3, level);
+    },
+
+    appendAndCondition: function(base, newStr) {
+        if (base.length > 0) {
+            if (newStr.length > 0)
+                return base + " and " + newStr;
+            else
+                return base;
+        }
+        return newStr;
+    },
+    getClearText: function(str) {
+        return str.replace(new RegExp("^[  \t \n \r]*", "gm"), "").replace(new RegExp("([  \t \n \r]*)$", "gm"), "");
+    },
+    getXIdetify: function(node, dir, level) {
+        var xi = "";
+        try {
+            if (level >= 1 && node.getAttribute("id") != null && node.getAttribute("id").length > 0) {
+                xi = this.appendAndCondition(xi, dir + "@id='" + node.getAttribute("id") + "'");
+            }
+            if (level >= 1 && node.getAttribute("rel") != null && node.getAttribute("rel").length > 0) {
+                xi = this.appendAndCondition(xi, dir + "@rel='" + node.getAttribute("rel") + "'");
+            }
+            if (level >= 2 && (node.className != null) && (node.className.length > 0)) {
+                xi = this.appendAndCondition(xi, dir + "@class='" + node.className + "'");
+            }
+            if (level >= 3 && node.getAttribute("title") != null && node.getAttribute("title").length > 0) {
+                xi = this.appendAndCondition(xi, dir + "@title='" + node.getAttribute("title") + "'");
+            }
+            if (level >= 3 && level < 5 && node.textContent != null && node.childNodes.length == 1 && node.textContent.length > 0 && node.textContent.length < this.MAXTextLength) {
+                //only if child is #text
+                var child = node.childNodes[0];
+
+                if (child.nodeType == 3)
+                    xi = this.appendAndCondition(xi, "(" + dir + "text()='" + this.getClearText(child.textContent) + "')");
+            }
+            if (level >= 5 && node.textContent != null && node.childNodes.length == 1 && node.textContent.length > 0 && node.textContent.length < this.MAXTextLength) {
+                //only if child is #text
+                var child = node.childNodes[0];
+
+                if (child.nodeType == 3)
+                    xi = this.appendAndCondition(xi, "contains(" + dir + "text(),'" + this.getClearText(child.textContent) + "')");
+            }
+            if (node.tagName == "INPUT") {
+                if (level >= 3 && node.getAttribute("type") != null && node.getAttribute("type").length > 0) {
+                    xi = this.appendAndCondition(xi, dir + "@type='" + node.getAttribute("type") + "'");
+                }
+                if (level >= 1 && node.getAttribute("name") != null && node.getAttribute("name").length > 0) {
+                    xi = this.appendAndCondition(xi, dir + "@name='" + node.getAttribute("name") + "'");
+                }
+                if (level >= 3 && node.getAttribute("value") != null && node.getAttribute("value").length > 0) {
+                    xi = this.appendAndCondition(xi, dir + "@value='" + node.getAttribute("value") + "'");
+                }
+                if (level >= 3 && node.getAttribute("src") != null && node.getAttribute("src").length > 0) {
+                    xi = this.appendAndCondition(xi, dir + "@src='" + node.getAttribute("src") + "'");
+                }
+            } else if (node.tagName == "IMG") {
+                if (level >= 3 && node.getAttribute("src") != null && node.getAttribute("src").length > 0) {
+                    xi = this.appendAndCondition(xi, dir + "@src='" + node.getAttribute("src") + "'");
+                }
+                if (level >= 3 && node.getAttribute("alt") != null && node.getAttribute("alt").length > 0) {
+                    xi = this.appendAndCondition(xi, dir + "@alt='" + node.getAttribute("alt") + "'");
+                }
+            }
+        } catch (e) {
+
+        }
+        return xi;
+    },
+    getTagCount: function(childs, index) {
+        var tagCount = 0;
+        var tagname = childs[index].tagName;
+        for (var i = childs.length - 1; i >= 0; --i) {
+            if (childs[i].tagName == tagname)
+                tagCount++;
+        }
+        return tagCount;
+    },
+
+    getTagIndex: function(childs, index) {
+        var tagIndex = 1;
+        var tagname = childs[index].tagName;
+        for (var i = index - 1; i >= 0; --i) {
+            if (childs[i].tagName == tagname)
+                tagIndex++;
+        }
+        return tagIndex;
+    },
+    getXPath: function(node, dir, deep, maxChildCount, level) {
+        var xi = this.getXIdetify(node, dir, level);
+        if (deep > 0 && node.hasChildNodes() && (node.childNodes != null) && (node.childNodes.length > 0)) {
+            var childs = node.childNodes;
+            for (var i = 0; i < childs.length; ++i) {
+                if (childs[i].nodeType == 1) {
+                    var tagname = childs[i].tagName.toLowerCase();
+                    if (maxChildCount >= this.getTagIndex(childs, i)) {
+                        if (this.getTagCount(childs, i) > 1)
+                            tagname = tagname + "[" + this.getTagIndex(childs, i) + "]";
+                        xi = this.appendAndCondition(xi,
+                            this.getXPath(childs[i], dir + tagname + "/", deep - 1, maxChildCount, level));
+                    }
+                }
+            }
+        }
+        return xi;
+    },
+    getTagName: function(node) {
+        if (!node)
+            return "nosuchnode";
+        var tagname = node.tagName.toLowerCase();
+        if (tagname == 'td' || tagname == 'th' || tagname == 'tr' || tagname == 'tbody')
+            tagname = "table";
+        return tagname;
+    },
+    getPathDir: function(root, child) {
+        var dir = "";
+        if (root != child) {
+            if (root == 'table') {
+                if (child == 'td' || child == 'th')
+                    dir = "/" + child;
+                if (child != "tbody")
+                    dir = "/tr" + dir;
+                dir = "tbody" + dir;
+            }
+            if (dir.length > 0)
+                dir = dir + "/";
+        }
+        return dir;
+    },
+
+    getXPathForObjectByChild: function(target, maxChildCount, level) {
+        if (!target)
+            return [];
+        var tagname = this.getTagName(target);
+        var dir = this.getPathDir(tagname, target.tagName.toLowerCase());
+        var path = "//" + tagname;
+        var xi = this.getXPath(target, dir, 1, maxChildCount, level);
+        if (xi.length > 0)
+            path = path + "[" + xi + "]";
+        return path;
+    },
+    getXPathForObjectByParent: function(target, maxChildCount, level) {
+        var nodePath = this.getNodeParents(target)
+        var dir = "";
+        var path = "/";
+        for (var i in nodePath) {
+            var node = nodePath[i]
+            var xi = this.getXPath(node, dir, 0, maxChildCount, level);
+            path = path + "/" + node.tagName.toLowerCase();
+            if (xi.length > 0)
+                path = path + "[" + xi + "]";
+
+        }
+        return path;
+    },
+    getXPathForObjectBySibling: function(target, maxChildCount, level) {
+
+        if (target.nodeType != 1)
+            return "";
+        var nodePath = this.getPreviousNodes(target)
+        var dir = "";
+        var path = this.getXPathForObjectByParent(target.parentNode, maxChildCount, level);
+        for (var i in nodePath) {
+            var node = nodePath[i]
+            var xi = this.getXPath(node, dir, 0, maxChildCount, level);
+            if (i == 0)
+                path = path + "/" + node.tagName.toLowerCase();
+            else
+                path = path + "/following-sibling::" + node.tagName.toLowerCase();
+
+            if (xi.length > 0)
+                path = path + "[" + xi + "]";
+            else
+                path = path + "[" + this.getNodePosition(node) + "]";
+        }
+        return path;
+    },
+    getXPathForObjectBySibling2: function(target, maxChildCount, level) {
+
+        if (target.nodeType != 1)
+            return "";
+        var nodePath = this.getPrecedingDifferentNode(target)
+        var count = nodePath[0]
+        var node = nodePath[1]
+        if (node == null || !node.tagName)
+            return null;
+
+        var dir = "";
+        var path = this.getXPathForObjectByParent(target.parentNode, maxChildCount, level); {
+            var xi = this.getXPath(node, dir, 0, maxChildCount, level);
+            path = path + "/*"; // + target.tagName.toLowerCase();
+            var prepath = node.tagName.toLowerCase();
+            if (xi.length > 0)
+                prepath += "[" + xi + "]";
+            else
+                prepath += "[last()]";
+
+
+            path += "[(position()=count(../" + prepath + "/preceding-sibling::*)+" + count + ") and name()='" + target.tagName.toUpperCase() + "']"
+
+            xi = this.getXPath(target, dir, 0, maxChildCount, level);
+            if (xi.length > 0)
+                path = path + "[" + xi + "]";
+
+
+        }
+        return path;
+    },
+    getXPathForObjectByPosition: function(target, maxChildCount, level) {
+
+        if (target == null || target.nodeType != 1)
+            return "";
+        var pos = this.getNodePosition(target)
+        var path = this.getXPathForObjectByParent(target.parentNode, maxChildCount, level);
+        path = path + "/" + target.tagName.toLowerCase() + "[" + pos + "]";
+        return path;
+    },
+    getPreviousNodes: function(node) {
+        var result = []
+        var tagname = node.tagName;
+        while (node != null && node.nodeType == 1 || node.nodeType == 3) {
+            if (node.nodeType == 1) {
+                result.unshift(node)
+                if (node.nodeType == 1 && node.hasAttribute("id")) return result
+                if (node.nodeType == 1 && tagname != node.tagName) return result
+            }
+            node = node.previousSibling
+            if (node == null)
+                break;
+        }
+        return result
+    },
+    getPrecedingDifferentNode: function(node) {
+        var result = []
+        var count = 0;
+        var tagname = node.tagName;
+        while (node != null && node.nodeType == 1 || node.nodeType == 3) {
+            count++;
+            if (node.nodeType == 1) {
+                if (node.nodeType == 1 && node.hasAttribute("id"))
+                    break;
+                if (node.nodeType == 1 && tagname != node.tagName)
+                    break;
+            }
+            node = node.previousSibling
+            if (node == null)
+                break;
+        }
+        result.push(count);
+        result.push(node);
+        return result
+    },
+    getNodePosition: function(node) {
+        var pos = 0;
+        var tagname = node.tagName;
+        while (node != null) {
+            if (node.nodeType == 1 && tagname == node.tagName) {
+                pos = pos + 1;
+            }
+            node = node.previousSibling
+            if (node == null)
+                break;
+        }
+        return pos;
+    },
+    getNodeParents: function(node) {
+        var result = []
+
+        while (node && (node.nodeType == 1 || node.nodeType == 3)) {
+            result.unshift(node)
+            if (node.nodeType == 1 && node.hasAttribute("id")) return result
+            if (node.nodeType == 1 && node.tagName == 'BODY') return result
+            node = node.parentNode
+        }
+        return result
+    },
+
+    evaluate: function(node, expr, enableJS, max) {
+        var doc = (node.ownerDocument == null) ? node : node.ownerDocument;
+        var found = [];
+
+        if(typeof(expr) == 'string'){
+            var aExpr = this.preparePath(doc, expr, enableJS);
+            try {
+                found = getElementsByXPath(aExpr, node);
+            } catch (e) {
+
+            }
+        }
+
+        return found;
+    },
+    preparePath: function(doc, path, enableJS) {
+        //host
+        //href
+        //hostname
+        //pathname
+        //port
+        //protocol
+        //search
+        //title
+        if (typeof(enableJS) == 'undefined')
+            enableJS = true;
+        var processXPath = function(xpath) {
+            return xpath;
+        };
+        var newPath = processXPath(path);
+        if (newPath.indexOf("%") == -1)
+            return newPath;
+
+        try {
+            var href = "";
+            var host = "";
+            var port = "";
+            if (enableJS) {
+                host = doc.location.host;
+                href = doc.location.href;
+            } else {
+                if (doc.documentElement.getAttribute("autopager-real-url")) {
+                    href = doc.documentElement.getAttribute("autopager-real-url")
+                } else {
+                    href = doc.baseURI;
+                }
+                host = href;
+
+                //remove prototol
+                host = host.substring(doc.location.protocol.length + 2);
+                port = doc.location.port + "";
+                host = host.substring(0, host.indexOf("/"));
+
+                if (port.length > 0)
+                    host = host.substring(0, host.length - port.length - 1);
+            }
+            newPath = newPath.replace(/\%href\%/g, "'" + href + "'");
+            newPath = newPath.replace(/\%host\%/g, "'" + host + "'");
+            newPath = newPath.replace(/\%hostname\%/g, "'" + host + "'");
+            newPath = newPath.replace(/\%pathname\%/g, "'" + doc.location.pathname + "'");
+            var pathname = doc.location.pathname;
+            var filename = pathname.substr(pathname.lastIndexOf(pathname, "/"))
+            newPath = newPath.replace(/\%filename\%/g, "'" + filename + "'");
+            if (!doc.location.port)
+                port = doc.location.port;
+            newPath = newPath.replace(/\%port\%/g, port);
+            newPath = newPath.replace(/\%protocol\%/g, "'" + doc.location.protocol + "'");
+            newPath = newPath.replace(/\%search\%/g, "'" + doc.location.search + "'");
+            newPath = newPath.replace(/\%title\%/g, "'" + doc.title + "'");
+            //newPath = newPath.replace(/\%referrer\%/g,"'" + doc.referrer+ "'");
+            newPath = newPath.replace(/\%baseuri\%/g, "'" + href.substring(0, href.lastIndexOf("/") + 1) + "'");
+        } catch (e) {
+            // autopagerMain.alertErr(e);
+        }
+        return newPath;
+    }
 };
 
 window.siteinfo_writer.init();
 
+function autopagerDiscoveryResult(doc, xpathes){
+    this.linkXPaths = autopagerXPath.discoveryLink(doc, xpathes);
+    this.contentXPaths = autopagerXPath.discoveryContent(doc, xpathes);
+}
+function autopagerXPathItem(){
+    this.xpath = "";
+    this.authority = 0;
+    this.matchCount = 0;
+    this.tmpCount = 1;
+}
+
+
 function Inspector(aWindow, aType, aCallback) {
 	this.win = aWindow;
 	this.doc = this.win.document;
-    this.type = aType;
+    this.aType = aType;
 	this.callback = aCallback;
 	this.init();
 }
@@ -645,7 +1766,7 @@ Inspector.prototype = {
 				event.stopPropagation();
 				this.uninit();
 				if (event.button == 0)
-					this.callback(this.getXPath(this.target));
+                    this.callback(this.getXPath(this.target))
 				break;
 			case 'mouseover':
 				if (this.target)
@@ -676,103 +1797,58 @@ Inspector.prototype = {
 			delete this.target.orgcss;
 		}
 	},
-	ATTR_CLASSID: 0,
-	ATTR_ID: 1,
-	ATTR_CLASS: 2,
-	ATTR_NOT_CLASSID: 3,
-	ATTR_FULL: 4,
-	TEXT: 5,
-	NEXT_REG: /[下后][一]?[页张个篇章节步]/,
-	NEXT_REG_A: /^[下后][一]?[页张个篇章节步]$/,
-	getXPath: function(originalTarget) {
-		var nodes = getElementsByXPath(
-			'ancestor-or-self::*[not(local-name()="html" or local-name()="HTML" or local-name()="body" or local-name()="BODY")]', originalTarget).reverse();
-		if (nodes.length == 0) return [];
+    getXPath: function(originalTarget){
+        var doc = originalTarget.ownerDocument;
+        var items = [];
+        items = autopagerXPath.discoveryMoreLinks(doc, items, [originalTarget]);
 
-		var current = nodes.shift();
-		var obj = {};
-		obj.localnames       = current.localName;
-		obj.self_classid     = this.getElementXPath(current, this.ATTR_CLASSID);
-		obj.self_id          = this.getElementXPath(current, this.ATTR_ID);
-		obj.self_class       = this.getElementXPath(current, this.ATTR_CLASS);
-		obj.self_attr        = this.getElementXPath(current, this.ATTR_NOT_CLASSID);
-		obj.self_full        = this.getElementXPath(current, this.ATTR_FULL);
-		obj.ancestor_classid = obj.self_classid;
-		obj.ancestor_id      = obj.self_id;
-		obj.ancestor_class   = obj.self_class;
-		obj.ancestor_attr    = obj.self_attr;
-		obj.ancestor_full    = obj.self_full;
-
-        if(this.type == "nextLink"){
-            // TODO: descendant
-            obj.self_text        = this.getElementXPath(current, this.TEXT);
-            obj.ancestor_text    = obj.self_text;
-        }
-
-		var hasId = current.getAttribute("id");
-		for (let [i, elem] in Iterator(nodes)) {
-			obj.localnames = elem.localName + "/" + obj.localnames;
-
-			if (!hasId) {
-				hasId = elem.getAttribute("id");
-				obj.ancestor_classid = this.getElementXPath(elem, this.ATTR_CLASSID) + "/" + obj.ancestor_classid;
-				obj.ancestor_id = this.getElementXPath(elem, this.ATTR_ID) + "/" + obj.ancestor_id;
-				obj.ancestor_full = this.getElementXPath(elem, this.ATTR_FULL) + "/" + obj.ancestor_full;
-                if(this.type == "nextLink"){
-				    obj.ancestor_text = this.getElementXPath(elem, this.ATTR_CLASSID) + "/" + obj.ancestor_text;
+        if(this.aType == "nextLink"){
+            var pushParentXPath = function(elem){
+                if (elem && elem.parentNode && elem.parentNode.tagName.toLowerCase() == "a") {
+                    var aItems = autopagerXPath.discoveryMoreLinks(doc, [], [elem.parentNode]);
+                    if (!aItems) return;
+                    items.push("-");
+                    for (var i in aItems)
+                        items.push(aItems[i]);
                 }
-			}
-			obj.ancestor_class = this.getElementXPath(elem, this.ATTR_NOT_CLASS) + "/" + obj.ancestor_class;
-			obj.ancestor_attr = this.getElementXPath(elem, this.ATTR_NOT_CLASSID) + "/" + obj.ancestor_attr;
-		}
+            };
 
-        if(this.type == "nextLink"){
-            let xpaths = obj.ancestor_text.split("/");
-            if(xpaths.length >= 3)
-                obj.text_descendant = xpaths[0] + "/" + "descendant::" + xpaths[xpaths.length - 1];
+            // pushParentXPath(originalTarget);
+            // pushParentXPath(originalTarget.parentNode);
         }
 
-		for (let [key, val] in Iterator(obj)) {
-			if (val.substr(0, 4) !== 'id("')
-				obj[key] = val = "//" + val;
-		}
-		var res = [x for each(x in obj)].filter(function(e, i, a) a.indexOf(e) === i).sort(function(a, b){
-			let aa = a.substr(0, 4) == 'id("';
-			let bb = b.substr(0, 4) == 'id("';
-			if ((aa && bb) || (!aa && !bb))
-				return b.length - a.length;
-			return bb? 1 : -1;
-		});
-		//var res = [[x, obj[x]] for(x in obj)].sort(function([a,], [b,]) a >= b);
-		////inspectObject([x for each(x in res)]);
-		//res = [x for each([,x] in res)].filter(function(e, i, a) a.indexOf(e) === i);
-		////inspectObject(res);
-		return res;
-	},
-	getElementXPath: function(elem, constant) {
-		if (!elem.getAttribute)
-			return "";
+        return items;
+    },
 
-		if (this.ATTR_CLASSID == constant) {
-			if (elem.getAttribute("id"))
-				return 'id("'+ elem.getAttribute('id') +'")';
-			if (elem.getAttribute("class"))
-				return elem.nodeName.toLowerCase() + '[@class="' + elem.getAttribute("class") + '"]';
-			return elem.nodeName.toLowerCase();
-		}
-		if (this.ATTR_ID == constant) {
-			if (elem.getAttribute("id"))
-				return 'id("'+ elem.getAttribute('id') +'")';
-			return elem.nodeName.toLowerCase();
-		}
-		if (this.ATTR_CLASS == constant) {
-			if (elem.getAttribute("class"))
-				return elem.nodeName.toLowerCase() + '[@class="' + elem.getAttribute("class") + '"]';
-			return elem.nodeName.toLowerCase();
-		}
-		if(this.TEXT == constant){
-			var text = elem.textContent;
-			if(text.length < 20){
+    ATTR_CLASSID: 0,
+    ATTR_ID: 1,
+    ATTR_CLASS: 2,
+    ATTR_NOT_CLASSID: 3,
+    ATTR_FULL: 4,
+    getElementXPath: function(elem, constant) {
+        if (!elem.getAttribute)
+            return "";
+
+        if (this.ATTR_CLASSID == constant) {
+            if (elem.getAttribute("id"))
+                return 'id("'+ elem.getAttribute('id') +'")';
+            if (elem.getAttribute("class"))
+                return elem.nodeName.toLowerCase() + '[@class="' + elem.getAttribute("class") + '"]';
+            return elem.nodeName.toLowerCase();
+        }
+        if (this.ATTR_ID == constant) {
+            if (elem.getAttribute("id"))
+                return 'id("'+ elem.getAttribute('id') +'")';
+            return elem.nodeName.toLowerCase();
+        }
+        if (this.ATTR_CLASS == constant) {
+            if (elem.getAttribute("class"))
+                return elem.nodeName.toLowerCase() + '[@class="' + elem.getAttribute("class") + '"]';
+            return elem.nodeName.toLowerCase();
+        }
+        if(this.TEXT == constant){
+            var text = elem.textContent;
+            if(text.length < 20){
                 var m = text.match(this.NEXT_REG)
                 if(m){
                     if(text == m[0] || text.indexOf(">") > 0)
@@ -780,42 +1856,41 @@ Inspector.prototype = {
                     else
                         return elem.nodeName.toLowerCase() + '[contains(text(), "' + m[0] + '")]';
                 }
-			}
-			return elem.nodeName.toLowerCase();
-		}
+            }
+            return elem.nodeName.toLowerCase();
+        }
 
-		var xpath = elem.nodeName.toLowerCase();
-		if (this.ATTR_FULL == constant) {
-			let x = [];
-			if (elem.hasAttribute("id"))
-				x[x.length] = '@id="' + elem.getAttribute("id") + '"';
-			if (elem.hasAttribute("class"))
-				x[x.length] = '@class="' + elem.getAttribute("class") + '"';
-			if (x.length)
-				xpath += '['+ x.join(" and ") +']';
-		}
+        var xpath = elem.nodeName.toLowerCase();
+        if (this.ATTR_FULL == constant) {
+            let x = [];
+            if (elem.hasAttribute("id"))
+                x[x.length] = '@id="' + elem.getAttribute("id") + '"';
+            if (elem.hasAttribute("class"))
+                x[x.length] = '@class="' + elem.getAttribute("class") + '"';
+            if (x.length)
+                xpath += '['+ x.join(" and ") +']';
+        }
 
         /*
-		var attrs = elem.attributes;
-		var arr = [];
-		for (var i = 0, len = attrs.length; i < len; i++) {
-			var name = attrs[i].nodeName;
-			if (name === "style" || name === "id" || name === "class") continue;
-			var value = attrs[i].nodeValue;
-			arr[arr.length] = '@' + name + '="' + value + '"';
-		};
+        var attrs = elem.attributes;
+        var arr = [];
+        for (var i = 0, len = attrs.length; i < len; i++) {
+            var name = attrs[i].nodeName;
+            if (name === "style" || name === "id" || name === "class") continue;
+            var value = attrs[i].nodeValue;
+            arr[arr.length] = '@' + name + '="' + value + '"';
+        };
         */
-		var arr = [
-			"@"+ x.nodeName +'="'+ x.nodeValue +'"'
-				for each(x in $A(elem.attributes))
-					if (!/^(?:id|class|style)$/i.test(x.nodeName))
-		];
-		if (arr.length > 0)
-			xpath += '[' + arr.join(" and ") + ']';
-		return xpath;
-	},
+        var arr = [
+            "@"+ x.nodeName +'="'+ x.nodeValue +'"'
+                for each(x in $A(elem.attributes))
+                    if (!/^(?:id|class|style)$/i.test(x.nodeName))
+        ];
+        if (arr.length > 0)
+            xpath += '[' + arr.join(" and ") + ']';
+        return xpath;
+    },
 };
-
 
 
 function log(arg){ Application.console.log("[SITEINFO_Writer] " + arg); }
@@ -964,24 +2039,33 @@ function addContentStyle(doc, css) {
   height: 4em;\
 }\
 \
-  #sw-grid .inspect {\
+#sw-grid .inspect {\
   list-style-image: url("chrome://global/skin/icons/Search-glass.png");\
   -moz-image-region: rect(0px, 16px, 16px, 0px);\
 }\
+#sw-grid .discovery {\
+  list-style-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACAUlEQVQ4jZXSQWgTURAG4D9pNYISakugKJ6860HBS8W1tiqmW2OVYgSpiKAHG1OaxJYgrDl5sBCXoAfFSlo8BESDspciqx4sbjapVtSiFQSRll5CtmlTuvveeLALVneDDszpzXxvYAZYH144hxeAx+XtV0iS5AUAWZZ3iqIYE4S2m8FgMDkyIu9eK3EH7OZodPBCSDy4PH73Ok08ucUejd+gi+d7zHA4nKyHNABAf//AgTO9R0y+NEXEP1q89pbRctEyy5Ns8HKY4vH4OQDI5XINjsCO7a0PFr6/JDKnV82yRtzQiVV04kbBmvuikHhUKKmquslxEkVR/CePd0xTdYq4UWS0WCQ7maETLWqUiPaZmqa1OgLZbHbzscNtBVoqETf09UBFJ6qVKHLptKW6AF4A6GwXxr5+ekbEPqxa5TfEKgUyyxqnlXfmwrcJErs6XiuK4nMFRkfH9p/qbq+tVItENMs4m2GcPjOiWStx5SyFQj1RANB1fcNfa7DXGIkMnOjuOvTj/u1r9EK5wx/eS1GnsPc9gMnmpqb5VCq1BwBUVW10RfL5/LahoWQ4MTzcF4td7ZUkqXlt5Od+v7+STqd3/V7vhPx5LB4AkGXZB+Cpz+erZjKZfY7bsBFVVRvtBOCxf5MkaSOAVy0tWx+7AnXCLt4SCASc7+Efkf9uqov8BEtwDwXhLuv5AAAAAElFTkSuQmCC);\
+}\
 \
-  #sw-grid .check {\
+#sw-grid .check {\
   list-style-image: url("chrome://global/skin/icons/find.png");\
   -moz-image-region: rect(0px, 48px, 16px, 32px);\
 }\
-\
-  #sw-url.error {\
-  outline: 1px solid red !important;\
+#sw-grid .inspect-devtools {\
+    list-style-image: url("chrome://browser/skin/devtools/inspect-button.png");\
+    -moz-image-region: rect(0px, 16px, 16px, 0px);\
 }\
-  #sw-popup > * {\
+#sw-url.error {\
+    outline: 1px solid red !important;\
+}\
+#sw-popup > * {\
   max-width: none !important;\
 }\
 #sw-launch, .sw-highlight-info{\
 	font-weight: 700;\
 }\
 #sw-grid row { height: 30px; }\
+#sw-discovery {\
+    list-style-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAYAAACpSkzOAAACk0lEQVRIie3TW0iTYRzH8eel93nFsXeFvTvCK4XbDA/QvDCVGNguoiIvNrUW1YpEqhsxFriiDCIRL3KJQXRwkkKxorQsKZOglPIQm9HQDrREGeoMDxkVHn5dCUWFe2e7qi/8rj/8H3gI+aeqqalR2Gy23enpaVcopR6dTufJzc095na7k/+WweTnWw8nJoqT2RvW42jJXlRXHkHV6RLs32OFRqOaz8rKrPd6vQnLQnJyst0G/RrcaKhC6M09hIMPMPLuPob6mzE8cBcfAi3YWbAVoij6XS6XMirFbDbvMhrW4rWvCfNTvcCnFz/t8+hTDPU3Ixx8iENFO5BhMrVH46zgOPqq49HVX4AfNzfZg+GBOxh734a0FAPsdrtNksLzfLZl00YsTP8ZWdzsRBcGA7dx4dxxGI36VkkQx3EnzpSXLIks7uNgG3ydjdDr9VOSIEqp5/L58oihL+FOvPXfhE6rnZV6UUV1pTNiaG6yGy+fNUKflCQNksvlhQcc+RFDsxNdaLh4CkajISAJcrvdyRq1cn4s2B4RNDPyBNu3mGGxWFySIEIIycrMrLcXbMPcVM+S0DVPBURRDNXV1Un/tF6vN0EURf/BokJ8HX/+W2BhuhdN189ipYKHIAghp9OZJhkihBCXy6XMMJnaU1P0uFR7EsHAPcyMdmB88DFab9Wi0LoZlNJuSlk/wzBQKoVQWVmZKSqMEELsdrvNaNS3chzni4+P72NZ1sdxXEtcXFweIYTjeV6glPoYhoFKpRopLS1NjRpbKkGQaSmlfoZhlveMkcTz/OpFTK1WjzocjthdplAoEihl+xiGgU6nDRcX71sXM0wQBC3Lsj5CyDeZTJYXM4gQQjQauXKVXG6NKfK/mPQdiHM1ltAZvg0AAAAASUVORK5CYII=);\
+}\
 ');

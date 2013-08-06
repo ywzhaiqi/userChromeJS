@@ -746,17 +746,6 @@ window.addMenu = {
 			canvas = null;
 			return data;
 		}
-		// 离线状态下，但会让 base64 变长
-		// function img2base64(imgsrc){
-		// 	if(typeof imgsrc == 'undefined') return "";
-
-  //           var iconImage = new ImageConverter(imgsrc);
-  //           var thread = Cc['@mozilla.org/thread-manager;1'].getService().mainThread;
-  //           while ( !iconImage.iscompleted ) {
-  //               thread.processNextEvent(true);
-  //           }
-  //           return iconImage.Database64;
-		// }
 	},
 	getSelection: function(win) {
 		// from getBrowserSelection Fx19
@@ -828,47 +817,6 @@ window.addMenu = {
 };
 
 window.addMenu.init();
-
-function ImageConverter(imageURL) {
-    this.imageURL = imageURL;
-    this.channel = Services.io.newChannel(imageURL, null, null);
-    this.channel.asyncOpen(this, null);
-}
-ImageConverter.prototype = {
-    imageURL : "",
-    channel : null,
-    bytes : [],
-    stream : null,
-    Database64 : null,
-    iscompleted: false,
-
-    // nsISupports
-    QueryInterface : function (iid) {
-        if (!iid.equals(Components.interfaces.nsISupports) &&
-            !iid.equals(Components.interfaces.nsIRequestObserver) &&
-            !iid.equals(Components.interfaces.nsIStreamListener)) {
-            throw Components.results.NS_ERROR_NO_INTERFACE;
-        }
-        return this;
-    },
-
-    // nsIRequestObserver
-    onStartRequest : function (aRequest, aContext) {
-        this.stream = Components.classes["@mozilla.org/binaryinputstream;1"].createInstance(Components.interfaces.nsIBinaryInputStream);
-    },
-
-    onStopRequest : function (aRequest, aContext, aStatusCode) {
-        this.Database64 = 'data:' + this.channel.contentType + ';base64,' + btoa(String.fromCharCode.apply(null, this.bytes));
-        this.iscompleted = true;
-    },
-
-    // nsIStreamListener
-    onDataAvailable : function (aRequest, aContext, aInputStream, aOffset, aCount) {
-        this.stream.setInputStream(aInputStream);
-        var chunk = this.stream.readByteArray(aCount);
-        this.bytes = this.bytes.concat(chunk);
-    }
-};
 
 function $(id) { return document.getElementById(id); }
 function $$(exp, doc) { return Array.prototype.slice.call((doc || document).querySelectorAll(exp)); }

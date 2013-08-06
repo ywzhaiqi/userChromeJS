@@ -33,8 +33,8 @@ userChromeJS for Firefox
  - [rebuild_userChrome](rebuild_userChrome)，脚本管理器（菜单修改版）。
  - [SaveUserChromeJS](SaveUserChromeJS)，像 Greasemonkey 一样保存 uc脚本（原创）。
  - [SidebarModfix](SidebarModfix)，侧边栏增强（修改版）。
- - [simpleAppButton](simpleAppButton)，简易启动应用程序按钮，左中右3键分别启动3个程序。
- - [Space_nextpage](Space_nextpage)，空格键页面底部翻页（调用nextPage.uc.xul），默认设置小说阅读脚本启用后禁用。
+ - [simpleAppButton](simpleAppButton)，简易启动应用程序按钮，左中右3键分别启动3个程序（参考用）。
+ - [Space_nextpage](Space_nextpage)，空格键页面底部翻页（依次调用 uAutoPagerize、uSuper_preloader、nextPage.uc.xul）
  - [stylishEdit](stylishEdit)，为 Stylish 增加外部编辑器等（修复版）。
  - [ThunderLixianExporterPatch](ThunderLixianExporterPatch)，迅雷离线直接导出 IDM.ef2（原创）。
  - [uAutoPagerize](uAutoPagerize)，中文规则增强版（大幅修改版）。

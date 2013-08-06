@@ -244,11 +244,6 @@ window.gWHT = {
 				if (!checkDoc(doc)) return;
 
                 this.delayLaunch(doc, win);
-
-                setTimeout(function(self, doc, win){
-                	self.fixAutoPage(doc, win);
-                }, 1000, this, doc, win)
-
 				break;
 			case "pageshow":
 				var doc = event.target;
@@ -315,35 +310,17 @@ window.gWHT = {
 
         var SyntaxHighlighter = win.wrappedJSObject.SyntaxHighlighter;
         if(typeof SyntaxHighlighter != "undefined"){
-        	win.addEventListener("load", function(){
-        		setTimeout(function(){
+        	win.addEventListener("load", function launch(){
+        		win.setTimeout(function(){
         			self.launch(doc, keywords);
         		}, 500);
-        		win.removeEventListener("load", arguments.callee, false);
+        		win.removeEventListener("load", launch, false);
         	}, false);
 
         	return;
         }
 
         this.launch(doc, keywords);
-    },
-    fixAutoPage: function(doc, win){
-    	if(!checkDoc(doc)) return;
-    	var _bodyHeight = doc.body.clientHeight;
-        // 创建观察者对象
-        var observer = new win.MutationObserver(function(mutations){
-            if(mutations[0].addedNodes && doc.body.clientHeight > _bodyHeight){
-
-                debug("MutationObserver addedNodes");
-                _bodyHeight = doc.body.clientHeight;
-
-                setTimeout(function(){
-                    gWHT.recoveryToolbar();
-                }, 200);
-
-            }
-        });
-        observer.observe(doc.body, {childList: true, subtree: true});
     },
     iconClick: function(event){
         if (event.target != $(CLASS_ICON)) return;
@@ -488,11 +465,32 @@ window.gWHT = {
 		if (keywords.length || hikitugi.length) {
 			this._launch(doc, tab);
 			doc.wht.addWord(keywords.concat(hikitugi));
+
+            var win = doc.defaultView;
+            win.setTimeout(function(self){
+                self.fixAutoPage(doc, win);
+            }, 1000, this);
 		}
 	},
 	launchFrame: function(doc) {
-
 	},
+    fixAutoPage: function(doc, win){
+        var _bodyHeight = doc.body.clientHeight;
+        // 创建观察者对象
+        var observer = new win.MutationObserver(function(mutations){
+            if(mutations[0].addedNodes && doc.body.clientHeight > _bodyHeight){
+
+                debug("MutationObserver addedNodes");
+                _bodyHeight = doc.body.clientHeight;
+
+                setTimeout(function(){
+                    gWHT.recoveryToolbar();
+                }, 200);
+
+            }
+        });
+        observer.observe(doc.body, {childList: true, subtree: true});
+    },
 	updateToolbar: function(toolbar) {
 		if (this.updateTimer) clearTimeout(this.updateTimer);
 		this.updateTimer = setTimeout(function() {

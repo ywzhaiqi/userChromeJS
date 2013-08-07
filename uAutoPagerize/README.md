@@ -2,11 +2,11 @@
 uAutoPagerize 中文规则版
 ========================
 
-### uAutoPagerize.uc.js
+### uAutoPagerize.uc.js（深度修改）
 
 基于 [Griever 的 uAutoPagerize](https://github.com/Griever/userChromeJS/tree/master/uAutoPagerize) 修改，参考了 [Super\_preloader](http://userscripts.org/scripts/show/84937)。[卡饭帖子地址](http://bbs.kafan.cn/thread-1555846-1-1.html)
 
- - 新增 [Super\_preloader.db](https://userscripts.org/scripts/show/142198) 规则的支持，几乎完美兼容该规则，支持 `auto;`、`css;`、函数、地址栏递增等多种方式
+ - 新增 **[Super\_preloader.db](https://userscripts.org/scripts/show/142198) 规则的支持**，几乎完美兼容该规则，支持 `auto;`、`css;`、函数、地址栏递增等多种方式
  - 能下载更新 Super\_preloader.db 的规则，文件名为 `uSuper_preloader.db.js`（Chrome目录下）
  - 新增 **本人维护的规则**，也可添加多个他人规则。以上所有规则都可通过 `更新中文规则` 更新
  - 新增 **iframe加载下一页**（浏览器级，默认只启用 JavaScript、Image，节省资源），可以支持一些特殊网站：如起点或漫画网站
@@ -15,6 +15,7 @@ uAutoPagerize 中文规则版
  - 新增 **提前预读** 功能，就是翻完第1页,立马预读第2页,翻完第2页,立马预读第3页..(大幅加快翻页快感-_-!!)
  - 新增 **最大翻页数** 的设置
  - 新增 **实际网页数**，来自 lastDream2013
+ - 新增 **AutoPager Rules 搜索** 功能
  - 原官方规则优先级最低，默认启用。略大，但很多网站都可翻页。可设置为禁用 `var ORIGINAL_SITEINFO = false`
  - 默认为可移动按钮，可在 `isUrlbar` 更改，true为地址栏，false为附加组件栏（可移动按钮）
 
@@ -23,9 +24,9 @@ uAutoPagerize 中文规则版
 由于下面的修复是通过研究网页代码而来，网页改版可能会造成失效，请反馈
 
  - *百度贴吧* 修复下一页图片的点击放大和回复按钮的可用
- - *Google* 搜索页面修复下一页图片或视频缩略图
- - *VeryCD* 搜索页面修复下一页图片
- - *youtube* 搜索页面修复下一页图片
+ - *Google 搜索* 修复下一页图片或视频缩略图
+ - *VeryCD 搜索* 修复下一页图片
+ - *youtube 搜索* 修复下一页图片
  - *天涯论坛帖子* 修复下一页只看楼主
  - *抽屉新热榜* 修复下一页图片，推荐、收藏、评论点击
 
@@ -41,17 +42,25 @@ uAutoPagerize 中文规则版
 
 ![分页导航2.png](分页导航2.png)
 
-### SITEINFO_Writer.uc.js
+### SITEINFO_Writer.uc.js（深度修改）
 
- - 新增 AutoPager Rules 搜索和点击 `install` 读取规则并弹出对话框
+ - 大幅修改以适应 uAutoPagerize 中文规则增强版
+ - 移植了 **AutoPager 的自动识别** 功能
+ - 自带的开发工具右键新增 **设置 nextLink 的值** 和 **设置 pageElement 的值** 功能
+ - AutoPager Rules 网站新增 **点击 `install` 读取规则并弹出对话框**
  - 新增 **读取当前页面规则** 的功能，当前页面已经运行的规则会加粗
  - 新增 **从剪贴板读取规则** 的功能
  - 新增 **查看规则(SP)** By lastdream2013，导出规则为 Super_preloader 格式
- - 新增 useiframe
- - 新增 auto; 或 css; 写法的支持
- - 新增选取时中文下一页的 xpath 显示
+ - 新增 **useiframe**
+ - 新增 **auto; 或 css; 写法的支持**
+ - 新增 **用Firebug 或自带开发工具查看元素**
+ - 修改选取的 xpath 获取方式为 AutoPager 方式
 
 ![SITEINFO_Writer](SITEINFO_Writer.png)
+
+#### 自带开发工具右键菜单
+
+![SITEINFO_Writer_devtools](SITEINFO_Writer_devtools.png)
 
 ## 文件简介
 

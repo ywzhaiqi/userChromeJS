@@ -6,51 +6,283 @@
 // @include        chrome://browser/content/places/places.xul
 // @include        chrome://mozapps/content/downloads/unknownContentType.xul
 // @include        chrome://mozapps/content/downloads/downloads.xul
+// @charset        uft-8
 // ==/UserScript==
 
 (function() {
 
-    switch (location.href) {
-        case "chrome://browser/content/browser.xul":
+    let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+    if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
 
-            // 下载按钮右键点击新建下载
-            newDownload_button();
+    var ns = {
+        get appVersion()  Services.appinfo.version.split(".")[0],
+        get mainwin() Services.wm.getMostRecentWindow("navigator:browser"),
 
-            // DownloadsPanel 右键新增移除下载文件功能
-            downloadsPanel_removeFile();
+        init: function(){
+            switch(location.href){
+                case "chrome://browser/content/browser.xul":
+                    ns.newDownload();                     // 下载按钮右键点击新建下载
+                    ns.autoClose_blankTab();              // 自动关闭下载产生的空白标签
+                    downloadSoundPlay();                  // 下载完成提示音
+                    ns.saveAndOpen_on_main();             // 跟下面的 saveAndOpen 配合使用
 
-            //下载提示音
-            download_sound_play();
+                    // 不完美？
+                    // ns.downloadsPanel_removeFile();    // DownloadsPanel 右键新增移除下载文件功能
+                    break;
+                case "chrome://mozapps/content/downloads/unknownContentType.xul":
+                    ns.download_dialog_changeName();      // 下载改名
+                    ns.download_dialog_saveAs();          // 下载另存为
+                    ns.download_dialog_showCompleteURL(); // 下载弹出窗口双击链接复制完整链接
+                    ns.saveAndOpen();
+                    break;
+                case "chrome://browser/content/places/places.xul":
+                    // newDownload_places();  // 书签窗口新增 "新建下载" 按钮
+                    break;
+            }
+        },
 
-            //自动关闭下载产生的空白标签
-            autoClose_blankTab();
+        newDownload: function(){
+            let parent = $('downloads-button').parentNode;
 
-            break;
-        case "chrome://browser/content/places/places.xul":
+            parent.addEventListener('click', ns.downloadsBtn_clicked, false);
+        },
+        newDownload_on_places: function () {
+            var button = $("placesToolbar").insertBefore(document.createElement("toolbarbutton"), $("clearDownloadsButton"));
+            button.id = "createNewDownload";
+            button.label = "新建下载";
+            button.style.paddingRight = "9px";
+            button.addEventListener("command", ns.open_newDownload_dialog, false);
+            window.addEventListener("click", function(e) {
+                button.style.display = ($("searchFilter").attributes.getNamedItem("collection").value == "downloads") ? "-moz-box" : "";
+            }, false);
+        },
+        downloadsBtn_clicked: function(event){
+            if(event.target.id == "downloads-button" || event.target.id == "downloads-indicator"){
+                if(event.button == 2 && !event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey){
+                    event.stopPropagation();
+                    event.preventDefault();
 
-            // 书签窗口 "新建下载" 按钮
-            newDownload_places();
+                    ns.open_newDownload_dialog();
+                }
+            }
+        },
+        newDownloadDialogXUL: '<?xml version="1.0" encoding="utf-8"?>\
+            <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>\
+            <window xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" width="500" height="300" title="新建下载任务">\
+                <hbox align="center" tooltiptext="http://www.example.com/[1-100-3]  ([开始-结束-位数])">\
+                    <label value="批量任务"></label>\
+                    <textbox flex="1"/>\
+                </hbox>\
+                <textbox id="urls" multiline="true" flex="1"/>\
+                <hbox dir="reverse">\
+                    <button label="开始下载"/>\
+                </hbox>\
+                <script>\
+                    <![CDATA[\
+                    function ParseURLs() {\
+                        var batchurl = document.querySelector("textbox").value;\
+                        if (/\\[\\d+-\\d+(-\\d+)?\\]/.test(batchurl)) {\
+                            for (let match = batchurl.match(/\\[(\\d+)-(\\d+)-?(\\d+)?\\]/), i = match[1], j = match[2], k = match[3], urls = []; i <= j; i++) {\
+                                urls.push(batchurl.replace(/\\[\\d+-\\d+(-\\d+)?\\]/, (i + "").length < k ? (eval("10e" + (k - (i + "").length)) + "").slice(2) + i : i));\
+                            }\
+                            document.querySelector("#urls").value = urls.join("\\n");\
+                        } else {\
+                            document.querySelector("#urls").value = batchurl;\
+                        }\
+                    }\
+                    document.querySelector("textbox").addEventListener("keyup", ParseURLs, false);\
+                    document.querySelector("button").addEventListener("command", function () {\
+                        document.querySelector("#urls").value.split("\\n").forEach(function (url) {\
+                            opener.saveURL(url , null, null, null, true, null, document);\
+                        });\
+                        close()\
+                    }, false);\
+                    document.querySelector("textbox").value = (opener.opener || window.opener).readFromClipboard();\
+                    ParseURLs();\
+                    ]]>\
+                </script>\
+            </window>\
+        ',
+        open_newDownload_dialog: function(){
+            window.openDialog("data:application/vnd.mozilla.xul+xml;charset=UTF-8," + encodeURIComponent(ns.newDownloadDialogXUL),
+                "name", "top=" + (window.screenY + 50) + ",left=" + (window.screenX + 50));
+        },
 
-            break;
-        case "chrome://mozapps/content/downloads/unknownContentType.xul":
+        downloadsPanel_removeFile: function() {
+            window.removeDownloadfile = {
+                removeStatus: function() {
+                    var RMBtn = $("removeDownload");
+                    var state = $("downloadsListBox").selectedItems[0].getAttribute('state');
+                    RMBtn.setAttribute("disabled", "true");
+                    if (state != "0" && state != "4" && state != "5")
+                        RMBtn.removeAttribute("disabled");
+                },
+                removeMenu: function() {
+                    try {
+                        this.removeStatus();
+                    } catch (e) {};
 
-            // 下载改名
-            download_dialog_changeName();
+                    let menuitem = $("removeDownload");
+                    if (!menuitem){
+                        menuitem = document.createElement("menuitem"),
+                            rlm = document.querySelector('.downloadRemoveFromHistoryMenuItem');
+                        menuitem.setAttribute("label", rlm.getAttribute("label").indexOf("History") != -1 ? "Delete File" : "从硬盘中删除");
+                        menuitem.setAttribute("id", "removeDownload");
+                        menuitem.onclick = function() {
+                            var path = decodeURI(DownloadsView.richListBox.selectedItem.image)
+                                .replace(/moz\-icon\:\/\/file\:\/\/\//, "").replace(/\?size\=32$/, "")
+                                .replace(/\?size\=32\&state\=normal$/, "").replace(/\//g, "\\\\");
+                            if (DownloadsView.richListBox.selectedItem.getAttribute('state') == "2") {
+                                path = path + ".part";
+                            }
+                            var file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
+                            file.initWithPath(path);
+                            file.exists() && file.remove(0);
+                            new DownloadsViewItemController(DownloadsView.richListBox.selectedItem).doCommand("cmd_delete");
+                        };
+                        $("downloadsContextMenu").appendChild(rlm);
+                        $("downloadsContextMenu").insertBefore(menuitem, rlm.nextSibling);
+                    }
 
-            // 下载另存为
-            download_dialog_saveAs();
+                    this.removeStatus();
+                },
+                Start: function() {
+                    $("downloadsContextMenu").addEventListener("popupshowing", this.removeMenu, false);
+                }
+            }
+            try {
+                eval("DownloadsPanel.showPanel = " + DownloadsPanel.showPanel.toString()
+                    .replace(/DownloadsPanel\.\_openPopupIfDataReady\(\)/, "{$&;removeDownloadfile\.Start\(\);}"));
+            } catch (e) {}
+        },
+        autoClose_blankTab: function () {
+            eval("gBrowser.mTabProgressListener = " + gBrowser.mTabProgressListener.toString().replace(/(?=var location)/, '\
+                if (aWebProgress.DOMWindow.document.documentURI == "about:blank"\
+                && aRequest.QueryInterface(nsIChannel).URI.spec != "about:blank") {\
+                aWebProgress.DOMWindow.setTimeout(function() {\
+                !aWebProgress.isLoadingDocument && aWebProgress.DOMWindow.close();\
+                }, 100);\
+                }\
+            '));
+        },
+        saveAndOpen: function(){
+            let acceptBtn = document.documentElement.getButton("accept");
+            let saveBtn = $("save");
 
-            // 下载弹出窗口双击链接复制完整链接
-            download_dialog_showCompleteURL();
+            var saveAndOpen = document.getAnonymousElementByAttribute(document.querySelector("*"), "dlgtype", "extra2");
+            saveAndOpen.parentNode.insertBefore(saveAndOpen, acceptBtn.nextSibling.nextSibling);
+            saveAndOpen.setAttribute("hidden", "false");
+            saveAndOpen.setAttribute("label", "保存并打开");
+            saveAndOpen.addEventListener("command", function(event){
+                ns.mainwin.saveAndOpen.urls.push(dialog.mLauncher.source.asciiSpec);
+                saveBtn.click();
+                acceptBtn.disabled = 0;
+                acceptBtn.click()
+            }, false);
+        },
+        // 作用于 main 窗口
+        saveAndOpen_on_main: function(){
+            let downloadManager = Cc["@mozilla.org/download-manager;1"].getService(Ci.nsIDownloadManager);
 
-            break;
-        case "chrome://mozapps/content/downloads/downloads.xul":
-            downloadsPanel_removeFile();
-            break;
-    }
+            window.saveAndOpen = {
+                urls: [],
+                onStateChange: function (prog, req, flags, status, dl) {
+                    if (flags == 327696 && !! ~this.urls.indexOf(dl.source.spec)) {
+                        this.urls[this.urls.indexOf(dl.source.spec)] = "";
+                        downloadManager.getDownload(downloadManager.DBConnection.lastInsertRowID).targetFile.launch();
+                    }
+                },
+                onSecurityChange: function (prog, req, state, dl) {},
+                onProgressChange: function (prog, req, prog, progMax, tProg, tProgMax, dl) {},
+                onDownloadStateChange: function (state, dl) {}
+            }
+            downloadManager.addListener(saveAndOpen);
+        },
+        download_dialog_changeName: function () {
+            if (location != "chrome://mozapps/content/downloads/unknownContentType.xul") return;
 
-    function download_sound_play() {
-        var downloadPlaySound = {
+            let downLocation = $("location");
+            let locationText = $("locationtext");
+
+            $("mode").addEventListener("select", function() {
+                if (dialog.dialogElement("save").selected) {
+                    if (!locationText) {
+                        locationText = downLocation.parentNode.insertBefore(document.createElement("textbox"), downLocation);
+                        locationText.id = "locationtext";
+                        locationText.setAttribute("style", "margin-top:-2px;margin-bottom:-3px");
+                        locationText.value = downLocation.value;
+                    }
+                    downLocation.hidden = true;
+                    locationText.hidden = false;
+                } else {
+                    locationText.hidden = true;
+                    downLocation.hidden = false;
+                }
+            }, false)
+
+            dialog.dialogElement("save").selected && dialog.dialogElement("save").click();
+
+            window.addEventListener("dialogaccept", function() {
+                if ((locationText.value != downLocation.value) && dialog.dialogElement("save").selected) {
+                    if(ns.appVersion >= 23){
+                        ns.mainwin.eval("(" + ns.mainwin.internalSave.toString()
+                            .replace("let ", "")
+                            .replace("var fpParams", "fileInfo.fileExt=null;fileInfo.fileName=aDefaultFileName;var fpParams") + ")")
+                            (dialog.mLauncher.source.asciiSpec, null, locationText.value, null, null, null, null, null, null,
+                                ns.mainwin.document, Services.prefs.getBoolPref("browser.download.useDownloadDir"), null);
+                    }else{
+                        dialog.mLauncher.saveToDisk(dialog.promptForSaveToFile(dialog.mLauncher, window, locationText.value), 1);
+                        dialog.onCancel = null;
+                    }
+
+                    document.documentElement.removeAttribute("ondialogaccept");
+                }
+            }, false);
+        },
+        download_dialog_saveAs: function () {
+            var saveas = document.documentElement.getButton("extra1");
+            saveas.setAttribute("hidden", "false");
+            saveas.setAttribute("label", "另存为");
+
+            saveas.addEventListener("command", function(event){
+                let locationText = $("locationtext");
+
+                if(ns.appVersion >= 23){
+                    ns.mainwin.eval("(" + ns.mainwin.internalSave.toString().replace("let ", "").replace("var fpParams", "fileInfo.fileExt=null;fileInfo.fileName=aDefaultFileName;var fpParams") + ")")
+                        (dialog.mLauncher.source.asciiSpec, null, (locationText ? locationText.value : dialog.mLauncher.suggestedFileName), null, null, null, null, null, null, ns.mainwin.document, 0, null);
+                }else{
+                    var file = (dialog.promptForSaveToFileAsync || dialog.promptForSaveToFile).call(dialog, dialog.mLauncher, window, dialog.mLauncher.suggestedFileName, "", true);
+                    if (file) {
+                        dialog.mLauncher.saveToDisk(file, 1);
+                        dialog.onCancel = function() {};
+                    }
+                }
+                close();
+
+            }, false);
+        },
+        download_dialog_showCompleteURL: function () {
+            var s = $("source");
+            s.value = dialog.mLauncher.source.spec;
+            s.setAttribute("crop", "center");
+            s.setAttribute("tooltiptext", dialog.mLauncher.source.spec);
+            s.addEventListener("dblclick", function() {
+                Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper)
+                    .copyString(dialog.mLauncher.source.spec)
+            }, false);
+        }
+    };
+
+    ns.init();
+
+    // From downloadSoundPlay.uc.js By Alice0775
+    function downloadSoundPlay(){
+        if(window.downloadPlaySound){
+            window.downloadPlaySound.uninit();
+            delete window.downloadPlaySound;
+        }
+
+        window.downloadPlaySound = {
             DL_START: "",
             DL_DONE: "file:///C:/WINDOWS/Media/chimes.wav", //设置响铃
             DL_CANCEL: "",
@@ -128,161 +360,12 @@
                 }
             }
         };
-        downloadPlaySound.init();
+        window.downloadPlaySound.init();
     }
 
-    function newDownload_button() {
-        document.getElementById('downloads-button').parentNode.addEventListener('click', function(e){
-            if(e.target.id == "downloads-button" || e.target.id == "downloads-indicator"){
-                if(e.button == 2 && !e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey){
-                    open_newDownload_dialog();
-                    e.stopPropagation();
-                    e.preventDefault();
-                }
-            }
-        }, false);
-    }
-
-    function newDownload_places() {
-        var button = document.querySelector("#placesToolbar").insertBefore(document.createElement("toolbarbutton"), document.querySelector("#clearDownloadsButton"));
-        button.id = "createNewDownload";
-        button.label = "新建下载";
-        button.style.paddingRight = "9px";
-        button.addEventListener("command", open_newDownload_dialog, false);
-        window.addEventListener("click", function(e) {
-            button.style.display = (document.getElementById("searchFilter").attributes.getNamedItem("collection").value == "downloads") ? "-moz-box" : "";
-        }, false);
-    }
-
-    function open_newDownload_dialog() {
-        window.openDialog("data:application/vnd.mozilla.xul+xml;charset=UTF-8;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPD94bWwtc3R5bGVzaGVldCBocmVmPSJjaHJvbWU6Ly9nbG9iYWwvc2tpbi8iIHR5cGU9InRleHQvY3NzIj8+Cjx3aW5kb3cgeG1sbnM9Imh0dHA6Ly93d3cubW96aWxsYS5vcmcva2V5bWFzdGVyL2dhdGVrZWVwZXIvdGhlcmUuaXMub25seS54dWwiIHdpZHRoPSI1MDAiIGhlaWdodD0iMzAwIiB0aXRsZT0i5paw5bu65LiL6L295Lu75YqhIj4KICAgIDxoYm94IGFsaWduPSJjZW50ZXIiIHRvb2x0aXB0ZXh0PSJodHRwOi8vd3d3LmV4YW1wbGUuY29tL1sxLTEwMC0zXSAgKFvlvIDlp4st57uT5p2fLeS9jeaVsF0pIj4KICAgICAgICA8bGFiZWwgdmFsdWU9IuaJuemHj+S7u+WKoSI+PC9sYWJlbD4KICAgICAgICA8dGV4dGJveCBmbGV4PSIxIi8+CiAgICA8L2hib3g+CiAgICA8dGV4dGJveCBpZD0idXJscyIgbXVsdGlsaW5lPSJ0cnVlIiBmbGV4PSIxIi8+CiAgICA8aGJveCBkaXI9InJldmVyc2UiPgogICAgICAgIDxidXR0b24gbGFiZWw9IuW8gOWni+S4i+i9vSIvPgogICAgPC9oYm94PgogICAgPHNjcmlwdD4KICAgICAgICA8IVtDREFUQVsKICAgICAgICBmdW5jdGlvbiBQYXJzZVVSTHMoKSB7CiAgICAgICAgICAgIHZhciBiYXRjaHVybCA9IGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoInRleHRib3giKS52YWx1ZTsKICAgICAgICAgICAgaWYgKC9cW1xkKy1cZCsoLVxkKyk/XF0vLnRlc3QoYmF0Y2h1cmwpKSB7CiAgICAgICAgICAgICAgICBmb3IgKHZhciBtYXRjaCA9IGJhdGNodXJsLm1hdGNoKC9cWyhcZCspLShcZCspLT8oXGQrKT9cXS8pLCBpID0gbWF0Y2hbMV0sIGogPSBtYXRjaFsyXSwgayA9IG1hdGNoWzNdLCB1cmxzID0gW107IGkgPD0gajsgaSsrKSB7CiAgICAgICAgICAgICAgICAgICAgdXJscy5wdXNoKGJhdGNodXJsLnJlcGxhY2UoL1xbXGQrLVxkKygtXGQrKT9cXS8sIChpICsgIiIpLmxlbmd0aCA8IGsgPyAoZXZhbCgiMTBlIiArIChrIC0gKGkgKyAiIikubGVuZ3RoKSkgKyAiIikuc2xpY2UoMikgKyBpIDogaSkpOwogICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgZG9jdW1lbnQucXVlcnlTZWxlY3RvcigiI3VybHMiKS52YWx1ZSA9IHVybHMuam9pbigiXG4iKTsKICAgICAgICAgICAgfSBlbHNlIHsKICAgICAgICAgICAgICAgIGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoIiN1cmxzIikudmFsdWUgPSBiYXRjaHVybDsKICAgICAgICAgICAgfQogICAgICAgIH0KICAgICAgICBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKCJ0ZXh0Ym94IikuYWRkRXZlbnRMaXN0ZW5lcigia2V5dXAiLCBQYXJzZVVSTHMsIGZhbHNlKTsKICAgICAgICBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKCJidXR0b24iKS5hZGRFdmVudExpc3RlbmVyKCJjb21tYW5kIiwgZnVuY3Rpb24gKCkgewogICAgICAgICAgICBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKCIjdXJscyIpLnZhbHVlLnNwbGl0KCJcbiIpLmZvckVhY2goZnVuY3Rpb24gKHVybCkgewogICAgICAgICAgICAgICAgb3BlbmVyLnNhdmVVUkwodXJsICwgbnVsbCwgbnVsbCwgbnVsbCwgdHJ1ZSwgbnVsbCwgZG9jdW1lbnQpOwogICAgICAgICAgICB9KTsKICAgICAgICAgICAgY2xvc2UoKQogICAgICAgIH0sIGZhbHNlKTsKICAgICAgICBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKCJ0ZXh0Ym94IikudmFsdWUgPSAob3BlbmVyLm9wZW5lciB8fCB3aW5kb3cub3BlbmVyKS5yZWFkRnJvbUNsaXBib2FyZCgpOwogICAgICAgIFBhcnNlVVJMcygpOwogICAgICAgIF1dPgogICAgPC9zY3JpcHQ+Cjwvd2luZG93Pg==",
-            "name", "top=" + (window.screenY + 50) + ",left=" + (window.screenX + 50));
-    }
-
-    function downloadsPanel_removeFile() {
-        var removeDownloadfile = {
-            removeStatus: function() {
-                var RMBtn = document.querySelector("#removeDownload");
-                var state = document.querySelector("#downloadsListBox").selectedItems[0].getAttribute('state');
-                RMBtn.setAttribute("disabled", "true");
-                if (state != "0" && state != "4" && state != "5")
-                    RMBtn.removeAttribute("disabled");
-            },
-            removeMenu: function() {
-                try {
-                    removeDownloadfile.removeStatus();
-                } catch (e) {};
-                if (document.querySelector("#removeDownload")) return;
-                var menuitem = document.createElement("menuitem"),
-                    rlm = document.querySelector('.downloadRemoveFromHistoryMenuItem');
-                menuitem.setAttribute("label", rlm.getAttribute("label").indexOf("History") != -1 ? "Delete File" : "\u4ECE\u786C\u76D8\u4E2D\u5220\u9664");
-                menuitem.setAttribute("id", "removeDownload");
-                menuitem.onclick = function() {
-                    var path = decodeURI(DownloadsView.richListBox.selectedItem.image)
-                        .replace(/moz\-icon\:\/\/file\:\/\/\//, "").replace(/\?size\=32$/, "")
-                        .replace(/\?size\=32\&state\=normal$/, "").replace(/\//g, "\\\\");
-                    if (DownloadsView.richListBox.selectedItem.getAttribute('state') == "2") {
-                        path = path + ".part";
-                    }
-                    var file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-                    file.initWithPath(path);
-                    file.exists() && file.remove(0);
-                    new DownloadsViewItemController(DownloadsView.richListBox.selectedItem).doCommand("cmd_delete");
-                };
-                document.querySelector("#downloadsContextMenu").appendChild(rlm);
-                document.querySelector("#downloadsContextMenu").insertBefore(menuitem, rlm.nextSibling);
-                removeDownloadfile.removeStatus();
-            },
-            Start: function() {
-                document.querySelector("#downloadsContextMenu").addEventListener("popupshowing", this.removeMenu, false);
-            }
-        }
-        try {
-            eval("DownloadsPanel.showPanel = " + DownloadsPanel.showPanel.toString()
-                .replace(/DownloadsPanel\.\_openPopupIfDataReady\(\)/, "{$&;removeDownloadfile\.Start\(\);}"));
-        } catch (e) {}
-    }
-
-    function download_dialog_showCompleteURL() {
-        var s = document.querySelector("#source");
-        s.value = dialog.mLauncher.source.spec;
-        s.setAttribute("crop", "center");
-        s.setAttribute("tooltiptext", dialog.mLauncher.source.spec);
-        s.addEventListener("dblclick", function() {
-            Components.classes["@mozilla.org/widget/clipboardhelper;1"].getService(Components.interfaces.nsIClipboardHelper).copyString(dialog.mLauncher.source.spec)
-        }, false);
-    }
-
-    function download_dialog_changeName() {
-        if (location != "chrome://mozapps/content/downloads/unknownContentType.xul") return;
-        document.querySelector("#mode").addEventListener("select", function() {
-            if (dialog.dialogElement("save").selected) {
-                if (!document.querySelector("#locationtext")) {
-                    var locationtext = document.querySelector("#location").parentNode.insertBefore(document.createElement("textbox"), document.querySelector("#location"));
-                    locationtext.id = "locationtext";
-                    locationtext.setAttribute("style", "margin-top:-2px;margin-bottom:-3px");
-                    locationtext.value = document.querySelector("#location").value;
-                }
-                document.querySelector("#location").hidden = true;
-                document.querySelector("#locationtext").hidden = false;
-            } else {
-                document.querySelector("#locationtext").hidden = true;
-                document.querySelector("#location").hidden = false;
-            }
-        }, false)
-        dialog.dialogElement("save").selected && dialog.dialogElement("save").click();
-        window.addEventListener("dialogaccept", function() {
-            if ((document.querySelector("#locationtext").value != document.querySelector("#location").value) && dialog.dialogElement("save").selected) {
-                dialog.mLauncher.saveToDisk(dialog.promptForSaveToFile(dialog.mLauncher, window, document.querySelector("#locationtext").value), 1);
-                dialog.onCancel = null;
-                document.documentElement.removeAttribute("ondialogaccept");
-            }
-        }, false);
-    }
-
-    function download_dialog_saveAs() {
-        var saveas = document.documentElement.getButton("extra1");
-        saveas.setAttribute("hidden", "false");
-        saveas.setAttribute("label", "\u53E6\u5B58\u4E3A");
-        saveas.setAttribute("oncommand", 'var file=(dialog.promptForSaveToFileAsync||dialog.promptForSaveToFile).call(dialog,dialog.mLauncher,window,dialog.mLauncher.suggestedFileName,"",true);if(file){dialog.mLauncher.saveToDisk(file,1);dialog.onCancel=function(){};close()}');
-    }
-
-    function autoClose_blankTab() {
-        eval("gBrowser.mTabProgressListener = " + gBrowser.mTabProgressListener.toString().replace(/(?=var location)/, '\
-            if (aWebProgress.DOMWindow.document.documentURI == "about:blank"\
-            && aRequest.QueryInterface(nsIChannel).URI.spec != "about:blank") {\
-            aWebProgress.DOMWindow.setTimeout(function() {\
-            !aWebProgress.isLoadingDocument && aWebProgress.DOMWindow.close();\
-            }, 100);\
-            }\
-        '));
+    function $(id, doc){
+        doc = doc || document;
+        return doc.getElementById(id);
     }
 
 })();
-
-
-// saveAndOpen 保存并打开,学习IE9.这里的open方式和下载框里选择的打开方式无关.打开只是调用系统的默认程序.相当于下载完成后双击该文件图标.
-
-location == "chrome://mozapps/content/downloads/unknownContentType.xul" && (function (s) {
-    var saveAndOpen = document.getAnonymousElementByAttribute(document.querySelector("*"), "dlgtype", "extra2");
-    saveAndOpen.parentNode.insertBefore(saveAndOpen,document.documentElement.getButton("accept").nextSibling.nextSibling);
-    saveAndOpen.setAttribute("hidden", "false");
-    saveAndOpen.setAttribute("label", "\u4FDD\u5B58\u5E76\u6253\u5F00");
-    saveAndOpen.setAttribute("oncommand", 'Components.classes["@mozilla.org/browser/browserglue;1"].getService(Components.interfaces.nsIBrowserGlue).getMostRecentBrowserWindow().saveAndOpen.urls.push(dialog.mLauncher.source.asciiSpec);document.querySelector("#save").click();document.documentElement.getButton("accept").disabled=0;document.documentElement.getButton("accept").click()')
-})()
-
-location == "chrome://browser/content/browser.xul" && (function () {
-    saveAndOpen = {
-        urls: [],
-        onStateChange: function (prog, req, flags, status, dl) {
-            if (flags == 327696 && !! ~this.urls.indexOf(dl.source.spec)) {
-                this.urls[this.urls.indexOf(dl.source.spec)] = "";
-                Cc["@mozilla.org/download-manager;1"].getService(Ci.nsIDownloadManager).getDownload(Cc["@mozilla.org/download-manager;1"].getService(Ci.nsIDownloadManager).DBConnection.lastInsertRowID).targetFile.launch();
-            }
-        },
-        onSecurityChange: function (prog, req, state, dl) {},
-        onProgressChange: function (prog, req, prog, progMax, tProg, tProgMax, dl) {},
-        onDownloadStateChange: function (state, dl) {}
-    }
-    Components.classes["@mozilla.org/download-manager;1"].getService(Components.interfaces.nsIDownloadManager).addListener(saveAndOpen);
-})()

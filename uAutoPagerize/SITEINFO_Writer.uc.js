@@ -16,7 +16,7 @@
 
 /**
  * 1、大幅修改以适应 uAutoPagerize 中文规则增强版，移植了 AutoPager 的自动识别功能
- * 2、给自带的开发工具右键添加 "设置 nextLink 的值" 和 "设置 pageElement 的值"
+ * 2、给自带的开发工具右键添加 "复制 xpath 的功能"
  */
 
 location == "chrome://browser/content/browser.xul" && (function(css){
@@ -51,11 +51,11 @@ location == "chrome://browser/content/browser.xul" && (function(css){
     	        <window id="main-window">\
     				<vbox id="sw-container" class="sw-add-element" hidden="true">\
     				    <hbox id="sw-hbox">\
+                          <toolbarbutton id="sw-discovery" tooltiptext="自动识别，来自 AutoPager" oncommand="siteinfo_writer.discoveryAll(true, true);" />\
     				      <toolbarbutton label="查看规则" oncommand="siteinfo_writer.toJSON();"/>\
     				      <toolbarbutton label="查看规则(SP)" oncommand="siteinfo_writer.toSuperPreLoaderFormat();"/>\
     				      <toolbarbutton id="sw-curpage-info" label="读取当前页面规则" oncommand="siteinfo_writer.getCurPageInfo();"/>\
     				      <toolbarbutton label="从剪贴板读取规则" oncommand="siteinfo_writer.readFromClipboard();"/>\
-    				      <toolbarbutton id="sw-discovery" tooltiptext="自动识别" oncommand="siteinfo_writer.discoveryAll(true, true);" />\
                           <toolbarbutton id="sw-launch" label="启动规则" tooltiptext="启动uAutoPagerize" oncommand="siteinfo_writer.launch();"/>\
                           <checkbox id="sw-useiframe" label="useiframe" checked="false"/>\
                           <checkbox id="sw-inspect-by-firebug" label="用Firebug查看元素" checked="' + this.USE_FIREBUG +'" \
@@ -103,7 +103,7 @@ location == "chrome://browser/content/browser.xul" && (function(css){
                                              tooltiptext="提取XPath"\
                                              oncommand="siteinfo_writer.inspect(\'nextLink\');"/>\
     				          <textbox id="sw-nextLink" \
-                                       onkeypress="if(event.keyCode == 13){ siteinfo_writer.xpathTest(\'nextLink\'); }"/>\
+                                       onkeypress="if(event.keyCode == 13){ siteinfo_writer.inspectMix(\'nextLink\'); }"/>\
     				          <toolbarbutton class="check"\
     				                         tooltiptext="测试XPath"\
     				                         oncommand="siteinfo_writer.xpathTest(\'nextLink\');"/>\
@@ -120,7 +120,7 @@ location == "chrome://browser/content/browser.xul" && (function(css){
                                              tooltiptext="提取XPath"\
                                              oncommand="siteinfo_writer.inspect(\'pageElement\');"/>\
     				          <textbox id="sw-pageElement" \
-                                             onkeypress="if(event.keyCode == 13){ siteinfo_writer.xpathTest(\'pageElement\'); }"/>\
+                                             onkeypress="if(event.keyCode == 13){ siteinfo_writer.inspectMix(\'pageElement\'); }"/>\
     				          <toolbarbutton class="check"\
     				                         tooltiptext="测试XPath"\
     				                         oncommand="siteinfo_writer.xpathTest(\'pageElement\');"/>\
@@ -272,7 +272,12 @@ location == "chrome://browser/content/browser.xul" && (function(css){
             if(info){
                 this.setAllValue(info);
             }else{
-                this.discoveryAll(true, true);
+                // this.discoveryAll(true, false);
+                info = {
+                    nextLink: "auto;"
+                }
+                this.setAllValue(info)
+                this.setUrl();
             }
 
     		this.container.hidden = false;
@@ -537,7 +542,7 @@ location == "chrome://browser/content/browser.xul" && (function(css){
     				content.AutoPagerize.launchAutoPager([i]);
     			else alert("翻页规则语法正确，但uAutoPagerize无法执行，可能uAutoPagerize被禁用或没有安装脚本");
     		} else {
-                alert("下一页链接或页面内容没有找到");
+                alert("有错误发生，请分别检查 url、nextLink、pageElement 是否正确");
     		}
     	},
     	inspect: function(aType) {
@@ -555,8 +560,13 @@ location == "chrome://browser/content/browser.xul" && (function(css){
         inspectMix: function(aType) {
             let xpath = this[aType].value;
             let doc = content.document;
+
+            var elem;
             try{
-                var elem = getFirstElementByXPath(xpath, doc);
+                if(xpath.startsWith("css;"))
+                    elem = doc.querySelector(xpath.slice(4))
+                else
+                    elem = getFirstElementByXPath(xpath, doc);
             }catch(e){
                 return;
             }
@@ -568,7 +578,7 @@ location == "chrome://browser/content/browser.xul" && (function(css){
                 this.devtools = this.loadDevtools();
 
             // 已经存在则直接启动
-            if(window.Firebug && Firebug.isInitialized){
+            if(window.Firebug && Firebug.isInitialized && Firebug.currentContext){
                 this.inspectWithFirebug(elem);
                 return;
             }else{
@@ -640,7 +650,7 @@ location == "chrome://browser/content/browser.xul" && (function(css){
                 this.xpathTest("pageElement");
                 setTimeout(function(self){
                     self.xpathTest("nextLink");
-                }, 1000, this)
+                }, 2000, this)
             }
         },
         discovery: function(aType){
@@ -663,15 +673,17 @@ location == "chrome://browser/content/browser.xul" && (function(css){
             range.detach();
 
             for (let [i, item] in Iterator(items)) {
-                if(item == "-"){
+                if(item == "-" ){
+                    if(i == 0 || i == (items.length - 1))
+                        break;
                     this.popup.appendChild(document.createElement("menuseparator"));
                     continue;
                 }
 
                 let menuitem = document.createElement("menuitem");
-                menuitem.setAttribute("label", item.xpath);
+                menuitem.setAttribute("label", item.xpath || item);
                 menuitem.setAttribute("oncommand", "siteinfo_writer['"+ aType +"'].value = this.getAttribute('label');" +
-                    "siteinfo_writer.xpathTest('"+ aType +"');");
+                    "siteinfo_writer.inspectMix('"+ aType +"');");
                 this.popup.appendChild(menuitem);
             }
 
@@ -1830,41 +1842,90 @@ location == "chrome://browser/content/browser.xul" && (function(css){
     			delete this.target.orgcss;
     		}
     	},
-        getXPath: function(originalTarget){
-            var doc = originalTarget.ownerDocument;
-            var items = [];
-            items = autopagerXPath.discoveryMoreLinks(doc, items, [originalTarget]);
-
-            // if(this.aType == "nextLink"){
-                // var pushParentXPath = function(elem){
-                //     if (elem && elem.parentNode && elem.parentNode.tagName.toLowerCase() == "a") {
-                //         var aItems = autopagerXPath.discoveryMoreLinks(doc, [], [elem.parentNode]);
-                //         if (!aItems) return;
-                //         items.push("-");
-                //         for (var i in aItems)
-                //             items.push(aItems[i]);
-                //     }
-                // };
-
-                // pushParentXPath(originalTarget);
-                // pushParentXPath(originalTarget.parentNode);
-            // }
-
-            return items;
-        },
-
         ATTR_CLASSID: 0,
         ATTR_ID: 1,
         ATTR_CLASS: 2,
         ATTR_NOT_CLASSID: 3,
         ATTR_FULL: 4,
+        TEXT: 5,
+        NEXT_REG: /[下后][一]?[页张个篇章节步]/,
+        getXPath: function(originalTarget) {
+            var nodes = getElementsByXPath(
+                'ancestor-or-self::*[not(local-name()="html" or local-name()="HTML" or local-name()="body" or local-name()="BODY")]', originalTarget).reverse();
+            if (nodes.length == 0) return [];
+
+            var current = nodes.shift();
+            var obj = {};
+            obj.localnames       = current.localName;
+            obj.self_classid     = this.getElementXPath(current, this.ATTR_CLASSID);
+            obj.self_id          = this.getElementXPath(current, this.ATTR_ID);
+            obj.self_class       = this.getElementXPath(current, this.ATTR_CLASS);
+            obj.self_attr        = this.getElementXPath(current, this.ATTR_NOT_CLASSID);
+            obj.self_full        = this.getElementXPath(current, this.ATTR_FULL);
+            obj.ancestor_classid = obj.self_classid;
+            obj.ancestor_id      = obj.self_id;
+            obj.ancestor_class   = obj.self_class;
+            obj.ancestor_attr    = obj.self_attr;
+            obj.ancestor_full    = obj.self_full;
+
+            if(this.aType == "nextLink"){
+                // TODO: descendant
+                obj.self_text        = this.getElementXPath(current, this.TEXT);
+                obj.ancestor_text    = obj.self_text;
+            }
+
+            var hasId = current.getAttribute("id");
+            for (let [i, elem] in Iterator(nodes)) {
+                obj.localnames = elem.localName + "/" + obj.localnames;
+
+                if (!hasId) {
+                    hasId = elem.getAttribute("id");
+                    obj.ancestor_classid = this.getElementXPath(elem, this.ATTR_CLASSID) + "/" + obj.ancestor_classid;
+                    obj.ancestor_id = this.getElementXPath(elem, this.ATTR_ID) + "/" + obj.ancestor_id;
+                    obj.ancestor_full = this.getElementXPath(elem, this.ATTR_FULL) + "/" + obj.ancestor_full;
+                    if(this.aType == "nextLink"){
+                        obj.ancestor_text = this.getElementXPath(elem, this.ATTR_CLASSID) + "/" + obj.ancestor_text;
+                    }
+                }
+                obj.ancestor_class = this.getElementXPath(elem, this.ATTR_NOT_CLASS) + "/" + obj.ancestor_class;
+                obj.ancestor_attr = this.getElementXPath(elem, this.ATTR_NOT_CLASSID) + "/" + obj.ancestor_attr;
+            }
+
+            if(this.aType == "nextLink"){
+                let xpaths = obj.ancestor_text.split("/");
+                if(xpaths.length >= 3){
+                    var lastXPath = xpaths.pop()
+                    xpaths.pop()  //去掉倒数第2个
+                    obj.text_descendant = xpaths.join("/") + "/descendant::" + lastXPath;
+                }
+            }
+
+            for (let [key, val] in Iterator(obj)) {
+                if (val.substr(0, 4) !== 'id("')
+                    obj[key] = val = "//" + val;
+            }
+            var res = [x for each(x in obj)].filter(function(e, i, a) a.indexOf(e) === i).sort(function(a, b){
+                let aa = a.substr(0, 4) == 'id("';
+                let bb = b.substr(0, 4) == 'id("';
+                if ((aa && bb) || (!aa && !bb))
+                    return b.length - a.length;
+                return bb? 1 : -1;
+            });
+            //var res = [[x, obj[x]] for(x in obj)].sort(function([a,], [b,]) a >= b);
+            ////inspectObject([x for each(x in res)]);
+            //res = [x for each([,x] in res)].filter(function(e, i, a) a.indexOf(e) === i);
+            ////inspectObject(res);
+            return res;
+        },
         getElementXPath: function(elem, constant) {
             if (!elem.getAttribute)
                 return "";
 
             if (this.ATTR_CLASSID == constant) {
-                if (elem.getAttribute("id"))
-                    return 'id("'+ elem.getAttribute('id') +'")';
+                let elemId = elem.getAttribute("id")
+                if (elemId)
+                    return 'id("'+ elemId +'")';
+
                 if (elem.getAttribute("class"))
                     return elem.nodeName.toLowerCase() + '[@class="' + elem.getAttribute("class") + '"]';
                 return elem.nodeName.toLowerCase();
@@ -1923,8 +1984,30 @@ location == "chrome://browser/content/browser.xul" && (function(css){
                 xpath += '[' + arr.join(" and ") + ']';
             return xpath;
         },
-    };
 
+        getXPath_AP: function(originalTarget){
+            var doc = originalTarget.ownerDocument;
+            var items = [];
+            items = autopagerXPath.discoveryMoreLinks(doc, items, [originalTarget]);
+
+            // if(this.aType == "nextLink"){
+                // var pushParentXPath = function(elem){
+                //     if (elem && elem.parentNode && elem.parentNode.tagName.toLowerCase() == "a") {
+                //         var aItems = autopagerXPath.discoveryMoreLinks(doc, [], [elem.parentNode]);
+                //         if (!aItems) return;
+                //         items.push("-");
+                //         for (var i in aItems)
+                //             items.push(aItems[i]);
+                //     }
+                // };
+
+                // pushParentXPath(originalTarget);
+                // pushParentXPath(originalTarget.parentNode);
+            // }
+
+            return items;
+        },
+    };
 
     function log(arg){ Application.console.log("[SITEINFO_Writer] " + arg); }
     function $(id) document.getElementById(id);
@@ -1934,6 +2017,7 @@ location == "chrome://browser/content/browser.xul" && (function(css){
     	if (attr) Object.keys(attr).forEach(function(n) el.setAttribute(n, attr[n]));
     	return el;
     }
+
 
     function wildcardToRegExpStr(urlstr) {
     	if (urlstr.source) return urlstr.source;
@@ -2108,95 +2192,84 @@ location == "chrome://browser/content/devtools/framework/toolbox.xul" && (functi
     let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
     if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
 
+    var mainwin = Services.wm.getMostRecentWindow("navigator:browser");
+    var siteinfo_writer = mainwin.siteinfo_writer || {}
+
     var ns = {
         init: function(){
-            this.chromeWin = Services.wm.getMostRecentWindow("navigator:browser");
+            var panel = document.getElementById("toolbox-panel-inspector")
+            if(!panel) return;
 
-            this.siteinfo_writer = this.chromeWin.siteinfo_writer;
-            if(!this.siteinfo_writer) return;
+            ns.addIframeListener()
 
-            var inspectorIframe = document.getElementById("toolbox-panel-iframe-inspector");
-            if(!inspectorIframe) return;
-
-            this.doc = inspectorIframe.contentDocument;
-            this.win = inspectorIframe.contentWindow;
-
-            this.inspectorPopup = this.doc.getElementById("inspector-node-popup");
-            this.inspectorPopup.addEventListener("popupshowing", this.inspectorPopupShowing, false);
+            // 从其它面板转过来，未成功
+            // var observer = new MutationObserver(function(mutations){
+            //     mutations.forEach(function(mutation){
+            //         if(mutation.addedNodes.length){
+            //             ns.addIframeListener()
+            //         }
+            //     })
+            // });
+            // observer.observe(panel, {childList: true})
         },
-        inspectorPopupShowing: function(event){
+        addIframeListener: function(){
+            var iframe = document.getElementById("toolbox-panel-iframe-inspector");
+            if(!iframe) return;
+
+            var doc = iframe.contentDocument;
+            ns.win = iframe.contentWindow;
+
+            ns.iframeInit(doc);
+        },
+        iframeInit: function(doc){
+            // 添加菜单
+            var popup = doc.getElementById("inspector-node-popup");
+            if(!popup){
+                throw("[SITEINFO_Writer] inspector popup node not find.")
+            }
+
+            var m = $C("menu", {
+                label: "Get XPath",
+                id: "menu-copy-xpath",
+                accesskey: "x"
+            });
+            var p = m.appendChild($C("menupopup", {}));
+            p.addEventListener("popupshowing", ns.onPopupshowing, false);
+            popup.insertBefore(m, popup.firstChild);
+        },
+        onPopupshowing: function(event){
+            var popup = event.target;
+            var range = document.createRange();
+            range.selectNodeContents(popup);
+            range.deleteContents();
+            range.detach();
+
             var inspector = ns.win.inspector;
-            if(!inspector.selection.isNode())
-                return;
+            var elem = inspector.selection.node;
 
-            var siteinfo_writer = ns.siteinfo_writer;
-            var ins = event.originalTarget;
-            var items = siteinfo_writer.findXPathes(inspector.selection.node);
-
-            // nextLink menu
-            var nextLinkMenu = ns.doc.getElementById("menu-set-nextLink");
-            var nextLinkPopup;
-            if(nextLinkMenu){
-                nextLinkPopup = nextLinkMenu.children[0];
-                deleteContents(nextLinkPopup);
-                ns.addPopupItems(nextLinkPopup, items);
-            }else{
-                nextLinkMenu = $C("menu", {
-                    id: "menu-set-nextLink",
-                    label: "设置 nextLink 的值"
-                });
-                nextLinkPopup = ns.addPopupItems(null, items);
-                nextLinkMenu.appendChild(nextLinkPopup);
-                ins.insertBefore(nextLinkMenu, ins.children[0]);
-
-                nextLinkPopup.addEventListener("click", function(event){
-                    if(siteinfo_writer.container.hidden)
-                        siteinfo_writer.show();
-                    siteinfo_writer.nextLink.value = event.target.label;
-                }, false);
-            }
-
-            // pageElement menu
-            var pageElementMenu = ns.doc.getElementById("menu-set-pageElement");
-            var pageElementPopup;
-            if(pageElementMenu){
-                pageElementPopup = pageElementMenu.children[0];
-                deleteContents(pageElementPopup);
-                ns.addPopupItems(pageElementPopup, items);
-            }else{
-                pageElementMenu = $C("menu", {
-                    id: "menu-set-pageElement",
-                    label: "设置 pageElement 的值"
-                });
-                pageElementPopup = ns.addPopupItems(null, items);
-                pageElementMenu.appendChild(pageElementPopup);
-                ins.insertBefore(pageElementMenu, ins.children[1]);
-
-                pageElementPopup.addEventListener("click", function(event){
-                    if(siteinfo_writer.container.hidden)
-                        siteinfo_writer.show();
-                    siteinfo_writer.pageElement.value = event.target.label;
-                }, false);
-            }
-
-            function deleteContents(menupopup){
-                let range = document.createRange();
-                range.selectNodeContents(menupopup);
-                range.deleteContents();
-                range.detach();
+            if(siteinfo_writer){
+                var items = siteinfo_writer.findXPathes(elem);
+                ns.createMenuitem(popup, items);
             }
         },
-        addPopupItems: function(popup, items){
-            popup = popup ||  $C("menupopup", {});
+        createMenuitem: function(popup, items) {
             for (let [i, item] in Iterator(items)) {
-                popup.appendChild($C("menuitem", {
-                    label: item.xpath,
-                    tooltiptext: item.xpath
-                }));
-            }
+                let str = item.xpath
 
-            return popup;
-        }
+                let m = document.createElement("menuitem");
+                m.setAttribute("label", str);
+                m.setAttribute("class", "menuitem-non-iconic");
+                m.style.setProperty("max-width","63em","important");
+                if (str.length > 110)
+                    m.setAttribute("tooltiptext", str);
+                m.addEventListener("click", ns.copyToClipboard, false)
+
+                popup.appendChild(m);
+            }
+        },
+        copyToClipboard: function(event) {
+            Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(event.target.getAttribute("label"));
+        },
     };
 
     ns.init();

@@ -44,9 +44,10 @@
 // 放置的位置，true为地址栏，false为附加组件栏（可移动按钮）
 var isUrlbar = false;
 
-// 原版规则是否启用？略大，但很多站点都可以翻页
-var ORIGINAL_SITEINFO = true;
-var SIMPLE_SEPARATOR = false;  // true 原版的分隔条，false 多功能分隔条
+
+var ORIGINAL_SITEINFO = true;  // 原版规则是否启用？略大，但很多站点都可以翻页
+var LAUNCH_ORIGINAL_SITEINFO = true;  // false 为不运行原版规则，只给 siteinfo_writer 搜索规则用
+var SIMPLE_SEPARATOR = true;  // true 原版的分隔条，false 多功能分隔条
 
 var DB_FILENAME_CN =  "uSuper_preloader.db.js";   // 中文数据库的位置
 var DB_FILENAME_JSON = "uAutoPagerize.json";      // 原版数据库位置
@@ -332,7 +333,7 @@ var ns = window.uAutoPagerize = {
         if (!getCache())
             requestSITEINFO();
 
-        if(!ns.loadSetting_cn())
+        if(!ns.loadSetting_CN())
             ns.requestSITEINFO_CN();
 
         ns.INCLUDE = INCLUDE;
@@ -701,26 +702,26 @@ var ns = window.uAutoPagerize = {
                 }
             }
 
-            if (!info) [index, info, nextLink] = ns.getInfo(ns.SITEINFO, win);
+            if (!info && LAUNCH_ORIGINAL_SITEINFO) [index, info, nextLink] = ns.getInfo(ns.SITEINFO, win);
 
             if (!info) [, info, nextLink] = ns.getInfo(ns.MICROFORMAT, win);
 
             // 强制拼接
             if(!info && win.localStorage.ap_force_nextpage){
                 nextLink = autoGetLink(doc);
-                if(nextLink){
+                if(nextLink)
                     info = FORCE_SITEINFO;
-                }
             }
 
-            let spenTime = "耗时: "+ (new Date().getTime() - startTime) + 'ms。';
+            let spenTime = "耗时: "+ (new Date().getTime() - startTime) + 'ms. ';
             if (info) {
                 debug("  找到匹配当前站点的规则: 是[" + info.type + ']第' + (index + 1) + '规则，' + spenTime +
                     "开始运行 Autopager");
                 win.ap = new AutoPager(win.document, info, nextLink);
             }else{
-                let infoLength = ns.MY_SITEINFO.length + ns.SITEINFO_CN.length +
-                                ns.SITEINFO.length + ns.MICROFORMAT.length;
+                let infoLength = ns.MY_SITEINFO.length + ns.SITEINFO_CN.length + ns.MICROFORMAT.length;
+                if(LAUNCH_ORIGINAL_SITEINFO)
+                    infoLength += ns.SITEINFO.length;
                 debug("  所有规则都没法找到下一页或内容，" + "共查找规则" + infoLength + "个，" + spenTime +
                     "结束运行");
             }
@@ -767,7 +768,7 @@ var ns = window.uAutoPagerize = {
                 if ( !exp.test(locationHref) ) continue;
 
                 if (info.url.length > 12)
-                    debug("  找到匹配当前站点的规则：[" + (info.type || "") + "]" + "第" + index + "个");
+                    debug("  匹配地址的规则：[" + (info.type || "") + "]" + "第" + (index + 1) + "个");
 
                 var nextLink = getElementMix(info.nextLink, doc);
                 if (!nextLink) {
@@ -1208,8 +1209,11 @@ AutoPager.prototype = {
         iframe.contentDocument.location.href = this.requestURL;
 
         function onload(event){
-            iframe.removeEventListener(event.type, onload, true);
             var doc = event.originalTarget;
+            if (doc.location.href == "about:blank" || doc.defaultView.frameElement)
+                return;
+
+            iframe.removeEventListener(event.type, onload, true);
             self.iframeLoad.apply(self, [doc]);
         }
 
@@ -1246,9 +1250,6 @@ AutoPager.prototype = {
         this.beforeLoaded(htmlDoc);
     },
     iframeLoad: function (doc) {
-        if (doc.location.href == "about:blank" || doc.defaultView.frameElement)
-            return;
-
         let win = doc.defaultView;
         win.scroll(win.scrollX, 99999);  //滚动到底部,针对,某些使用滚动事件加载图片的网站.
 
@@ -1279,7 +1280,7 @@ AutoPager.prototype = {
         }
 
         if (!page || page.length < 1 ) {
-            debug('  pageElement not found.', this.info.pageElement, htmlDoc.documentElement.innerHTML);
+            debug('  pageElement not found.', this.info.pageElement);
             this.state = 'terminated';
             return;
         }
@@ -1800,14 +1801,14 @@ function launchAutoPager_org(list, win) {
 // 获取更新 Super_preloader.db
 (function(){
 
-    ns.requestSITEINFO_CN = requestSITEINFO;
+    ns.requestSITEINFO_CN = requestSITEINFO_CN;
 
     ns.resetSITEINFO_CN = function(){
         if (confirm('确定要重置 Super_preloader 及其它规则吗？'))
-            requestSITEINFO(SITEINFO_CN_IMPORT_URLS);
+            requestSITEINFO_CN(SITEINFO_CN_IMPORT_URLS);
     };
 
-    ns.loadSetting_cn = function(isAlert) {
+    ns.loadSetting_CN = function(isAlert) {
         var data = loadText(ns.file_cn);
         if (!data) return false;
         var sandbox = new Cu.Sandbox( new XPCNativeWrapper(window) );
@@ -1859,7 +1860,7 @@ function launchAutoPager_org(list, win) {
     var finishCount = 0;
     var dataStr = "";
 
-    function requestSITEINFO(){
+    function requestSITEINFO_CN(){
         finishCount = 0;
         dataStr = "";
         // debug(" request Super_preloader.db");
@@ -1871,7 +1872,7 @@ function launchAutoPager_org(list, win) {
                 overrideMimeType: "text/plan; charset=utf-8;",
                 onload: function(res) {
                     xhrStates[i] = 'loaded';
-                    getCacheCallback(res, i);
+                    getCacheCallback_CN(res, i);
                 },
                 onerror: function(res) {
                     xhrStates[i] = 'error';
@@ -1888,7 +1889,7 @@ function launchAutoPager_org(list, win) {
         });
     }
 
-    function getCacheCallback(res, url) {
+    function getCacheCallback_CN(res, url) {
         if (res.status != 200) {
             return getCacheErrorCallback(url);
         }
@@ -1906,16 +1907,13 @@ function launchAutoPager_org(list, win) {
         finishCount += 1;
         if(finishCount >= SITEINFO_CN_IMPORT_URLS.length){
             saveFile(DB_FILENAME_CN, dataStr);
-            ns.loadSetting_cn();
+            ns.loadSetting_CN();
             alerts("uAutoPagerize", "中文规则已经更新完毕");
         }
 
         log('getCacheCallback:' + url);
     }
 
-    function getCacheErrorCallback(url) {
-        log('getCacheErrorCallback:' + url);
-    }
 })();
 
 // 来自 NLF 的 Super_preloader

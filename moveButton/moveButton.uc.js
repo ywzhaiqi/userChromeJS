@@ -105,7 +105,7 @@ var moveButton = {
                 }
 
                 if (info.insertAfter && (ins = $(info.insertAfter))){
-                    ins.parentNode.insertBefore(button, ins);
+                    ins.parentNode.insertBefore(button, ins.nextSlibing);
 
                     this.buttons.splice(i, 1);
                     continue;

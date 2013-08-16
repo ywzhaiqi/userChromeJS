@@ -103,7 +103,7 @@ location == "chrome://browser/content/browser.xul" && (function(css){
                                              tooltiptext="提取XPath"\
                                              oncommand="siteinfo_writer.inspect(\'nextLink\');"/>\
     				          <textbox id="sw-nextLink" \
-                                       onkeypress="if(event.keyCode == 13){ siteinfo_writer.inspectMix(\'nextLink\'); }"/>\
+                                       onkeypress="if(event.keyCode == 13){ siteinfo_writer.xpathTest(\'nextLink\'); }"/>\
     				          <toolbarbutton class="check"\
     				                         tooltiptext="测试XPath"\
     				                         oncommand="siteinfo_writer.xpathTest(\'nextLink\');"/>\
@@ -120,7 +120,7 @@ location == "chrome://browser/content/browser.xul" && (function(css){
                                              tooltiptext="提取XPath"\
                                              oncommand="siteinfo_writer.inspect(\'pageElement\');"/>\
     				          <textbox id="sw-pageElement" \
-                                             onkeypress="if(event.keyCode == 13){ siteinfo_writer.inspectMix(\'pageElement\'); }"/>\
+                                             onkeypress="if(event.keyCode == 13){ siteinfo_writer.xpathTest(\'pageElement\'); }"/>\
     				          <toolbarbutton class="check"\
     				                         tooltiptext="测试XPath"\
     				                         oncommand="siteinfo_writer.xpathTest(\'pageElement\');"/>\
@@ -683,7 +683,7 @@ location == "chrome://browser/content/browser.xul" && (function(css){
                 let menuitem = document.createElement("menuitem");
                 menuitem.setAttribute("label", item.xpath || item);
                 menuitem.setAttribute("oncommand", "siteinfo_writer['"+ aType +"'].value = this.getAttribute('label');" +
-                    "siteinfo_writer.inspectMix('"+ aType +"');");
+                    "siteinfo_writer.xpathTest('"+ aType +"');");
                 this.popup.appendChild(menuitem);
             }
 
@@ -1835,7 +1835,7 @@ location == "chrome://browser/content/browser.xul" && (function(css){
     		XULBrowserWindow.statusTextField.label = this.getElementXPath(this.target, this.ATTR_FULL);
     	},
     	lowlight : function() {
-    		if ("orgcss" in this.target) {
+    		if (this.target && "orgcss" in this.target) {
     			this.target.orgcss?
     				this.target.style.cssText = this.target.orgcss:
     				this.target.removeAttribute("style");

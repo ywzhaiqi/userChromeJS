@@ -7,6 +7,7 @@
 // @description    Snap Links for userChromeJS
 // @include        main
 // @charset        UTF-8
+// @version        2012/08/22 add copy links Reverse by ywzhaiqi
 // @version        2012/06/28 add radiobox options.
 // @version        2012/06/01 hide entry menu on link, image, text input area or context selected.
 // @version        2012/04/02 fixed by lastdream2013, add display count, fix open/copy url order, add context menu and fix memory leak
@@ -51,7 +52,7 @@ snapLinks.init();
 			          class="hasLink"
 			          oncommand="snapLinks.copyLinks();" />
             <menuitem label="复制所有链接URL（反向）"
-                id="SnapLinksCopyLinks"
+                id="SnapLinksCopyLinksReverse"
                       class="hasLink"
                       oncommand="snapLinks.copyLinks(null, true);" />
 			<menuitem label="在新标签页打开所有图片链接" hidden="true"
@@ -340,25 +341,29 @@ var snapLinks = {
 		if ( imagecount > 0 ) cls.push("hasImageLink");
 		if ( checkboxcount > 0 ) cls.push("hasCheckbox");
 		if ( radiocount > 0 ) cls.push("hasRadio");
-             var currentEntry=document.getElementById("SnapLinksOpenLinks");
-			if(currentEntry){  currentEntry.setAttribute("label", "在新标签打开所有链接 (" + linkcount +")"); }
-             var currentEntry=document.getElementById("SnapLinksCopyLinks");
-			if(currentEntry){  currentEntry.setAttribute("label", "复制所有链接URL (" + linkcount +")"); }
-             var currentEntry=document.getElementById("SnapLinksOpenImageLinks");
-			if(currentEntry){  currentEntry.setAttribute("label", "在新标签页打开所有图片链接 (" + imagecount +")"); }
-             var currentEntry=document.getElementById("SnapLinksImageLinksOnePage");
-			if(currentEntry){  currentEntry.setAttribute("label", "在一个标签页显示所有图片链接 (" + imagecount +")"); }
-             var currentEntry=document.getElementById("SnapLinksCheckBoxSelect");
-			if(currentEntry){  currentEntry.setAttribute("label", "复选框 - 选中 (" + checkboxcount +")"); }
-             var currentEntry=document.getElementById("SnapLinksCheckBoxCancel");
-			if(currentEntry){  currentEntry.setAttribute("label", "复选框 - 取消 (" + checkboxcount +")"); }
-             var currentEntry=document.getElementById("SnapLinksCheckBoxTaggle");
-			if(currentEntry){  currentEntry.setAttribute("label", "复选框 - 反选 (" + checkboxcount +")"); }
 
-             var currentEntry=document.getElementById("SnapLinksRadioSelect");
-			if(currentEntry){  currentEntry.setAttribute("label", "单选框 - 选中 (" + radiocount +")"); }
-             var currentEntry=document.getElementById("SnapLinksRadioCancel");
-			if(currentEntry){  currentEntry.setAttribute("label", "单选框 - 取消 (" + radiocount +")"); }
+		var setCount = function(id, label){
+			let currentEntry = document.getElementById(id);
+			if(currentEntry)
+				currentEntry.setAttribute("label", label);
+		};
+
+		var data = {
+			"SnapLinksOpenLinks": "在新标签打开所有链接 (" + linkcount + ")",
+			"SnapLinksCopyLinks": "复制所有链接URL (" + linkcount + ")",
+			"SnapLinksCopyLinksReverse": "复制所有链接URL (" + linkcount + ")(反向)",
+			"SnapLinksOpenImageLinks": "在新标签页打开所有图片链接 (" + imagecount + ")",
+			"SnapLinksImageLinksOnePage": "在一个标签页显示所有图片链接 (" + imagecount + ")",
+			"SnapLinksCheckBoxSelect": "复选框 - 选中 (" + checkboxcount + ")",
+			"SnapLinksCheckBoxCancel": "复选框 - 取消 (" + checkboxcount + ")",
+			"SnapLinksCheckBoxTaggle": "复选框 - 反选 (" + checkboxcount + ")",
+			"SnapLinksRadioSelect": "单选框 - 选中 (" + radiocount + ")",
+			"SnapLinksRadioCancel": "单选框 - 取消 (" + radiocount + ")",
+		};
+
+		for(let id in data){
+			setCount(id, data[id]);
+		}
 
 		if (cls.length > 0) {
 			this.popup.className = cls.join(' ');
@@ -384,26 +389,14 @@ var snapLinks = {
 		}).map(function(e) e.href);
 
         // 筛选出重复的
-        var newLinks = [];
-        links.forEach(function(link){
-            for (var i = newLinks.length - 1; i >= 0; i--) {
-                if(newLinks[i] == link)
-                    return
-            }
-            newLinks.push(link)
-        })
+        links = this.unique(links);
 
-        links = []
-        if(reverse){
-            for (var i = newLinks.length - 1; i >= 0; i--) {
-                links.push(newLinks[i])
-            }
-        }else{
-            links = newLinks;
-        }
+        if(reverse)
+        	links = links.reverse();
 
 		if (links.length){
-			Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper)
+			Components.classes["@mozilla.org/widget/clipboardhelper;1"]
+				.getService(Components.interfaces.nsIClipboardHelper)
                 .copyString(links.join('\n'));
 		}
 	},
@@ -438,6 +431,19 @@ var snapLinks = {
 			}
 		}
 	},
+	unique: function(a){
+		var o = {},
+			r = [],
+			t;
+		for (var i = 0, l = a.length; i < l; i++) {
+			t = a[i];
+			if(!o[t]){
+				o[t] = true;
+				r.push(t);
+			}
+		}
+		return r;
+	}
 };
 (function () {
 	function optionsShowHide() {

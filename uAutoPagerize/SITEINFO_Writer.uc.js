@@ -21,13 +21,13 @@
 
 location == "chrome://browser/content/browser.xul" && (function(css){
 
+    if (window.siteinfo_writer) {
+        window.siteinfo_writer.destroy();
+        delete window.siteinfo_writer;
+    }
+
     let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
     if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
-
-    if (window.siteinfo_writer) {
-    	window.siteinfo_writer.destroy();
-    	delete window.siteinfo_writer;
-    }
 
     var ns = window.siteinfo_writer = {
         USE_FIREBUG: false,
@@ -38,7 +38,6 @@ location == "chrome://browser/content/browser.xul" && (function(css){
         },
 
     	init: function() {
-
             try{
                 ns["USE_FIREBUG"] = ns.prefs.getBoolPref("USE_FIREBUG");
             }catch(e) {}
@@ -287,7 +286,8 @@ location == "chrome://browser/content/browser.xul" && (function(css){
     	},
         setUrl: function() {
             var location = content.location;
-            var url = location.protocol + "//" + location.host + location.pathname;
+            // var url = location.protocol + "//" + location.host + location.pathname;
+            var url = location.href;
 
             this.url.value = "^" + url.replace(/[()\[\]{}|+.,^$?\\]/g, '\\$&');
             this.url.className = "";
@@ -547,9 +547,15 @@ location == "chrome://browser/content/browser.xul" && (function(css){
     	},
         inspect: function(aType){
             var self = this;
+            if(window.dactyl)
+                dactyl.execute(":js modes.push(modes.PASS_THROUGH, null, null);")
+
             Aardvark.start(function(elem){
                 let items = self.findXPathes(elem);
                 self.createXPathPopupMenu(items, aType);
+
+                if(window.dactyl)
+                    dactyl.execute(":js modes.cleanup();")
             });
         },
     	inspect_old: function(aType) {
@@ -708,28 +714,29 @@ location == "chrome://browser/content/browser.xul" && (function(css){
             var selector = textbox.value;
             var autoGetLink = uAutoPagerize.autoGetLink;
             var doc = content.document;
-    		try {
-                var elements;
-                if(selector.startsWith("css;")){
-                    selector = selector.slice(4);
-                    if(selector)
-                        elements = doc.querySelectorAll(selector);
-                    else
-                        return alert("css; 后面不能为空");
-                }else if(autoGetLink && selector.trim() == "auto;"){
-                    let nextLink = autoGetLink(doc);
-                    if(nextLink)
-                        elements = [nextLink];
-                    else
-                        return alert("没有找到下一页链接");
-                }else{
-                    elements = getElementsByXPath(selector, doc);
-                }
-    		} catch (e) {
-                return alert(e);
-    		}
 
-            if(elements && elements[0]){
+    		var elements = [];
+            if(selector.startsWith("css;")){
+                selector = selector.slice(4);
+                if(selector)
+                    elements = doc.querySelectorAll(selector);
+                else
+                    return alert("css; 后面接css选择器，例如 css;#content");
+            }else if(autoGetLink && selector.trim() == "auto;"){
+                let nextLink = autoGetLink(doc);
+                if(nextLink)
+                    elements = [nextLink];
+                else
+                    return alert("自动查找没有找到下一页链接");
+            }else{
+                try{
+                   elements = getElementsByXPath(selector, doc);
+                } catch (e) {
+                    return alert(e);
+                }
+            }
+
+            if(elements[0]){
                 elements[0].scrollIntoView();
             }else{
                 return alert("没有找到元素");
@@ -2032,9 +2039,6 @@ location == "chrome://browser/content/browser.xul" && (function(css){
                 command = "select";
             else if (event.charCode) {
                 var key = String.fromCharCode(event.charCode).toLowerCase();
-
-                content.console.log(key, this.commands);
-
                 var commands = this.commands;
                 for (var i = 0; i < commands.length; i++)
                     if (commands[commands[i] + "_key"] == key || commands[commands[i] + "_altkey"] == key)

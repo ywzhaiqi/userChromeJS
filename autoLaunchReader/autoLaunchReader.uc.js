@@ -203,7 +203,8 @@ if (typeof window.autoReader != "undefined") {
             if(win){
                 isAutoLaunch = true;
             }else{
-                win = getFocusedWindow();
+                // win = getFocusedWindow();
+                win = content;
             }
 
             win.setTimeout(function() {
@@ -234,11 +235,11 @@ if (typeof window.autoReader != "undefined") {
                         if(!bodyName || bodyName != "MyNovelReader"){
                             other_launch();
                         }
-                    }, 500);
+                    }, 1000);
                     return;
+                }else{
+                    other_launch();
                 }
-
-                other_launch();
 
             }, timer || 0);
         },

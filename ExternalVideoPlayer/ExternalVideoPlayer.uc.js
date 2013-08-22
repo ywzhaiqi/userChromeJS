@@ -5,7 +5,7 @@
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
-// @version        0.0.5
+// @version        0.0.6
 // @note           youku、悦台、网易视频、优米等调用外部播放器播放。土豆、奇艺等不支持外部播放的新页面打开 flvcd 网址。
 // @note           2013/06/22 ver0.003 增加了大量的站点，增加了二级菜单清晰度的选择。
 // @note           2013/06/21 ver0.002 修正几个错误
@@ -19,18 +19,18 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
 (function(){
 
-	// 播放器路径
-	var PLAYER_PATH = "D:\\Program Files\\Potplayer\\PotPlayerMini.exe";
+	// 播放器路径，不填或不正确会打开 asx 文件，一般是 wmp 关联，需要安装解码器
+	// var PLAYER_PATH = "D:\\Program Files\\Potplayer\\PotPlayerMini.exe";
+	// var PLAYER_PATH = "D:\\App\\SMPlayer\\smplayer.exe";
+	var PLAYER_PATH = "";
+
+    // pls 播放列表格式
+    var PLAYER_PLS = /s?mplayer\.exe/
 
 	// 清晰度: normal high super supper2
 
 	// 下载设置
 	var IDM_PATH = "D:\\Program Files\\Internet Download Manager\\IDMan.exe";
-
-
-	// youku 视频地址一段时间后失效，所以 cache 有问题。
-	var useCache = false;
-	var DEBUG = false;
 
 	let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 	Components.utils.import("resource://gre/modules/FileUtils.jsm");
@@ -38,7 +38,6 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 	var ns = window.externalVideoPlayer = {
 		PLAYER_PATH: PLAYER_PATH,
 		FILE_NAME: "externalVideoPlayer",
-		_menu: null,
 		_canPlay: true,
 		_noPlayer: false,
 		_video_path_cache: {},
@@ -49,9 +48,9 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
 		},
 		uninit: function(){
-			if(this._menu){
+			if(this._menu)
 				this._menu.parentNode.removeChild(this._menu);
-			}
+
 			$("contentAreaContextMenu").removeEventListener("popupshowing", this, false);
 		},
 		handleEvent: function(event){
@@ -175,12 +174,6 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 				return ns.openFlvcd(flvcdUrl);
 			}
 
-			if(useCache && flvcdUrl in ns._video_path_cache){
-				var videoPath = ns._video_path_cache[flvcdUrl];
-				var videoFile = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
-				videoFile.initWithPath(videoPath);
-				ns.launch(videoFile);
-			}else{
                 getHTML(flvcdUrl, function(){
                     if(this.readyState == 4 && this.status == 200){
                             ns.requestLoaded(this.response, type);
@@ -189,7 +182,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
                     }
                 }, "gbk");
 				ns._requestUrl = flvcdUrl;
-			}
+
 		},
 		openFlvcd: function(flvcdUrl){
 			flvcdUrl = flvcdUrl || ns._requestUrl;
@@ -238,8 +231,9 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 					ns.download_aria2(list);
 					break;
 				default:
-					if(ns.PLAYER_PATH.match(/\\mplayer\.exe/)){
-						ns.run_mplayer(list);
+					if(ns.PLAYER_PATH.match(PLAYER_PLS)){
+						// ns.run_mplayer(list);
+                        ns.saveAndRun_pls(list)
 					}else{
 						ns.saveAndRun_asx(list);
 					}
@@ -265,16 +259,27 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 			ns.initPlayer();
 			ns.launch(file);
 		},
-		// mplayer txt 格式没法播放？
-		saveAndRun_txt: function(list){
-			var text = "";
+		saveAndRun_pls: function(list){
+			var text = "[playlist]\n";
 			list.forEach(function(info, i){
-				text += info.url + "\n";
+                i += 1
+				text += "File" + i + "=" + info.url + "\n" +
+                    "Title" + i + "=" + ns.encode_16(info.title) + "\n" +
+                    "Length" + i + "=0\n"
 			});
-			var file = ns.saveList(ns.FILE_NAME + ".txt", text);
+            text += "NumberOfEntries=" + list.length +
+                "\nVersion=2"
+			var file = ns.saveList(ns.FILE_NAME + ".pls", text);
 			ns.initPlayer();
 			ns.launch(file);
 		},
+        encode_16: function(str){
+            var s = ""
+            for (var i = 0; i < str.length; i++) {
+                s += "\\x" + str.charCodeAt(i).toString(16)
+            }
+            return s
+        },
 		run_mplayer: function(list){
 			var args = [];
 			list.forEach(function(info){

@@ -13,6 +13,7 @@
 //     oncommand: "Application.restart();"
 // });
 
+
 page([
     {   // 给 Firebug 换个快捷键
         id: "menu_firebug_firebugInspect",
@@ -69,7 +70,8 @@ tab([
                     win.location.href + "\n";
             }
 
-            Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(text);
+            Components.classes["@mozilla.org/widget/clipboardhelper;1"]
+                .getService(Components.interfaces.nsIClipboardHelper).copyString(text);
         }
     },
     {},
@@ -86,7 +88,7 @@ tab([
 ]);
 
 // 链接
-css("#context-copylink {display: none}")
+css("#context-copylink {display: none}");  // 给自带的添加图标，先隐藏，后面添加
 page([
     {
         label: "复制链接文本",

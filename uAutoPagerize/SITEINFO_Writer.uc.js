@@ -1845,7 +1845,7 @@ location == "chrome://browser/content/browser.xul" && (function(css){
             this.browser.contentWindow.focus();
 
             let doc = this.browser.contentDocument;
-            this.boxElem = doc.importNode(E("ehh-elementmarker").firstElementChild.cloneNode(true), true);
+            this.boxElem = doc.importNode(E("my-aardvark-elementmarker").firstElementChild.cloneNode(true), true);
 
             this.initHelpBox();
 
@@ -1898,11 +1898,11 @@ location == "chrome://browser/content/browser.xul" && (function(css){
             if (this.commandLabelTimer)
                 this.commandLabelTimer.cancel();
 
-            E("ehh-commandlabel-key").textContent = key.toUpperCase();
-            E("ehh-commandlabel-alternativeKey").textContent = alternativeKey.toUpperCase();
-            E("ehh-commandlabel-label").setAttribute("value", label);
+            E("my-aardvark-commandlabel-key").textContent = key.toUpperCase();
+            E("my-aardvark-commandlabel-alternativeKey").textContent = alternativeKey.toUpperCase();
+            E("my-aardvark-commandlabel-label").setAttribute("value", label);
 
-            var commandLabel = E("ehh-commandlabel");
+            var commandLabel = E("my-aardvark-commandlabel");
             commandLabel.showPopup(this.window.document.documentElement, this.mouseX, this.mouseY, "tooltip", "topleft", "topleft");
 
             this.commandLabelTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
@@ -1959,13 +1959,10 @@ location == "chrome://browser/content/browser.xul" && (function(css){
                 "alternativeKey": ""
             },
         },
-        commandsInited: false,
         initHelpBox: function() {
-            if(this.commandsInited)
+            var helpBoxRows = E("my-aardvark-helpbox-rows");
+            if(helpBoxRows.firstElementChild)
                 return;
-
-            var helpBoxRows = E("ehh-helpbox-rows");
-            var helpBoxInited = helpBoxRows.firstElementChild ? true : false;
 
             for (var i = 0; i < this.commands.length; i++) {
                 var command = this.commands[i];
@@ -1975,9 +1972,6 @@ location == "chrome://browser/content/browser.xul" && (function(css){
                 this.commands[command + "_key"] = key.toLowerCase();
                 this.commands[command + "_altkey"] = alternativeKey.toLowerCase();
                 this.commands[command + "_label"] = label;
-
-                if(helpBoxInited)
-                    continue;
 
                 var row = this.window.document.createElement("row");
                 helpBoxRows.appendChild(row);
@@ -1997,12 +1991,10 @@ location == "chrome://browser/content/browser.xul" && (function(css){
                 element.className = "label";
                 row.appendChild(element);
             }
-
-            this.commandsInited = true;
         },
 
         hideTooltips: function() {
-            let tooltips = ["ehh-helpbox", "ehh-commandlabel", "ehh-viewsource"];
+            let tooltips = ["my-aardvark-helpbox", "my-aardvark-commandlabel", "my-aardvark-viewsource"];
             for (let i = 0; i < tooltips.length; i++) {
                 let tooltip = E(tooltips[i]);
                 if (tooltip)
@@ -2392,7 +2384,7 @@ location == "chrome://browser/content/browser.xul" && (function(css){
             if (!elem)
                 return false;
 
-            var sourceBox = E("ehh-viewsource");
+            var sourceBox = E("my-aardvark-viewsource");
             if (sourceBox.state == "open" && this.commentElem == elem) {
                 sourceBox.hidePopup();
                 return true;
@@ -2508,7 +2500,7 @@ location == "chrome://browser/content/browser.xul" && (function(css){
         },
 
         showMenu: function() {
-            var helpBox = E("ehh-helpbox");
+            var helpBox = E("my-aardvark-helpbox");
             if (helpBox.state == "open") {
                 helpBox.hidePopup();
                 return true;
@@ -2527,10 +2519,9 @@ location == "chrome://browser/content/browser.xul" && (function(css){
             for each (let method in ["onMouseClick", "onMouseScroll", "onKeyPress", "onPageHide", "onMouseMove", "onAfterPaint", "quit"])
                 Aardvark[method] = Aardvark[method].bind(Aardvark);
 
-            if(!E("ehh-popupset")){
+            if(!E("my-aardvark-popupset")){
                 this.addPopupSet();
                 this.addChromeCss();
-
             }
         },
         addPopupSet: function(){
@@ -2538,29 +2529,29 @@ location == "chrome://browser/content/browser.xul" && (function(css){
                 <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" \
                          xmlns:html="http://www.w3.org/1999/xhtml"> \
                 <window id="main-window">\
-                <popupset id="ehh-popupset"\
+                <popupset id="my-aardvark-popupset"\
                         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"\
                         xmlns:html="http://www.w3.org/1999/xhtml">\
-                    <tooltip id="ehh-helpbox" noautohide="true" orient="vertical">\
-                        <description id="ehh-helpbox-title" value="页面元素选择 - 快捷键"/>\
+                    <tooltip id="my-aardvark-helpbox" noautohide="true" orient="vertical">\
+                        <description id="my-aardvark-helpbox-title" value="页面元素选择 - 快捷键"/>\
                     \
                         <grid flex="1">\
                             <columns>\
                                 <column/>\
                                 <column flex="1"/>\
                             </columns>\
-                            <rows id="ehh-helpbox-rows"/>\
+                            <rows id="my-aardvark-helpbox-rows"/>\
                         </grid>\
                     </tooltip>\
-                    <tooltip id="ehh-commandlabel" noautohide="true">\
+                    <tooltip id="my-aardvark-commandlabel" noautohide="true">\
                         <hbox align="center">\
-                            <description id="ehh-commandlabel-key"/>\
-                            <description id="ehh-commandlabel-alternativeKey"/>\
-                            <description id="ehh-commandlabel-label"/>\
+                            <description id="my-aardvark-commandlabel-key"/>\
+                            <description id="my-aardvark-commandlabel-alternativeKey"/>\
+                            <description id="my-aardvark-commandlabel-label"/>\
                         </hbox>\
                     </tooltip>\
-                    <tooltip id="ehh-viewsource" noautohide="true" orient="vertical"/>\
-                    <tooltip id="ehh-elementmarker">\
+                    <tooltip id="my-aardvark-viewsource" noautohide="true" orient="vertical"/>\
+                    <tooltip id="my-aardvark-elementmarker">\
                         <html:div>\
                             <html:div class="border"/>\
                             <html:div class="label"><html:span class="labelTag"/><html:span class="labelAddition"/></html:div>\
@@ -2581,14 +2572,14 @@ location == "chrome://browser/content/browser.xul" && (function(css){
         },
         addChromeCss: function(){
             var css = '\
-                #ehh-helpbox, #ehh-commandlabel, #ehh-viewsource {\
+                #my-aardvark-helpbox, #my-aardvark-commandlabel, #my-aardvark-viewsource {\
                         margin: 10px;\
                         padding: 5px;\
                     }\
-                    #ehh-helpbox row {\
+                    #my-aardvark-helpbox row {\
                         -moz-box-align: center;\
                     }\
-                    #ehh-helpbox .key:not(:empty) {\
+                    #my-aardvark-helpbox .key:not(:empty) {\
                         font-weight: bold;\
                         margin: 2px 10px 2px 0px;\
                         border: 1px solid black;\
@@ -2600,14 +2591,14 @@ location == "chrome://browser/content/browser.xul" && (function(css){
                         color: black;\
                         border-radius: 3px;\
                     }\
-                    #ehh-helpbox-title {\
+                    #my-aardvark-helpbox-title {\
                         font-size: 130%;\
                         margin-bottom: 10px;\
                     }\
-                    #ehh-commandlabel {\
+                    #my-aardvark-commandlabel {\
                         font-size: 150%;\
                     }\
-                    #ehh-commandlabel-key:not(:empty), #ehh-commandlabel-alternativeKey:not(:empty) {\
+                    #my-aardvark-commandlabel-key:not(:empty), #my-aardvark-commandlabel-alternativeKey:not(:empty) {\
                         font-weight: bold;\
                         margin: 0px 10px 0px 0px;\
                         border: 1px solid black;\
@@ -2619,31 +2610,31 @@ location == "chrome://browser/content/browser.xul" && (function(css){
                         color: black;\
                         border-radius: 4px;\
                     }\
-                    #ehh-viewsource {\
+                    #my-aardvark-viewsource {\
                         max-width: none;\
                     }\
-                    #ehh-viewsource description, #ehh-viewsource hbox, #ehh-viewsource vbox {\
+                    #my-aardvark-viewsource description, #my-aardvark-viewsource hbox, #my-aardvark-viewsource vbox {\
                         margin: 0px;\
                     }\
-                    #ehh-viewsource .elementBox {\
+                    #my-aardvark-viewsource .elementBox {\
                         border: 1px solid #CCCCCC;\
                         margin: 5px;\
                     }\
-                    #ehh-viewsource .text, #ehh-viewsource .cdata, #ehh-viewsource .comment {\
+                    #my-aardvark-viewsource .text, #my-aardvark-viewsource .cdata, #my-aardvark-viewsource .comment {\
                         margin: 0px 5px;\
                     }\
-                    #ehh-viewsource .tagName {\
+                    #my-aardvark-viewsource .tagName {\
                         font-weight: bold;\
                         color: #FF0000;\
                     }\
-                    #ehh-viewsource .attrName {\
+                    #my-aardvark-viewsource .attrName {\
                         margin-left: 5px;\
                         color: #00FF00;\
                     }\
-                    #ehh-viewsource .attrValue {\
+                    #my-aardvark-viewsource .attrValue {\
                         color: #0000FF;\
                     }\
-                    #ehh-viewsource .comment {\
+                    #my-aardvark-viewsource .comment {\
                         color: #808080;\
                     }\
                 ';
@@ -2758,7 +2749,7 @@ location == "chrome://browser/content/browser.xul" && (function(css){
             let styleURI = Services.io.newURI("data:text/css," + encodeURIComponent(data), null, null);
             styleService.loadAndRegisterSheet(styleURI, Ci.nsIStyleSheetService.USER_SHEET);
 
-            E("ehh-elementmarker").firstElementChild.setAttribute("class", elementMarkerClass);
+            E("my-aardvark-elementmarker").firstElementChild.setAttribute("class", elementMarkerClass);
         }
     };
 

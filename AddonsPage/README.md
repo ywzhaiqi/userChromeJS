@@ -10,4 +10,4 @@ AddonsPage.uc.js
 
 ![ÓÒ¼ü²Ëµ¥.png](ÓÒ¼ü²Ëµ¥.png)
 
-![ÓÒ¼ü²Ëµ¥.pngÏêÏ¸Ò³Ãæ.png](ÓÒ¼ü²Ëµ¥.pngÏêÏ¸Ò³Ãæ.png)
+![ÏêÏ¸Ò³Ãæ.png](ÏêÏ¸Ò³Ãæ.png)

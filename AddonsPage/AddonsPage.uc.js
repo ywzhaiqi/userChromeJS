@@ -5,7 +5,7 @@
 // @author       ywzhaiqi
 // @include      main
 // @charset      utf-8
-// @version      0.4.1
+// @version      0.4.2
 // ==/UserScript==
 
 location == "chrome://browser/content/browser.xul" && (function(){
@@ -155,7 +155,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
 			var url = content.gViewController.viewObjects.detail._addon;
 			if(!url) return false;
 			var url2 = (url.contributionURL || url.reviewURL) || false;
-			return ((url2 && url2.replace(/\/developers|\/reviews/g,"")) || (url._script && url._script.downloadURL))||false;
+			return ((url2 && url2.replace(/\/developers|\/reviews/g,"")) || (url._script && url._script.downloadURL.replace(/(^.+)source\/(\d+).*$/,"$1show/$2")))||false;
 		},
 		get getPath(){
 			var url = content.gViewController.viewObjects.detail._addon;

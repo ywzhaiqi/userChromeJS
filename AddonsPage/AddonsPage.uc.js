@@ -84,17 +84,17 @@ location == "chrome://browser/content/browser.xul" && (function(){
 
 			AddToAddonsPage._menuseparator1.hidden = isUserStyle || isUserScript;
 			AddToAddonsPage._browseDir.hidden = isUserStyle || isUserScript;
-			AddToAddonsPage._copyName.hidden = isUserStyle;
+			// AddToAddonsPage._copyName.hidden = isUserStyle;
 		},
 		getPopupNode: function (aNode) {
 			var doc = aNode.ownerDocument;
 			return "triggerNode" in aNode.parentNode ? aNode.parentNode.triggerNode : doc.popupNode;
 		},
 		getAddon: function (aId, aCallback, aEvent) {
-			// if (gDetailView._addon) {
-			// 	aCallback(gDetailView._addon, aEvent);
-			// 	return;
-			// }
+			if (content.gDetailView._addon) {
+				aCallback(content.gDetailView._addon, aEvent);
+				return;
+			}
 
 			AddonManager.getAllAddons(function(aAddons) {
 				for (var i = 0; i < aAddons.length; i++) {

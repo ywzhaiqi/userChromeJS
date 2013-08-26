@@ -7,55 +7,57 @@
 // @author         Original Author: pile0nades
 // @modifier       Alice0775
 // @modifier       ywzhaiqi
+// @version        2.1
+// @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/stylishEdit
 // @note           修复了原脚本只能在纯文本下编辑的情况（即使用时需把 extensions.stylish.editor 设为 1，默认0）。现在无需设置也能使用。
 // @note           编辑器路径移到最前面，如果为空则为 about:config 中 view_source.editor.path。
-// @version        2009/04/30 version 1.0対応(tnks 音吉) でも0.59で不具合がないなら1.0にしない方がいいよ
-// @version        2007/05/25
+// @note           2009/04/30 version 1.0対応(tnks 音吉) でも0.59で不具合がないなら1.0にしない方がいいよ
+// @note           2007/05/25
 // @Note
 // ==/UserScript==
 
 /* ***** BEGIN LICENSE BLOCK *****
-* Version: MPL 1.1
-*
-* The contents of this file are subject to the Mozilla Public License Version
-* 1.1 (the "License"); you may not use this file except in compliance with
-* the License. You may obtain a copy of the License at
-* http://www.mozilla.org/MPL/
-*
-* Software distributed under the License is distributed on an "AS IS" basis,
-* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-* for the specific language governing rights and limitations under the
-* License.
-*
-* Alternatively, the contents of this file may be used under the
-* terms of the GNU General Public License Version 2 or later (the
-* "GPL"), in which case the provisions of the GPL are applicable
-* instead of those above.
-*
-* The Original Code is the important.uc.js .
-* The Initial Developer of the above Original Code is
-* pile0nades.
-*
-* The Original Code is the External Editor extension.
-* The Initial Developer of the above Original Code is
-* Philip Nilsson.
-* Portions created by the Initial Developer are Copyright (C) 2005
-* the Initial Developer. All Rights Reserved.
-*
-* Contributor(s):
-* Kimitake
-* Supported Japanese charaset and added ja-JP locale
-*
-* The Original Code is the MozEx extension.
-* Copyright (C) 2003 Tomas Styblo <tripie@cpan.org>
-*
-*
-* Contributor(s):
-* External Edittor for Stylish-editor, For stylish 0.5～
-* Alice0775
-* http://space.geocities.yahoo.co.jp/gl/alice0775
-*
-* ***** END LICENSE BLOCK ***** */
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * Alternatively, the contents of this file may be used under the
+ * terms of the GNU General Public License Version 2 or later (the
+ * "GPL"), in which case the provisions of the GPL are applicable
+ * instead of those above.
+ *
+ * The Original Code is the important.uc.js .
+ * The Initial Developer of the above Original Code is
+ * pile0nades.
+ *
+ * The Original Code is the External Editor extension.
+ * The Initial Developer of the above Original Code is
+ * Philip Nilsson.
+ * Portions created by the Initial Developer are Copyright (C) 2005
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * Kimitake
+ * Supported Japanese charaset and added ja-JP locale
+ *
+ * The Original Code is the MozEx extension.
+ * Copyright (C) 2003 Tomas Styblo <tripie@cpan.org>
+ *
+ *
+ * Contributor(s):
+ * External Edittor for Stylish-editor, For stylish 0.5～
+ * Alice0775
+ * http://space.geocities.yahoo.co.jp/gl/alice0775
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 WindowHook.register("chrome://stylish/content/edit.xul",
   function winhook(aWindow) {
@@ -64,6 +66,14 @@ WindowHook.register("chrome://stylish/content/edit.xul",
     // 如果为空则为 about:config 中 view_source.editor.path，仅window下。
     var EDITOR_PATH = "";
 
+    var iText = {
+      "domain(\"%u\"),": 'domain("%u"),',
+      "url(\"\")": '@-moz-document url(""){\n\n}',
+      "url-prefix(\"\")": '@-moz-document url-prefix(""){\n\n}',
+      "domain(\"\")": '@-moz-document domain(""){\n\n}',
+      "regexp(\"\")": '@-moz-document regexp(""){\n\n}'
+    };
+
     var isNewEditor = (Services.prefs.getIntPref('extensions.stylish.editor') === 0);
 
     // get the checkbox
@@ -71,8 +81,40 @@ WindowHook.register("chrome://stylish/content/edit.xul",
 
     if (aWindow.document.getElementById("internal-code")) { //ver 1.0 のとき color picker と importantを入れる
 
- //Color picker///////////////////////////////////////////////////////////////////////////////////
-      if('rainbowpickerToolbar' in window){
+      // 插入文本 //////////////////////////////////////////////////
+      var button = document.createElement("button");
+      button.setAttribute("label", "插入文本");
+      button.onclick = function(event){
+        var popup = event.target.querySelector("menupopup");
+        if(!popup) return;
+        popup.openPopup(event.target, "after_start", -1, -1, false, false);
+      };
+      checkbox.parentNode.insertBefore(button, checkbox);
+      // add menupopup
+      var menuPopup = document.createElement("menupopup");
+      var i, menuitem;
+      for(i in iText){
+        menuitem = menuPopup.appendChild(document.createElement("menuitem"));
+        menuitem.setAttribute("label", i);
+        menuitem.setAttribute("value",iText[i]);
+        menuitem.onclick = function (event) {
+          insertString(this.value.replace("%u", window.content.location.host));
+          var popup = event.target.parentNode;
+          popup.hidePopup();
+        };
+      }
+      button.appendChild(menuPopup);
+
+     function insertString(str, range) {
+        var start = aWindow.codeElementWrapper.selectionStart + str.length;
+        aWindow.codeElementWrapper.value = aWindow.codeElementWrapper.value.substr(0, aWindow.codeElementWrapper.selectionStart) + str + aWindow.codeElementWrapper.value.substring(aWindow.codeElementWrapper.selectionEnd);
+        if (range) start = start - range;
+        aWindow.codeElementWrapper.focus();
+        aWindow.codeElementWrapper.setSelectionRange(start, start);
+      }
+
+      //Color picker///////////////////////////////////////////////////////////////////////////////////
+      if ('rainbowpickerToolbar' in window) {
         var menuitem = aWindow.document.createElement("menuitem");
         button.setAttribute("label", "Color Picker");
         checkbox.parentNode.insertBefore(button, checkbox);
@@ -83,24 +125,24 @@ WindowHook.register("chrome://stylish/content/edit.xul",
           aWindow.openColorPicker();
         }, false);
       } else {
-        var picker   = aWindow.document.createElement("colorpicker");
+        var picker = aWindow.document.createElement("colorpicker");
 
-        var getColor = function(){
-                if (arguments.callee.caller.name != 'onchange') return;  //why is this necessary?
-                var box;
-                if(isNewEditor){
-                    box = aWindow.codeElementWrapper;
-                }else{
-                    box = aWindow.document.getElementById("internal-code").mInputField;
-                }
-                var text   = box.value.toString()
-                var s      = box.selectionStart;
-                var e      = box.selectionEnd;
-                box.value  = text.substring(0,s)   +
-                                   this.color.toString()  +
-                                   text.substring(e,text.length);
-                box.setSelectionRange(s + 7, s + 7);  // 7 = "#AABBCC".length
-                box.focus();
+        var getColor = function() {
+          if (arguments.callee.caller.name != 'onchange') return; //why is this necessary?
+          var box;
+          if (isNewEditor) {
+            box = aWindow.codeElementWrapper;
+          } else {
+            box = aWindow.document.getElementById("internal-code").mInputField;
+          }
+          var text = box.value.toString()
+          var s = box.selectionStart;
+          var e = box.selectionEnd;
+          box.value = text.substring(0, s) +
+            this.color.toString() +
+            text.substring(e, text.length);
+          box.setSelectionRange(s + 7, s + 7); // 7 = "#AABBCC".length
+          box.focus();
         }
         picker.getColor = getColor;
         picker.setAttribute("label", "Color Picker");
@@ -109,51 +151,54 @@ WindowHook.register("chrome://stylish/content/edit.xul",
         checkbox.parentNode.insertBefore(picker, checkbox);
       }
 
-//!important////////////////////////////////////////////////////////////////////////////////////////
+      //!important////////////////////////////////////////////////////////////////////////////////////////
       // create a button and place it
-      var button = aWindow.document.createElement("button");
+      button = aWindow.document.createElement("button");
       button.setAttribute("label", "!important");
       checkbox.parentNode.insertBefore(button, checkbox);
 
       // add click event to button
       button.addEventListener("click", function() {
         var box, codeElement;
-        if(isNewEditor){
-            box = codeElement = aWindow.codeElementWrapper;
-        }else{
-            var codeElement = aWindow.document.getElementById("code");
-            if (!codeElement)
-              codeElement = aWindow.document.getElementById("internal-code");
-            box = codeElement.mInputField;
+        if (isNewEditor) {
+          box = codeElement = aWindow.codeElementWrapper;
+        } else {
+          var codeElement = aWindow.document.getElementById("code");
+          if (!codeElement)
+            codeElement = aWindow.document.getElementById("internal-code");
+          box = codeElement.mInputField;
         }
         var scroll = [box.scrollTop, box.scrollLeft];
         var code = codeElement.value;
 
-        code = code.replace(/\s*?!\s*?important/gi, "")    // remove existing !important's to simplify things
+        code = code.replace(/\s*?!\s*?important/gi, "") // remove existing !important's to simplify things
         //change ;base64 to __base64__ so we don't match it on the ; when we split declarations
         code = code.replace(/;base64/g, "__base64__");
         var declarationBlocks = code.match(/\{[^\{\}]*[\}]/g);
         var declarations = [];
-        declarationBlocks && declarationBlocks.forEach(function (declarationBlock) {
-            declarations = declarations.concat(declarationBlock.split(/;/));
+        declarationBlocks && declarationBlocks.forEach(function(declarationBlock) {
+          declarations = declarations.concat(declarationBlock.split(/;/));
         });
         //make sure everything is really a declaration, and make sure it's not already !important
-        declarations = declarations.filter(function (declaration) {
-            return /[A-Za-z0-9-]+\s*:\s*[^};]+/.test(declaration) && !/!important/.test(declaration);
+        declarations = declarations.filter(function(declaration) {
+          return /[A-Za-z0-9-]+\s*:\s*[^};]+/.test(declaration) && !/!important/.test(declaration);
         });
         //strip out any extra stuff like brackets and whitespace
-        declarations = declarations.map(function (declaration) {
-            return declaration.match(/[A-Za-z0-9-]+\s*:\s*[^};]+/)[0].replace(/\s+$/, "");
+        declarations = declarations.map(function(declaration) {
+          return declaration.match(/[A-Za-z0-9-]+\s*:\s*[^};]+/)[0].replace(/\s+$/, "");
         });
         //replace them with "hashes" to avoid a problem with multiple identical name/value pairs
         var replacements = [];
-        declarations.forEach(function (declaration) {
-            var replacement = {hash: Math.random(), value: declaration};
-            replacements.push(replacement);
-            code = code.replace(replacement.value, replacement.hash);
+        declarations.forEach(function(declaration) {
+          var replacement = {
+            hash: Math.random(),
+            value: declaration
+          };
+          replacements.push(replacement);
+          code = code.replace(replacement.value, replacement.hash);
         });
-        replacements.forEach(function (replacement) {
-            code = code.replace(replacement.hash, replacement.value + " !important");
+        replacements.forEach(function(replacement) {
+          code = code.replace(replacement.hash, replacement.value + " !important");
         });
         //put ;base64 back
         code = code.replace(/__base64__/g, ";base64");
@@ -161,59 +206,64 @@ WindowHook.register("chrome://stylish/content/edit.xul",
 
         box.scrollTop = scroll[0];
         box.scrollLeft = scroll[1];
-     }, false);
-   }
+      }, false);
+    }
 
-//External Editor///////////////////////////////////////////////////////////////////////////////////
+    //External Editor///////////////////////////////////////////////////////////////////////////////////
     //if(typeof ItsAllText != 'undefined') return;
     // add External Editor button
     button = aWindow.document.createElement("button");
     button.setAttribute("label", "Editor");
-    button.setAttribute("accesskey","T");
+    button.setAttribute("accesskey", "T");
     checkbox.parentNode.insertBefore(button, checkbox);
 
     // add click event to button
     button.addEventListener("click", function() {
       var textarea = aWindow.document.getElementById("code");
-        if (!textarea)
-          textarea = aWindow.document.getElementById("internal-code");
+      if (!textarea)
+        textarea = aWindow.document.getElementById("internal-code");
 
-      try{
+      try {
         editinit();
         edittarget(textarea);
-      }catch(e){}
+      } catch (e) {}
     }, false);
 
-////Extarnal Edittor functions///////////////////////////////////////////////////////////////////////
+    ////Extarnal Edittor functions///////////////////////////////////////////////////////////////////////
 
     //Extarnal Edittor functions
     //
-    var _editor,_tmpdir = null,_dir_separator,_os;
-    var _ext,_encode,_target=[];
+    var _editor, _tmpdir = null,
+      _dir_separator, _os;
+    var _ext, _encode, _target = [];
 
-    function editinit(){
-      if(window.navigator.platform.toLowerCase().indexOf("win") != -1){
+    function editinit() {
+      if (window.navigator.platform.toLowerCase().indexOf("win") != -1) {
         //_editor = "C:\\WINDOWS\\notepad.exe";             /* windows */
         _editor = EDITOR_PATH || Services.prefs.getCharPref("view_source.editor.path"); /* windows */
-        _dir_separator = '\\';                            /* windows */
-        _os = 'win';                                      /* windows */
-      }else{
-        _editor = "/bin/vi";      /* unix */
-        _dir_separator = '/';     /* unix */
-        _os = 'unix';             /* unix */
+        _dir_separator = '\\'; /* windows */
+        _os = 'win'; /* windows */
+      } else {
+        _editor = "/bin/vi"; /* unix */
+        _dir_separator = '/'; /* unix */
+        _os = 'unix'; /* unix */
       }
       _ext = "css";
       _encode = 'UTF-8';
       _target = [];
 
-      window.addEventListener("unload", function(){ edituninit(); }, false);
-      aWindow.addEventListener("unload", function(){
-        aWindow.document.removeEventListener("focus", function(){ checkfocus_window(); }, true);
+      window.addEventListener("unload", function() {
+        edituninit();
+      }, false);
+      aWindow.addEventListener("unload", function() {
+        aWindow.document.removeEventListener("focus", function() {
+          checkfocus_window();
+        }, true);
       }, false);
     }
 
-    function edituninit(){
-      if(_tmpdir == null) return;
+    function edituninit() {
+      if (_tmpdir == null) return;
       var windowType = "navigator:browser";
       var windowManager = Components.classes['@mozilla.org/appshell/window-mediator;1'].getService();
       var windowManagerInterface = windowManager.QueryInterface(Components.interfaces.nsIWindowMediator);
@@ -222,45 +272,45 @@ WindowHook.register("chrome://stylish/content/edit.xul",
         return;
       }
       var file = Components.classes["@mozilla.org/file/local;1"]
-                           .createInstance(Components.interfaces.nsILocalFile);
+        .createInstance(Components.interfaces.nsILocalFile);
       file.initWithPath(_tmpdir);
       var entries = file.directoryEntries;
       while (entries.hasMoreElements()) {
         var entry = entries.getNext().QueryInterface(Components.interfaces.nsIFile);
-        if (/^ucjs.textarea\./i.test(entry.leafName)){
-          try{
+        if (/^ucjs.textarea\./i.test(entry.leafName)) {
+          try {
             entry.remove(false);
-          }catch(e){}
+          } catch (e) {}
         }
       }
 
-      try{
-        if( file.exists() == true ) file.remove(false);
-      }catch(e){}
+      try {
+        if (file.exists() == true) file.remove(false);
+      } catch (e) {}
       _tmpdir = null;
     }
 
-    function checkfocus_window(){
+    function checkfocus_window() {
       var target, filename, timestamp, encode, file, inst, sstream, utf, textBoxText
-      if (_target.length<=0) return;
+      if (_target.length <= 0) return;
       file = Components.classes["@mozilla.org/file/local;1"].
-                     createInstance(Components.interfaces.nsILocalFile);
+      createInstance(Components.interfaces.nsILocalFile);
       istr = Components.classes['@mozilla.org/network/file-input-stream;1'].
-              createInstance(Components.interfaces.nsIFileInputStream);
+      createInstance(Components.interfaces.nsIFileInputStream);
       // FileInputStream's read is [noscript].
       sstream = Components.classes["@mozilla.org/scriptableinputstream;1"].
-              createInstance(Components.interfaces.nsIScriptableInputStream);
+      createInstance(Components.interfaces.nsIScriptableInputStream);
       utf = Components.classes['@mozilla.org/intl/utf8converterservice;1'].
-            createInstance(Components.interfaces.nsIUTF8ConverterService);
+      createInstance(Components.interfaces.nsIUTF8ConverterService);
 
-      for(var i=0,len=_target.length;i<len;i++){
+      for (var i = 0, len = _target.length; i < len; i++) {
         target = _target[i];
-        if(!target.hasAttribute("filename")) continue;
+        if (!target.hasAttribute("filename")) continue;
         filename = target.getAttribute("filename");
         timestamp = target.getAttribute("timestamp");
         file.initWithPath(filename);
-        if(!file.exists() || !file.isReadable()) continue;
-        if(file.lastModifiedTime <= timestamp) continue;
+        if (!file.exists() || !file.isReadable()) continue;
+        if (file.lastModifiedTime <= timestamp) continue;
 
         target.setAttribute("timestamp", file.lastModifiedTime);
 
@@ -271,36 +321,38 @@ WindowHook.register("chrome://stylish/content/edit.xul",
         encode = target.getAttribute("encode");
 
         var box;
-        if(isNewEditor){
-            box = aWindow.codeElementWrapper;
-        }else{
-            box = target;
+        if (isNewEditor) {
+          box = aWindow.codeElementWrapper;
+        } else {
+          box = target;
         }
 
-        if(textBoxText.length){
-            box.value = utf.convertStringToUTF8(textBoxText, encode, true);
-        }else{
-            box.value = "";
+        if (textBoxText.length) {
+          box.value = utf.convertStringToUTF8(textBoxText, encode, true);
+        } else {
+          box.value = "";
         }
 
         sstream.close();
         istr.close();
-        try{file.remove(false);}catch(e){}
+        try {
+          file.remove(false);
+        } catch (e) {}
       }
     }
 
 
-    function editfile(target,filename){
+    function editfile(target, filename) {
       // Figure out what editor to use.
       var editor = _editor;
       var file = Components.classes["@mozilla.org/file/local;1"].
-          createInstance(Components.interfaces.nsILocalFile);
+      createInstance(Components.interfaces.nsILocalFile);
       file.initWithPath(editor);
-      if(!file.exists()){
+      if (!file.exists()) {
         alert("Error_invalid_Editor_file");
         return false;
       }
-      if(!file.isExecutable()){
+      if (!file.isExecutable()) {
         alert("Error_Editor_not_executable");
         return false;
       }
@@ -309,50 +361,52 @@ WindowHook.register("chrome://stylish/content/edit.xul",
 
       // Run the editor.
       var process = Components.classes["@mozilla.org/process/util;1"].
-          createInstance(Components.interfaces.nsIProcess);
+      createInstance(Components.interfaces.nsIProcess);
       process.init(file);
       var args = [filename];
-      process.run(false, args, args.length);  // don't block
-      aWindow.document.addEventListener("focus", function(){ checkfocus_window(); }, true);
+      process.run(false, args, args.length); // don't block
+      aWindow.document.addEventListener("focus", function() {
+        checkfocus_window();
+      }, true);
       return true;
     }
 
-    function edittarget(target){
+    function edittarget(target) {
 
       var textBoxText = target.value;
-      if(isNewEditor){
+      if (isNewEditor) {
         textBoxText = aWindow.codeElementWrapper.value;
       }
       // Get filename.
       var file = Components.classes["@mozilla.org/file/local;1"].
-                 createInstance(Components.interfaces.nsILocalFile);
-      if(target.hasAttribute("filename")){
+      createInstance(Components.interfaces.nsILocalFile);
+      if (target.hasAttribute("filename")) {
         var filename = target.getAttribute("filename");
         file.initWithPath(filename);
-        try{
-          if( file.exists() == true ) file.remove(false);
-        }catch(e){}
-      }else{
+        try {
+          if (file.exists() == true) file.remove(false);
+        } catch (e) {}
+      } else {
         var filename = TmpFilenameTextarea();
       }
       file.initWithPath(filename);
-      file.create(file.NORMAL_FILE_TYPE, parseInt(600,8));
+      file.create(file.NORMAL_FILE_TYPE, parseInt(600, 8));
 
       // Write the data to the file.
       var ostr = Components.classes['@mozilla.org/network/file-output-stream;1'].
-            createInstance(Components.interfaces.nsIFileOutputStream);
+      createInstance(Components.interfaces.nsIFileOutputStream);
       ostr.init(file, 2, 0x200, false);
 
-      if(navigator.platform == "Win32"){
+      if (navigator.platform == "Win32") {
         // Convert Unix newlines to standard network newlines.
         textBoxText = textBoxText.replace(/(\r)?\n/g, "\r\n");
       }
       var conv = Components.classes['@mozilla.org/intl/saveascharset;1'].
-            createInstance(Components.interfaces.nsISaveAsCharset);
-      try{
+      createInstance(Components.interfaces.nsISaveAsCharset);
+      try {
         conv.Init(_encode, 0, 0);
         textBoxText = conv.Convert(textBoxText);
-      }catch(e){
+      } catch (e) {
         textBoxText = "";
       }
       ostr.write(textBoxText, textBoxText.length);
@@ -364,7 +418,7 @@ WindowHook.register("chrome://stylish/content/edit.xul",
       target.setAttribute("encode", _encode);
 
       // Edit the file.
-      if(editfile(target,file.path)){
+      if (editfile(target, file.path)) {
         _target.push(target); // Editting target array
       }
     }
@@ -374,45 +428,50 @@ WindowHook.register("chrome://stylish/content/edit.xul",
     //    - document url
     //    - textarea name
     //    - ext suffix
-    function TmpFilenameTextarea(){
+
+    function TmpFilenameTextarea() {
       var TmpFilename;
       _tmpdir = gettmpDir();
-      do{
+      do {
         TmpFilename = _tmpdir + _dir_separator + "ucjs.textarea." +
-                      Math.floor( Math.random() * 100000 ) + "." + _ext;
-      }while(!ExistsFile(TmpFilename))
+          Math.floor(Math.random() * 100000) + "." + _ext;
+      } while (!ExistsFile(TmpFilename))
       return TmpFilename;
     }
 
-  //Function returns true if given filename exists
-    function ExistsFile(filename){
-      try{
+    //Function returns true if given filename exists
+
+    function ExistsFile(filename) {
+      try {
         var file = Components.classes["@mozilla.org/file/local;1"].
-                   createInstance(Components.interfaces.nsILocalFile);
+        createInstance(Components.interfaces.nsILocalFile);
         file.initWithPath(filename);
         return true;
-      }catch(e){
+      } catch (e) {
         return false;
       }
     }
     /**
-    * Returns the directory where we put files to edit.
-    * @returns nsILocalFile The location where we should write editable files.
-    */
+     * Returns the directory where we put files to edit.
+     * @returns nsILocalFile The location where we should write editable files.
+     */
+
     function gettmpDir() {
       /* Where is the directory that we use. */
       var fobj = Components.classes["@mozilla.org/file/directory_service;1"].
-        getService(Components.interfaces.nsIProperties).
-        get("ProfD", Components.interfaces.nsIFile);
+      getService(Components.interfaces.nsIProperties).
+      get("ProfD", Components.interfaces.nsIFile);
       fobj.append('Temp_ExternalEditor');
       if (!fobj.exists()) {
         fobj.create(Components.interfaces.nsIFile.DIRECTORY_TYPE,
-                    parseInt('0700',8));
+          parseInt('0700', 8));
       }
       if (!fobj.isDirectory()) {
-        alert('Having a problem finding or creating directory: '+fobj.path);
+        alert('Having a problem finding or creating directory: ' + fobj.path);
       }
       return fobj.path;
     }
+
+
   }
 );

@@ -1,36 +1,54 @@
 AddonsPage.uc.js
 ================
 
-¸½¼ş×é¼şÒ³ÃæÓÒ¼üĞÂÔö²é¿´ËùÔÚÄ¿Â¼£¬ÏêÏ¸ĞÅÏ¢Ò³ÃæĞÂÔö°²×°µØÖ·»òÂ·¾¶£¬ĞÂÔö uc½Å±¾¹ÜÀíÒ³Ãæ¡£
+é™„ä»¶ç»„ä»¶é¡µé¢ï¼ˆabout:addonsï¼‰å³é”®æ–°å¢æŸ¥çœ‹æ‰€åœ¨ç›®å½•ï¼Œè¯¦ç»†ä¿¡æ¯é¡µé¢æ–°å¢å®‰è£…åœ°å€æˆ–è·¯å¾„ï¼Œæ–°å¢ ucè„šæœ¬ç®¡ç†é¡µé¢ã€‚[å¡é¥­è®ºå›åœ°å€](http://bbs.kafan.cn/thread-1617407-1-1.html)
 
-## ËµÃ÷
+## è¯´æ˜
 
- - ¸½¼ş×é¼şÒ³ÃæÓÒ¼üĞÂÔö²é¿´ËùÔÚÄ¿Â¼£¨Ö§³ÖÀ©Õ¹¡¢Ö÷Ìâ¡¢²å¼ş£©¡¢¸´ÖÆÃû×Ö¡£Greasemonkey¡¢Scriptish ×Ô´øÒÑ¾­´æÔÚ¡£
- - ¸½¼ş×é¼şÏêÏ¸ĞÅÏ¢Ò³ÃæĞÂÔöGM½Å±¾¡¢À©Õ¹¡¢Ö÷Ìâ°²×°µØÖ·ºÍ²å¼şÂ·¾¶£¬ÓÒ¼ü¼´¸´ÖÆ¡£
- - ĞÂÔö uc½Å±¾¹ÜÀíÒ³Ãæ£¨ÆôÓÃ½ûÓÃĞèÒª rebuild_userChrome.uc.xul£©
- - ÓÒ¼ü²Ëµ¥ "²é¿´¸½¼Ó×é¼ş" ĞèÒª DOM Inspector
+ - é™„ä»¶ç»„ä»¶é¡µé¢å³é”®æ–°å¢æŸ¥çœ‹æ‰€åœ¨ç›®å½•ï¼ˆæ”¯æŒæ‰©å±•ã€ä¸»é¢˜ã€æ’ä»¶ã€ucè„šæœ¬ï¼‰ã€å¤åˆ¶åå­—ã€‚Greasemonkeyã€Scriptish è‡ªå¸¦å·²ç»å­˜åœ¨ã€‚
+ - é™„ä»¶ç»„ä»¶è¯¦ç»†ä¿¡æ¯é¡µé¢æ–°å¢GMè„šæœ¬ã€æ‰©å±•ã€ä¸»é¢˜å®‰è£…åœ°å€å’Œæ’ä»¶è·¯å¾„ï¼Œå³é”®å³å¤åˆ¶ã€‚
+ - æ–°å¢ ucè„šæœ¬ç®¡ç†é¡µé¢
+ - å³é”®èœå• "æŸ¥çœ‹é™„åŠ ç»„ä»¶" éœ€è¦ DOM Inspector
 
-#### ÓÒ¼ü²Ëµ¥
+#### å³é”®èœå•
 
-![ÓÒ¼ü²Ëµ¥.png](ÓÒ¼ü²Ëµ¥.png)
-![ÓÒ¼ü²Ëµ¥_GM.png](ÓÒ¼ü²Ëµ¥_GM.png)
+![å³é”®èœå•.png](å³é”®èœå•.png)
+![å³é”®èœå•_GM.png](å³é”®èœå•_GM.png)
 
-#### uc½Å±¾¹ÜÀí½çÃæ
+#### ucè„šæœ¬ç®¡ç†ç•Œé¢
+
+ - å¯ç”¨ç¦ç”¨éœ€è¦ rebuild_userChrome.uc.xul
+ - è¯¦ç»†é¡µé¢æ–°å¢çš„ä¿¡æ¯éœ€è¦ [ä¿®æ”¹ç‰ˆuserChrome.js](https://github.com/ywzhaiqi/userChromeJS/tree/master/userChrome.js)
+ 	- æ–°å¢å¯¹ucè„šæœ¬å¤šä¸ªå‚æ•°çš„è¯†åˆ«ï¼š`// @homepageURL`ã€`// @reviewURL`ã€`// @optionsURL`
 
 ![AddonsPage_userChromeJS.png](AddonsPage_userChromeJS.png)
 
-#### ÏêÏ¸Ò³Ãæ
+![ucè„šæœ¬è¯¦ç»†é¡µé¢.png](ucè„šæœ¬è¯¦ç»†é¡µé¢.png)
 
-![ÏêÏ¸Ò³Ãæ.png](ÏêÏ¸Ò³Ãæ.png)
+#### è¯¦ç»†é¡µé¢
 
-## ²Î¿¼
+![è¯¦ç»†é¡µé¢.png](è¯¦ç»†é¡µé¢.png)
 
- - [Add InstallUrl Or Path To AddonsPage ½Å±¾ By Crab](http://j.mozest.com/zh-CN/ucscript/script/109/)
- - [Add-ons Manager Context Menu À©Õ¹](https://addons.mozilla.org/zh-cn/firefox/addon/am-context/)
+### æ·»åŠ å›¾æ ‡
+
+è‡ªè¡Œæ·»åŠ æ ·å¼
+
+	@namespace url(http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul);
+
+	@-moz-document url("about:addons"), url("chrome://mozapps/content/extensions/extensions.xul") {
+		#category-userchromejs > .category-icon {
+			list-style-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACk0lEQVQ4ja3RW0hTARwG8A+nEIIxI9DwyQtCarKj7vhkWEwj8AKahNR6siAispce6k2y9VJvIblpkBOt4xGU5ko0RKZuecMLedlxTk0ym7Y5TcvL10OmKwuC+uB7/fG/AP8jarWaERERNBgMDxsbG4uMRuMdQRB4WH2MGdog0gvuuL+XbnDLDW66wQNAeXl5mSzLeUajsVQQhHW1+gjFtPgNn6d2Yl6pdM4rlc53U8/G/a4T/q2/A9RMS0tfXfR86ZpwLjgmnAuOMYU27/TZpe0/AQ0NDbkmk+nGPpC25vF47Iqi9CmK0jfh9PV4p7OWDwCRkZEsKysz1NfXF1VUVNzaA7TatSXvcs+Uy9WruFy9k9P+bt9M9vLO3C9AXFwcBUGgKIrMyMhgYmIij4aFMT05+fPk0NDAQGfn8LDNNjzUNdb/seekd90eAKiCwxkVFc2EhOPUaDTUiiLjYmKYAvAMwHyAJQDvAqwE2IwgOqDaB87nH2JRgbhaUFj8tbi4ePWiXv8pLyfHJwDMBli4C5QDNAG0AOxHwATcACcHr483NXeNWSyWPovV2tnUKPekAMwCeCk01HNPp7M8ysxsq9Hp2pp1urYOne71PjAPvum44jLXWTslSbJLsuyoNdf0pQA8BbBUo3FY7fZkyWrNrNutuaUl+zfAyy5Jeu4IBE4DvJaUNNTQ3p77RJb1JlnWV8qy/rEslfwEdLffdFY9dXSY617ZzPWtturqpr0VLoSE+G+npg4+EIRRo1Y7Kmm1o62i+HYP2JoBl8fD19+PxPs+jMSuLI7Grrjt0f6U3SOeA3gZoAFgFcAWgAOBR9x0g9szIGfBnVmQc+DqGPgDKAJ4FeB9gFXBwXyhUrFXFfDGf8k3RzmjBlDWo+YAAAAASUVORK5CYII=);
+		}
+	}
+
+## å‚è€ƒ
+
+ - [Add InstallUrl Or Path To AddonsPage è„šæœ¬ By Crab](http://j.mozest.com/zh-CN/ucscript/script/109/)
+ - [Add-ons Manager Context Menu æ‰©å±•](https://addons.mozilla.org/zh-cn/firefox/addon/am-context/)
  - OpenAddonFolder.uc.js
- - Greasemonkey ºÍ Scriptish À©Õ¹
+ - Greasemonkey å’Œ Scriptish æ‰©å±•
 
-## Ğ´Õâ¸ö½Å±¾µÄËµÃ÷
+## å†™è¿™ä¸ªè„šæœ¬çš„è¯´æ˜
 
- - AM À©Õ¹²Ëµ¥Ì«¶àÁË£¬ÔÚ Scriptish Ò³Ãæ¸ü¼Ó»ìÂÒ£¬ÇÒÃ»ÓĞ°²×°Á´½Ó
- - AM À©Õ¹²»Ö§³Ö²é¿´ plugin µÄÂ·¾¶
+ - AM æ‰©å±•èœå•å¤ªå¤šäº†ï¼Œåœ¨ Scriptish é¡µé¢æ›´åŠ æ··ä¹±ï¼Œä¸”æ²¡æœ‰å®‰è£…é“¾æ¥
+ - AM æ‰©å±•ä¸æ”¯æŒæŸ¥çœ‹ plugin çš„è·¯å¾„

@@ -25,6 +25,7 @@ userChromeJS for Firefox
 文件夹
 
  - [addmenuPlus](addmenuPlus)，增加修改 Firefox 菜单（修改版）。
+ - [AddonsPage](AddonsPage)，附件组件页面（about:addons）右键新增查看所在目录，详细信息页面新增安装地址或路径，新增 uc脚本管理页面。
  - [autoLaunchReader](autoLaunchReader)，自动启用阅读器（原创）。
  - [ExternalEditor](ExternalEditor)，输入框右键添加 `用外部编辑器打开` 功能（修改版）。
  - [ExternalVideoPlayer](ExternalVideoPlayer)，调用外部播放器播放网络视频（原创）。
@@ -63,7 +64,7 @@ userChromeJS for Firefox
  - [statusbarButtonScrapbook.uc.js](statusbarButtonScrapbook.uc.js)，更改 Scrapbook 状态栏图标为鼠标中键打开侧边栏。
  - [textLink.uc.js](textLink.uc.js)，双击打开文字链接。
  - [UserAgentChangeModLite.uc.js](UserAgentChangeModLite.uc.js)，UA切换（修改版）。
-
+ - [userChrome.js](userChrome.js)，修改版，增加对 @homepageURL 等参数的解析，在 AddonsPage.uc.js 的uc脚本详细页面就会有主页等链接。
 
 ## 单文件说明
 

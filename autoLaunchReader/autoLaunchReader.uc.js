@@ -5,7 +5,8 @@
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
-// @version        0.0.4
+// @version        0.0.5
+// @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/autoLaunchReader
 // @note           2013/06/06 ver0.004 调用小说脚本失败后，再次调用其它工具。clearly 后台加载网页的支持
 // @note           2013/06/04 ver0.003 修复诸多bug
 // @note           2013/06/03 ver0.002 改用 Overlay

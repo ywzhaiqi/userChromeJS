@@ -7,6 +7,7 @@
 // @compatibility  Firefox 4.0+
 // @author         ywzhaiqi
 // @version        2013/06/18
+// @homepageURL     https://github.com/ywzhaiqi/userChromeJS/blob/master/findScriptForGreaemonkeyOrScriptish.uc.js
 // ==/UserScript==
 
 
@@ -30,7 +31,7 @@ var findScriptForScriptish = {
 	        scriptishShow.parentNode.insertBefore(
 	            document.createElement("menuseparator"),
 	            scriptishShow.nextSibling
-	        );	
+	        );
 		}
 
 		// Greasemonkey

@@ -5,34 +5,29 @@
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
-// @version        0.0.2
+// @version        0.0.5
+// @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/moveButton
+// @reviewURL      http://bbs.kafan.cn/thread-1572303-1-1.html
 // @note           2013/06/03 ver0.0.3  改进一些情况下无法移动的问题。
 // @note           2013/05/22 ver0.0.2，新增参数 clone: true（克隆按钮/菜单，原来的保留）
 // @note           2013/05/21 初始版本
+// @note           填写的 buttons 说明：
+// @note           　　id: 要移动的按钮/菜单的 Id
+// @note           - 示例1： 移动 "翻译按钮" 到 "scriptish按钮" 的前面
+// @note           　　{ id: "translatorButton", insertBefore: "scriptish-button" },
+// @note           - 示例2： 移动 "翻译按钮" 到 "scriptish按钮" 的后面
+// @note           　　{ id: "translatorButton", insertAfter: "scriptish-button" },
+// @note           - 示例3： 移动 "翻译按钮" 到 "附加组件栏" 的第一个位置
+// @note           　　{ id: "translatorButton", bar: "addon-bar", pos: 1 },
+// @note           - 示例4：移动 "翻译按钮" 到 原来的第一个位置。（不推荐，建议用css调整）
+// @note           　　{ id: "translatorButton", pos: 1 },
+// @note           -  示例5：移动 "工具菜单" 到 系统按钮弹出的菜单 "选项" 的下面。
+// @note           　　{ id: "tools-menu", insertAfter: "appmenu_customize"},
+// @note           - 示例6：克隆 "工具菜单" 到 系统按钮弹出的菜单 "选项" 的下面
+// @note           　　 { id: "tools-menu", insertAfter: "appmenu_customize", clone: true },
 // ==/UserScript==
 
 /*
-功能：移动或克隆按钮/菜单到任意位置
-
-建议只移动不可移动的按钮。如果移动后位置不正确可能用css固定了，如果移动后出现空白
-
-填写的 buttons 说明
-
-    id: 要移动的按钮/菜单的 Id
-
-    示例1： 移动 "翻译按钮" 到 "scriptish按钮" 的前面
-        { id: "translatorButton", insertBefore: "scriptish-button" },
-    示例2： 移动 "翻译按钮" 到 "scriptish按钮" 的后面
-        { id: "translatorButton", insertAfter: "scriptish-button" },
-    示例3： 移动 "翻译按钮" 到 "附加组件栏" 的第一个位置
-        { id: "translatorButton", bar: "addon-bar", pos: 1 }
-    示例4：移动 "翻译按钮" 到 原来的第一个位置。（不推荐，建议用css调整）
-        { id: "translatorButton", pos: 1 }
-    示例5：移动 "工具菜单" 到 系统按钮弹出的菜单 "选项" 的下面。
-        { id: "tools-menu", insertAfter: "appmenu_customize"}
-    示例6：克隆 "工具菜单" 到 系统按钮弹出的菜单 "选项" 的下面。
-        { id: "tools-menu", insertAfter: "appmenu_customize", clone: true }
-
     参考的工具栏或按钮的Id：
         nav-bar（导航工具栏）
             unified-back-forward-button（前进后退按钮）
@@ -55,7 +50,8 @@ var moveButton = {
     buttons:[
         // { id: "autoReaderButton", bar: "PersonalToolbar", pos: 1 },
         // { id: "translatorButton",  insertAfter: "jsoff-statusbar" },
-        // { id: "ScrapBookStatusPanel", insertBefore: "scriptish-button" },
+        { id: "ScrapBookStatusPanel", insertBefore: "scriptish-button" },
+        { id: "autoReaderButton", insertAfter: "uAutoPagerize-icon"}
     ],
 
     interval: 200, // 0.2秒间隔

@@ -7,10 +7,12 @@
 // @description    Snap Links for userChromeJS
 // @include        main
 // @charset        UTF-8
-// @version        2012/08/22 add copy links Reverse by ywzhaiqi
-// @version        2012/06/28 add radiobox options.
-// @version        2012/06/01 hide entry menu on link, image, text input area or context selected.
-// @version        2012/04/02 fixed by lastdream2013, add display count, fix open/copy url order, add context menu and fix memory leak
+// @version        2012/08/22
+// @homepageURL    https://github.com/ywzhaiqi/userChromeJS/blob/master/SnapLinksMod.uc.xul
+// @note           2012/08/22 add copy links Reverse by ywzhaiqi
+// @note           2012/06/28 add radiobox options.
+// @note           2012/06/01 hide entry menu on link, image, text input area or context selected.
+// @note           2012/04/02 fixed by lastdream2013, add display count, fix open/copy url order, add context menu and fix memory leak
 // @note           CSS が適用されていなかったのを修正
 // @note           2012/03/08 フレーム跨いだりツールチップ使うのをやめた
 // ==/UserScript==

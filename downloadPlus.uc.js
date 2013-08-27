@@ -7,6 +7,7 @@
 // @include        chrome://mozapps/content/downloads/unknownContentType.xul
 // @include        chrome://mozapps/content/downloads/downloads.xul
 // @charset        uft-8
+// @homepageURL    https://github.com/ywzhaiqi/userChromeJS/blob/master/downloadPlus.uc.js
 // ==/UserScript==
 
 (function() {

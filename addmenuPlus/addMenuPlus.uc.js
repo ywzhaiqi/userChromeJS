@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name           addMenu.uc.js
-// @description    通过配置文件自定义菜单
+// @description    通过配置文件增加修改菜单，修改版
 // @namespace      http://d.hatena.ne.jp/Griever/
 // @author         Griever
 // @include        main
@@ -8,6 +8,8 @@
 // @compatibility  Firefox 21
 // @charset        UTF-8
 // @version        0.0.7
+// @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
+// @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
 // @note           0.0.7 Firefox 21 の Favicon 周りの変更に対応
 // @note           0.0.6 Firefox 19 に合わせて修正
 // @note           0.0.5 Remove E4X

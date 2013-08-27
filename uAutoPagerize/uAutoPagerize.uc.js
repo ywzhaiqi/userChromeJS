@@ -1,13 +1,15 @@
 // ==UserScript==
-// @name           uAutoPagerize
+// @name           uAutoPagerize 中文规则增强版
 // @namespace      http://d.hatena.ne.jp/Griever/
-// @description    loading next page and inserting into current page.
+// @description    在同一个页面自动加载下一页
 // @include        main
 // @modified       ywzhaiqi
-// @update         2013-7-26
 // @compatibility  Firefox 17
 // @charset        UTF-8
 // @version        0.3.0
+// @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/uAutoPagerize
+// @reviewURL      http://bbs.kafan.cn/thread-1555846-1-1.html
+// @optionsURL     about:config?filter=uAutopagerize
 // @note           添加最大加载页数，参考 卡饭论坛 lastdream2013
 // @note           添加 Super_preloader 的数据库支持及更新 By ywzhaiqi。
 // @note           0.3.0 本家に倣って Cookie の処理を変更した

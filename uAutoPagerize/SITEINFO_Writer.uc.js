@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name           SITEINFO_Writer.uc.js
-// @description    uAutoPagerize 中文增强版的站点配置辅助工具
+// @description    uAutoPagerize 中文增强版的站点配置辅助工具，大幅修改了原脚本
 // @namespace      http://d.hatena.ne.jp/Griever/
 // @author         Griever, 深度修改 by ywzhaiqi
 // @update         2013-8-22
@@ -8,7 +8,9 @@
 // @include        chrome://browser/content/devtools/framework/toolbox.xul
 // @compatibility  Firefox 20 - firefox 23
 // @charset        UTF-8
-// @version        下書き1
+// @version        0.5
+// @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/uAutoPagerize
+// @reviewURL      http://bbs.kafan.cn/thread-1555846-1-1.html
 // @note           fix compatibility for firefox 23a1 by lastdream2013
 // @note           まだこれからつくり込む段階
 // @note           ツールメニューから起動する

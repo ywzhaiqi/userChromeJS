@@ -4,6 +4,9 @@
 // @description    像 Greasemonkey 一样保存 uc脚本
 // @include        main
 // @charset        UTF-8
+// @version        0.3
+// @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/SaveUserChromeJS
+// @reviewURL      http://bbs.kafan.cn/thread-1590873-1-1.html
 // ==/UserScript==
 
 (function() {
@@ -12,7 +15,7 @@
 var notificationsAfterInstall = true;
 
 // 保存完毕是否加载脚本（无需启动）？仅支持 .uc.js，一些脚本有问题。
-var runWithoutRestart = false;
+var runWithoutRestart = true;
 
 
 let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;

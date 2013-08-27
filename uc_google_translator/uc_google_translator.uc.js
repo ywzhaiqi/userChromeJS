@@ -7,8 +7,9 @@
 // @license        MIT License
 // @compatibility  Firefox 4
 // @charset        UTF-8
-// @version        2.2 2013/04/09 02:00 REMOVE E4X
-// @version        2.1.0.1
+// @version        2.2
+// @note           2.2 2013/04/09 02:00 REMOVE E4X
+// @note           2.1.0.1
 // @note           2013/06/02 略加修改 by ywzhaiqi
 // @note           支持选择翻译并可替换原文
 // @note           支持全页翻译

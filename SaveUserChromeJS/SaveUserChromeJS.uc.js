@@ -15,7 +15,7 @@
 var notificationsAfterInstall = true;
 
 // 保存完毕是否加载脚本（无需启动）？仅支持 .uc.js，一些脚本有问题。
-var runWithoutRestart = true;
+var runWithoutRestart = false;
 
 
 let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;

@@ -20,6 +20,7 @@ AddonsPage.uc.js
  - 启用禁用需要 rebuild_userChrome.uc.xul
  - 详细页面新增的信息需要 [修改版userChrome.js](https://github.com/ywzhaiqi/userChromeJS/tree/master/userChrome.js)
  	- 新增对uc脚本多个参数的识别：`// @homepageURL`、`// @reviewURL`、`// @optionsURL`
+ - 编辑命令需要首先设置 view\_source.editor.path 的路径，可用网址 about:config?filter=view_source.editor.path 打开
 
 ![AddonsPage_userChromeJS.png](AddonsPage_userChromeJS.png)
 

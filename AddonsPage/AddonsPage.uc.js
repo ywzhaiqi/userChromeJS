@@ -8,7 +8,7 @@
 // @downloadURL  https://raw.github.com/ywzhaiqi/userChromeJS/master/AddonsPage/AddonsPage.uc.js
 // @homepageURL  https://github.com/ywzhaiqi/userChromeJS/tree/master/AddonsPage
 // @reviewURL    http://bbs.kafan.cn/thread-1617407-1-1.html
-// @optionsURL   about:config?filter=view_source.editor
+// @optionsURL   about:config?filter=view_source.editor.path
 // @note         - 附件组件页面右键新增查看所在目录（支持扩展、主题、插件）、复制名字。Greasemonkey、Scriptish 自带已经存在
 // @note         - 附件组件详细信息页面新增GM脚本、扩展、主题安装地址和插件路径，右键即复制
 // @note         - 新增 uc脚本管理页面

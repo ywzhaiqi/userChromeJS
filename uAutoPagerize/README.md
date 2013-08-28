@@ -44,9 +44,10 @@ uAutoPagerize 中文规则版
 
 ### SITEINFO_Writer.uc.js（深度修改）
 
- - 大幅修改以适应 uAutoPagerize 中文规则增强版
+ - 修改以适应 uAutoPagerize 中文规则增强版
+ - 替换原来的选取方式为 Element Hiding Helper for Adblock Plus 的方式，可用按键放大缩小
  - 移植了 **AutoPager 的自动识别** 功能
- - 自带的开发工具右键新增 **设置 nextLink 的值** 和 **设置 pageElement 的值** 功能
+ - 自带的开发工具右键新增 **Copy XPath**
  - AutoPager Rules 网站新增 **点击 `install` 读取规则并弹出对话框**
  - 新增 **读取当前页面规则** 的功能，当前页面已经运行的规则会加粗
  - 新增 **从剪贴板读取规则** 的功能

@@ -22,7 +22,7 @@ userChromeJS for Firefox
 
 ## 说明
 
-文件夹
+### 文件夹
 
  - [addmenuPlus](addmenuPlus)，增加修改 Firefox 菜单（修改版）。
  - [AddonsPage](AddonsPage)，附件组件页面（about:addons）右键新增查看所在目录，详细信息页面新增安装地址或路径，新增 uc脚本管理页面。
@@ -44,7 +44,7 @@ userChromeJS for Firefox
  - [viewSourceModoki](viewSourceModoki)，右键菜单增加 `View Source With: All、Document、css、js`。
  - [WordHighlightToolbarFix](WordHighlightToolbarFix)，搜索高亮（修改版）。
 
-单文件
+### 单文件
 
  - [chromejs.uc.js](chromejs.uc.js)，在地址栏运行uc代码，例：打开书签 `chromejs:PlacesCommandHook.showPlacesOrganizer('AllBookmarks');`
  - [copybookmark.uc.js](copybookmark.uc.js)，书签右键复制标题链接（修改版）。
@@ -63,10 +63,26 @@ userChromeJS for Firefox
  - [speedupErrorConsole.uc.js](speedupErrorConsole.uc.js)，加速错误控制台。
  - [statusbarButtonScrapbook.uc.js](statusbarButtonScrapbook.uc.js)，更改 Scrapbook 状态栏图标为鼠标中键打开侧边栏。
  - [textLink.uc.js](textLink.uc.js)，双击打开文字链接。
- - [UserAgentChangeModLite.uc.js](UserAgentChangeModLite.uc.js)，UA切换（修改版）。
+
  - [userChrome.js](userChrome.js)，修改版，增加对 @homepageURL 等参数的解析，在 AddonsPage.uc.js 的uc脚本详细页面就会有主页等链接。
 
-## 单文件说明
+
+### Disable文件夹
+
+ - [UserAgentChangeModLite.uc.js](Disable/UserAgentChangeModLite.uc.js)，UA切换（修改版），已改用[User Agent Overrider :: Firefox 附加组件](https://addons.mozilla.org/zh-cn/firefox/addon/user-agent-overrider/?src=search)
+
+ - [inlineEditForBookmarkTitleOnSidebar.uc.js](Disable/inlineEditForBookmarkTitleOnSidebar.uc.js)。侧边栏书签按F2直接编辑标题，[原作者地址（日文）](https://github.com/alice0775/userChrome.js/blob/master/inlineEditForBookmarkTitleOnSidebar.uc.js)
+
+ - [AutoCloseBookMarkFolder_Fx37.uc.js](Disable/AutoCloseBookMarkFolder_Fx37.uc.js)，侧边栏书签增加 "展开"、"折叠" 按钮，[原作者地址（日文）](https://github.com/alice0775/userChrome.js/blob/master/AutoCloseBookMarkFolder_Fx37.uc.js)
+
+ - [AutoCloseHistoryFolder_Fx37.uc.js](Disable/AutoCloseHistoryFolder_Fx37.uc.js)，侧边栏历史增加 "展开"、"折叠" 按钮，[原作者地址（日文）](https://github.com/alice0775/userChrome.js/blob/master/AutoCloseHistoryFolder_Fx37.uc.js)
+
+ - [autoContextmenu.uc.xul](Disable/autoContextmenu.uc.xul)，选中自动弹出右键菜单，可开关，可用 rebuild_userChrome.uc 把设置集中在一起。[原作者地址（日文）](https://github.com/alice0775/userChrome.js/blob/master/autoContextmenu.uc.xul)
+
+ - [KeepBookmarksOnMiddleClick.uc.js](Disable/KeepBookmarksOnMiddleClick.uc.js)，鼠标中键连续打开书签。
+
+
+## 单文件补充说明
 
 ### copyBookmark.uc.js
 
@@ -118,24 +134,3 @@ UA切换，基于 [lastdream2013 的版本](http://bbs.kafan.cn/thread-1534937-1
 
  - 去除右键菜单，自己用 addMenu.uc 添加，菜单只出现在一般情况下，在链接、图片、输入框等情况下不会出现。
 
-
-## 不用的脚本（Disable文件夹中）
-
-### inlineEditForBookmarkTitleOnSidebar.uc.js
-
-侧边栏书签按F2直接编辑标题。[原作者地址（日文）](https://github.com/alice0775/userChrome.js/blob/master/inlineEditForBookmarkTitleOnSidebar.uc.js)
-
-### AutoCloseBookMarkFolder_Fx37.uc.js
-
-侧边栏书签增加 "展开"、"折叠" 按钮。[原作者地址（日文）](https://github.com/alice0775/userChrome.js/blob/master/AutoCloseBookMarkFolder_Fx37.uc.js)
-
-### AutoCloseHistoryFolder_Fx37.uc.js
-侧边栏历史增加 "展开"、"折叠" 按钮。[原作者地址（日文）](https://github.com/alice0775/userChrome.js/blob/master/AutoCloseHistoryFolder_Fx37.uc.js)
-
-### autoContextmenu.uc.xul
-
-选中自动弹出右键菜单，可开关，可用 rebuild_userChrome.uc 集中设置在一起。[原作者地址（日文）](https://github.com/alice0775/userChrome.js/blob/master/autoContextmenu.uc.xul)
-
-### KeepBookmarksOnMiddleClick.uc.js
-
-鼠标中键连续打开书签。

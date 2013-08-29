@@ -4,7 +4,7 @@
 // @author       ywzhaiqi
 // @include      main
 // @charset      utf-8
-// @version      0.3
+// @version      0.4
 // @downloadURL  https://raw.github.com/ywzhaiqi/userChromeJS/master/AddonsPage/AddonsPage.uc.js
 // @homepageURL  https://github.com/ywzhaiqi/userChromeJS/tree/master/AddonsPage
 // @reviewURL    http://bbs.kafan.cn/thread-1617407-1-1.html
@@ -18,14 +18,19 @@
 
 location == "chrome://browser/content/browser.xul" && (function(){
 
-	// if(window.AM_Helper){
-	// 	AM_Helper.uninit();
-	// 	delete AM_Helper;
-	// }
+	if(window.AM_Helper){
+		AM_Helper.uninit();
+		delete AM_Helper;
+	}
+	if(window.userChromeJSAddon){
+		userChromeJSAddon.uninit();
+		delete userChromeJSAddon;
+	}
 
-	let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-	if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
-	Cu.import("resource://gre/modules/AddonManager.jsm");
+	var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+	var { Services } = Cu.import("resource://gre/modules/Services.jsm");
+	var { AddonManager } = Cu.import("resource://gre/modules/AddonManager.jsm");
+	var { XPIProvider } = Cu.import("resource://gre/modules/XPIProvider.jsm");
 
 	var debug = content.console.log;
 
@@ -33,10 +38,6 @@ location == "chrome://browser/content/browser.xul" && (function(){
 		menuitem: {},
 
 		init: function(){
-			["browseDir", "copyName", "setUrlOrPath", "setItemsAttributes", "editScript"].forEach(function(menthod){
-				AM_Helper[menthod] = AM_Helper[menthod].bind(AM_Helper);
-			});
-
 			document.addEventListener("DOMContentLoaded", this, false);
 		},
 		uninit: function(){
@@ -88,6 +89,8 @@ location == "chrome://browser/content/browser.xul" && (function(){
 			menuitem = $C("menuitem", {
 				id: "AM-inspect-addon",
 				label: "查看附加组件",
+				accesskey: "i",
+				tooltipText: "调用 DOM Inspector 查看 addon 对象",
 				oncommand: "AM_Helper.getAddon(AM_Helper.getPopupNode(this).value, AM_Helper.inspectAddon);"
 			});
 			this.menuitem.inspectItem = popup.insertBefore(menuitem, ins);
@@ -95,6 +98,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
 			menuitem = $C("menuitem", {
 				id: "AM-edit-script",
 				label: "编辑",
+				accesskey: "e",
 				hidden: true,
 				oncommand: "AM_Helper.getAddon(AM_Helper.getPopupNode(this).value, AM_Helper.editScript);"
 			});
@@ -103,13 +107,24 @@ location == "chrome://browser/content/browser.xul" && (function(){
 			menuitem = $C("menuitem", {
 				id: "AM-browse-dir",
 				label: "查看所在目录",
+				accesskey: "b",
 				oncommand: "AM_Helper.getAddon(AM_Helper.getPopupNode(this).value, AM_Helper.browseDir);"
 			});
 			this.menuitem.browseDir = popup.insertBefore(menuitem, ins);
 
 			menuitem = $C("menuitem", {
+				id: "AM-open-url",
+				label: "打开安装页面",
+				accesskey: "u",
+				tooltipText: null,
+				oncommand: "openURL(this.tooltipText)",
+			});
+			this.menuitem.openURLOrPath = popup.insertBefore(menuitem, ins);
+
+			menuitem = $C("menuitem", {
 				id: "AM-copy-name",
 				label: "复制名称",
+				accesskey: "c",
 				oncommand: "AM_Helper.getAddon(AM_Helper.getPopupNode(this).value, AM_Helper.copyName);"
 			});
 			this.menuitem.copyName = popup.insertBefore(menuitem, ins);
@@ -137,20 +152,26 @@ location == "chrome://browser/content/browser.xul" && (function(){
 		setItemsAttributes: function(aAddon, event){
 			var popup = event.target;
 			var doc = popup.ownerDocument;
-			var categorie = doc.getElementById("categories").getAttribute('last-selected').replace("category-", "");
-			var isExtension = (categorie == "extension");
-			var isTheme = (categorie == "theme");
-			var isPlugin = (categorie == "plugin");
-			var isUserStyle = (categorie == "userstyle");
-			var isScriptish = (categorie == "userscript");
-			var isUserScript = (categorie == "user-script") || // Greasemonkey
-			                   (categorie == "userscript") ||  // Scriptish
-			                   (categorie == "greasemonkey-user-script"); // Greasemonkey 1.7+
-			var isUserChromeJS = (categorie == "userchromejs");
+
+			var isExtension = (aAddon.type == "extension");
+			var isTheme = (aAddon.type == "theme");
+			var isPlugin = (aAddon.type == "plugin");
+			var isUserStyle = (aAddon.type == "userstyle");
+			var isScriptish = (aAddon.type == "userscript");
+			var isUserScript = (aAddon.type == "user-script") || // Greasemonkey
+			                   (aAddon.type == "userscript") ||  // Scriptish
+			                   (aAddon.type == "greasemonkey-user-script"); // Greasemonkey 1.7+
+			var isUserChromeJS = (aAddon.type == "userchromejs");
 
 			this.menuitem.browseDir.hidden = isUserStyle || isUserScript;
 
 			this.menuitem.editScript.hidden = !isUserChromeJS;
+
+			// install url
+			var openInstallURLItem = this.menuitem.openURLOrPath;
+			var installURL = this.getInstallURL(aAddon) || null;
+			openInstallURLItem.tooltipText = installURL;
+			openInstallURLItem.hidden = !installURL;
 
 			var inspectItem = this.menuitem.inspectItem;
 			inspectItem.disabled = !("inspectObject" in window);
@@ -162,71 +183,70 @@ location == "chrome://browser/content/browser.xul" && (function(){
 
 			var copyNameItem = this.menuitem.copyName;
 			copyNameItem.tooltipText = aAddon.name;
-			copyNameItem.disabled = isUserStyle;
+			// copyNameItem.disabled = isUserStyle;
 
-			// var amoURL = aAddon.reviewURL
-			//              ? aAddon.reviewURL.replace(/\/reviews\//, "/")
-			//              : null;
-
-			var usoRegx = /^https?:\/\/userscripts.org\/scripts\/source\/\d+.\w+.js$/;
-			var usoURL = "";
-			if (aAddon._script) {
-				var usDownloadURL = aAddon._script._downloadURL;
-				var usUpdateURL = aAddon._script._updateURL;
-				if (usoRegx.test(usDownloadURL)) {
-					usoURL = usDownloadURL;
-				} else if (usoRegx.test(usUpdateURL)) {
-					usoURL = usUpdateURL;
+			if(isUserScript && !isScriptish){
+				var usoRegx = /^https?:\/\/userscripts.org\/scripts\/source\/\d+.\w+.js$/;
+				var usoURL = "";
+				if (aAddon._script) {
+					var usDownloadURL = aAddon._script._downloadURL;
+					var usUpdateURL = aAddon._script._updateURL;
+					if (usoRegx.test(usDownloadURL)) {
+						usoURL = usDownloadURL;
+					} else if (usoRegx.test(usUpdateURL)) {
+						usoURL = usUpdateURL;
+					}
 				}
+
+				var usoItem = this.menuitem.goUSO;
+				usoItem.disabled = !usoRegx.test(usoURL);
+				usoItem.className = isUserScript ? usoItem.disabled ? "" : "greasemonkey" : "";
+				usoItem.tooltipText = usoURL.replace(/source/, "show")
+					.replace(/.\w+.js$/, "");
+
+				var fusoItem = this.menuitem.findUSO;
+				fusoItem.disabled = usoRegx.test(usoURL);
+				fusoItem.className = isUserScript ? fusoItem.disabled ? "" : "greasemonkey" : "";
+				fusoItem.setAttribute("find-on-uso",
+					"http://userscripts.org/scripts/search?q=" +
+					encodeURIComponent(aAddon.name));
 			}
+		},
 
-			var usoItem = this.menuitem.goUSO;
-			usoItem.disabled = !usoRegx.test(usoURL);
-			usoItem.className = isUserScript ? usoItem.disabled ? "" : "greasemonkey" : "";
-			usoItem.tooltipText = usoURL.replace(/source/, "show")
-				.replace(/.\w+.js$/, "");
-
-			var fusoItem = this.menuitem.findUSO;
-			fusoItem.hidden = true;
-			fusoItem.disabled = usoRegx.test(usoURL);
-			fusoItem.className = isUserScript ? fusoItem.disabled ? "" : "greasemonkey" : "";
-			fusoItem.setAttribute("find-on-uso",
-				"http://userscripts.org/scripts/search?q=" +
-				encodeURIComponent(aAddon.name));
-		},
-		inspectAddon: function (aAddon) {
-		 	inspectObject(aAddon);
-		},
-		inspectUserscript: function (aAddon) {
-		 	inspectObject(aAddon._script);
-		},
 		getPopupNode: function (aNode) {
 			var doc = aNode.ownerDocument;
 			return "triggerNode" in aNode.parentNode ? aNode.parentNode.triggerNode : doc.popupNode;
 		},
 		getAddon: function (aId, aCallback, aEvent) {
+			var self = this;
+
 			if (content.gDetailView._addon) {
-				aCallback(content.gDetailView._addon, aEvent);
+				aCallback.apply(self, [content.gDetailView._addon, aEvent]);
 				return;
 			}
 
 			AddonManager.getAllAddons(function(aAddons) {
 				for (var i = 0; i < aAddons.length; i++) {
 					if (aAddons[i].id == aId) {
-						aCallback(aAddons[i], aEvent);
+						aCallback.apply(self, [aAddons[i], aEvent]);
 						return;
 					}
 				}
 			});
 		},
+
+		inspectAddon: function (aAddon) {
+		 	inspectObject(aAddon);
+		},
+		inspectUserscript: function (aAddon) {
+		 	inspectObject(aAddon._script);
+		},
 		browseDir: function (aAddon) {
 			switch(aAddon.type){
 				case "plugin":
 					var pathes = aAddon.pluginFullpath;
-					if(pathes.length == 1){
-						this.revealPath(pathes[0]);
-					}else{
-						alert("有多个路径：\n" + path.join("\n"));
+					for (var i = 0; i < pathes.length; i++) {
+						this.revealPath(pathes[i]);
 					}
 					return;
 				case "userchromejs":
@@ -290,29 +310,40 @@ location == "chrome://browser/content/browser.xul" && (function(){
 		copyName: function (aAddon) {
 		 	this.copyToClipboard(aAddon.name);
 		},
+		getInstallURL: function(aAddon){
+			aAddon = aAddon || content.gViewController.viewObjects.detail._addon;
+			if(!aAddon) return null;
 
-		get getUrl() {
-			var aAddon = content.gViewController.viewObjects.detail._addon;
-			if(!aAddon) return false;
-
+			var url = null;
 			switch(aAddon.type){
 				case "extension":
 				case "theme":
-					var url = (aAddon.contributionURL || aAddon.reviewURL) || false;
+					url = (aAddon.contributionURL || aAddon.reviewURL) || null;
 					return url && url.replace(/\/developers|\/reviews/g,"");
 				case "greasemonkey-user-script":
 					return aAddon._script && aAddon._script.downloadURL.replace(/(^.+)source\/(\d+).*$/,"$1show/$2");
 				case "userscript":
-					return
+					url = aAddon.homepageURL;
+					if(!url && aAddon._updateURL){
+						url = aAddon._updateURL.replace(/(^.+)source\/(\d+).*$/,"$1show/$2");
+					}
+					return url;
+				case "userchromejs":
+					return aAddon.homepageURL || aAddon.reviewURL;
+				default:
+					return aAddon.homepageURL;
 			}
 		},
+
 		get getPath(){
 			var url = content.gViewController.viewObjects.detail._addon;
 			if(!url) return false;
 			return url.pluginFullpath || false;
 		},
 		setUrlOrPath :function(doc){
-			if (!this.getUrl && !this.getPath) return;
+			var installURL = this.getInstallURL();
+			if (!installURL && !this.getPath) return;
+
 			if(!doc.getElementById("detail-InstallURL-row")){
 				var value = "",label = "";
 				if(content.gViewController.currentViewId.indexOf("detail")!= -1){
@@ -320,7 +351,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
 						case "extension":
 						case "theme":
 						case "greasemonkey-user-script":
-							value = this.getUrl;
+							value = installURL;
 							label = "%Installpage%";
 							break;
 						case "plugin":
@@ -380,12 +411,11 @@ location == "chrome://browser/content/browser.xul" && (function(){
 		scripts:[],
 
 	    init: function(){
-	    	["getScriptById"].forEach(function(menthod){
-	    		userChromeJSAddon[menthod] = userChromeJSAddon.getScriptById.bind(userChromeJSAddon);
-	    	});
-
 	        this.initScripts();
 	        this.registerProvider();
+	    },
+	    uninit: function(){
+	    	this.unregisterProvider();
 	    },
 	    initScripts: function(){
 	        var scripts = window.userChrome_js.scripts.concat(window.userChrome_js.overlays);
@@ -413,9 +443,11 @@ location == "chrome://browser/content/browser.xul" && (function(){
 					9000)];
 			}
 
-			AddonManagerPrivate.registerProvider({
+			this.provider = {
 				getAddonByID: function(aId, aCallback) {
-					aCallback(userChromeJSAddon.getScriptById(aId));
+					aCallback(function(){
+						userChromeJSAddon.getScriptById(aId)
+					});
 				},
 
 				getAddonsByTypes: function(aTypes, aCallback) {
@@ -425,7 +457,12 @@ location == "chrome://browser/content/browser.xul" && (function(){
 						aCallback(userChromeJSAddon.scripts);
 					}
 				}
-			}, types);
+			};
+
+			AddonManagerPrivate.registerProvider(this.provider, types);
+	    },
+	    unregisterProvider: function(){
+	    	AddonManagerPrivate.unregisterProvider(this.provider);
 	    }
 	};
 
@@ -445,11 +482,10 @@ location == "chrome://browser/content/browser.xul" && (function(){
 		this.reviewCount = 0;
 		this.fullDescription = this._script.fullDescription || null;
 		this.downloadURL = this._script.downloadURL || null;
-		this.optionsURL = this._script.optionsURL || null;
 	}
 
 	ScriptAddon.prototype = {
-		id: null,
+		active: false,
 		version: null,
 		type: "userchromejs",
 		isCompatible: true,
@@ -462,6 +498,11 @@ location == "chrome://browser/content/browser.xul" && (function(){
 		operationsRequiringRestart: 6,
 		// operationsRequiringRestart: AddonManager.OP_NEEDS_RESTART_DISABLE,
 
+		get optionsURL(){
+			if (this.isActive && this._script.optionsURL)
+				return this._script.optionsURL;
+		},
+
 		get isActive() !this.userDisabled,
 		get userDisabled() !this.enabled,
 		set userDisabled(val) {
@@ -469,21 +510,20 @@ location == "chrome://browser/content/browser.xul" && (function(){
 				return val;
 			}
 
+			AddonManagerPrivate.callAddonListeners(val ? 'onEnabling' : 'onDisabling', this, false);
+
 			if(this.pendingOperations == AddonManager.PENDING_NONE){
 				this.pendingOperations = val ? AddonManager.PENDING_DISABLE : AddonManager.PENDING_ENABLE;
 			}else{
 				this.pendingOperations = AddonManager.PENDING_NONE;
 			}
 
-			AddonManagerPrivate.callAddonListeners(
-				val ? 'onEnabling' : 'onDisabling', this, false);
 			this.enabled = !val;
-			AddonManagerPrivate.callAddonListeners(
-				val ? 'onEnabled' : 'onDisabled', this);
-
 			if(window.userChromejs){
 				userChromejs.chgScriptStat(this.name);
 			}
+
+			AddonManagerPrivate.callAddonListeners(val ? 'onEnabled' : 'onDisabled', this);
 		},
 		get permissions() {
 			// var perms = AddonManager.PERM_CAN_UNINSTALL;
@@ -504,7 +544,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
 			this.pendingOperations ^= AddonManager.PENDING_UNINSTALL;
 			AddonManagerPrivate.callAddonListeners("onOperationCancelled", this);
 		},
-	}
+	};
 
 
 	AM_Helper.init();
@@ -516,5 +556,4 @@ location == "chrome://browser/content/browser.xul" && (function(){
 	    if (attr) Object.keys(attr).forEach(function(n) el.setAttribute(n, attr[n]));
 	    return el;
 	}
-
 })();

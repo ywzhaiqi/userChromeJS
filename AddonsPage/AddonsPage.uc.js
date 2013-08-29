@@ -445,9 +445,8 @@ location == "chrome://browser/content/browser.xul" && (function(){
 
 			this.provider = {
 				getAddonByID: function(aId, aCallback) {
-					aCallback(function(){
-						userChromeJSAddon.getScriptById(aId)
-					});
+					let script = userChromeJSAddon.getScriptById(aId);
+					aCallback(script);
 				},
 
 				getAddonsByTypes: function(aTypes, aCallback) {
@@ -485,7 +484,6 @@ location == "chrome://browser/content/browser.xul" && (function(){
 	}
 
 	ScriptAddon.prototype = {
-		active: false,
 		version: null,
 		type: "userchromejs",
 		isCompatible: true,

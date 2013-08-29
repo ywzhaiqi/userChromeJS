@@ -49,6 +49,7 @@ AddonsPage.uc.js
  - [Add-ons Manager Context Menu 扩展](https://addons.mozilla.org/zh-cn/firefox/addon/am-context/)
  - OpenAddonFolder.uc.js
  - Greasemonkey 和 Scriptish 扩展
+ - Firefox 源代码
 
 ## 写这个脚本的说明
 

@@ -145,7 +145,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 			ns._canPlay = true;
 
 			var hostname = content.location.hostname;
-			if(hostname.match(/youku|yinyuetai|ku6|umiwi|sina|163|56|joy|v\.qq|letv|(tieba|mv|zhangmen)\.baidu|wasu|pps|kankan\.xunlei|tangdou|taiyuan\.acfun\.tv|www\.bilibili\.tv/)){
+			if(hostname.match(/youku|yinyuetai|ku6|umiwi|sina|163|56|joy|v\.qq|letv|(tieba|mv|zhangmen)\.baidu|wasu|pps|kankan\.xunlei|tangdou|acfun\.tv|www\.bilibili\.tv/)){
 				return true;
 			}
 

@@ -1,3 +1,13 @@
+// ==UserScript==
+// @name          AutoPagerize IDE
+// @include       http*
+// @exclude       http*://mail.google.com/*
+// @exclude       http*://maps.google*
+// @exclude       http*://www.google.com/reader*
+// @grant         GM_registerMenuCommand
+// ==/UserScript==
+
+
 /*
  * @title AutoPagerize IDE
  * @description AutoPagerize IDEの結果をAutoPagerizeに加えやすいように書き換えた。
@@ -76,8 +86,9 @@ function dirty_generated_code() {
                     z-index: 100000;\
                     color: black;\
                 \
-                    font-family: 'メイリオ',Sans-Serif !important;\
+                    font-family: '微软雅黑',Sans-Serif !important;\
                     font-size: normal !important;\
+                    background: none repeat scroll 0% 0% rgb(249, 244, 227);\
                 }\
                 \
                 ._floating_window div {\
@@ -1478,4 +1489,5 @@ function exec_once() {
     return false;
 }
 
-exec_once();
+
+GM_registerMenuCommand("启动 AutoPagerize IDE", exec_once);

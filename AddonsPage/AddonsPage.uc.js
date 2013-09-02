@@ -4,7 +4,7 @@
 // @author       ywzhaiqi
 // @include      main
 // @charset      utf-8
-// @version      0.5
+// @version      0.6
 // @downloadURL  https://raw.github.com/ywzhaiqi/userChromeJS/master/AddonsPage/AddonsPage.uc.js
 // @homepageURL  https://github.com/ywzhaiqi/userChromeJS/tree/master/AddonsPage
 // @reviewURL    http://bbs.kafan.cn/thread-1617407-1-1.html
@@ -65,6 +65,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
 
 					// 给菜单调用
 					win.AM_Helper = AM_Helper;
+					this.win = win;
 
 					var self = this;
 					var observer = new MutationObserver(function(e) {
@@ -77,7 +78,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
 					observer.observe(doc.getElementById("detail-view"), {attributes: true});
 					break;
 				case "popupshowing":
-					this.getAddon(content.document.popupNode.value,
+					this.getAddon(this.win.document.popupNode.value,
 					              this.setItemsAttributes,
 					              event);
 					break;
@@ -229,8 +230,8 @@ location == "chrome://browser/content/browser.xul" && (function(){
 		getAddon: function (aId, aCallback, aEvent) {
 			var self = this;
 
-			if (content.gDetailView._addon) {
-				aCallback.apply(self, [content.gDetailView._addon, aEvent]);
+			if (this.win.gDetailView._addon) {
+				aCallback.apply(this, [this.win.gDetailView._addon, aEvent]);
 				return;
 			}
 
@@ -320,7 +321,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
 		 	this.copyToClipboard(aAddon.name);
 		},
 		getInstallURL: function(aAddon){
-			aAddon = aAddon || content.gViewController.viewObjects.detail._addon;
+			aAddon = aAddon || this.win.gViewController.viewObjects.detail._addon;
 			if(!aAddon) return null;
 
 			var url = null;
@@ -345,7 +346,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
 		},
 
 		get getPath(){
-			var url = content.gViewController.viewObjects.detail._addon;
+			var url = this.win.gViewController.viewObjects.detail._addon;
 			if(!url) return false;
 			return url.pluginFullpath || false;
 		},
@@ -355,8 +356,8 @@ location == "chrome://browser/content/browser.xul" && (function(){
 
 			if(!doc.getElementById("detail-InstallURL-row")){
 				var value = "",label = "";
-				if(content.gViewController.currentViewId.indexOf("detail")!= -1){
-					switch (content.gViewController.viewObjects.detail._addon.type){
+				if(this.win.gViewController.currentViewId.indexOf("detail")!= -1){
+					switch (this.win.gViewController.viewObjects.detail._addon.type){
 						case "extension":
 						case "theme":
 						case "greasemonkey-user-script":

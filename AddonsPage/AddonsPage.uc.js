@@ -4,7 +4,7 @@
 // @author       ywzhaiqi
 // @include      main
 // @charset      utf-8
-// @version      0.4
+// @version      0.5
 // @downloadURL  https://raw.github.com/ywzhaiqi/userChromeJS/master/AddonsPage/AddonsPage.uc.js
 // @homepageURL  https://github.com/ywzhaiqi/userChromeJS/tree/master/AddonsPage
 // @reviewURL    http://bbs.kafan.cn/thread-1617407-1-1.html
@@ -13,7 +13,11 @@
 // @note         - 附件组件详细信息页面新增GM脚本、扩展、主题安装地址和插件路径，右键即复制
 // @note         - 新增 uc脚本管理页面
 // @note         - 右键菜单 "查看附加组件" 需要 DOM Inspector
-// @note         其它信息请查看主页
+// @note         uc脚本管理界面
+// @note         - 启用禁用需要 rebuild_userChrome.uc.xul
+// @note         - 编辑命令需要首先设置 view_source.editor.path 的路径
+// @note         - 图标请自行添加样式，详细信息见主页
+// @note         其它信息见主页
 // ==/UserScript==
 
 location == "chrome://browser/content/browser.xul" && (function(){
@@ -27,12 +31,17 @@ location == "chrome://browser/content/browser.xul" && (function(){
 		delete userChromeJSAddon;
 	}
 
-	var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-	var { Services } = Cu.import("resource://gre/modules/Services.jsm");
-	var { AddonManager } = Cu.import("resource://gre/modules/AddonManager.jsm");
-	var { XPIProvider } = Cu.import("resource://gre/modules/XPIProvider.jsm");
+	let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+	let { Services } = Cu.import("resource://gre/modules/Services.jsm");
+	let { AddonManager } = Cu.import("resource://gre/modules/AddonManager.jsm");
+	let { XPIProvider } = Cu.import("resource://gre/modules/XPIProvider.jsm");
 
 	var debug = content.console.log;
+
+	var locale = Cc["@mozilla.org/preferences-service;1"]
+	    .getService(Components.interfaces.nsIPrefBranch)
+	    .getCharPref("general.useragent.locale");
+	var isZhCN = locale.indexOf("zh") != -1;
 
 	window.AM_Helper = {
 		menuitem: {},
@@ -88,16 +97,16 @@ location == "chrome://browser/content/browser.xul" && (function(){
 
 			menuitem = $C("menuitem", {
 				id: "AM-inspect-addon",
-				label: "查看附加组件",
+				label: isZhCN ? "查看附加组件" : "Inspect Addon",
 				accesskey: "i",
-				tooltipText: "调用 DOM Inspector 查看 addon 对象",
+				tooltipText: isZhCN ? "调用 DOM Inspector 查看 addon 对象" : "inspect addon use DOM Inspector",
 				oncommand: "AM_Helper.getAddon(AM_Helper.getPopupNode(this).value, AM_Helper.inspectAddon);"
 			});
 			this.menuitem.inspectItem = popup.insertBefore(menuitem, ins);
 
 			menuitem = $C("menuitem", {
 				id: "AM-edit-script",
-				label: "编辑",
+				label: isZhCN ? "编辑" : "Edit",
 				accesskey: "e",
 				hidden: true,
 				oncommand: "AM_Helper.getAddon(AM_Helper.getPopupNode(this).value, AM_Helper.editScript);"
@@ -106,7 +115,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
 
 			menuitem = $C("menuitem", {
 				id: "AM-browse-dir",
-				label: "查看所在目录",
+				label: isZhCN ? "查看所在目录" : "Browser Dir",
 				accesskey: "b",
 				oncommand: "AM_Helper.getAddon(AM_Helper.getPopupNode(this).value, AM_Helper.browseDir);"
 			});
@@ -114,7 +123,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
 
 			menuitem = $C("menuitem", {
 				id: "AM-open-url",
-				label: "打开安装页面",
+				label: isZhCN ? "打开安装页面" : "Open Install URL",
 				accesskey: "u",
 				tooltipText: null,
 				oncommand: "openURL(this.tooltipText)",
@@ -123,7 +132,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
 
 			menuitem = $C("menuitem", {
 				id: "AM-copy-name",
-				label: "复制名称",
+				label: isZhCN ? "复制名称" : "Copy Name",
 				accesskey: "c",
 				oncommand: "AM_Helper.getAddon(AM_Helper.getPopupNode(this).value, AM_Helper.copyName);"
 			});
@@ -133,7 +142,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
 				id: "AM-go-uso",
 				class: "greasemonkey",
 				hidden: true,
-				label: "在 Userscripts.org 上查看",
+				label: isZhCN ? "在 Userscripts.org 上查看" : "View on Userscripts.org",
 				oncommand: "openURL(this.tooltipText);"
 			});
 			this.menuitem.goUSO = popup.appendChild(menuitem);
@@ -142,7 +151,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
 				id: "AM-find-uso",
 				class: "greasemonkey",
 				hidden: true,
-				label: "在 Userscripts.org 上查找",
+				label: isZhCN ? "在 Userscripts.org 上查找" : "Find on Userscripts.org",
 				oncommand: "openURL(this.getAttribute('find-on-uso'));"
 			});
 			this.menuitem.findUSO = popup.appendChild(menuitem);
@@ -384,8 +393,8 @@ location == "chrome://browser/content/browser.xul" && (function(){
 					}
 					xul = '<row class="detail-row-complex" id="detail-InstallURL-row" label="'+ label +'">'+
 								'<label class="detail-row-label" value="'+ label +'"/>'+ xul +'</row>';
-					if(Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefBranch).getCharPref("general.useragent.locale").indexOf("zh")!=-1){
-						xul = xul.replace(/\%Installpage\%/g, "安装页面").replace(/\%Path\%/g,"路径");
+					if(isZhCN){
+						xul = xul.replace(/\%Installpage\%/g, "安装页面").replace(/\%Path\%/g, "路径");
 					}else{
 						xul = xul.replace(/\%/g,"");
 					}
@@ -404,8 +413,6 @@ location == "chrome://browser/content/browser.xul" && (function(){
 				getService(Ci.nsIClipboardHelper).copyString(aString);
 		}
 	};
-
-	var SCRIPT_ID_SUFFIX = '@userchromejs';
 
 	window.userChromeJSAddon = {
 		scripts:[],
@@ -438,7 +445,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
 				types = [new AddonManagerPrivate.AddonType(
 					"userchromejs",
 					"",
-					"uc 脚本",
+					isZhCN ? "uc 脚本" : "userChrome JS",
 					AddonManager.VIEW_TYPE_LIST,
 					9000)];
 			}
@@ -468,7 +475,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
 	function ScriptAddon(aScript){
 		this._script = aScript;
 
-		this.id = this._script.filename + SCRIPT_ID_SUFFIX;
+		this.id = this._script.url;
 		this.name = this._script.filename;
 		this.description = this._script.description;
 		this.enabled = !userChrome_js.scriptDisable[this.name]

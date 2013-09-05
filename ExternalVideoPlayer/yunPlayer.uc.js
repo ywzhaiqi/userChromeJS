@@ -5,16 +5,15 @@
 // @author         ywzhaiqi
 // @include        main
 // @charset        UTF-8
-// @version        0.1
-// @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/uAutoPagerize
-// @reviewURL
+// @version        0.2
+// @homepageURL    https://github.com/ywzhaiqi/userChromeJS/blob/master/ExternalVideoPlayer/yunPlayer.uc.js
 // @note
 // ==/UserScript==
 
 (function (){
 
 	var API_URL = "http://www.happyfuns.com/happyvod/api.php#!url=";
-	var link_regexp = /\.(?:rmvb|mp4)$|^(?:thunder|ed2k)/i;
+	var link_regexp = /\.(?:rmvb|mp4)$|^(?:thunder|ed2k|magnet):/i;
 	var location_regexp = /^$/i;
 
 	if(window.yunPlayer){
@@ -23,6 +22,10 @@
 	}
 
 	window.yunPlayer = {
+		get focusedWindow() {
+			return gContextMenu && gContextMenu.target ? gContextMenu.target.ownerDocument.defaultView : content;
+		},
+
 		init: function(){
 			var contextMenu = $("contentAreaContextMenu");
 
@@ -30,7 +33,7 @@
 				id: "yun-player-context",
 				label: "云点播播放",
 				hidden: true,
-				oncommand: "yunPlayer.run()"
+				oncommand: "yunPlayer.run(this.getAttribute('tooltiptext'))"
 			});
 
 			contextMenu.insertBefore(menuitem, contextMenu.firstChild);
@@ -50,22 +53,67 @@
 				case "popupshowing":
 					var menuitem = $("yun-player-context");
 					var locationHref = content.location.href;
+
+					var hidden = true;
 					if(gContextMenu.onLink){
-						if(link_regexp.test(gContextMenu.linkURL))
-							return menuitem.hidden = false;
-						if(location_regexp.test(locationHref))
-							return menuitem.hidden = false;
+						var url = gContextMenu.linkURL;
+						if(link_regexp.test(url))
+							menuitem.setAttribute("tooltiptext", url);
+							hidden = false;
+						// if(location_regexp.test(locationHref))
+						// 	hidden = false;
 					}
-					menuitem.hidden = true;
+
+					var selection = this.getSelection();
+					if(link_regexp.test(selection)){
+						menuitem.setAttribute("tooltiptext", selection);
+						hidden = false;
+					}
+					menuitem.hidden = hidden;
 					break;
 			}
 		},
-		run: function(){
-			var url = API_URL + gContextMenu.linkURL;
+		run: function(url){
+			if(!url) return;
+
+			var url = API_URL + url;
 			var nextTabIndex = gBrowser.mCurrentTab._tPos + 1;
 		   	var tab = gBrowser.loadOneTab(url, null, null, null, false, false);
 		   	gBrowser.moveTabTo(tab, nextTabIndex);
-		}
+		},
+		getSelection: function(win) {
+			// from getBrowserSelection Fx19
+			win || (win = this.focusedWindow);
+			var selection  = this.getRangeAll(win).join(" ");
+			if (!selection) {
+				let element = document.commandDispatcher.focusedElement;
+				let isOnTextInput = function (elem) {
+					return elem instanceof HTMLTextAreaElement ||
+						(elem instanceof HTMLInputElement && elem.mozIsTextField(true));
+				};
+
+				if (isOnTextInput(element)) {
+					selection = element.QueryInterface(Ci.nsIDOMNSEditableElement)
+						.editor.selection.toString();
+				}
+			}
+
+			if (selection) {
+				selection = selection.replace(/^\s+/, "")
+					.replace(/\s+$/, "")
+					.replace(/\s+/g, " ");
+			}
+			return selection;
+		},
+		getRangeAll: function(win) {
+			win || (win = this.focusedWindow);
+			var sel = win.getSelection();
+			var res = [];
+			for (var i = 0; i < sel.rangeCount; i++) {
+				res.push(sel.getRangeAt(i));
+			};
+			return res;
+		},
 	};
 
 	function $(id) document.getElementById(id);

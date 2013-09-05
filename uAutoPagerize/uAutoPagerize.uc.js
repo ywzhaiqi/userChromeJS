@@ -78,7 +78,8 @@ var REALPAGE_SITE_PATTERN = ['search?', 'search_', 'forum', 'thread'];
 
 var SITEINFO_CN_IMPORT_URLS = [
     //Super_preloader 的翻页规则更新地址
-    "http://simpleu.googlecode.com/svn/trunk/scripts/Super_preloader.db.js",
+    // "http://simpleu.googlecode.com/svn/trunk/scripts/Super_preloader.db.js",
+    "https://userscripts.org/scripts/source/142198.user.js",
 
     // ywzhaiqi 的规则。github 速度略慢，用 googlecode
     "http://autopagerize-userchrome.googlecode.com/git/_uAutoPagerize.js",

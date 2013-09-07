@@ -20,6 +20,8 @@
 		delete window.yunPlayer;
 	}
 
+	const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
+
 	window.yunPlayer = {
 		get focusedWindow() {
 			return gContextMenu && gContextMenu.target ? gContextMenu.target.ownerDocument.defaultView : content;

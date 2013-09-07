@@ -5,7 +5,7 @@
 // @author         ywzhaiqi
 // @include        main
 // @charset        UTF-8
-// @version        0.3
+// @version        0.4
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/blob/master/ExternalVideoPlayer/yunPlayer.uc.js
 // @note
 // ==/UserScript==
@@ -53,14 +53,14 @@
 			switch(event.type){
 				case "popupshowing":
 					var playerMenu = $("yun-player-context");
-					var locationHref = content.location.href;
 
 					var hidden = true;
 					if(gContextMenu.onLink){
 						var url = gContextMenu.linkURL;
-						if(link_regexp.test(url))
+						if(link_regexp.test(url)){
 							playerMenu.setAttribute("tooltiptext", url);
 							hidden = false;
+						}
 					}
 
 					var selection = this.getSelection();
@@ -68,6 +68,7 @@
 						playerMenu.setAttribute("tooltiptext", selection);
 						hidden = false;
 					}
+
 					playerMenu.hidden = hidden;
 					break;
 			}

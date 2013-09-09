@@ -193,6 +193,7 @@ uAutoPagerize 中文规则版
  - `documentFilter(doc, requestURL, info)`: 对下一页的 document 对象处理
  - `fragmentFilter(fragment, doc, pages)`: 对规则找到的 pageElements 而创建的 fragment 对象处理
  - `filter(pages)`: 对添加到原网页后的 pages 处理
+ - `stylish`: 自定义样式
 
 #### 例：verycd 搜索的下一页图片的修复
 

@@ -5,7 +5,7 @@
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
-// @version        0.0.7
+// @version        0.0.8
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/ExternalVideoPlayer
 // @reviewURL      http://bbs.kafan.cn/thread-1587228-1-1.html
 // @note           youku、悦台、网易视频、优米等调用外部播放器播放。土豆、奇艺等不支持外部播放的新页面打开 flvcd 网址。
@@ -28,6 +28,8 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
     // pls 播放列表格式
     var PLAYER_PLS = /s?mplayer\.exe/
+
+	var HOST_REGEXP = /youku|yinyuetai|ku6|umiwi|sina|163|56|joy|v\.qq|letv|(tieba|mv|zhangmen)\.baidu|wasu|pps|kankan\.xunlei|tangdou|acfun\.tv|www\.bilibili\.tv|v\.ifeng\.com|cntv\.cn/i;
 
 	// 清晰度: normal high super supper2
 
@@ -145,7 +147,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 			ns._canPlay = true;
 
 			var hostname = content.location.hostname;
-			if(hostname.match(/youku|yinyuetai|ku6|umiwi|sina|163|56|joy|v\.qq|letv|(tieba|mv|zhangmen)\.baidu|wasu|pps|kankan\.xunlei|tangdou|acfun\.tv|www\.bilibili\.tv/)){
+			if(hostname.match()){
 				return true;
 			}
 

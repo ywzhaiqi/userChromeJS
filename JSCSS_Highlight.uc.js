@@ -600,7 +600,7 @@ window.JSCSS = {
 				break;
 			case "DOMContentLoaded":
 				var doc = event.target;
-				if (!/css|javascript|plain/.test(doc.contentType) || 
+				if (!/css|javascript|plain/.test(doc.contentType) ||
 				    doc.location.protocol === "view-source:"
 				) return;
 				this.run(doc, 300000);
@@ -628,7 +628,7 @@ window.JSCSS = {
 		var preRange = doc.createRange();
 		preRange.selectNodeContents(pre);
 		preRange.deleteContents();
-		
+
 		var range = doc.createRange();
 		range.selectNodeContents(doc.body);
 		var df = range.createContextualFragment(html);
@@ -643,10 +643,10 @@ window.JSCSS = {
 		if (pre.textContent.length > maxLength) {
 			var browser = gBrowser.getBrowserForDocument(doc);
 			var notificationBox = gBrowser.getNotificationBox(browser);
-			var message = "Der Text ist zu lang. Wollen Sie hervorheben? (Es besteht Absturzgefahr!)"
+			var message = "文字太长。要语法高亮吗？ (存在卡住的风险!)"
 			var buttons = [{
-				label: "Ja",
-				accessKey: "J",
+				label: "是",
+				accessKey: "Y",
 				callback: function (aNotification, aButton) {
 					 self.write(pre);
 				}

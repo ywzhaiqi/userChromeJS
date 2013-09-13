@@ -52,7 +52,7 @@
 (function(){
   // -- config --
   const EXCLUDE_CHROMEHIDDEN = false; //chromehiddenなwindow(popup等)ではロード: しないtrue, する[false]
-  const USE_0_63_FOLDER = true; //0.63のフォルダ規則を使う[true], 使わないfalse
+  const USE_0_63_FOLDER = false; //0.63のフォルダ規則を使う[true], 使わないfalse
   const FORCESORTSCRIPT = false; //強制的にスクリプトをファイル名順でソートするtrue, しない[false]
   const AUTOREMOVEBOM   = false;  //BOMを自動的に, 取り除く:true, 取り除かない[false](元ファイルは.BOMとして残る)
   const REPLACECACHE = false; //スクリプトの更新日付によりキャッシュを更新する: true , しない:[false]

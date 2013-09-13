@@ -5,7 +5,7 @@
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
-// @version        0.0.8
+// @version        0.0.9
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/ExternalVideoPlayer
 // @reviewURL      http://bbs.kafan.cn/thread-1587228-1-1.html
 // @note           youku、悦台、网易视频、优米等调用外部播放器播放。土豆、奇艺等不支持外部播放的新页面打开 flvcd 网址。
@@ -217,8 +217,11 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 				});
 			}else{
 				for (var i = 0; i < links.length; i++) {
+					let num = i + 1;
+					if(num < 10)
+						num = "0" + num;
 					list.push({
-						title: title + "-" + (i + 1),
+						title: title + "-" + num,
 						url: links[i].href
 					});
 				}
@@ -291,7 +294,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 			});
 
 			ns.exec(ns.PLAYER_PATH, args);
-			ns._playerProcess.run(false, args, args.length);
+			// ns._playerProcess.run(false, args, args.length);
 		},
 		saveList: function(name, data){
 			var tmpfile = FileUtils.getFile("TmpD", [name]);
@@ -327,12 +330,14 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 				window.saveURL(file.url, file.title, null, null, true, null, document);
 			});
 		},
-		// 文件名没法改？
 		download_IDM: function(filelist){
 			filelist.forEach(function(file, i){
 				var title_gbk = ns.convert_to_gbk(ns.safe_title(file.title));
-				ns.exec(IDM_PATH, ["/a", "/d", file.url, "/f", title_gbk], true);
+				ns.exec(IDM_PATH, ["/a", "/d", file.url, "/f", title_gbk + ".flv"], true);
 			});
+
+			// 再次运行，激活到前台
+			ns.exec(IDM_PATH);
 		},
 		download_aria2: function(filelist){
 
@@ -348,8 +353,8 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 			ns._requestUrl = null;
 		},
 		exec: function(path, args, blocking){
-	        path = ns.handleRelativePath(path);
-	        blocking = typeof(blocking) == 'undefined' ? false : blocking;
+			args || (args = []);
+			blocking || (blocking = false);
 
 			var file    = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
 			var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
@@ -369,18 +374,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
 			} catch(e) {}
 		},
-	    handleRelativePath: function(path) {
-	        if (path) {
-	            path = path.replace(/\//g, '\\').toLocaleLowerCase();
-	            var ffdir = Cc['@mozilla.org/file/directory_service;1'].getService(Ci.nsIProperties)
-	            			.get("ProfD", Ci.nsILocalFile).path;
-	            if (/^(\\)/.test(path)) {
-	                return ffdir + path;
-	            }else{
-	                return path;
-	            }
-	        }
-	    },
+
 	    convert_to_gbk: function(data){
 	    	var suConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
 	    	suConverter.charset = 'gbk';

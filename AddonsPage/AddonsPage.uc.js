@@ -22,7 +22,7 @@
 
 location == "chrome://browser/content/browser.xul" && (function(){
 
-     var iconURL = "";  // uc 列表的图标，没法用 base64，类似下面的路径
+     var iconURL = "";  // uc 脚本列表的图标，没法用 base64，类似下面的路径
     //var iconURL = "chrome://scriptish/skin/third-party/uso_medium.png";
 
     if(window.AM_Helper){
@@ -39,7 +39,6 @@ location == "chrome://browser/content/browser.xul" && (function(){
     Cu.import("resource://gre/modules/AddonManager.jsm");
     Cu.import("resource://gre/modules/XPIProvider.jsm");
 
-    var debug = content.console.log;
     var isCN = Services.prefs.getCharPref("general.useragent.locale").indexOf("zh") != -1;
 
     window.AM_Helper = {
@@ -433,6 +432,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
             var scripts = window.userChrome_js.scripts.concat(window.userChrome_js.overlays);
 
             var self = this;
+            self.scripts = [];
             scripts.forEach(function(script, i){
                 self.scripts[i] = new ScriptAddon(script);
             });

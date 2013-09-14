@@ -149,12 +149,12 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 			ns._canPlay = true;
 
 			var hostname = content.location.hostname;
-			if(hostname.match()){
+			if(HOST_REGEXP.test(hostname)){
 				return true;
 			}
 
 			// tudou 没法用外置播放器看，其它由于网络限制，只能用硕鼠下载
-			if(hostname.match(/tudou|qiyi|v\.sohu\.com|v\.pptv/)){
+			if(/tudou|qiyi|v\.sohu\.com|v\.pptv/.test(hostname)){
 				ns._canPlay = false;
 				return true;
 			}

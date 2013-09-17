@@ -28,7 +28,7 @@ userChromeJS for Firefox
  - [AddonsPage](AddonsPage)，附件组件页面（about:addons）右键新增查看所在目录，详细信息页面新增安装地址或路径，新增 uc脚本管理页面。
  - [autoLaunchReader](autoLaunchReader)，自动启用阅读器（原创）。
  - [ExternalEditor](ExternalEditor)，输入框右键添加 `用外部编辑器打开` 功能（修改版）。
- - [ExternalVideoPlayer](ExternalVideoPlayer)，调用外部播放器播放网络视频（原创）。
+ - [ExternalVideoPlayer](ExternalVideoPlayer)，调用外部播放器播放网络视频（原创）。[yunPlayer.uc.js](ExternalVideoPlayer/yunPlayer.uc.js)，右键菜单云播放视频。
  - [moveButton](moveButton)，移动或克隆按钮/菜单到任意位置（原创）。
  - [MyNovelReader](MyNovelReader)，小说阅读uc版（原创），已弃用，请用 [小说阅读GM版](https://userscripts.org/scripts/show/165951)（原创）和[autoLanuchReader](autoLanuchReader)。
  - [rebuild_userChrome](rebuild_userChrome)，脚本管理器（菜单修改版）。

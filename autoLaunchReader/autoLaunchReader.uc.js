@@ -5,7 +5,7 @@
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
-// @version        0.0.5
+// @version        0.0.6
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/autoLaunchReader
 // @note           2013/06/06 ver0.004 调用小说脚本失败后，再次调用其它工具。clearly 后台加载网页的支持
 // @note           2013/06/04 ver0.003 修复诸多bug
@@ -114,7 +114,7 @@ if (typeof window.autoReader != "undefined") {
                 removable: "true",
                 state: ns.AUTO_START ? "on" : "off",
                 label: "autoReader",
-                onclick: "if (event.button != 2) autoReader.iconClick(event);",
+                onclick: "autoReader.iconClick(event);",
                 context: "autoReader-menupopup",
                 tooltiptext: "左键调用阅读工具，右键弹出菜单",
                 image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABOUlEQVQ4jZ2TsUrDUBSGvxvzAg7qJA5BdBARI1ishYJ26uZLOBQtUpEMjhUr6KAgqC/gC7ipIKSCoiKOQTI4dnQ1N7kOkpomuZb6w4Fz7v3/w38O9wqlFAAV56UKbABzwBj56ACvQPO6Zd8DCKUUK9uP+4CjEeng3B4uHohyvV0FrgYUA4RAwYyCoPYPMcAQ0DAjKe30jXu+mmGX1m8yZwqKRijlaCglyYhhWRaWZXWbpnmRlONG9JP0RBIjy8fdvHNXy3DNKAi0Q/q+3+MGIM3/00EsijFstzLcviPMr1123eRx+zZI1p9vu7k76KB/upmZU7VnRFI+p7vOVC5+l5ZTJ+JJTJdPl4A2IHQuNPgCZoVSiqnSyQ6wB5gDiOueu3km4u88WThaALaAIjChEX4ALtB8f2h4AN/8SQfIa3maJAAAAABJRU5ErkJggg=="
@@ -231,7 +231,7 @@ if (typeof window.autoReader != "undefined") {
                 if (wrappedJS.readx) {  // 小说阅读脚本
                     wrappedJS.readx();
                     // 如果小说阅读脚本没调用成功，则调用
-                    setTimeout(function(){
+                    win.setTimeout(function(){
                         var bodyName = win.document.body.getAttribute("name");
                         if(!bodyName || bodyName != "MyNovelReader"){
                             other_launch();
@@ -265,6 +265,8 @@ if (typeof window.autoReader != "undefined") {
                 autoReader.launch();
             } else if (event.button == 1) {
                 middleButtonClicked();
+            } else if (event.button == 2) {
+                $("autoReader-menupopup").openPopup(ns.icon);
             }
         },
         toggle: function() {

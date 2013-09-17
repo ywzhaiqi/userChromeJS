@@ -4,7 +4,7 @@
 // @author       ywzhaiqi
 // @include      main
 // @charset      utf-8
-// @version      0.7
+// @version      0.8
 // @downloadURL  https://raw.github.com/ywzhaiqi/userChromeJS/master/AddonsPage/AddonsPage.uc.js
 // @homepageURL  https://github.com/ywzhaiqi/userChromeJS/tree/master/AddonsPage
 // @reviewURL    http://bbs.kafan.cn/thread-1617407-1-1.html
@@ -22,7 +22,7 @@
 
 location == "chrome://browser/content/browser.xul" && (function(){
 
-     var iconURL = null;  // uc 列表的图标，没法用 base64
+     var iconURL = "";  // uc 脚本列表的图标，没法用 base64，类似下面的路径
     //var iconURL = "chrome://scriptish/skin/third-party/uso_medium.png";
 
     if(window.AM_Helper){
@@ -39,7 +39,6 @@ location == "chrome://browser/content/browser.xul" && (function(){
     Cu.import("resource://gre/modules/AddonManager.jsm");
     Cu.import("resource://gre/modules/XPIProvider.jsm");
 
-    var debug = content.console.log;
     var isCN = Services.prefs.getCharPref("general.useragent.locale").indexOf("zh") != -1;
 
     window.AM_Helper = {
@@ -93,16 +92,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
             var menuitem = $C("menuseparator", {
                 id: "AM-separator-1"
             });
-            this.menuitem.separator_1 = popup.insertBefore(menuitem, ins);
-
-            menuitem = $C("menuitem", {
-                id: "AM-inspect-addon",
-                label: isCN ? "查看附加组件" : "Inspect Addon",
-                accesskey: "i",
-                tooltipText: isCN ? "调用 DOM Inspector 查看 addon 对象" : "inspect addon use DOM Inspector",
-                oncommand: "AM_Helper.getAddon(AM_Helper.getPopupNode(this).value, AM_Helper.inspectAddon);"
-            });
-            this.menuitem.inspectItem = popup.insertBefore(menuitem, ins);
+            popup.insertBefore(menuitem, ins);
 
             menuitem = $C("menuitem", {
                 id: "AM-edit-script",
@@ -111,7 +101,16 @@ location == "chrome://browser/content/browser.xul" && (function(){
                 hidden: true,
                 oncommand: "AM_Helper.getAddon(AM_Helper.getPopupNode(this).value, AM_Helper.editScript);"
             });
-            this.menuitem.editScript = popup.insertBefore(menuitem, ins);
+            popup.insertBefore(menuitem, ins);
+
+            menuitem = $C("menuitem", {
+                id: "AM-inspect-addon",
+                label: isCN ? "查看附加组件" : "Inspect Addon",
+                accesskey: "i",
+                tooltipText: isCN ? "调用 DOM Inspector 查看 addon 对象" : "inspect addon use DOM Inspector",
+                oncommand: "AM_Helper.getAddon(AM_Helper.getPopupNode(this).value, AM_Helper.inspectAddon);"
+            });
+            popup.insertBefore(menuitem, ins);
 
             menuitem = $C("menuitem", {
                 id: "AM-browse-dir",
@@ -119,7 +118,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
                 accesskey: "b",
                 oncommand: "AM_Helper.getAddon(AM_Helper.getPopupNode(this).value, AM_Helper.browseDir);"
             });
-            this.menuitem.browseDir = popup.insertBefore(menuitem, ins);
+            popup.insertBefore(menuitem, ins);
 
             menuitem = $C("menuitem", {
                 id: "AM-open-url",
@@ -128,7 +127,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
                 tooltipText: null,
                 oncommand: "openURL(this.tooltipText)",
             });
-            this.menuitem.openURLOrPath = popup.insertBefore(menuitem, ins);
+            popup.insertBefore(menuitem, ins);
 
             menuitem = $C("menuitem", {
                 id: "AM-copy-name",
@@ -136,7 +135,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
                 accesskey: "c",
                 oncommand: "AM_Helper.getAddon(AM_Helper.getPopupNode(this).value, AM_Helper.copyName);"
             });
-            this.menuitem.copyName = popup.insertBefore(menuitem, ins);
+            popup.insertBefore(menuitem, ins);
 
             menuitem = $C("menuitem", {
                 id: "AM-go-uso",
@@ -145,7 +144,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
                 label: isCN ? "在 Userscripts.org 上查看" : "View on Userscripts.org",
                 oncommand: "openURL(this.tooltipText);"
             });
-            this.menuitem.goUSO = popup.appendChild(menuitem);
+            popup.appendChild(menuitem);
 
             menuitem = $C("menuitem", {
                 id: "AM-find-uso",
@@ -154,13 +153,15 @@ location == "chrome://browser/content/browser.xul" && (function(){
                 label: isCN ? "在 Userscripts.org 上查找" : "Find on Userscripts.org",
                 oncommand: "openURL(this.getAttribute('find-on-uso'));"
             });
-            this.menuitem.findUSO = popup.appendChild(menuitem);
+            popup.appendChild(menuitem);
 
             popup.addEventListener("popupshowing", this, true);
         },
         setItemsAttributes: function(aAddon, event){
             var popup = event.target;
             var doc = popup.ownerDocument;
+
+            function $(id) doc.getElementById(id)
 
             var isExtension = (aAddon.type == "extension");
             var isTheme = (aAddon.type == "theme");
@@ -172,17 +173,17 @@ location == "chrome://browser/content/browser.xul" && (function(){
                                (aAddon.type == "greasemonkey-user-script"); // Greasemonkey 1.7+
             var isUserChromeJS = (aAddon.type == "userchromejs");
 
-            this.menuitem.browseDir.hidden = isUserStyle || isUserScript;
+            $("AM-browse-dir").hidden = isUserStyle || isUserScript;
 
-            this.menuitem.editScript.hidden = !isUserChromeJS;
+            $("AM-edit-script").hidden = !isUserChromeJS;
 
             // install url
-            var openInstallURLItem = this.menuitem.openURLOrPath;
+            var openInstallURLItem = $("AM-open-url");
             var installURL = this.getInstallURL(aAddon) || null;
             openInstallURLItem.tooltipText = installURL;
             openInstallURLItem.hidden = !installURL;
 
-            var inspectItem = this.menuitem.inspectItem;
+            var inspectItem = $("AM-inspect-addon");
             inspectItem.disabled = !("inspectObject" in window);
             inspectItem.className = isUserScript
                                     ? isScriptish
@@ -190,9 +191,8 @@ location == "chrome://browser/content/browser.xul" && (function(){
                                       : "greasemonkey"
                                     : "";
 
-            var copyNameItem = this.menuitem.copyName;
+            var copyNameItem = $("AM-copy-name");
             copyNameItem.tooltipText = aAddon.name;
-            // copyNameItem.disabled = isUserStyle;
 
             if(isUserScript && !isScriptish){
                 var usoRegx = /^https?:\/\/userscripts.org\/scripts\/source\/\d+.\w+.js$/;
@@ -207,18 +207,17 @@ location == "chrome://browser/content/browser.xul" && (function(){
                     }
                 }
 
-                var usoItem = this.menuitem.goUSO;
+                var usoItem = $("AM-go-uso");
                 usoItem.disabled = !usoRegx.test(usoURL);
                 usoItem.className = isUserScript ? usoItem.disabled ? "" : "greasemonkey" : "";
                 usoItem.tooltipText = usoURL.replace(/source/, "show")
                     .replace(/.\w+.js$/, "");
 
-                var fusoItem = this.menuitem.findUSO;
+                var fusoItem = $("AM-find-uso");
                 fusoItem.disabled = usoRegx.test(usoURL);
                 fusoItem.className = isUserScript ? fusoItem.disabled ? "" : "greasemonkey" : "";
                 fusoItem.setAttribute("find-on-uso",
-                    "http://userscripts.org/scripts/search?q=" +
-                    encodeURIComponent(aAddon.name));
+                    "http://userscripts.org/scripts/search?q=" + encodeURIComponent(aAddon.name));
             }
         },
 
@@ -332,7 +331,11 @@ location == "chrome://browser/content/browser.xul" && (function(){
                 case "greasemonkey-user-script":
                     return aAddon._script && aAddon._script.downloadURL.replace(/(^.+)source\/(\d+).*$/,"$1show/$2");
                 case "userscript":
-                    url = aAddon._updateURL ? aAddon._updateURL.replace(/(^.+)source\/(\d+).*$/,"$1show/$2") : null;
+                    if(aAddon._updateURL){
+                        url = aAddon._updateURL.replace(/(^.+)source\/(\d+).*$/,"$1show/$2");
+                    }else{
+                        url = "http://userscripts.org/scripts/search?q=" + encodeURIComponent(aAddon.name);
+                    }
                     return url;
                 case "userchromejs":
                     return aAddon.homepageURL || aAddon.reviewURL;
@@ -416,6 +419,8 @@ location == "chrome://browser/content/browser.xul" && (function(){
         unloads: [],
 
         init: function(){
+            if("userchromejs" in AddonManager.addonTypes) return;
+
             this.initScripts();
             this.registerProvider();
             this.addStyle();
@@ -427,6 +432,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
             var scripts = window.userChrome_js.scripts.concat(window.userChrome_js.overlays);
 
             var self = this;
+            self.scripts = [];
             scripts.forEach(function(script, i){
                 self.scripts[i] = new ScriptAddon(script);
             });

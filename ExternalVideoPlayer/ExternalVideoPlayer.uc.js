@@ -5,7 +5,7 @@
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
-// @version        0.0.9
+// @version        0.1.0
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/ExternalVideoPlayer
 // @reviewURL      http://bbs.kafan.cn/thread-1587228-1-1.html
 // @note           youku、悦台、网易视频、优米等调用外部播放器播放。土豆、奇艺等不支持外部播放的新页面打开 flvcd 网址。
@@ -27,7 +27,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 	var PLAYER_PATH = "";
 
     // pls 播放列表格式
-    var PLAYER_PLS = /s?mplayer\.exe/
+    var PLAYER_PLS = /\\s?mplayer\.exe/
 
 	var HOST_REGEXP = /youku|yinyuetai|ku6|umiwi|sina|163|56|joy|v\.qq|letv|(tieba|mv|zhangmen)\.baidu|wasu|pps|kankan\.xunlei|tangdou|acfun\.tv|www\.bilibili\.tv|v\.ifeng\.com|cntv\.cn/i;
 
@@ -122,11 +122,13 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 			// });
 			// menupopup.appendChild(menuitem);
 
-			// menuitem = $C("menuitem", {
-			// 	label: "下载（IDM）",
-			// 	oncommand: "event.stopPropagation();externalVideoPlayer.run(null, 'download_IDM')",
-			// });
-			// menupopup.appendChild(menuitem);
+			var idm_file = FileUtils.File(IDM_PATH);
+			menuitem = $C("menuitem", {
+				label: "下载（IDM）",
+				hidden: !idm_file.exists(),
+				oncommand: "event.stopPropagation();externalVideoPlayer.run('super', 'download_IDM')",
+			});
+			menupopup.appendChild(menuitem);
 
 			// menuitem = $C("menuitem", {
 			// 	label: "下载（Aria2）",
@@ -147,12 +149,12 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 			ns._canPlay = true;
 
 			var hostname = content.location.hostname;
-			if(hostname.match()){
+			if(HOST_REGEXP.test(hostname)){
 				return true;
 			}
 
 			// tudou 没法用外置播放器看，其它由于网络限制，只能用硕鼠下载
-			if(hostname.match(/tudou|qiyi|v\.sohu\.com|v\.pptv/)){
+			if(/tudou|qiyi|v\.sohu\.com|v\.pptv/.test(hostname)){
 				ns._canPlay = false;
 				return true;
 			}
@@ -195,8 +197,6 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 			}
 		},
 		requestLoaded: function(doc, type){
-            log("requestLoaded")
-
 			var content = doc.querySelectorAll(".mn.STYLE4")[2];
 			if(!content){
 				return ns.openFlvcd();
@@ -331,9 +331,12 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 			});
 		},
 		download_IDM: function(filelist){
+			var m = filelist[0].url.match(/\/st\/(\w+)\/fileid/i);
+			var fileExt = (m && m[1]) ? ("." + m[1]) : "";
+
 			filelist.forEach(function(file, i){
 				var title_gbk = ns.convert_to_gbk(ns.safe_title(file.title));
-				ns.exec(IDM_PATH, ["/a", "/d", file.url, "/f", title_gbk + ".flv"], true);
+				ns.exec(IDM_PATH, ["/a", "/d", file.url, "/f", title_gbk + fileExt], true);
 			});
 
 			// 再次运行，激活到前台

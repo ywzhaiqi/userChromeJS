@@ -10,8 +10,7 @@
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/uAutoPagerize
 // @reviewURL      http://bbs.kafan.cn/thread-1555846-1-1.html
 // @optionsURL     about:config?filter=uAutopagerize
-// @note           添加最大加载页数，参考 卡饭论坛 lastdream2013
-// @note           添加 Super_preloader 的数据库支持及更新 By ywzhaiqi。
+// @note           大幅修改 By ywzhaiqi
 // @note           0.3.0 本家に倣って Cookie の処理を変更した
 // @note           0.2.9 remove E4X
 // @note           0.2.8 履歴に入れる機能を廃止
@@ -45,19 +44,15 @@
 
 // 放置的位置，true为地址栏，false为附加组件栏（可移动按钮）
 var isUrlbar = false;
-
-
-var ORIGINAL_SITEINFO = true;  // 原版规则是否启用？略大，但很多站点都可以翻页
-var LAUNCH_ORIGINAL_SITEINFO = true;  // false 为不运行原版规则，只给 siteinfo_writer 搜索规则用
-var SIMPLE_SEPARATOR = true;  // true 原版的分隔条，false 多功能分隔条
+var ORIGINAL_SITEINFO = false;  // 原版规则是否启用？略大，但很多站点都可以翻页
+var SIMPLE_SEPARATOR = false;  // true 原版的分隔条，false 多功能分隔条
 
 var DB_FILENAME_CN =  "uSuper_preloader.db.js";   // 中文数据库的位置
 var DB_FILENAME_JSON = "uAutoPagerize.json";      // 原版数据库位置
 
-
 var FORCE_TARGET_WINDOW = true;
 var BASE_REMAIN_HEIGHT = 600;
-var DEBUG = true;
+var DEBUG = false;
 var AUTO_START = true;
 var SCROLL_ONLY = false;
 var CACHE_EXPIRE = 24 * 60 * 60 * 1000;
@@ -69,7 +64,6 @@ var IMMEDIATELY_PAGER_NUM = 3;    // 立即加载的初始页数
 var USE_IFRAME = true;            // 是否启用 iframe 加载下一页（浏览器级，默认只允许JavaScript，在 createIframe 中可设置其它允许）
 var USE_FORCE_NEXT_PAGE = true;   // 是否启用强制拼接？
 var PRE_REQUEST_NEXT_PAGE = true; // 提前预读下一页..就是翻完第1页,立马预读第2页,翻完第2页,立马预读第3页..(大幅加快翻页快感-_-!!)
-var PRE_REQUEST_NEXT_PAGE_FIRST_TIME = true;   // 页面一载入是否预读下一页，否则加载第1页后才开始预读下一页
 var SEPARATOR_RELATIVELY = true;  //分隔符.在使用上滚一页或下滚一页的时候是否保持相对位置..
 
 // 出在自动翻页信息附加显示真实相对页面信息，一般能智能识别出来。如果还有站点不能识别，可以把地址的特征字符串加到下面
@@ -94,12 +88,16 @@ var INCLUDE = [
     "*"
 ];
 var EXCLUDE = [
-    'https://mail.google.com/*'
-    ,'http://www.google.co.jp/reader/*'
-    ,'http://b.hatena.ne.jp/*'
-    ,'http://www.livedoor.com/*'
-    ,'http://reader.livedoor.com/*'
-    ,'http://fastladder.com/*'
+    'https://mail.google.com/*',
+    'https://maps.google.*/*',
+    'https://www.google.com/maps/*',
+    'https://www.google.com/calendar*',
+    'http://www.google.*/reader/*',
+    '*://app.yinxiang.com/*',
+    '*://www.dropbox.com/*',
+    '*://www.toodledo.com/*',
+    '*://www.wumii.com/*',
+    '*/archives/*'
 ];
 
 var MY_SITEINFO = [
@@ -124,32 +122,6 @@ var FORCE_SITEINFO = {
     url        : '^https?://.*',
     nextLink   : 'auto;',
     pageElement: "//body/*"
-};
-
-var nextPageKey = [  //下一页关键字
-    '下一页', '下一頁', '下1页', '下1頁', '下页', '下頁',
-    '翻页', '翻頁', '翻下頁', '翻下页',
-    '下一张', '下一張', '下一幅', '下一章', '下一节', '下一節', '下一篇',
-    '后一页', '後一頁',
-    '前进', '下篇', '后页', '往后', 'Next', 'Next Page', '次へ'
-];
-var autoMatch = {
-    digitalCheck:true,  //对数字连接进行检测,从中找出下一页的链接
-    cases:false,  //关键字区分大小写....
-    pfwordl:{     //关键字前面的字符限定.
-        next:{    //下一页关键字前面的字符
-            enable:true,
-            maxPrefix:2,
-            character:[' ','　','[','［','『','「','【','(']
-        }
-    },
-    sfwordl:{//关键字后面的字符限定.
-        next:{//下一页关键字后面的字符
-            enable:true,
-            maxSubfix: 3,
-            character:[' ','　',']','］','>','﹥','›','»','>>','』','」','】',')','→']
-        }
-    }
 };
 
 // 分页导航图标的颜色
@@ -214,7 +186,7 @@ if (typeof window.uAutoPagerize != 'undefined') {
 
 var ns = window.uAutoPagerize = {
     INCLUDE_REGEXP : /./,
-    EXCLUDE_REGEXP : /^$/,
+    EXCLUDE_REGEXP : [],
     MICROFORMAT    : MICROFORMAT.slice(),
     MY_SITEINFO    : MY_SITEINFO.slice(),
     SITEINFO_CN    : [],
@@ -252,9 +224,9 @@ var ns = window.uAutoPagerize = {
     get EXCLUDE() EXCLUDE,
     set EXCLUDE(arr) {
         try {
-            this.EXCLUDE_REGEXP = arr.length > 0 ?
-                new RegExp(arr.map(wildcardToRegExpStr).join("|")) :
-                /^$/;
+            this.EXCLUDE_REGEXP = arr.map(function(s){
+                return new RegExp(wildcardToRegExpStr(s));
+            });
             EXCLUDE = arr;
         } catch (e) {
             log("EXCLUDE 不正确");
@@ -317,6 +289,7 @@ var ns = window.uAutoPagerize = {
 
     init: function() {
         ns.style = addStyle(css);
+
         ns.icon = ns.addButton();
         ns.popupMenu = ns.addPopupMenu();
         if(USE_FORCE_NEXT_PAGE)
@@ -340,7 +313,15 @@ var ns = window.uAutoPagerize = {
             ns.requestSITEINFO_CN();
 
         ns.INCLUDE = INCLUDE;
-        ns.EXCLUDE = EXCLUDE;
+
+        try{
+            let str = ns.prefs.getCharPref("EXCLUDE");
+            ns.EXCLUDE = str.split(",");
+        }catch(e){}
+        if(!ns.EXCLUDE){
+            ns.EXCLUDE = EXCLUDE;
+        }
+
         ns.addListener();
         ns.loadSetting();
         updateIcon();
@@ -359,6 +340,8 @@ var ns = window.uAutoPagerize = {
                 ns.prefs.setIntPref(name, ns[name]);
             } catch (e) {}
         }, ns);
+
+        ns.prefs.setCharPref("EXCLUDE", ns.EXCLUDE.join(","));
     },
     theEnd: function() {
         ns.IMMEDIATELY_PAGER_NUM = $("uAutoPagerize-immedialate-pages").value;
@@ -443,7 +426,7 @@ var ns = window.uAutoPagerize = {
 
             setTimeout(function(icon){
                 icon.removeAttribute("image");
-            }, 200, icon);
+            }, 500, icon);
 
             var updateToolbar = {
                 runOnce: function(){
@@ -467,22 +450,29 @@ var ns = window.uAutoPagerize = {
         var xml = '\
             <menupopup id="uAutoPagerize-popup"\
                        position="after_start"\
-                       onpopupshowing="if (this.triggerNode) this.triggerNode.setAttribute(\'open\', \'true\');"\
-                       onpopuphiding="if (this.triggerNode) this.triggerNode.removeAttribute(\'open\');">\
+                       ignorekeys="true"\
+                       onpopupshowing="uAutoPagerize.onPopupShowing(event);" >\
                 <menuitem label="启用自动翻页"\
                           id="uAutoPagerize-AUTOSTART"\
                           type="checkbox"\
                           autoCheck="true"\
                           checked="'+ AUTO_START +'"\
                           oncommand="uAutoPagerize.toggle(event);"/>\
-                <menuitem label="载入配置" accesskey="r"\
-                          oncommand="uAutoPagerize.loadSetting(true);"/>\
+                <menuitem label="载入配置"\
+                          tooltiptext="左键载入配置，右键编辑配置文件"\
+                          oncommand="uAutoPagerize.loadSetting(true);"\
+                          onclick="if(event.button == 2) { uAutoPagerize.edit(uAutoPagerize.file); return false; }"/>\
                 <menuitem label="更新中文规则" \
                           tooltiptext="包含Super_preloader规则和本人维护的规则"\
                           oncommand="uAutoPagerize.resetSITEINFO_CN();"/>\
                 <menuitem label="更新原版规则" hidden="' + !ORIGINAL_SITEINFO + '" \
                           oncommand="uAutoPagerize.resetSITEINFO();"/>\
                 <menuseparator/>\
+                <hbox>\
+                    <textbox id="uAutoPagerize-blacklist-textbox" oninput="uAutoPagerize.checkUrl(event);"/>\
+                    <toolbarbutton label="添加" id="uAutoPagerize-blacklist-icon" \
+                        tooltiptext="添加到黑名单" onclick="uAutoPagerize.blacklistBtnClick(event);"/>\
+                </hbox>\
                 <hbox style="padding-left:32px;">\
                     立即翻<textbox type="number" value="' + IMMEDIATELY_PAGER_NUM + '" tooltiptext="连续翻页的数量" \
                         id="uAutoPagerize-immedialate-pages" style="width:35px" />页\
@@ -540,12 +530,40 @@ var ns = window.uAutoPagerize = {
 
         return $("uAutoPagerize-popup");
     },
+    onPopupShowing: function(event){
+        var excludeStr;
+        var locationHref = content.location.href;
+        var blacklistBtn = $("uAutoPagerize-blacklist-icon");
+        var blacklistText = $("uAutoPagerize-blacklist-textbox");
+
+        for(let [index, reg] in Iterator(ns.EXCLUDE_REGEXP)){
+            if(reg.test(locationHref)){
+                excludeStr = ns.EXCLUDE[index];
+                break;
+            }
+        }
+
+        if(excludeStr){
+            blacklistBtn.setAttribute("label", "修改");
+            blacklistText.setAttribute("oldvalue", excludeStr);
+            blacklistText.setAttribute("tooltiptext", "修改黑名单或从中删除，空白为删除");
+            blacklistText.style.color = "green";
+        }else{
+            excludeStr = "*" + content.location.host + "*";
+            blacklistBtn.setAttribute("label", "添加");
+            blacklistText.removeAttribute("oldvalue");
+            blacklistText.setAttribute("tooltiptext", "添加到黑名单中");
+            blacklistText.style.color = "";
+        }
+
+        blacklistText.value = excludeStr;
+    },
     loadSetting: function(isAlert) {
         var data = loadText(this.file);
         if (!data) return false;
         var sandbox = new Cu.Sandbox( new XPCNativeWrapper(window) );
         sandbox.INCLUDE = null;
-        sandbox.EXCLUDE = null;
+        // sandbox.EXCLUDE = null;
         sandbox.MY_SITEINFO = [];
         sandbox.MICROFORMAT = [];
         sandbox.USE_MY_SITEINFO = true;
@@ -561,8 +579,8 @@ var ns = window.uAutoPagerize = {
         ns.MICROFORMAT = sandbox.USE_MICROFORMAT ? sandbox.MICROFORMAT.concat(MICROFORMAT): sandbox.MICROFORMAT;
         if (sandbox.INCLUDE)
             ns.INCLUDE = sandbox.INCLUDE;
-        if (sandbox.EXCLUDE)
-            ns.EXCLUDE = sandbox.EXCLUDE;
+        // if (sandbox.EXCLUDE)
+        //     ns.EXCLUDE = sandbox.EXCLUDE;
 
         ns.MY_SITEINFO.forEach(function(i){
             i.type = 'my';
@@ -576,10 +594,17 @@ var ns = window.uAutoPagerize = {
     launch: function(win, timer){
         var doc = win.document;
         var locationHref = win.location.href;
+
         if (locationHref.indexOf('http') !== 0 ||
-           !ns.INCLUDE_REGEXP.test(locationHref) ||
-            ns.EXCLUDE_REGEXP.test(locationHref))
-            return updateIcon();
+           !ns.INCLUDE_REGEXP.test(locationHref)){
+            return updateIcon("不包含的页面");
+        }
+
+        for(let [index, reg] in Iterator(ns.EXCLUDE_REGEXP)){
+            if(reg.test(locationHref)){
+                return updateIcon("排除列表, " + ns.EXCLUDE[index]);
+            }
+        }
 
         if (!/html|xml/i.test(doc.contentType) ||
             doc.body instanceof HTMLFrameSetElement ||
@@ -705,7 +730,7 @@ var ns = window.uAutoPagerize = {
                 }
             }
 
-            if (!info && LAUNCH_ORIGINAL_SITEINFO) [index, info, nextLink] = ns.getInfo(ns.SITEINFO, win);
+            if (!info) [index, info, nextLink] = ns.getInfo(ns.SITEINFO, win);
 
             if (!info) [, info, nextLink] = ns.getInfo(ns.MICROFORMAT, win);
 
@@ -722,9 +747,7 @@ var ns = window.uAutoPagerize = {
                     "开始运行 Autopager");
                 win.ap = new AutoPager(win.document, info, nextLink);
             }else{
-                let infoLength = ns.MY_SITEINFO.length + ns.SITEINFO_CN.length + ns.MICROFORMAT.length;
-                if(LAUNCH_ORIGINAL_SITEINFO)
-                    infoLength += ns.SITEINFO.length;
+                let infoLength = ns.MY_SITEINFO.length + ns.SITEINFO_CN.length + ns.MICROFORMAT.length + ns.SITEINFO.length;
                 debug("  所有规则都没法找到下一页或内容，" + "共查找规则" + infoLength + "个，" + spenTime +
                     "结束运行");
             }
@@ -749,13 +772,65 @@ var ns = window.uAutoPagerize = {
             updateIcon();
         } else {
             ns.AUTO_START = true;
-            if (!content.ap)
+            if (!content.ap){
                 ns.launch(content);
-            else{
+                content.ap.scroll();
+            }else{
                 content.ap.scroll();
                 updateIcon();
             }
         }
+    },
+    checkUrl: function(event){
+        var blacklistText = event.target;
+
+        var url = content.location.href;
+        if (!url)
+            blacklistText.style.color = "";
+
+        var urlValue = wildcardToRegExpStr(blacklistText.value);
+        try {
+            var regexp = new RegExp(urlValue);
+
+            if (regexp.test(url))
+                blacklistText.style.color = "green";
+            else
+                blacklistText.style.color = "red";
+        } catch (e) {
+            blacklistText.style.color = "red";
+        }
+    },
+    blacklistBtnClick: function(event){
+        var textbox = $("uAutoPagerize-blacklist-textbox");
+        var oldvalue = textbox.getAttribute("oldvalue");
+        var newValue = textbox.value.trim();
+
+        if(oldvalue){
+            var index = ns.EXCLUDE.indexOf(oldvalue);
+            if(index == -1) return;
+
+            if(!newValue || newValue == "**"){  // remove
+                ns.EXCLUDE.splice(index, 1);
+            }else{  // modified
+                ns.EXCLUDE[index] = newValue;
+            }
+
+            ns.EXCLUDE = ns.EXCLUDE;  // 重新赋值，刷新 EXCLUDE_REGEXP
+
+            ns.launch(content);
+        }else{  // add
+            if(!newValue || newValue == "**") return;
+
+            ns.EXCLUDE.push(newValue);
+            ns.EXCLUDE = ns.EXCLUDE;
+
+            if(content.ap){
+                content.ap.destroy(true);
+                updateIcon("排除列表, " + newValue);
+            }
+        }
+
+        $('uAutoPagerize-popup').hidePopup();
     },
     getInfo: function (list, win) {
         if (!list) list = ns.MY_SITEINFO.concat(ns.SITEINFO_CN, ns.SITEINFO);
@@ -808,12 +883,20 @@ var ns = window.uAutoPagerize = {
             } catch(e){ }
         });
     },
-    isInfoEqual: function (info1, info2){
-        // info1.type == info2.type
-        if(info1.url == info2.url && info1.nextLink == info2.nextLink && info1.pageElement == info2.pageElement)
-            return true;
+    edit: function(aFile) {
+        if (!aFile || !aFile.exists() || !aFile.isFile()) return;
+        var editor = Services.prefs.getCharPref("view_source.editor.path");
+        if (!editor) {
+            alert("编辑器的路径未设定。\n 请设置 view_source.editor.path");
+            return;
+        }
 
-        return false;
+        try {
+            var UI = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
+            UI.charset = window.navigator.platform.toLowerCase().indexOf("win") >= 0? "gbk": "UTF-8";
+            var path = UI.ConvertFromUnicode(aFile.path);
+            exec(editor, path);
+        } catch (e) {}
     },
     immediatelyStart: function(){
         var pages = $("uAutoPagerize-immedialate-pages").value;
@@ -1033,14 +1116,14 @@ AutoPager.prototype = {
         this.addListener();
 
         if (!ns.SCROLL_ONLY){
-            this.loadedOnce = this.scroll();
+            this.scroll();
         }
 
         if (this.getScrollHeight() == this.win.innerHeight)
             this.body.style.minHeight = (this.win.innerHeight + 1) + 'px';
 
         // 第一次提前预读
-        if (PRE_REQUEST_NEXT_PAGE && PRE_REQUEST_NEXT_PAGE_FIRST_TIME) {
+        if (PRE_REQUEST_NEXT_PAGE) {
             this.doRequest();
         }
     },
@@ -1121,9 +1204,6 @@ AutoPager.prototype = {
             }else{
                 this.doRequest();
             }
-            return true;
-        }else{
-            return false;
         }
     },
     abort: function() {
@@ -1145,21 +1225,10 @@ AutoPager.prototype = {
         if (this.state !== 'enable' || !this.requestURL || this.loadedURLs[this.requestURL]) return;
 
         // 最大页数自动停止
-        if(this.pageNum > (MAX_PAGER_NUM - 1) && MAX_PAGER_NUM > 0){
+        if(MAX_PAGER_NUM > 0 && this.pageNum > (MAX_PAGER_NUM - 1)){
             this.addEndSeparator();
             return;
         }
-
-        if(this.iframeMode){
-            this.win.setTimeout(function(self){  // 延时点
-                self.iframeRequest.apply(self, null);
-            }, 199, this);
-        }else{
-            this.httpRequest();
-        }
-    },
-    httpRequest: function(){
-        debug("Http Request: " + this.requestURL);
 
         var [reqScheme,,reqHost] = this.requestURL.split('/');
         var {protocol, host} = this.win.location;
@@ -1175,6 +1244,18 @@ AutoPager.prototype = {
             return;
         }
         this.lastRequestURL = this.requestURL;
+
+        if(this.iframeMode){
+            this.win.setTimeout(function(self){  // 延时点
+                self.iframeRequest.apply(self, null);
+            }, 199, this);
+        }else{
+            this.httpRequest(isSameDomain, reqHost, reqScheme);
+        }
+    },
+    httpRequest: function(isSameDomain, reqHost, reqScheme){
+        debug("Http Request: " + this.requestURL);
+
         var self = this;
         var headers = {};
         if (isSameDomain)
@@ -1184,9 +1265,9 @@ AutoPager.prototype = {
             get url() self.requestURL,
             set url(url) self.requestURL = url,
             headers: headers,
-            overrideMimeType: 'text/html; charset=' + this.doc.characterSet,
+            overrideMimeType: 'text/html; charset=' + self.doc.characterSet,
             onerror: function(){ self.state = 'error'; self.req = null; },
-            onload: function(res) { self.requestLoad.apply(self, [res]); self.req = null; }
+            onload: function(res) { self.httpLoad.apply(self, [res]); self.req = null; }
         };
         if(!this.isXML){
             opt.responseType = "document";
@@ -1196,15 +1277,14 @@ AutoPager.prototype = {
         this.req = GM_xmlhttpRequest(opt);
     },
     iframeRequest: function(){
-        var self = this;
-
         debug("iframe Request: " + this.requestURL);
+        var self = this;
         this.state = 'loading';
 
         var browser = gBrowser.getBrowserForDocument(this.doc);
         var iframe = browser.uAutoPagerizeIframe;
         if(!iframe){
-            iframe = browser.uAutoPagerizeIframe = createIframe();
+            iframe = browser.uAutoPagerizeIframe = createIframe("uAutoPagerize-iframe");
         }
 
         //两个地址都要改?mdc是按照第二个写的,真正有效的也是第二个,第一个是以后用来比较用的
@@ -1226,7 +1306,7 @@ AutoPager.prototype = {
             iframe.addEventListener("DOMContentLoaded", onload, true);
         }
     },
-    requestLoad : function(res){
+    httpLoad : function(res){
         var before = res.URI.host;
         var after  = res.originalURI.host;
         if (before != after && !this.isThridParty(before, after)) {
@@ -1252,26 +1332,22 @@ AutoPager.prototype = {
 
         this.beforeLoaded(htmlDoc);
     },
-    iframeLoad: function (doc) {
-        let win = doc.defaultView;
+    iframeLoad: function (htmlDoc) {
+        let win = htmlDoc.defaultView;
         win.scroll(win.scrollX, 99999);  //滚动到底部,针对,某些使用滚动事件加载图片的网站.
 
-        this.beforeLoaded(doc);
+        this.beforeLoaded(htmlDoc);
     },
-    beforeLoaded: function(doc){
-        if(this.loadedOnce){
-            this.loadedOnce = false;
-            this.loaded(doc);
-        }else if(PRE_REQUEST_NEXT_PAGE && !this.ipagesMode){
-            this.tmpDoc = doc;
+    beforeLoaded: function(htmlDoc){
+        if(PRE_REQUEST_NEXT_PAGE && !this.ipagesMode){
+            this.tmpDoc = htmlDoc;
             this.scroll();
             this.state = 'enable';
         }else{
-            this.loaded(doc);
+            this.loaded(htmlDoc);
         }
     },
     loaded: function(htmlDoc){
-        // debug("开始载入下一页内容");
         try {
             var page = getElementsMix(this.info.pageElement, htmlDoc);
             var url = this.getNextURL(htmlDoc);
@@ -1746,29 +1822,30 @@ AutoPager.prototype = {
     }
 };
 
-function updateIcon(){
+var stateTooltip = {
+    "off": "自动翻页已关闭",
+    "terminated": "自动翻页已结束",
+    "enable": "自动翻页已启用",
+    "disable": "此页面不支持自动翻页",
+    "error": "自动翻页有错误",
+    "loading": "自动翻页进行中"
+};
+
+function updateIcon(tooltiptext){
     var newState = "";
-    var tooltiptext = "";
-    var checkautomenu = $("uAutoPagerize-AUTOSTART");
 
     if (ns.AUTO_START == false) {
         newState = "off";
-        tooltiptext = "自动翻页已关闭";
-        checkautomenu.setAttribute("checked", false);
     } else {
         if (content.ap) {
             newState = content.ap.state;
-            tooltiptext = content.ap.state;
-            if (tooltiptext == "terminated"){ tooltiptext = "自动翻页已结束" };
-            if (tooltiptext == "enable")    { tooltiptext = "自动翻页已启用" };
         } else {
             newState = "disable";
-            tooltiptext = "此页面不支持自动翻页";
         }
-        checkautomenu.setAttribute("checked", true);
     }
     ns.icon.setAttribute('state', newState);
-    ns.icon.setAttribute('tooltiptext', tooltiptext);
+    ns.icon.setAttribute('tooltiptext', tooltiptext || stateTooltip[newState]);
+    $("uAutoPagerize-AUTOSTART").setAttribute("checked", ns.AUTO_START);
 }
 
 function launchAutoPager_org(list, win) {
@@ -1920,64 +1997,94 @@ function launchAutoPager_org(list, win) {
 })();
 
 // 来自 NLF 的 Super_preloader
-var re_nextPageKey;
-function parseKWRE(){
-    function modifyPageKey(name,pageKey,pageKeyLength){
-        function strMTE(str){
-            return (str.replace(/\\/g, '\\\\')
-                        .replace(/\+/g, '\\+')
-                        .replace(/\./g, '\\.')
-                        .replace(/\?/g, '\\?')
-                        .replace(/\{/g, '\\{')
-                        .replace(/\}/g, '\\}')
-                        .replace(/\[/g, '\\[')
-                        .replace(/\]/g, '\\]')
-                        .replace(/\^/g, '\\^')
-                        .replace(/\$/g, '\\$')
-                        .replace(/\*/g, '\\*')
-                        .replace(/\(/g, '\\(')
-                        .replace(/\)/g, '\\)')
-                        .replace(/\|/g, '\\|')
-                        .replace(/\//g, '\\/'));
-        };
-
-        var pfwordl= autoMatch.pfwordl,
-            sfwordl = autoMatch.sfwordl;
-
-        var RE_enable_a=pfwordl[name].enable,
-                    RE_maxPrefix=pfwordl[name].maxPrefix,
-                    RE_character_a=pfwordl[name].character,
-                    RE_enable_b=sfwordl[name].enable,
-                    RE_maxSubfix=sfwordl[name].maxSubfix,
-                    RE_character_b=sfwordl[name].character;
-        var plwords,
-                    slwords,
-                    rep;
-
-        plwords=RE_maxPrefix>0? ('['+(RE_enable_a? strMTE(RE_character_a.join('')) : '.')+']{0,'+RE_maxPrefix+'}') : '';
-        plwords='^\\s*' + plwords;
-        slwords=RE_maxSubfix>0? ('['+(RE_enable_b? strMTE(RE_character_b.join('')) : '.')+']{0,'+RE_maxSubfix+'}') : '';
-        slwords=slwords + '\\s*$';
-        rep = autoMatch.cases ? '' : 'i';
-
-        for(var i=0;i<pageKeyLength;i++){
-            pageKey[i]=new RegExp(plwords + strMTE(pageKey[i]) + slwords,rep);
+var SP = {
+    nextPageKey: [  //下一页关键字
+        '下一页', '下一頁', '下1页', '下1頁', '下页', '下頁',
+        '翻页', '翻頁', '翻下頁', '翻下页',
+        '下一张', '下一張', '下一幅', '下一章', '下一节', '下一節', '下一篇',
+        '后一页', '後一頁',
+        '前进', '下篇', '后页', '往后', 'Next', 'Next Page', '次へ'
+    ],
+    autoMatch: {
+        digitalCheck:true,  //对数字连接进行检测,从中找出下一页的链接
+        cases:false,  //关键字区分大小写....
+        pfwordl:{     //关键字前面的字符限定.
+            next:{    //下一页关键字前面的字符
+                enable:true,
+                maxPrefix:2,
+                character:[' ','　','[','［','『','「','【','(']
+            }
+        },
+        sfwordl:{//关键字后面的字符限定.
+            next:{//下一页关键字后面的字符
+                enable:true,
+                maxSubfix: 3,
+                character:[' ','　',']','］','>','﹥','›','»','>>','』','」','】',')','→']
+            }
         }
-        return pageKey;
+    },
+    get nextPageKey_reg() {
+        if(!SP._nextPageKey_reg){
+            SP._nextPageKey_reg = SP.parseKWRE();
+        }
+        return SP._nextPageKey_reg;
+    },
+    parseKWRE: function (){
+        function modifyPageKey(name,pageKey,pageKeyLength){
+            function strMTE(str){
+                return (str.replace(/\\/g, '\\\\')
+                            .replace(/\+/g, '\\+')
+                            .replace(/\./g, '\\.')
+                            .replace(/\?/g, '\\?')
+                            .replace(/\{/g, '\\{')
+                            .replace(/\}/g, '\\}')
+                            .replace(/\[/g, '\\[')
+                            .replace(/\]/g, '\\]')
+                            .replace(/\^/g, '\\^')
+                            .replace(/\$/g, '\\$')
+                            .replace(/\*/g, '\\*')
+                            .replace(/\(/g, '\\(')
+                            .replace(/\)/g, '\\)')
+                            .replace(/\|/g, '\\|')
+                            .replace(/\//g, '\\/'));
+            };
+
+            var pfwordl= autoMatch.pfwordl,
+                sfwordl = autoMatch.sfwordl;
+
+            var RE_enable_a=pfwordl[name].enable,
+                        RE_maxPrefix=pfwordl[name].maxPrefix,
+                        RE_character_a=pfwordl[name].character,
+                        RE_enable_b=sfwordl[name].enable,
+                        RE_maxSubfix=sfwordl[name].maxSubfix,
+                        RE_character_b=sfwordl[name].character;
+            var plwords,
+                        slwords,
+                        rep;
+
+            plwords=RE_maxPrefix>0? ('['+(RE_enable_a? strMTE(RE_character_a.join('')) : '.')+']{0,'+RE_maxPrefix+'}') : '';
+            plwords='^\\s*' + plwords;
+            slwords=RE_maxSubfix>0? ('['+(RE_enable_b? strMTE(RE_character_b.join('')) : '.')+']{0,'+RE_maxSubfix+'}') : '';
+            slwords=slwords + '\\s*$';
+            rep = autoMatch.cases ? '' : 'i';
+
+            for(var i=0;i<pageKeyLength;i++){
+                pageKey[i]=new RegExp(plwords + strMTE(pageKey[i]) + slwords,rep);
+            }
+            return pageKey;
+        }
+        //转成正则.
+        return modifyPageKey('next', SP.nextPageKey, SP.nextPageKey.length);
     }
-    //转成正则.
-    return modifyPageKey('next', nextPageKey, nextPageKey.length);
-}
+};
+
 // doc 必须，后面2个可选
 function autoGetLink(doc, win, cplink) {
-    if (!re_nextPageKey)
-        re_nextPageKey = parseKWRE();
-
     win = win || doc.defaultView;
 
     var startTime = new Date();
 
-    var _nextPageKey = re_nextPageKey;
+    var _nextPageKey = SP.nextPageKey_reg;
     var _nPKL = _nextPageKey.length;
     var _getAllElementsByXpath = getElementsByXPath;
     cplink = cplink || doc.URL || win.location.href;
@@ -2095,82 +2202,82 @@ function autoGetLink(doc, win, cplink) {
     return _nextlink || null;
 }
 // 地址栏递增
-function hrefInc(obj,doc,win){
-    var _cplink = doc.URL || win.location.href;
-    _cplink = _cplink.replace(/#.*$/,''); //url 去掉hash
+function hrefInc(obj, doc, win){
+    var _cplink = doc._cplink || doc.URL;
+    _cplink = _cplink.replace(/#.*$/, ''); //url 去掉hash
 
-    function getHref(href){
-        var mFails=obj.mFails;
-        if(!mFails)return href;
+    function getHref(href) {
+        var mFails = obj.mFails;
+        if (!mFails) return href;
         var str;
-        if(typeof mFails=='string'){
-            str=mFails;
-        }else{
+        if (typeof mFails == 'string') {
+            str = mFails;
+        } else {
             var fx;
-            var array=[];
-            var i,ii;
+            var array = [];
+            var i, ii;
             var mValue;
-            for(i=0,ii=mFails.length;i<ii;i++){
-                fx=mFails[i];
-                if(!fx)continue;
-                if(typeof fx=='string'){
+            for (i = 0, ii = mFails.length; i < ii; i++) {
+                fx = mFails[i];
+                if (!fx) continue;
+                if (typeof fx == 'string') {
                     array.push(fx);
-                }else{
-                    mValue=href.match(fx);
-                    if(!mValue)return href;
+                } else {
+                    mValue = href.match(fx);
+                    if (!mValue) return href;
                     array.push(mValue);
                 };
             };
-            var str=array.join('');
+            var str = array.join('');
         };
         return str;
-    };
+    }
 
-    var sa=obj.startAfter;
-    var saType=typeof sa;
+    var sa = obj.startAfter;
+    var saType = typeof sa;
     var index;
 
-    if(saType=='string'){
-        index=_cplink.indexOf(sa);
-        if(index==-1){
-            _cplink=getHref(_cplink);
-            index=_cplink.indexOf(sa);
-            if(index==-1)return;
-        };
-    }else{
-        var tsa=_cplink.match(sa);
-        if(!tsa){
-            _cplink=getHref(_cplink);
-            sa=(_cplink.match(sa) || [])[0];
-            if(!sa)return;
-            index=_cplink.indexOf(sa);
-            if(index==-1)return;
-        }else{
-            sa=tsa[0];
-            index=_cplink.indexOf(sa);
-        };
-    };
+    if (saType == 'string') {
+        index = _cplink.indexOf(sa);
+        if (index == -1) {
+            _cplink = getHref(_cplink);
+            index = _cplink.indexOf(sa);
+            if (index == -1) return;
+        }
+    } else {
+        var tsa = _cplink.match(sa);
+        if (!tsa) {
+            _cplink = getHref(_cplink);
+            sa = (_cplink.match(sa) || [])[0];
+            if (!sa) return;
+            index = _cplink.indexOf(sa);
+            if (index == -1) return;
+        } else {
+            sa = tsa[0];
+            index = _cplink.indexOf(sa);
+        }
+    }
 
-    index+=sa.length;
-    var max=obj.max===undefined? 9999 : obj.max;
-    var min=obj.min===undefined? 1 : obj.min;
-    var aStr=_cplink.slice(0,index);
-    var bStr=_cplink.slice(index);
-    var nbStr=bStr.replace(/^(\d+)(.*)$/,function(a,b,c){
-        b=Number(b)+obj.inc;
-        if(b>=max || b<min)return a;
-        return b+c;
+    index += sa.length;
+    var max = obj.max === undefined ? 9999 : obj.max;
+    var min = obj.min === undefined ? 1 : obj.min;
+    var aStr = _cplink.slice(0, index);
+    var bStr = _cplink.slice(index);
+    var nbStr = bStr.replace(/^(\d+)(.*)$/, function(a, b, c) {
+        b = Number(b) + obj.inc;
+        if (b >= max || b < min) return a;
+        return b + c;
     });
-    if(nbStr!==bStr){
+    if (nbStr !== bStr) {
         var ilresult;
-        try{
-            ilresult=obj.isLast(doc,win,_cplink);
-        }catch(e){
+        try {
+            ilresult = obj.isLast(doc, win, _cplink);
+        } catch (e) {
             // debug("Error: getNextUrl hrefInc().", e);
         }
-        if(ilresult)return;
-        return aStr+nbStr;
-    };
+        if (ilresult) return;
+        return aStr + nbStr;
+    }
 }
 
 function toRE(obj) {
@@ -2539,11 +2646,34 @@ function saveFile(name, data) {
     foStream.close();
 }
 
+function exec(path, arg){
+    var file    = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
+    var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
+    try {
+        var a = (typeof arg == 'string' || arg instanceof String) ? arg.split(/\s+/) : [arg];
+        file.initWithPath(path);
+
+        if (!file.exists()) {
+            Cu.reportError('File Not Found: ' + path);
+            return;
+        }
+
+        if (file.isExecutable()) {
+            process.init(file);
+            process.run(false, a, a.length);
+        } else {
+            file.launch();
+        }
+
+    } catch(e) {
+        debug(e);
+    }
+}
+
 function alerts(title, info){
     Cc['@mozilla.org/alerts-service;1'].getService(Ci.nsIAlertsService)
         .showAlertNotification(null, title, info, false, "", null, "");
 }
-
 
 })('\
 #uAutoPagerize-icon {\

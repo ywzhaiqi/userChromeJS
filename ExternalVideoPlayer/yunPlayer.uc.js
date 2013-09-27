@@ -7,11 +7,25 @@
 // @charset        UTF-8
 // @version        0.6
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/blob/master/ExternalVideoPlayer/yunPlayer.uc.js
+// @note
 // ==/UserScript==
 
 (function (){
 
-    var API_URL = "http://www.happyfuns.com/happyvod/api.html?url=";
+    var API_URLS = {
+        "快乐云点播": "http://www.happyfuns.com/happyvod/api.php#!url=",
+        "火焰云点播": "http://www.huoyan.tv/index.php#!u=",
+        "997m云点播": "http://www.997m.com/?u=",
+        "福利吧云点播": "http://fuliba.net/yun.php?u=",
+        "帝国云点播": "http://vod.dgyun.com/index.htm?url=",
+        "如意云点播": "http://www.ruyiba.cn/index.php#!u=",
+        "云播": "http://vod.yundianbo.info/?u=",
+        "CloudPlayer": "http://zdfans.com/cloudplayer/vod.html?url="
+
+        // "yktime": "http://vod.yktime.com/index.php#!u=",
+        // "亦轩云点播": "http://cs.17xbc.com/index.php#!u="
+    };
+
     var linkClicked_Color = "#666666";
     var link_regexp = /^(?:thunder|ed2k|magnet|flashget|qqdl):|\.(?:mp4|flv|rm|rmvb|mkv|asf|wmv|avi|mpeg|mpg|mov|qt)$/i;
 
@@ -30,16 +44,24 @@
         init: function(){
             var contextMenu = $("contentAreaContextMenu");
 
-            var palyerMenu = $C("menuitem", {
+            var playerMenu = $C("menu", {
                 id: "yun-player-context",
-                label: "云点播播放",
-                class: "menuitem-iconic",
+                label: "云点播",
+                class: "menu-iconic",
                 hidden: true,
-                oncommand: "yunPlayer.run(this.getAttribute('tooltiptext'))",
                 image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACiElEQVQ4jWWTy2+MYRTGn6IiSIbEJdGIhYiQ+AdqURsLNLHpTqUWbAmRkNCFjRCJhEgsbMzGYtxiQlzKaBt1rU7bGd/oXTv1aV2+6U3Nd/1ZvB/SOsm7O8/lnOe80rzyv2Rq3Gxdym1NOO4zUX4sZh8kHPdNXSr4cm/P/P6/5ThOovyuNh1+EKElgqzwXwuvRZQfiV/3DZnbWZuemRlc+z+4fbOFLRgWUa8IcyJoF/4L4T4V5YfCaxZeq/Deb7bmkLhdh1JRaTl8E3wWDIqoELt4JdyMKDcJ/6VxFbwVfm9t2sxczNQEnxthei+UFsKY4JOIesTAQ9F05Z9y0C7CDhF2irBLBM69PXKty0m8Npg5DhPLYFxcPSvsNmGlxekDFXgtInhvQGFeRJZxGI3svaNy7kSRcgqmG6BUCWPiwinx7pYB+G/MC3MxqFdE/YIBwVDCkZffCdP7YHIdfBfYgiHTHGbNvGFeRB8N8Ee2kunCQhgRFIX87kooLTLgMcGIiPoMKOiIlXtixWHRemc1XZkVpndcyM1WFRmLlUdENCDCwr9FRYXY8rBJ6FzjNiaHKsERlFZ9lZurT/Iptt0n3JwIu439MG9mZkgwKprvruHqxS0wsRgmN8DssRvyx1uq/yiFebF/dwWF2yLoNNumX/zsWcD1S+s5f2YrgbMEpnaY1Py+GnNI3XWpIGuiGn8iDtctZt+u5Zw8uJIjDVUcPbSRppurje3JTTBzEspP038v0bbtpV7H9la/zRyM/9KMEX00V8moWRilCpiqhp/XLBwnMec/2La91MvXJ90nwns+j6AYEziC2aOp/8BzvvOPlmrPqk+G1obBqBDHN1pVpFSf5FemZn7/b/8KdAFaIa0vAAAAAElFTkSuQmCC"
             });
 
-            contextMenu.insertBefore(palyerMenu, contextMenu.firstChild);
+            var menuPopup = playerMenu.appendChild($C("menupopup"));
+            for(var name in API_URLS){
+                let url = API_URLS[name];
+                menuPopup.appendChild($C("menuitem", {
+                    label: name,
+                    oncommand: "yunPlayer.run(this.parentNode.parentNode.getAttribute('tooltiptext'), this.label)",
+                }));
+            }
+
+            contextMenu.insertBefore(playerMenu, contextMenu.firstChild);
             contextMenu.addEventListener("popupshowing", this, false);
         },
         uninit: function(){
@@ -75,14 +97,17 @@
                     break;
             }
         },
-        run: function(url){
+        run: function(url, api_name){
             if(!url) return;
+            if(!api_name){
+                api_name = "快乐云点播";
+            }
 
             if(gContextMenu.target){
                 gContextMenu.target.style.color = linkClicked_Color;
             }
 
-            url = API_URL + url;
+            url = API_URLS[api_name] + url;
             var nextTabIndex = gBrowser.mCurrentTab._tPos + 1;
             var tab = gBrowser.loadOneTab(url, null, null, null, false, false);
             gBrowser.moveTabTo(tab, nextTabIndex);

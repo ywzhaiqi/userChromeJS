@@ -5,7 +5,7 @@
 // @author         ywzhaiqi
 // @include        main
 // @charset        UTF-8
-// @version        0.6
+// @version        0.7
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/blob/master/ExternalVideoPlayer/yunPlayer.uc.js
 // @note
 // ==/UserScript==
@@ -27,7 +27,7 @@
     };
 
     var linkClicked_Color = "#666666";
-    var link_regexp = /^(?:thunder|ed2k|magnet|flashget|qqdl):|\.(?:mp4|flv|rm|rmvb|mkv|asf|wmv|avi|mpeg|mpg|mov|qt)$/i;
+    var link_regexp = /^(?:thunder|ed2k|magnet|flashget|qqdl):|\.(?:mp4|flv|rm|rmvb|mkv|asf|wmv|avi|mpeg|mpg|mov|qt)$|^http:\/\/dl[^\/]+sendfile.vip.xunlei.com/i;
 
     if(window.yunPlayer){
         window.yunPlayer.uninit();

@@ -63,8 +63,8 @@ userChromeJS for Firefox
  - [speedupErrorConsole.uc.js](speedupErrorConsole.uc.js)，加速错误控制台。
  - [statusbarButtonScrapbook.uc.js](statusbarButtonScrapbook.uc.js)，更改 Scrapbook 状态栏图标为鼠标中键打开侧边栏。
  - [textLink.uc.js](textLink.uc.js)，双击打开文字链接。
-
  - [userChrome.js](userChrome.js)，修改版，增加对 @homepageURL 等参数的解析，在 AddonsPage.uc.js 的uc脚本详细页面就会有主页等链接。
+ - [userChrome-26.js](userChrome-26.js)，适合 FF26,在24下会让 xul 的脚本没法加载。
 
 
 ### Disable文件夹

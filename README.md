@@ -70,15 +70,10 @@ userChromeJS for Firefox
 ### Disable文件夹
 
  - [UserAgentChangeModLite.uc.js](Disable/UserAgentChangeModLite.uc.js)，UA切换（修改版），已改用[User Agent Overrider :: Firefox 附加组件](https://addons.mozilla.org/zh-cn/firefox/addon/user-agent-overrider/?src=search)
-
  - [inlineEditForBookmarkTitleOnSidebar.uc.js](Disable/inlineEditForBookmarkTitleOnSidebar.uc.js)。侧边栏书签按F2直接编辑标题，[原作者地址（日文）](https://github.com/alice0775/userChrome.js/blob/master/inlineEditForBookmarkTitleOnSidebar.uc.js)
-
  - [AutoCloseBookMarkFolder_Fx37.uc.js](Disable/AutoCloseBookMarkFolder_Fx37.uc.js)，侧边栏书签增加 "展开"、"折叠" 按钮，[原作者地址（日文）](https://github.com/alice0775/userChrome.js/blob/master/AutoCloseBookMarkFolder_Fx37.uc.js)
-
  - [AutoCloseHistoryFolder_Fx37.uc.js](Disable/AutoCloseHistoryFolder_Fx37.uc.js)，侧边栏历史增加 "展开"、"折叠" 按钮，[原作者地址（日文）](https://github.com/alice0775/userChrome.js/blob/master/AutoCloseHistoryFolder_Fx37.uc.js)
-
  - [autoContextmenu.uc.xul](Disable/autoContextmenu.uc.xul)，选中自动弹出右键菜单，可开关，可用 rebuild_userChrome.uc 把设置集中在一起。[原作者地址（日文）](https://github.com/alice0775/userChrome.js/blob/master/autoContextmenu.uc.xul)
-
  - [KeepBookmarksOnMiddleClick.uc.js](Disable/KeepBookmarksOnMiddleClick.uc.js)，鼠标中键连续打开书签。
 
 

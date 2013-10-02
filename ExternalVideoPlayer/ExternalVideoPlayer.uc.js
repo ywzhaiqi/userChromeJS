@@ -21,17 +21,19 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
 (function(){
 
-    // 播放器路径，不填或不正确会打开 asx 文件，一般是 wmp 关联，需要安装解码器
-    // var PLAYER_PATH = "D:\\Program Files\\Potplayer\\PotPlayerMini.exe";
-    // var PLAYER_PATH = "D:\\App\\SMPlayer\\smplayer.exe";
-    var PLAYER_PATH = "";
+	// 播放器路径，不填或不正确会打开 asx 文件，一般是 wmp 关联，需要安装解码器
+    // var PLAYER_PATH = "D:\\Program Files\\baidu\\BaiduPlayerBaiduYun\\1.19.1.23\\BaiduPlayer.exe";
+    var PLAYER_PATH = "d:\\App\\vlc-2.1.0\\vlc.exe";
+    // var PLAYER_PATH = "D:\\Program Files\\PotPlayer\\PotPlayerMini.exe";
 
-    // pls 播放列表格式
-    var PLAYER_PLS = /\\s?mplayer\.exe/
-
-    var HOST_REGEXP = /youku|yinyuetai|ku6|umiwi|sina|163|56|joy|v\.qq|letv|(tieba|mv|zhangmen)\.baidu|wasu|pps|kankan\.xunlei|tangdou|acfun\.tv|www\.bilibili\.tv|v\.ifeng\.com|cntv\.cn/i;
+    var PLAYER_PLS = /s?mplayer\.exe/i;  // pls 播放列表格式
+    var PLAYER_XSPF = /\\vlc\.exe$/i;  // xspf 播放列表格式
+    var PLAYER_URLS = /^$/i;  // 直接传递地址
+    var PLAYER_COPY = /BaiduPlayer\.exe/i;  // 复制链接到剪贴板
 
     // 清晰度: normal high super supper2
+
+    var HOST_REGEXP = /youku|yinyuetai|ku6|umiwi|sina|163|56|joy|v\.qq|letv|(tieba|mv|zhangmen)\.baidu|wasu|pps|kankan\.xunlei|tangdou|acfun\.tv|www\.bilibili\.tv|v\.ifeng\.com|cntv\.cn/i;
 
     // 下载设置
     var IDM_PATH = "D:\\Program Files\\Internet Download Manager\\IDMan.exe";
@@ -42,9 +44,8 @@ if(typeof window.externalVideoPlayer != 'undefined'){
     var ns = window.externalVideoPlayer = {
         PLAYER_PATH: PLAYER_PATH,
         FILE_NAME: "externalVideoPlayer",
+
         _canPlay: true,
-        _noPlayer: false,
-        _video_path_cache: {},
         get IDM_hidden() {
             if(!this._IDM_hidden){
                 var idm_file = FileUtils.File(IDM_PATH);
@@ -54,13 +55,15 @@ if(typeof window.externalVideoPlayer != 'undefined'){
         },
 
         init: function(){
+            this._menuitem = this.createMenuItem();
 
-            this.addMenuItem();
-
+            var contextMenu = $("contentAreaContextMenu");
+            contextMenu.insertBefore(this._menuitem, contextMenu.firstChild);
+            contextMenu.addEventListener("popupshowing", this, false);
         },
         uninit: function(){
-            if(this._menu)
-                this._menu.parentNode.removeChild(this._menu);
+            if(this._menuitem)
+                this._menuitem.parentNode.removeChild(this._menuitem);
 
             $("contentAreaContextMenu").removeEventListener("popupshowing", this, false);
         },
@@ -68,16 +71,16 @@ if(typeof window.externalVideoPlayer != 'undefined'){
             switch(event.type){
                 case "popupshowing":
                     if (event.target != event.currentTarget) return;
-                    this._menu.hidden = !this.isValidLocation();
+                    this._menuitem.hidden = !this.isValidLocation();
                     if(gContextMenu.onLink){
-                        this._menu.setAttribute("label", "用外部播放器播放当前链接");
+                        this._menuitem.setAttribute("label", "用外部播放器播放当前链接");
                     }else{
-                        this._menu.setAttribute("label", "用外部播放器播放当前页面");
+                        this._menuitem.setAttribute("label", "用外部播放器播放当前页面");
                     }
                     break;
             }
         },
-        addMenuItem: function(){
+        createMenuItem: function(){
             var menu, menupopup, menuitem;
 
             menu = $C("menu", {
@@ -97,19 +100,19 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
             menuitem = $C("menuitem", {
                 label: "播放（普通）",
-                oncommand: "event.stopPropagation();externalVideoPlayer.run('normal')",
+                oncommand: "externalVideoPlayer.run('normal')",
             });
             menupopup.appendChild(menuitem);
 
             menuitem = $C("menuitem", {
                 label: "播放（高清）",
-                oncommand: "event.stopPropagation();externalVideoPlayer.run('high')",
+                oncommand: "externalVideoPlayer.run('high')",
             });
             menupopup.appendChild(menuitem);
 
             menuitem = $C("menuitem", {
                 label: "播放（超清）",
-                oncommand: "event.stopPropagation();externalVideoPlayer.run('super')",
+                oncommand: "externalVideoPlayer.run('super')",
             });
             menupopup.appendChild(menuitem);
 
@@ -117,42 +120,35 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
             menuitem = $C("menuitem", {
                 label: "打开 Flvcd 的解析链接",
-                oncommand: "event.stopPropagation();externalVideoPlayer.run(null, 'open')",
+                oncommand: "externalVideoPlayer.run(null, 'open')",
             });
             menupopup.appendChild(menuitem);
 
-            // menupopup.appendChild($C("menuseparator", {}));
+            menupopup.appendChild($C("menuseparator", {}));
 
-            // menuitem = $C("menuitem", {
-            //  label: "下载（内置）",
-            //  oncommand: "event.stopPropagation();externalVideoPlayer.run(null, 'download_normal')",
-            // });
-            // menupopup.appendChild(menuitem);
-
+            menuitem = $C("menuitem", {
+                label: "下载（内置）",
+                oncommand: "externalVideoPlayer.run(null, 'download_normal')",
+            });
+            menupopup.appendChild(menuitem);
 
             menuitem = $C("menuitem", {
                 label: "下载（IDM）",
                 hidden: ns.IDM_hidden,
-                oncommand: "event.stopPropagation();externalVideoPlayer.run('super', 'download_IDM')",
+                oncommand: "externalVideoPlayer.run('super', 'download_IDM')",
             });
             menupopup.appendChild(menuitem);
 
             // menuitem = $C("menuitem", {
             //  label: "下载（Aria2）",
-            //  oncommand: "event.stopPropagation();externalVideoPlayer.run(null, 'download_aria2')",
+            //  oncommand: "externalVideoPlayer.run(null, 'download_aria2')",
             // });
             // menupopup.appendChild(menuitem);
 
             menu.appendChild(menupopup);
-            this._menu = menu;
-
-            var contextMenu = $("contentAreaContextMenu");
-            contextMenu.insertBefore(menu, contextMenu.firstChild);
-            contextMenu.addEventListener("popupshowing", this, false);
-
+            return menu;
         },
         isValidLocation: function(){
-
             ns._canPlay = true;
 
             var hostname = content.location.hostname;
@@ -190,8 +186,8 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
             getHTML(flvcdUrl, function(){
                 if(this.readyState == 4 && this.status == 200){
-                    ns.requestLoaded(this.response, type);
-                    if(!contextOnLink){
+                    var opened = ns.requestLoaded(this.response, type);
+                    if(opened && !contextOnLink){
                         gBrowser.removeTab(gBrowser.mCurrentTab, { animate: true });
                     }
                 }else{
@@ -199,7 +195,6 @@ if(typeof window.externalVideoPlayer != 'undefined'){
                 }
             }, "gbk");
             ns._requestUrl = flvcdUrl;
-
         },
         openFlvcd: function(flvcdUrl){
             flvcdUrl = flvcdUrl || ns._requestUrl;
@@ -208,9 +203,12 @@ if(typeof window.externalVideoPlayer != 'undefined'){
             }
         },
         requestLoaded: function(doc, type){
+            debug("requestLoaded")
+
             var content = doc.querySelectorAll(".mn.STYLE4")[2];
             if(!content){
-                return ns.openFlvcd();
+                ns.openFlvcd();
+                return false;
             }
 
             var title = doc.querySelector('input[name="name"]').getAttribute("value");
@@ -249,13 +247,31 @@ if(typeof window.externalVideoPlayer != 'undefined'){
                     ns.download_aria2(list);
                     break;
                 default:
-                    if(ns.PLAYER_PATH.match(PLAYER_PLS)){
-                        // ns.run_mplayer(list);
-                        ns.saveAndRun_pls(list)
-                    }else{
-                        ns.saveAndRun_asx(list);
+                    switch(true){
+                        case PLAYER_PLS.test(ns.PLAYER_PATH):
+                            ns.saveAndRun_pls(list);
+                            break;
+                        case PLAYER_XSPF.test(ns.PLAYER_PATH):
+                            ns.saveAndRun_xspf(list);
+                            break;
+                        case PLAYER_URLS.test(ns.PLAYER_PATH):
+                            ns.run_player(list);
+                            break;
+                        case PLAYER_COPY.test(ns.PLAYER_PATH):
+                            var urls = [];
+                            list.forEach(function(info){
+                                urls.push(info.url);
+                            });
+                            ns.exec(ns.PLAYER_PATH, []);
+                            Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper)
+                                .copyString(urls.join("\n"));
+                            break;
+                        default:
+                            ns.saveAndRun_asx(list);
                     }
             }
+
+            return true;
         },
         saveAndRun_asx: function(list){
             var text = '<asx version = "3.0" >\n\n';
@@ -265,54 +281,69 @@ if(typeof window.externalVideoPlayer != 'undefined'){
                 '</entry>\n\n';
 
             list.forEach(function(info){
-                text += ns.nano(item_tpl, {
-                    title: info.title,
-                    url: info.url
-                });
+                text += nano(item_tpl, info);
             });
 
             text += "</asx>";
 
             var file = ns.saveList(ns.FILE_NAME + ".asx", text);
-            ns.initPlayer();
-            ns.launch(file);
+            ns.exec(ns.PLAYER_PATH, [file.path]);
         },
         saveAndRun_pls: function(list){
             var text = "[playlist]\n";
+            var item_tpl = 'File{i}={url}\n' +
+                'Title{i}={title}\n' +
+                'Length{i}=0\n';
+
             list.forEach(function(info, i){
-                i += 1
-                text += "File" + i + "=" + info.url + "\n" +
-                    "Title" + i + "=" + ns.encode_16(info.title) + "\n" +
-                    "Length" + i + "=0\n"
+                info.i = i + 1;
+                info.title = encode_16(info.title);
+
+                text += nano(item_tpl, info);
             });
-            text += "NumberOfEntries=" + list.length +
-                "\nVersion=2"
+            text += "NumberOfEntries=" + list.length + "\nVersion=2";
+
             var file = ns.saveList(ns.FILE_NAME + ".pls", text);
-            ns.initPlayer();
-            ns.launch(file);
+            ns.exec(ns.PLAYER_PATH, [file.path]);
         },
-        encode_16: function(str){
-            var s = ""
-            for (var i = 0; i < str.length; i++) {
-                s += "\\x" + str.charCodeAt(i).toString(16)
-            }
-            return s
+        saveAndRun_xspf: function(list){
+            var text = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+                    '<playlist xmlns="http://xspf.org/ns/0/" xmlns:vlc="http://www.videolan.org/vlc/playlist/ns/0/" version="1">\n' +
+                    '    <title>播放列表</title>\n' +
+                    '    <trackList>\n';
+
+            var tpl_item = '        <track>\n' +
+                '            <location>{url}</location>\n' +
+                '            <title>{title}</title>\n' +
+                '            <extension application="http://www.videolan.org/vlc/playlist/0">\n' +
+                '                <vlc:id>{i}</vlc:id>\n' +
+                '                <vlc:option>network-caching=1000</vlc:option>\n' +
+                '            </extension>\n' +
+                '        </track>\n';
+
+            list.forEach(function(info, i){
+                info.i = i;
+                text += nano(tpl_item, info);
+            });
+            text += "    </trackList>\n</playlist>";
+
+            var file = ns.saveList(ns.FILE_NAME + ".xspf", text, "utf-8");
+            ns.exec(ns.PLAYER_PATH, [file.path]);
         },
-        run_mplayer: function(list){
+        run_player: function(list){
             var args = [];
             list.forEach(function(info){
                 args.push(info.url);
             });
 
             ns.exec(ns.PLAYER_PATH, args);
-            // ns._playerProcess.run(false, args, args.length);
         },
-        saveList: function(name, data){
+        saveList: function(name, data, encode){
             var tmpfile = FileUtils.getFile("TmpD", [name]);
             tmpfile.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
 
             var suConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
-            suConverter.charset = 'gbk';
+            suConverter.charset = encode || 'gbk';
             data = suConverter.ConvertFromUnicode(data);
 
             var foStream = Cc['@mozilla.org/network/file-output-stream;1'].createInstance(Ci.nsIFileOutputStream);
@@ -322,20 +353,6 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
             return tmpfile;
         },
-        initPlayer: function(){
-            if(ns.PLAYER_PATH){
-                var _playerFile = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
-                _playerFile.initWithPath(ns.PLAYER_PATH);
-                if(_playerFile.exists() && _playerFile.isExecutable()){
-                    ns._playerProcess = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
-                    ns._playerProcess.init(_playerFile);
-                    return;
-                }
-            }
-
-            ns._noPlayer = true;
-        },
-        // 文件名没法改？
         download_normal: function(filelist){
             filelist.forEach(function(file, i){
                 window.saveURL(file.url, file.title, null, null, true, null, document);
@@ -355,16 +372,6 @@ if(typeof window.externalVideoPlayer != 'undefined'){
         },
         download_aria2: function(filelist){
 
-        },
-        launch: function(file){
-            if(ns._noPlayer){
-                file.launch();
-            }else{
-                ns._playerProcess.run(false, [file.path], 1);
-            }
-
-            // ns._video_path_cache[ns._requestUrl] = file.path;
-            ns._requestUrl = null;
         },
         exec: function(path, args, blocking){
             args || (args = []);
@@ -388,32 +395,19 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
             } catch(e) {}
         },
-
+        safe_title: function(title) {
+            return title.replace(/[\\\|\:\*\"\?\<\>]/g,"_");
+        },
         convert_to_gbk: function(data){
             var suConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
             suConverter.charset = 'gbk';
             return suConverter.ConvertFromUnicode(data);
         },
-        safe_title: function(title) {
-            return title.replace(/[\\\|\:\*\"\?\<\>]/g,"_");
-        },
-        _regex: /\{([\w\.]*)\}/g,
-        nano: function(template, data) {
-            return template.replace(this._regex, function(str, key) {
-                var keys = key.split('.'),
-                    value = data[keys.shift()];
-                keys.forEach(function(key) {
-                    value = value[key];
-                });
-                return (value === null || value === undefined) ? '' : value;
-            });
-        },
+
     };
 
-
-    function log(arg) { Application.console.log("[ExternalVideoPlayer]" + arg); }
+    function debug(arg) { Application.console.log("[ExternalVideoPlayer]" + arg); }
     function $(id) document.getElementById(id);
-
     function $C(name, attr) {
         var el = document.createElement(name);
         if (attr) Object.keys(attr).forEach(function(n) el.setAttribute(n, attr[n]));
@@ -428,6 +422,23 @@ if(typeof window.externalVideoPlayer != 'undefined'){
         if(charset)
             xhr.overrideMimeType("text/html; charset=" + charset);
         xhr.send(null);
+    }
+
+    function nano(template, data) {
+        return template.replace(/\{([\w\.]*)\}/g, function(str, key) {
+            var keys = key.split("."),
+                v = data[keys.shift()];
+            for (var i = 0, l = keys.length; i < l; i++) v = v[keys[i]];
+            return (typeof v !== "undefined" && v !== null) ? v : "";
+        });
+    }
+
+    function encode_16(str){
+        var s = ""
+        for (var i = 0; i < str.length; i++) {
+            s += "\\x" + str.charCodeAt(i).toString(16)
+        }
+        return s
     }
 
 })();

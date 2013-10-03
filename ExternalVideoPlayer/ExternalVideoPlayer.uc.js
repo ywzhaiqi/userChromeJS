@@ -24,7 +24,13 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 	// 播放器路径，不填或不正确会打开 asx 文件，一般是 wmp 关联，需要安装解码器
     // var PLAYER_PATH = "D:\\Program Files\\baidu\\BaiduPlayerBaiduYun\\1.19.1.23\\BaiduPlayer.exe";
     var PLAYER_PATH = "d:\\App\\vlc-2.1.0\\vlc.exe";
+    // var PLAYER_PATH = "D:\\App\\SMPlayer\\smplayer.exe";
     // var PLAYER_PATH = "D:\\Program Files\\PotPlayer\\PotPlayerMini.exe";
+
+    var IS_CLOSE_TAB = true;  // 启动后是否关闭标签
+
+    // 下载设置
+    var IDM_PATH = "D:\\Program Files\\Internet Download Manager\\IDMan.exe";
 
     var PLAYER_PLS = /s?mplayer\.exe/i;  // pls 播放列表格式
     var PLAYER_XSPF = /\\vlc\.exe$/i;  // xspf 播放列表格式
@@ -34,9 +40,6 @@ if(typeof window.externalVideoPlayer != 'undefined'){
     // 清晰度: normal high super supper2
 
     var HOST_REGEXP = /youku|yinyuetai|ku6|umiwi|sina|163|56|joy|v\.qq|letv|(tieba|mv|zhangmen)\.baidu|wasu|pps|kankan\.xunlei|tangdou|acfun\.tv|www\.bilibili\.tv|v\.ifeng\.com|cntv\.cn/i;
-
-    // 下载设置
-    var IDM_PATH = "D:\\Program Files\\Internet Download Manager\\IDMan.exe";
 
     let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
     Components.utils.import("resource://gre/modules/FileUtils.jsm");
@@ -151,6 +154,10 @@ if(typeof window.externalVideoPlayer != 'undefined'){
         isValidLocation: function(){
             ns._canPlay = true;
 
+            if(gContextMenu.onLink && gContextMenu.linkURL.startsWith("http://d.pcs.baidu.com/file/")){
+                return true;
+            }
+
             var hostname = content.location.hostname;
             if(HOST_REGEXP.test(hostname)){
                 return true;
@@ -167,6 +174,11 @@ if(typeof window.externalVideoPlayer != 'undefined'){
             return false;
         },
         run: function(format, type){
+            if(gContextMenu.onLink && gContextMenu.linkURL.startsWith("http://d.pcs.baidu.com/file/")){
+                ns.exec(ns.PLAYER_PATH, [gContextMenu.linkURL]);
+                return;
+            }
+
             var url;
             var contextOnLink = gContextMenu && gContextMenu.onLink;
             if(contextOnLink){
@@ -187,7 +199,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
             getHTML(flvcdUrl, function(){
                 if(this.readyState == 4 && this.status == 200){
                     var opened = ns.requestLoaded(this.response, type);
-                    if(opened && !contextOnLink){
+                    if(IS_CLOSE_TAB && opened && !contextOnLink){
                         gBrowser.removeTab(gBrowser.mCurrentTab, { animate: true });
                     }
                 }else{

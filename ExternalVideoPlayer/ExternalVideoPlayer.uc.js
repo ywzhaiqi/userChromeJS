@@ -39,7 +39,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
     // 清晰度: normal high super supper2
 
-    var HOST_REGEXP = /youku|yinyuetai|ku6|umiwi|sina|163|56|joy|v\.qq|letv|(tieba|mv|zhangmen)\.baidu|wasu|pps|kankan\.xunlei|tangdou|acfun\.tv|www\.bilibili\.tv|v\.ifeng\.com|cntv\.cn/i;
+    var HOST_REGEXP = /www\.soku\.com|youku|yinyuetai|ku6|umiwi|sina|163|56|joy|v\.qq|letv|(tieba|mv|zhangmen)\.baidu|wasu|pps|kankan\.xunlei|tangdou|acfun\.tv|www\.bilibili\.tv|v\.ifeng\.com|cntv\.cn/i;
 
     let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
     Components.utils.import("resource://gre/modules/FileUtils.jsm");
@@ -217,14 +217,14 @@ if(typeof window.externalVideoPlayer != 'undefined'){
         requestLoaded: function(doc, type){
             debug("requestLoaded")
 
-            var content = doc.querySelectorAll(".mn.STYLE4")[2];
-            if(!content){
+            var elem = doc.querySelectorAll(".mn.STYLE4")[2];
+            if(!elem){
                 ns.openFlvcd();
                 return false;
             }
 
             var title = doc.querySelector('input[name="name"]').getAttribute("value");
-            var links = content.querySelectorAll("a");
+            var links = elem.querySelectorAll("a");
 
             var list = [];
             var len = links.length;
@@ -335,6 +335,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
             list.forEach(function(info, i){
                 info.i = i;
+                info.url = info.url.replace(/&/g, "&amp;");  // 腾讯视频需要这样
                 text += nano(tpl_item, info);
             });
             text += "    </trackList>\n</playlist>";

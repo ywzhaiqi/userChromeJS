@@ -4,7 +4,7 @@
 // @author       ywzhaiqi
 // @include      main
 // @charset      utf-8
-// @version      0.8
+// @version      0.9
 // @downloadURL  https://raw.github.com/ywzhaiqi/userChromeJS/master/AddonsPage/AddonsPage.uc.js
 // @homepageURL  https://github.com/ywzhaiqi/userChromeJS/tree/master/AddonsPage
 // @reviewURL    http://bbs.kafan.cn/thread-1617407-1-1.html
@@ -22,8 +22,8 @@
 
 location == "chrome://browser/content/browser.xul" && (function(){
 
-    var iconURL = null;  // uc 列表的图标，没法用 base64
-    // var iconURL = "chrome://scriptish/skin/third-party/uso_medium.png";
+    var iconURL = "";  // uc 脚本列表的图标，没法用 base64，类似下面的路径
+    //var iconURL = "chrome://scriptish/skin/third-party/uso_medium.png";
 
     if(window.AM_Helper){
         window.AM_Helper.uninit();
@@ -129,7 +129,8 @@ location == "chrome://browser/content/browser.xul" && (function(){
                 id: "AM-reload-uc",
                 hidden: true,
                 label: isCN ? "重载 uc 脚本（慎用）" : "Reload uc script",
-                tooltiptext: "仅部分脚本支持。如有重复添加按钮、菜单等重启可以解决。",
+                style: "color:red;",
+                tooltiptext: "仅部分脚本支持。如有问题，重启解决。",
                 oncommand: "AM_Helper.getAddon(AM_Helper.getPopupNode(this).value, AM_Helper.reloadUserChromeJS);"
             });
             popup.insertBefore(menuitem, ins);
@@ -325,9 +326,11 @@ location == "chrome://browser/content/browser.xul" && (function(){
         reloadUserChromeJS: function (aAddon) {
             if(aAddon.type != "userchromejs") return;
 
+            var result = confirm("确定要重载吗？");
+            if(!result) return;
+
             var script = aAddon._script;
 
-            // Services.obs.notifyObservers(script.file, "flush-cache-entry", "");
             Services.obs.notifyObservers(null, "startupcache-invalidate", "");
             Services.scriptloader.loadSubScript(script.url, {}, script.charset || "utf-8");
         },

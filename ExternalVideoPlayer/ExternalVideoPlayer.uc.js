@@ -5,7 +5,7 @@
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
-// @version        0.1.1
+// @version        0.1.2
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/ExternalVideoPlayer
 // @reviewURL      http://bbs.kafan.cn/thread-1587228-1-1.html
 // @note           youku、悦台、网易视频、优米等调用外部播放器播放。土豆、奇艺等不支持外部播放的新页面打开 flvcd 网址。
@@ -36,6 +36,9 @@ if(typeof window.externalVideoPlayer != 'undefined'){
     var PLAYER_XSPF = /\\vlc\.exe$/i;  // xspf 播放列表格式
     var PLAYER_URLS = /^$/i;  // 直接传递地址
     var PLAYER_COPY = /BaiduPlayer\.exe/i;  // 复制链接到剪贴板
+
+    var LINK_CLICKED_COLOR = "#666666";
+    var LINK_SHOW_REGEXP = /^http:\/\/d\.pcs\.baidu\.com\/file\/|^http:\/\/dl[^\/]+sendfile.vip.xunlei.com|\.(?:mp4|flv|rm|rmvb|mkv|asf|wmv|avi|mpeg|mpg|mov|qt)$/i;
 
     // 清晰度: normal high super supper2
 
@@ -131,6 +134,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
             menuitem = $C("menuitem", {
                 label: "下载（内置）",
+                hidden: true,
                 oncommand: "externalVideoPlayer.run(null, 'download_normal')",
             });
             menupopup.appendChild(menuitem);
@@ -152,10 +156,21 @@ if(typeof window.externalVideoPlayer != 'undefined'){
             return menu;
         },
         isValidLocation: function(){
-            ns._canPlay = true;
+            // 设置初始值
+            this._canPlay = true;
+            this.execOnceURL = null;
 
-            if(gContextMenu.onLink && gContextMenu.linkURL.startsWith("http://d.pcs.baidu.com/file/")){
-                return true;
+            if(gContextMenu.onLink){
+                if(LINK_SHOW_REGEXP.test(gContextMenu.linkURL)){
+                    this.execOnceURL = gContextMenu.linkURL;
+                    return true;
+                }
+            } else {
+                var selection = this.getSelection();
+                if(selection && LINK_SHOW_REGEXP.test(selection)){
+                    this.execOnceURL = selection;
+                    return true;
+                }
             }
 
             var hostname = content.location.hostname;
@@ -165,7 +180,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
             // tudou 没法用外置播放器看，其它由于网络限制，只能用硕鼠下载
             if(/tudou|qiyi|v\.sohu\.com|v\.pptv/.test(hostname)){
-                ns._canPlay = false;
+                this._canPlay = false;
                 return true;
             }
 
@@ -174,18 +189,17 @@ if(typeof window.externalVideoPlayer != 'undefined'){
             return false;
         },
         run: function(format, type){
-            if(gContextMenu.onLink && gContextMenu.linkURL.startsWith("http://d.pcs.baidu.com/file/")){
-                ns.exec(ns.PLAYER_PATH, [gContextMenu.linkURL]);
+            // 直接启动播放器
+            if(this.execOnceURL){
+                this.exec(this.PLAYER_PATH, [this.execOnceURL]);
+                if(gContextMenu.target){
+                    gContextMenu.target.style.color = LINK_CLICKED_COLOR;
+                }
                 return;
             }
 
-            var url;
-            var contextOnLink = gContextMenu && gContextMenu.onLink;
-            if(contextOnLink){
-                url = gContextMenu.linkURL;
-            }else{
-                url = content.location.href;
-            }
+            var url = gContextMenu ? gContextMenu.getLinkURL() : content.location.href;
+            var closeTab = !(gContextMenu && gContextMenu.onLink);
 
             var flvcdUrl = 'http://www.flvcd.com/parse.php?kw=' + encodeURIComponent(url);
             if(format){
@@ -199,7 +213,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
             getHTML(flvcdUrl, function(){
                 if(this.readyState == 4 && this.status == 200){
                     var opened = ns.requestLoaded(this.response, type);
-                    if(IS_CLOSE_TAB && opened && !contextOnLink){
+                    if(IS_CLOSE_TAB && opened && closeTab){
                         gBrowser.removeTab(gBrowser.mCurrentTab, { animate: true });
                     }
                 }else{
@@ -301,7 +315,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
             var file = ns.saveList(ns.FILE_NAME + ".asx", text);
             ns.exec(ns.PLAYER_PATH, [file.path]);
         },
-        saveAndRun_pls: function(list){
+        getList_pls: function(list){
             var text = "[playlist]\n";
             var item_tpl = 'File{i}={url}\n' +
                 'Title{i}={title}\n' +
@@ -315,6 +329,10 @@ if(typeof window.externalVideoPlayer != 'undefined'){
             });
             text += "NumberOfEntries=" + list.length + "\nVersion=2";
 
+            return text;
+        },
+        saveAndRun_pls: function(list){
+            var text = ns.getList_pls(list);
             var file = ns.saveList(ns.FILE_NAME + ".pls", text);
             ns.exec(ns.PLAYER_PATH, [file.path]);
         },
@@ -351,9 +369,14 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
             ns.exec(ns.PLAYER_PATH, args);
         },
-        saveList: function(name, data, encode){
-            var tmpfile = FileUtils.getFile("TmpD", [name]);
-            tmpfile.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
+        saveList: function(path, data, encode){
+            var tmpfile;
+            if (path.indexOf("\\") == -1){
+                tmpfile = FileUtils.getFile("TmpD", [path]);
+                tmpfile.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
+            } else {
+                tmpfile = FileUtils.file(path);
+            }
 
             var suConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
             suConverter.charset = encode || 'gbk';
@@ -416,7 +439,42 @@ if(typeof window.externalVideoPlayer != 'undefined'){
             suConverter.charset = 'gbk';
             return suConverter.ConvertFromUnicode(data);
         },
+        get focusedWindow() {
+            return gContextMenu && gContextMenu.target ? gContextMenu.target.ownerDocument.defaultView : content;
+        },
+        getSelection: function(win) {
+            // from getBrowserSelection Fx19
+            win || (win = this.focusedWindow);
+            var selection  = this.getRangeAll(win).join(" ");
+            if (!selection) {
+                let element = document.commandDispatcher.focusedElement;
+                let isOnTextInput = function (elem) {
+                    return elem instanceof HTMLTextAreaElement ||
+                        (elem instanceof HTMLInputElement && elem.mozIsTextField(true));
+                };
 
+                if (isOnTextInput(element)) {
+                    selection = element.QueryInterface(Ci.nsIDOMNSEditableElement)
+                        .editor.selection.toString();
+                }
+            }
+
+            if (selection) {
+                selection = selection.replace(/^\s+/, "")
+                    .replace(/\s+$/, "")
+                    .replace(/\s+/g, " ");
+            }
+            return selection;
+        },
+        getRangeAll: function(win) {
+            win || (win = this.focusedWindow);
+            var sel = win.getSelection();
+            var res = [];
+            for (var i = 0; i < sel.rangeCount; i++) {
+                res.push(sel.getRangeAt(i));
+            }
+            return res;
+        },
     };
 
     function debug(arg) { Application.console.log("[ExternalVideoPlayer]" + arg); }

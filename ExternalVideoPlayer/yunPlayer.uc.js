@@ -5,7 +5,7 @@
 // @author         ywzhaiqi
 // @include        main
 // @charset        UTF-8
-// @version        0.7
+// @version        0.8
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/blob/master/ExternalVideoPlayer/yunPlayer.uc.js
 // @note
 // ==/UserScript==
@@ -13,6 +13,7 @@
 (function (){
 
     var API_URLS = {
+        "迅雷云播": "http://vod.xunlei.com/iplay.html?url=",
         "快乐云点播": "http://www.happyfuns.com/happyvod/api.php#!url=",
         "火焰云点播": "http://www.huoyan.tv/index.php#!u=",
         "997m云点播": "http://www.997m.com/?u=",
@@ -85,12 +86,12 @@
                             playerMenu.setAttribute("tooltiptext", url);
                             hidden = false;
                         }
-                    }
-
-                    var selection = this.getSelection();
-                    if(link_regexp.test(selection)){
-                        playerMenu.setAttribute("tooltiptext", selection);
-                        hidden = false;
+                    } else {
+                        var selection = this.getSelection();
+                        if(link_regexp.test(selection)){
+                            playerMenu.setAttribute("tooltiptext", selection);
+                            hidden = false;
+                        }
                     }
 
                     playerMenu.hidden = hidden;

@@ -5,7 +5,7 @@
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
-// @version        0.1.2
+// @version        0.1.3
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/ExternalVideoPlayer
 // @reviewURL      http://bbs.kafan.cn/thread-1587228-1-1.html
 // @note           youku、悦台、网易视频、优米等调用外部播放器播放。土豆、奇艺等不支持外部播放的新页面打开 flvcd 网址。
@@ -21,37 +21,40 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
 (function(){
 
-	// 播放器路径，不填或不正确会打开 asx 文件，一般是 wmp 关联，需要安装解码器
-    // var PLAYER_PATH = "D:\\Program Files\\baidu\\BaiduPlayerBaiduYun\\1.19.1.23\\BaiduPlayer.exe";
-    var PLAYER_PATH = "d:\\App\\vlc-2.1.0\\vlc.exe";
-    // var PLAYER_PATH = "D:\\App\\SMPlayer\\smplayer.exe";
-    // var PLAYER_PATH = "D:\\Program Files\\PotPlayer\\PotPlayerMini.exe";
-
     var IS_CLOSE_TAB = true;  // 启动后是否关闭标签
+
+    var DEFAULT_ENCODING = "gbk";  // 默认播放列表编码
 
     // 下载设置
     var IDM_PATH = "D:\\Program Files\\Internet Download Manager\\IDMan.exe";
 
-    var PLAYER_PLS = /s?mplayer\.exe/i;  // pls 播放列表格式
-    var PLAYER_XSPF = /\\vlc\.exe$/i;  // xspf 播放列表格式
+    var VIDEO_FORMAT = ["normal", "high", "super"];  // 清晰度，super2 非全部支持
+
+    var PLAYER_PLS = /\bs?mplayer\b/i;  // pls 播放列表格式
+    var PLAYER_XSPF = /\bvlc\b/i;  // xspf 播放列表格式
     var PLAYER_URLS = /^$/i;  // 直接传递地址
-    var PLAYER_COPY = /BaiduPlayer\.exe/i;  // 复制链接到剪贴板
+    var PLAYER_COPY = /BaiduPlayer/i;  // 复制链接到剪贴板
 
     var LINK_CLICKED_COLOR = "#666666";
-    var LINK_SHOW_REGEXP = /^http:\/\/d\.pcs\.baidu\.com\/file\/|^http:\/\/dl[^\/]+sendfile.vip.xunlei.com|\.(?:mp4|flv|rm|rmvb|mkv|asf|wmv|avi|mpeg|mpg|mov|qt)$/i;
-
-    // 清晰度: normal high super supper2
-
+    var LINK_SHOW_REGEXP = /^http:\/\/d\.pcs\.baidu\.com\/file\/|\.(?:mp4|flv|rm|rmvb|mkv|asf|wmv|avi|mpeg|mpg|mov|qt)$/i;
     var HOST_REGEXP = /www\.soku\.com|youku|yinyuetai|ku6|umiwi|sina|163|56|joy|v\.qq|letv|(tieba|mv|zhangmen)\.baidu|wasu|pps|kankan\.xunlei|tangdou|acfun\.tv|www\.bilibili\.tv|v\.ifeng\.com|cntv\.cn/i;
 
     let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
     Components.utils.import("resource://gre/modules/FileUtils.jsm");
 
-    var ns = window.externalVideoPlayer = {
-        PLAYER_PATH: PLAYER_PATH,
-        FILE_NAME: "externalVideoPlayer",
+    var Instances = {
+        get fp() Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker),
+        get lf() Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile),
+        get process() Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess),
+    };
 
+    var ns = window.externalVideoPlayer = {
+        FILE_NAME: "externalVideoPlayer",
         _canPlay: true,
+        get prefs() {
+            delete this.prefs;
+            return this.prefs = Services.prefs.getBranch("userChromeJS.ExternalVideoPlayer.");
+        },
         get IDM_hidden() {
             if(!this._IDM_hidden){
                 var idm_file = FileUtils.File(IDM_PATH);
@@ -61,10 +64,11 @@ if(typeof window.externalVideoPlayer != 'undefined'){
         },
 
         init: function(){
-            this._menuitem = this.createMenuItem();
-
             var contextMenu = $("contentAreaContextMenu");
+
+            this._menuitem = this.createMenuItem();
             contextMenu.insertBefore(this._menuitem, contextMenu.firstChild);
+
             contextMenu.addEventListener("popupshowing", this, false);
         },
         uninit: function(){
@@ -104,33 +108,22 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
             menupopup = $C("menupopup", {});
 
-            menuitem = $C("menuitem", {
-                label: "播放（普通）",
-                oncommand: "externalVideoPlayer.run('normal')",
+            // create menuitem dynamic
+            VIDEO_FORMAT.forEach(function(f){
+                menuitem = $C("menuitem", {
+                    label: "播放（" + f + "）",
+                    oncommand: "externalVideoPlayer.run('" + f + "')",
+                });
+                menupopup.appendChild(menuitem);
             });
-            menupopup.appendChild(menuitem);
-
-            menuitem = $C("menuitem", {
-                label: "播放（高清）",
-                oncommand: "externalVideoPlayer.run('high')",
-            });
-            menupopup.appendChild(menuitem);
-
-            menuitem = $C("menuitem", {
-                label: "播放（超清）",
-                oncommand: "externalVideoPlayer.run('super')",
-            });
-            menupopup.appendChild(menuitem);
 
             menupopup.appendChild($C("menuseparator", {}));
 
             menuitem = $C("menuitem", {
                 label: "打开 Flvcd 的解析链接",
-                oncommand: "externalVideoPlayer.run(null, 'open')",
+                oncommand: "externalVideoPlayer.run(null, 'openFlvcd')",
             });
             menupopup.appendChild(menuitem);
-
-            menupopup.appendChild($C("menuseparator", {}));
 
             menuitem = $C("menuitem", {
                 label: "下载（内置）",
@@ -143,6 +136,14 @@ if(typeof window.externalVideoPlayer != 'undefined'){
                 label: "下载（IDM）",
                 hidden: ns.IDM_hidden,
                 oncommand: "externalVideoPlayer.run('super', 'download_IDM')",
+            });
+            menupopup.appendChild(menuitem);
+
+            menupopup.appendChild($C("menuseparator", {}));
+
+            menuitem = $C("menuitem", {
+                label: "设置播放器",
+                oncommand: "externalVideoPlayer.getPlayer(true)",
             });
             menupopup.appendChild(menuitem);
 
@@ -160,20 +161,21 @@ if(typeof window.externalVideoPlayer != 'undefined'){
             this._canPlay = true;
             this.execOnceURL = null;
 
+            var hostname = content.location.hostname;
+
             if(gContextMenu.onLink){
-                if(LINK_SHOW_REGEXP.test(gContextMenu.linkURL)){
+                if(hostname == "www.flvcd.com" || LINK_SHOW_REGEXP.test(gContextMenu.linkURL)){
                     this.execOnceURL = gContextMenu.linkURL;
                     return true;
                 }
             } else {
-                var selection = this.getSelection();
+                var selection = Util.getSelection();
                 if(selection && LINK_SHOW_REGEXP.test(selection)){
                     this.execOnceURL = selection;
                     return true;
                 }
             }
 
-            var hostname = content.location.hostname;
             if(HOST_REGEXP.test(hostname)){
                 return true;
             }
@@ -191,14 +193,14 @@ if(typeof window.externalVideoPlayer != 'undefined'){
         run: function(format, type){
             // 直接启动播放器
             if(this.execOnceURL){
-                this.exec(this.PLAYER_PATH, [this.execOnceURL]);
+                this.launchPlayer(this.execOnceURL);
                 if(gContextMenu.target){
                     gContextMenu.target.style.color = LINK_CLICKED_COLOR;
                 }
                 return;
             }
 
-            var url = gContextMenu ? gContextMenu.getLinkURL() : content.location.href;
+            var url = gContextMenu ? gContextMenu.linkURL : content.location.href;
             var closeTab = !(gContextMenu && gContextMenu.onLink);
 
             var flvcdUrl = 'http://www.flvcd.com/parse.php?kw=' + encodeURIComponent(url);
@@ -206,8 +208,8 @@ if(typeof window.externalVideoPlayer != 'undefined'){
                 flvcdUrl += '&format=' + format;
             }
 
-            if(!ns._canPlay || type == 'open'){
-                return ns.openFlvcd(flvcdUrl);
+            if(!this._canPlay || type == 'openFlvcd'){
+                return this.openFlvcd(flvcdUrl);
             }
 
             getHTML(flvcdUrl, function(){
@@ -222,18 +224,10 @@ if(typeof window.externalVideoPlayer != 'undefined'){
             }, "gbk");
             ns._requestUrl = flvcdUrl;
         },
-        openFlvcd: function(flvcdUrl){
-            flvcdUrl = flvcdUrl || ns._requestUrl;
-            if(flvcdUrl){
-                gBrowser.addTab(flvcdUrl);
-            }
-        },
         requestLoaded: function(doc, type){
-            debug("requestLoaded")
-
             var elem = doc.querySelectorAll(".mn.STYLE4")[2];
             if(!elem){
-                ns.openFlvcd();
+                this.openFlvcd();
                 return false;
             }
 
@@ -243,15 +237,15 @@ if(typeof window.externalVideoPlayer != 'undefined'){
             var list = [];
             var len = links.length;
             if(len == 0){
-                ns.openFlvcd();
-                return;
+                this.openFlvcd();
+                return false;
             }else if(len == 1){
                 list.push({
                     title: title,
                     url: links[0].href
                 });
             }else{
-                for (var i = 0; i < links.length; i++) {
+                for (var i = 0; i < len; i++) {
                     let num = i + 1;
                     if(num < 10)
                         num = "0" + num;
@@ -262,124 +256,186 @@ if(typeof window.externalVideoPlayer != 'undefined'){
                 }
             }
 
-            switch(type){
-                case "download_normal":
-                    ns.download_normal(list);
-                    break;
-                case "download_IDM":
-                    ns.download_IDM(list);
-                    break;
-                case "download_aria2":
-                    ns.download_aria2(list);
-                    break;
-                default:
-                    switch(true){
-                        case PLAYER_PLS.test(ns.PLAYER_PATH):
-                            ns.saveAndRun_pls(list);
-                            break;
-                        case PLAYER_XSPF.test(ns.PLAYER_PATH):
-                            ns.saveAndRun_xspf(list);
-                            break;
-                        case PLAYER_URLS.test(ns.PLAYER_PATH):
-                            ns.run_player(list);
-                            break;
-                        case PLAYER_COPY.test(ns.PLAYER_PATH):
-                            var urls = [];
-                            list.forEach(function(info){
-                                urls.push(info.url);
-                            });
-                            ns.exec(ns.PLAYER_PATH, []);
-                            Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper)
-                                .copyString(urls.join("\n"));
-                            break;
-                        default:
-                            ns.saveAndRun_asx(list);
-                    }
+            if (type && this[type]) {  // download_IDM 等
+                this[type](list);
+            } else {
+                this.launchPlayer(list);
             }
 
             return true;
         },
-        saveAndRun_asx: function(list){
-            var text = '<asx version = "3.0" >\n\n';
-            var item_tpl = '<entry>\n' +
-                '   <title>{title}</title>\n' +
-                '   <ref href = "{url}" />\n' +
-                '</entry>\n\n';
+        getPlayer: function(change){
+            if(!change){
+                var player;
+                try{
+                    player = this.prefs.getComplexValue("player", Ci.nsILocalFile);
+                }catch(e) {}
 
-            list.forEach(function(info){
-                text += nano(item_tpl, info);
-            });
+                if(player && player.exists() && player.isExecutable()){
+                    return player;
+                }
+            }
 
-            text += "</asx>";
+            var nsIFilePicker = Ci.nsIFilePicker;
+            var fp = Instances.fp;
+            fp.init(window, '请选择播放器', nsIFilePicker.modeOpen);
+            fp.appendFilters(nsIFilePicker.filterApplication);
+            fp.appendFilters(nsIFilePicker.filterAll);
 
-            var file = ns.saveList(ns.FILE_NAME + ".asx", text);
-            ns.exec(ns.PLAYER_PATH, [file.path]);
+            if (fp.show() != nsIFilePicker.returnOK)
+                return null;
+
+            if (fp.file.exists() && fp.file.isExecutable()) {
+                this.prefs.setComplexValue("player", Ci.nsILocalFile, fp.file);
+                return fp.file;
+            }
         },
-        getList_pls: function(list){
-            var text = "[playlist]\n";
-            var item_tpl = 'File{i}={url}\n' +
-                'Title{i}={title}\n' +
-                'Length{i}=0\n';
+        launchPlayer: function(listFileOrUrl){
+            var args,
+                player = this.getPlayer();
 
-            list.forEach(function(info, i){
-                info.i = i + 1;
-                info.title = encode_16(info.title);
+            if(!player){
+                return;
+            }
 
-                text += nano(item_tpl, info);
-            });
-            text += "NumberOfEntries=" + list.length + "\nVersion=2";
+            if (listFileOrUrl instanceof Array) { // fileList
+                listFileOrUrl = this.checkPlayList(listFileOrUrl, player && player.path);
+            }
+
+            if (typeof listFileOrUrl == "undefined") {
+                args = [];
+            } else if (typeof listFileOrUrl == "string") {
+                args = [listFileOrUrl];
+            } else if (listFileOrUrl instanceof Array) {
+                args = listFileOrUrl;
+            } else {
+                args = [listFileOrUrl.path];
+            }
+
+            var process = Instances.process;
+            process.init(player);
+            process.runAsync(args, args.length);
+        },
+        checkPlayList: function(list, playerPath){
+            playerPath = playerPath || "";
+            var arr = playerPath.split("\\"),
+                playerName = arr[arr.length - 1];
+
+            var type, encoding = DEFAULT_ENCODING;
+            switch(true){
+                case PLAYER_PLS.test(playerName):
+                    type = ".pls";
+                    break;
+                case PLAYER_XSPF.test(playerName):
+                    type = ".xspf";
+                    encoding = "utf-8";
+                    break;
+                case PLAYER_URLS.test(playerName):
+                    return getListURLs();
+                case PLAYER_COPY.test(playerName):
+                    var urls = getListURLs();
+                    Util.clipboardWrite(urls.join("\n"));
+                    break;
+                default:
+                    type = ".asx";
+                    break;
+            }
+
+            if(type){
+                var text = this.getPlayList(list, type);
+                if(text){
+                    var file = this.savePlayList(this.FILE_NAME + type, text, encoding);
+                    return file;
+                }
+            }
+
+            function getListURLs(){
+                var urls = [];
+                list.forEach(function(info){
+                    urls.push(info.url);
+                });
+                return urls;
+            }
+        },
+        getPlayList: function(list, type){
+            var text, item_tpl;
+            switch(type){
+                case ".asx":
+                    text = '<asx version = "3.0" >\n\n';
+                    item_tpl = '<entry>\n' +
+                        '   <title>{title}</title>\n' +
+                        '   <ref href = "{url}" />\n' +
+                        '</entry>\n\n';
+
+                    list.forEach(function(info){
+                        text += nano(item_tpl, info);
+                    });
+
+                    text += "</asx>";
+                    break;
+                case ".pls":
+                    text = "[playlist]\n";
+                    item_tpl = 'File{i}={url}\n' +
+                        'Title{i}={title}\n' +
+                        'Length{i}=0\n';
+
+                    list.forEach(function(info, i){
+                        info.i = i + 1;
+                        info.title = encode_16(info.title);
+
+                        text += nano(item_tpl, info);
+                    });
+                    text += "NumberOfEntries=" + list.length + "\nVersion=2";
+                    break;
+                case ".xspf":
+                    text = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+                            '<playlist xmlns="http://xspf.org/ns/0/" xmlns:vlc="http://www.videolan.org/vlc/playlist/ns/0/" version="1">\n' +
+                            '    <title>播放列表</title>\n' +
+                            '    <trackList>\n';
+
+                    item_tpl = '        <track>\n' +
+                        '            <location>{url}</location>\n' +
+                        '            <title>{title}</title>\n' +
+                        '            <extension application="http://www.videolan.org/vlc/playlist/0">\n' +
+                        '                <vlc:id>{i}</vlc:id>\n' +
+                        '                <vlc:option>network-caching=1000</vlc:option>\n' +
+                        '            </extension>\n' +
+                        '        </track>\n';
+
+                    list.forEach(function(info, i){
+                        info.i = i;
+                        info.url = info.url.replace(/&/g, "&amp;");  // 腾讯视频需要这样
+                        text += nano(item_tpl, info);
+                    });
+                    text += "    </trackList>\n</playlist>";
+                    break;
+                case "copy":
+                    var urls = [];
+                    list.forEach(function(info){
+                        urls.push(info.url);
+                    });
+                    text = urls.join("\n");
+                    break;
+                case "urls":
+                    break;
+                default:
+                    break;
+            }
 
             return text;
         },
-        saveAndRun_pls: function(list){
-            var text = ns.getList_pls(list);
-            var file = ns.saveList(ns.FILE_NAME + ".pls", text);
-            ns.exec(ns.PLAYER_PATH, [file.path]);
-        },
-        saveAndRun_xspf: function(list){
-            var text = '<?xml version="1.0" encoding="UTF-8"?>\n' +
-                    '<playlist xmlns="http://xspf.org/ns/0/" xmlns:vlc="http://www.videolan.org/vlc/playlist/ns/0/" version="1">\n' +
-                    '    <title>播放列表</title>\n' +
-                    '    <trackList>\n';
-
-            var tpl_item = '        <track>\n' +
-                '            <location>{url}</location>\n' +
-                '            <title>{title}</title>\n' +
-                '            <extension application="http://www.videolan.org/vlc/playlist/0">\n' +
-                '                <vlc:id>{i}</vlc:id>\n' +
-                '                <vlc:option>network-caching=1000</vlc:option>\n' +
-                '            </extension>\n' +
-                '        </track>\n';
-
-            list.forEach(function(info, i){
-                info.i = i;
-                info.url = info.url.replace(/&/g, "&amp;");  // 腾讯视频需要这样
-                text += nano(tpl_item, info);
-            });
-            text += "    </trackList>\n</playlist>";
-
-            var file = ns.saveList(ns.FILE_NAME + ".xspf", text, "utf-8");
-            ns.exec(ns.PLAYER_PATH, [file.path]);
-        },
-        run_player: function(list){
-            var args = [];
-            list.forEach(function(info){
-                args.push(info.url);
-            });
-
-            ns.exec(ns.PLAYER_PATH, args);
-        },
-        saveList: function(path, data, encode){
-            var tmpfile;
-            if (path.indexOf("\\") == -1){
-                tmpfile = FileUtils.getFile("TmpD", [path]);
-                tmpfile.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
-            } else {
-                tmpfile = FileUtils.file(path);
+        openFlvcd: function(flvcdUrl){
+            flvcdUrl = flvcdUrl || ns._requestUrl;
+            if(flvcdUrl){
+                gBrowser.selectedTab = gBrowser.addTab(flvcdUrl);
             }
+        },
+        savePlayList: function(fileName, data, encoding){
+            var tmpfile = FileUtils.getFile("TmpD", [fileName]);
+            tmpfile.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
 
             var suConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
-            suConverter.charset = encode || 'gbk';
+            suConverter.charset = encoding || 'gbk';
             data = suConverter.ConvertFromUnicode(data);
 
             var foStream = Cc['@mozilla.org/network/file-output-stream;1'].createInstance(Ci.nsIFileOutputStream);
@@ -399,17 +455,69 @@ if(typeof window.externalVideoPlayer != 'undefined'){
             var fileExt = (m && m[1]) ? ("." + m[1]) : "";
 
             filelist.forEach(function(file, i){
-                var title_gbk = ns.convert_to_gbk(ns.safe_title(file.title));
-                ns.exec(IDM_PATH, ["/a", "/d", file.url, "/f", title_gbk + fileExt], true);
+                var title_gbk = ns.convert_to_gbk(Util.safeTitle(file.title));
+                Util.exec(IDM_PATH, ["/a", "/d", file.url, "/f", title_gbk + fileExt], true);
             });
 
             // 再次运行，激活到前台
-            ns.exec(IDM_PATH);
+            Util.exec(IDM_PATH);
         },
         download_aria2: function(filelist){
 
         },
-        exec: function(path, args, blocking){
+        convert_to_gbk: function(data){
+            var suConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
+            suConverter.charset = 'gbk';
+            return suConverter.ConvertFromUnicode(data);
+        },
+    };
+
+    var Util = (function(){
+        var getFocusWindow = function (){
+            return gContextMenu && gContextMenu.target ? gContextMenu.target.ownerDocument.defaultView : content;
+        };
+
+        var getRangeAll = function (win) {
+            win || (win = getFocusWindow());
+            var sel = win.getSelection();
+            var res = [];
+            for (var i = 0; i < sel.rangeCount; i++) {
+                res.push(sel.getRangeAt(i));
+            }
+            return res;
+        };
+
+        var getSelection = function(win) {
+            // from getBrowserSelection Fx19
+            win || (win = getFocusWindow());
+            var selection  = getRangeAll(win).join(" ");
+            if (!selection) {
+                let element = document.commandDispatcher.focusedElement;
+                let isOnTextInput = function (elem) {
+                    return elem instanceof HTMLTextAreaElement ||
+                        (elem instanceof HTMLInputElement && elem.mozIsTextField(true));
+                };
+
+                if (isOnTextInput(element)) {
+                    selection = element.QueryInterface(Ci.nsIDOMNSEditableElement)
+                        .editor.selection.toString();
+                }
+            }
+
+            if (selection) {
+                selection = selection.replace(/^\s+/, "")
+                    .replace(/\s+$/, "")
+                    .replace(/\s+/g, " ");
+            }
+            return selection;
+        };
+
+        var clipboardWrite = function(str){
+            Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper)
+                .copyString(str);
+        };
+
+        var exec = function(path, args, blocking){
             args || (args = []);
             blocking || (blocking = false);
 
@@ -430,52 +538,20 @@ if(typeof window.externalVideoPlayer != 'undefined'){
                 }
 
             } catch(e) {}
-        },
-        safe_title: function(title) {
+        };
+
+        var safeTitle = function(title) {
             return title.replace(/[\\\|\:\*\"\?\<\>]/g,"_");
-        },
-        convert_to_gbk: function(data){
-            var suConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
-            suConverter.charset = 'gbk';
-            return suConverter.ConvertFromUnicode(data);
-        },
-        get focusedWindow() {
-            return gContextMenu && gContextMenu.target ? gContextMenu.target.ownerDocument.defaultView : content;
-        },
-        getSelection: function(win) {
-            // from getBrowserSelection Fx19
-            win || (win = this.focusedWindow);
-            var selection  = this.getRangeAll(win).join(" ");
-            if (!selection) {
-                let element = document.commandDispatcher.focusedElement;
-                let isOnTextInput = function (elem) {
-                    return elem instanceof HTMLTextAreaElement ||
-                        (elem instanceof HTMLInputElement && elem.mozIsTextField(true));
-                };
+        };
 
-                if (isOnTextInput(element)) {
-                    selection = element.QueryInterface(Ci.nsIDOMNSEditableElement)
-                        .editor.selection.toString();
-                }
-            }
+        return {
+            getSelection: getSelection,
+            clipboardWrite: clipboardWrite,
+            exec: exec,
+            safeTitle: safeTitle
+        };
+    })();
 
-            if (selection) {
-                selection = selection.replace(/^\s+/, "")
-                    .replace(/\s+$/, "")
-                    .replace(/\s+/g, " ");
-            }
-            return selection;
-        },
-        getRangeAll: function(win) {
-            win || (win = this.focusedWindow);
-            var sel = win.getSelection();
-            var res = [];
-            for (var i = 0; i < sel.rangeCount; i++) {
-                res.push(sel.getRangeAt(i));
-            }
-            return res;
-        },
-    };
 
     function debug(arg) { Application.console.log("[ExternalVideoPlayer]" + arg); }
     function $(id) document.getElementById(id);

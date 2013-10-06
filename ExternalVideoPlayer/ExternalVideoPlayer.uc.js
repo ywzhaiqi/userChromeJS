@@ -200,7 +200,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
                 return;
             }
 
-            var url = gContextMenu ? gContextMenu.linkURL : content.location.href;
+            var url =  gContextMenu && gContextMenu.linkURL || content.location.href;
             var closeTab = !(gContextMenu && gContextMenu.onLink);
 
             var flvcdUrl = 'http://www.flvcd.com/parse.php?kw=' + encodeURIComponent(url);

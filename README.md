@@ -58,6 +58,7 @@ userChromeJS for Firefox
  - [nextpage.uc.xul](nextpage.uc.xul)，下一页。
  - [OpenLinkinNewTabwithRightClick.uc.js](OpenLinkinNewTabwithRightClick.uc.js)，右键在新标签页打开链接，修改自`openlinkinnewtabwithleftdoubleclick.uc.js`。
  - [openLinkTabThirdPart.uc.js](openLinkTabThirdPart.uc.js)，域名第三方新标签页打开，否则当前标签页打开。
+ - [placesToolbarMiddleClick.uc.js](placesToolbarMiddleClick.uc.js)，禁用书签栏文件夹的鼠标中键打开所有标签页。
  - [SidebarGestures.uc.js](SidebarGestures.uc.js)，给侧边栏网页加上鼠标手势，左：后退，右：前进，上下：刷新。
  - [SnapLinksMod.uc.xul](SnapLinksMod.uc.xul)，改自 lastDream 2013 的版本，复制链接去重复和反向复制。
  - [speedupErrorConsole.uc.js](speedupErrorConsole.uc.js)，加速错误控制台。

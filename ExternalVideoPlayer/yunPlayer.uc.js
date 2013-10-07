@@ -5,9 +5,8 @@
 // @author         ywzhaiqi
 // @include        main
 // @charset        UTF-8
-// @version        0.8
+// @version        0.9
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/blob/master/ExternalVideoPlayer/yunPlayer.uc.js
-// @note
 // ==/UserScript==
 
 (function (){
@@ -27,8 +26,8 @@
         // "亦轩云点播": "http://cs.17xbc.com/index.php#!u="
     };
 
-    var linkClicked_Color = "#666666";
-    var link_regexp = /^(?:thunder|ed2k|magnet|flashget|qqdl):|\.(?:mp4|flv|rm|rmvb|mkv|asf|wmv|avi|mpeg|mpg|mov|qt)$|^http:\/\/dl[^\/]+sendfile.vip.xunlei.com/i;
+    var LINK_CLICKED_COLOR = "#666666";
+    var LINK_REGEXP = /^(?:thunder|ed2k|magnet|flashget|qqdl):|\.(?:mp4|flv|rm|rmvb|mkv|asf|wmv|avi|mpeg|mpg|mov|qt)$|^http:\/\/dl[^\/]+sendfile.vip.xunlei.com/i;
 
     if(window.yunPlayer){
         window.yunPlayer.uninit();
@@ -82,13 +81,13 @@
                     var hidden = true;
                     if(gContextMenu.onLink){
                         var url = gContextMenu.linkURL;
-                        if(link_regexp.test(url)){
+                        if(LINK_REGEXP.test(url)){
                             playerMenu.setAttribute("tooltiptext", url);
                             hidden = false;
                         }
                     } else {
                         var selection = this.getSelection();
-                        if(link_regexp.test(selection)){
+                        if(LINK_REGEXP.test(selection)){
                             playerMenu.setAttribute("tooltiptext", selection);
                             hidden = false;
                         }
@@ -98,17 +97,22 @@
                     break;
             }
         },
-        run: function(url, api_name){
+        run: function(url, apiName){
             if(!url) return;
-            if(!api_name){
-                api_name = "快乐云点播";
+            if(!apiName){
+                apiName = "快乐云点播";
             }
 
             if(gContextMenu.target){
-                gContextMenu.target.style.color = linkClicked_Color;
+                gContextMenu.target.style.color = LINK_CLICKED_COLOR;
             }
 
-            url = API_URLS[api_name] + url;
+            // 迅雷云播磁力链接不支持
+            if (apiName == "迅雷云播" && url.startsWith("magnet:")) {
+                this.copy(url);
+            }
+
+            url = API_URLS[apiName] + url;
             var nextTabIndex = gBrowser.mCurrentTab._tPos + 1;
             var tab = gBrowser.loadOneTab(url, null, null, null, false, false);
             gBrowser.moveTabTo(tab, nextTabIndex);
@@ -145,6 +149,10 @@
                 res.push(sel.getRangeAt(i));
             }
             return res;
+        },
+        copy: function(str){
+            Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper)
+                .copyString(str);
         }
     };
 

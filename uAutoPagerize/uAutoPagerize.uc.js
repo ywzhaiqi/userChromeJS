@@ -2049,6 +2049,7 @@ var SP = {
                             .replace(/\//g, '\\/'));
             };
 
+            var autoMatch = SP.autoMatch;
             var pfwordl= autoMatch.pfwordl,
                 sfwordl = autoMatch.sfwordl;
 
@@ -2085,6 +2086,8 @@ function autoGetLink(doc, win, cplink) {
     var startTime = new Date();
 
     var _nextPageKey = SP.nextPageKey_reg;
+    var autoMatch = SP.autoMatch;
+
     var _nPKL = _nextPageKey.length;
     var _getAllElementsByXpath = getElementsByXPath;
     cplink = cplink || doc.URL || win.location.href;

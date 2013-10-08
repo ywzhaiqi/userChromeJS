@@ -1,0 +1,13 @@
+@namespace url('http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul');
+
+.inspect {
+  list-style-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACAUlEQVQ4jZXSQWgTURAG4D9pNYISakugKJ6860HBS8W1tiqmW2OVYgSpiKAHG1OaxJYgrDl5sBCXoAfFSlo8BESDspciqx4sbjapVtSiFQSRll5CtmlTuvveeLALVneDDszpzXxvYAZYH144hxeAx+XtV0iS5AUAWZZ3iqIYE4S2m8FgMDkyIu9eK3EH7OZodPBCSDy4PH73Ok08ucUejd+gi+d7zHA4nKyHNABAf//AgTO9R0y+NEXEP1q89pbRctEyy5Ns8HKY4vH4OQDI5XINjsCO7a0PFr6/JDKnV82yRtzQiVV04kbBmvuikHhUKKmquslxEkVR/CePd0xTdYq4UWS0WCQ7maETLWqUiPaZmqa1OgLZbHbzscNtBVoqETf09UBFJ6qVKHLptKW6AF4A6GwXxr5+ekbEPqxa5TfEKgUyyxqnlXfmwrcJErs6XiuK4nMFRkfH9p/qbq+tVItENMs4m2GcPjOiWStx5SyFQj1RANB1fcNfa7DXGIkMnOjuOvTj/u1r9EK5wx/eS1GnsPc9gMnmpqb5VCq1BwBUVW10RfL5/LahoWQ4MTzcF4td7ZUkqXlt5Od+v7+STqd3/V7vhPx5LB4AkGXZB+Cpz+erZjKZfY7bsBFVVRvtBOCxf5MkaSOAVy0tWx+7AnXCLt4SCASc7+Efkf9uqov8BEtwDwXhLuv5AAAAAElFTkSuQmCC);
+}
+.check {
+  list-style-image: url('chrome://global/skin/icons/find.png');
+  -moz-image-region: rect(0px, 48px, 16px, 32px);
+}
+.inspect-devtools {
+    list-style-image: url('chrome://browser/skin/devtools/inspect-button.png');
+    -moz-image-region: rect(0px, 16px, 16px, 0px);
+}

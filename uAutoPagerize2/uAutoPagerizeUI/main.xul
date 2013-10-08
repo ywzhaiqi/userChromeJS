@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xml-stylesheet type="text/css" href="chrome://userChromeJS/content/uAutoPagerizeUI/main.css
+"?>
+
+<page
+	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+	id="uAutoPagerizeUI"
+	onload="init()"
+	onunload="cleanUp()">
+
+	<script type="application/x-javascript;version=1.8" src="chrome://userChromejs/content/uAutoPagerizeUI/main.js" />
+	<script type="application/x-javascript;version=1.8" src="chrome://userChromejs/content/uAutoPagerizeUI/Aardvark.js" />
+	<script type="application/x-javascript;version=1.8" src="chrome://userChromejs/content/uAutoPagerizeUI/autopager-xpath.js" />
+	<script type="application/x-javascript;version=1.8" src="chrome://userChromejs/content/uAutoPagerizeUI/xpath-autoComplete.js" />
+
+	<keyset id="sidebarKeys">
+		<key id="save-key" modifiers="accel" key="S" command="save-command"/>
+	</keyset>
+
+	<commandset id="sidebarCommands">
+		<command id="save-command" oncommand="handleSaveSiteButton()"/>
+		<command id="edit-setting-command" oncommand="editSetting()"/>
+		<command id="reload-setting-command" oncommand="reloadSetting()"/>
+	</commandset>
+
+	<popupset id="sidebarPopups">
+		<menupopup id="xpath-find-popup">
+		</menupopup>
+
+		<panel id="xpath_autoCompletePopup" class="devtools-autocomplete-popup light-theme" noautofocus="true" level="top" ignorekeys="true" >
+			<richlistbox flex="1" seltype="single" id="xpath_autocompletePopupListBox" class="devtools-autocomplete-listbox light-theme" width="176" height="342" top="0">
+
+			</richlistbox>
+		</panel>
+	</popupset>
+
+	<panel id="autocompletePanel"
+	       fade="fast">
+	  <richlistbox id="autocompleteList"
+	               seltype="single"
+	               maxheight="250"
+	               minwidth="100"/>
+	</panel>
+
+	<hbox flex="1">
+		<hbox flex="1">
+			<vbox id="tree-container" flex="1">
+				<hbox align="center" id="search-box">
+					<label value="Filter" accesskey="F" control="filter"/>
+					<textbox id="filter" oncommand="setFilter(this.value)" flex="1" type="search" emptytext="Search" />
+				</hbox>
+				<tree id="tree" flex="1" seltype="single" onselect="updateDetails()">
+					<treecols>
+						<treecol id="name" label="名称" flex="4" persist="width ordinal sortDirection hidden"/>
+						<splitter class="tree-splitter" />
+						<treecol id="url" label="规则" flex="10" persist="width ordinal sortDirection hidden"/>
+						<splitter class="tree-splitter" />
+						<treecol id="count" label="计数" flex="0" persist="width ordinal sortDirection hidden"/>
+					</treecols>
+					<treechildren id="siteContents" context="rules-menu" />
+				</tree>
+			</vbox>
+			<vbox id="center-buttons">
+				<button id="btnAdd" label="添加" oncommand="handleAddSiteButton()"/>
+				<button id="btnClone" label="克隆" oncommand="handleCloneSiteButton()" />
+				<button id="btnDelete" label="删除" oncommand="handleDeleteSiteButton()"/>
+				<spacer flex="1" />
+				<button id="btnImport" label="导入" oncommand="readInfoFromClipBoard()" tooltiptext="从剪贴板中导入规则"/>
+				<button id="btnExport" label="导出" oncommand="copyInfoToClipBoard();" tooltiptext="导出规则到剪贴板中"/>
+			</vbox>
+		</hbox>
+		<splitter id="splitter" />
+		<vbox id="right-box" width="700">
+			<tabbox id="rule-tabbox" flex="1" selectedIndex="0">
+				<tabs orient="horizontal" value="">
+					<tab label="一般" first-tab="true" selected="true" />
+					<tab label="高级" last-tab="true" afterselected="true" />
+				</tabs>
+				<tabpanels flex="1" selectedIndex="0">
+					<tabpanel id="rule-general-setting" flex="1">
+						<vbox flex="1">
+							<hbox flex="1" align="center">
+								<button id="btnSave" label="保存" command="save-command" key="save-key" tooltiptext="快捷键 Ctrl + S 保存"/>
+								<button label="编辑" command="edit-setting-command" key="edit-key" tooltiptext="打开配置文件后，可以直接搜索，已经复制 name 或 url 到剪贴板"/>
+								<button label="重载" command="reload-setting-command" key="reload-key" tooltiptext="重新载入配置文件"/>
+								<button id="btnTest" label="测试" oncommand="handleTestSiteButton(event)"/>
+								<checkbox id="chkUseiframe" label="useiframe" onclick="toggleUseIframe(event)"/>
+								<checkbox id="chkIloaded" label="iloaded" hidden="true"/>
+								<label id="exampleUrl" label="exampleUrl" href="" class="text-link" hidden="true" crop="end" flex="1"/>
+							</hbox>
+							<grid id="grid" flex="1">
+								<columns>
+									<column/>
+									<column flex="1" />
+									<column/>
+									<column/>
+									<column/>
+								</columns>
+								<rows>
+									<row>
+										<label value="name" control="siteName" />
+										<textbox id="siteName" style="" />
+										<toolbarbutton class="inspect" tooltiptext="提取网站名称" oncommand="setSiteName();" />
+										<hbox/>
+										<hbox/>
+									</row>
+									<row>
+										<label value="url" control="urlPattern" />
+										<textbox id="urlPattern" oninput="xpathTools.checkUrlPattern(event);" onkeypress="if(event.keyCode==13){ xpathTools.checkUrlPattern(event); }" />
+										<toolbarbutton class="inspect" tooltiptext="提取地址" oncommand="setUrl();" />
+										<hbox/>
+										<hbox/>
+									</row>
+									<row>
+										<label value="nextLink" control="nextLink" />
+										<textbox id="nextLink" tooltiptext="例：auto; 或 css;a#pnnext 或 //a[@id='pnnext'] 或 //div[@id='footlink']/descendant::a[text()='下一页']" />
+										<toolbarbutton class="inspect" tooltiptext="提取XPath" oncommand="xpathTools.pickupElement('nextLink');" />
+										<toolbarbutton class="check" tooltiptext="测试XPath" oncommand="xpathTools.xpathTest('nextLink');" />
+										<toolbarbutton class="inspect-devtools" tooltiptext="使用Firebug或自带开发工具查看元素" oncommand="xpathTools.inspectMix('nextLink');" />
+									</row>
+									<row>
+										<label value="pageElement" control="pageElement" />
+										<textbox id="pageElement" tooltiptext="例：css;#ires 或 //div[@id='ires']" />
+										<toolbarbutton class="inspect" tooltiptext="提取XPath" oncommand="xpathTools.pickupElement('pageElement');" />
+										<toolbarbutton class="check" tooltiptext="测试XPath" oncommand="xpathTools.xpathTest('pageElement');" />
+										<toolbarbutton class="inspect-devtools" tooltiptext="使用Firebug或自带开发工具查看元素" oncommand="xpathTools.inspectMix('pageElement');" />
+									</row>
+									<row hidden="true">
+										<label value="insertBefore" control="insertBefore" />
+										<textbox id="insertBefore" />
+										<toolbarbutton class="inspect" tooltiptext="提取XPath" oncommand="xpathTools.pickupElement('insertBefore');"/>
+										<toolbarbutton class="check" tooltiptext="测试XPath" oncommand="xpathTools.xpathTest('insertBefore');" />
+										<toolbarbutton class="inspect-devtools" tooltiptext="使用Firebug或自带开发工具查看元素" />
+									</row>
+								</rows>
+							</grid>
+						</vbox>
+					</tabpanel>
+					<tabpanel id="rule-advanced-setting" flex="1">
+						<vbox flex="1">
+							<hbox>
+								<label control="desc" value="其它:" keyword="Description" tooltiptext="点击鼠标查看描述"/>
+								<textbox multiline="true" id="desc" rows="3" flex="1" class="changed" />
+							</hbox>
+							<hbox >
+								<label control="desc" value="描述:" keyword="Description" tooltiptext="点击鼠标查看描述"/>
+								<textbox multiline="true" id="desc" rows="2" flex="1" class="changed" />
+							</hbox>
+						</vbox>
+					</tabpanel>
+				</tabpanels>
+			</tabbox>
+			<hbox id="footer">
+				<label id="message" value=""/>
+			</hbox>
+		</vbox>
+	</hbox>
+
+</page>

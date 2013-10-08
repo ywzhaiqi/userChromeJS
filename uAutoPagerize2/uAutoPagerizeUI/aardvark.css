@@ -1,0 +1,89 @@
+@namespace url("http://www.w3.org/1999/xhtml");
+
+.my-aardvark, .my-aardvark > .label, .my-aardvark > .label > .labelTag, .my-aardvark > .label > .labelAddition, .my-aardvark > .border {
+    display: block !important;
+    position: static !important;
+    float: none !important;
+    clear: none !important;
+    right: auto !important;
+    bottom: auto !important;
+    z-index: 2147483647 !important;
+    background: transparent !important;
+    border: none !important;
+    clip: auto !important;
+    cursor: auto !important;
+    margin: 0px !important;
+    max-width: none !important;
+    max-height: none !important;
+    min-width: 0px !important;
+    min-height: 0px !important;
+    opacity: 1 !important;
+    outline: none !important;
+    padding: 0px !important;
+    visibility: visible !important;
+    -moz-binding: none !important;
+    border-radius: 0px !important;
+    -moz-user-focus: none !important;
+    -moz-user-input: none !important;
+    -moz-user-select: none !important;
+}
+.my-aardvark {
+    position: fixed !important;
+    width: auto !important;
+    height: auto !important;
+}
+.my-aardvark > .border {
+    border: 2px solid #ff0000 !important;
+    top: auto !important;
+    left: auto !important;
+}
+.my-aardvark > .label {
+	float: left !important;
+	background-color: #fff0cc !important;
+	border-color: #000000 !important;
+	border-width: 0px 2px 1px 2px !important;
+	border-style: solid !important;
+	border-bottom-left-radius: 6px !important;
+	border-bottom-right-radius: 6px !important;
+	padding: 2px 5px !important;
+	top: auto !important;
+	left: auto !important;
+	width: auto !important;
+	height: auto !important;
+}
+.my-aardvark > .label.onTop {
+    position: relative !important;
+    left: 5px !important;
+    top: -25px !important;
+    border-top-width: 1px !important;
+    border-radius: 6px !important;
+}
+.my-aardvark > .label > .labelTag, .my-aardvark > .label > .labelAddition {
+    display: inline !important;
+    font-family: Arial !important;
+    font-size: 12px !important;
+    color: #000000 !important;
+    top: auto !important;
+    left: auto !important;
+    width: auto !important;
+    height: auto !important;
+    direction: ltr !important;
+    font-size-adjust: none !important;
+    font-stretch: normal !important;
+    font-style: normal !important;
+    font-variant: normal !important;
+    font-weight: normal !important;
+    letter-spacing: normal !important;
+    line-height: normal !important;
+    text-align: start !important;
+    text-decoration: none !important;
+    text-indent: 0px !important;
+    text-shadow: none !important;
+    text-transform: none !important;
+    text-transform: none !important;
+    white-space: normal !important;
+    word-spacing: 0px !important;
+}
+.my-aardvark > .label > .labelTag {
+    font-weight: bold !important;
+}

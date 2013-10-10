@@ -14,13 +14,14 @@ if(window.FindScriptForScriptish){
     delete window.FindScriptForScriptish;
 }
 
-
 var FindScriptForScriptish = {
 	_id: "Scriptish-find-script",
 	init: function(){
+        var isCN = navigator.language.substr(0, 2) == "zh";
+
 		var menuitem = document.createElement("menuitem");
 		menuitem.setAttribute("id", this._id);
-		menuitem.setAttribute("label", "为本站搜索脚本(S)");
+		menuitem.setAttribute("label", isCN ? "为本站搜索脚本(S)" : "find Script");
         menuitem.setAttribute("accesskey", "s");
 		menuitem.setAttribute("oncommand", "FindScriptForScriptish.findscripts()");
 

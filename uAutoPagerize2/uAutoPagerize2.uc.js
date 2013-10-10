@@ -58,6 +58,7 @@ var EXCLUDE = [
     '*://www.dropbox.com/*',
     '*://www.toodledo.com/*',
     '*://www.wumii.com/*',
+    'http://www.cnbeta.com/*',
     '*/archives/*'
 ];
 
@@ -620,10 +621,10 @@ var ns = window.uAutoPagerize = {
         }
 
 		win.setTimeout(function(){
+            var startTime = new Date().getTime();
 			win.ap = null;
 			miscellaneous.forEach(function(func){ func(doc, locationHref); });
-			var index = -1,
-                startTime = new Date().getTime();
+			var index = -1;
 			if (!info) [, info, nextLink] = ns.getInfo(ns.MY_SITEINFO, win);
             if (!info) [, info, nextLink] = ns.getInfo(ns.SITEINFO_CN, win);
 			if (info) {
@@ -653,6 +654,8 @@ var ns = window.uAutoPagerize = {
             //debug(index + 'th/' + (new Date().getTime() - s) + 'ms');
             if (!info) [, info, nextLink] = ns.getInfo(ns.MICROFORMAT, win);
 			if (info) win.ap = new AutoPager(win.document, info, nextLink);
+
+            debug('总耗时:' + (new Date() - startTime) + '毫秒, 地址为：' + locationHref);
 
 			updateIcon();
 		}, timer||0);
@@ -886,7 +889,7 @@ var ns = window.uAutoPagerize = {
     },
     getInfoFromURL: function (url) {
         if (!url) url = content.location.href;
-        var list = ns.ns.SITEINFO_CN;
+        var list = ns.SITEINFO_CN;
         return list.filter(function(info, index, array) {
             try {
                 var exp = info.url_regexp || Object.defineProperty(info, "url_regexp", {
@@ -1557,6 +1560,7 @@ var SP = (function(){  // 来自 NLF 的 Super_preloader
                             .replace(/\//g, '\\/'));
             };
 
+            var autoMatch = SP.autoMatch;
             var pfwordl= autoMatch.pfwordl,
                 sfwordl = autoMatch.sfwordl;
 
@@ -1606,7 +1610,7 @@ var SP = (function(){  // 来自 NLF 的 Super_preloader
         var curLHref = cplink;
         var _nextlink;
 
-        var DCEnable = autoMatch.digitalCheck;
+        var DCEnable = SP.autoMatch.digitalCheck;
         var DCRE = /^\s*\D{0,1}(\d+)\D{0,1}\s*$/;
 
         var i, a, ahref, atext, numtext;

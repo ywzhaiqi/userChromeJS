@@ -5,7 +5,7 @@
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
-// @version        0.1.4
+// @version        0.1.5
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/ExternalVideoPlayer
 // @reviewURL      http://bbs.kafan.cn/thread-1587228-1-1.html
 // @note           youku、悦台、网易视频、优米等调用外部播放器播放。土豆、奇艺等不支持外部播放的新页面打开 flvcd 网址。
@@ -41,7 +41,20 @@ if(typeof window.externalVideoPlayer != 'undefined'){
     var PLAYER_COPY = /BaiduPlayer/i;  // 复制链接到剪贴板
 
     var LINK_CLICKED_COLOR = "#666666";
-    var LINK_SHOW_REGEXP = /^http:\/\/d\.pcs\.baidu\.com\/file\/|\.(?:mp4|flv|rm|rmvb|mkv|asf|wmv|avi|mpeg|mpg|mov|qt)$/i;
+
+    var LINK_SHOW = [
+        "^http://d\\.pcs\\.baidu\\.com/file/",
+        "http://gdl\\.lixian\\.vip\\.xunlei\\.com",
+        "\\.(?:mp4|flv|rm|rmvb|mkv|asf|wmv|avi|mpeg|mpg|mov|qt)$"
+    ];
+
+    var LINK_EXCLUDE = [
+        "http://www.youku.com/",
+        "http://www.tudou.com/",
+        "http://www.iqiyi.com/"
+    ];
+
+    var LINK_SHOW_REGEXP = new RegExp(LINK_SHOW.join("|"), "i");
     var HOST_REGEXP = /www\.soku\.com|youku|yinyuetai|ku6|umiwi|sina|163|56|joy|v\.qq|letv|(tieba|mv|zhangmen)\.baidu|wasu|pps|kankan|funshion|tangdou|acfun\.tv|www\.bilibili\.tv|v\.ifeng\.com|cntv\.cn/i;
 
     let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
@@ -52,6 +65,86 @@ if(typeof window.externalVideoPlayer != 'undefined'){
         get lf() Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile),
         get process() Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess),
     };
+
+    var Util = (function(){
+        var getFocusWindow = function (){
+            return gContextMenu && gContextMenu.target ? gContextMenu.target.ownerDocument.defaultView : content;
+        };
+
+        var getRangeAll = function (win) {
+            win || (win = getFocusWindow());
+            var sel = win.getSelection();
+            var res = [];
+            for (var i = 0; i < sel.rangeCount; i++) {
+                res.push(sel.getRangeAt(i));
+            }
+            return res;
+        };
+
+        var getSelection = function(win) {
+            // from getBrowserSelection Fx19
+            win || (win = getFocusWindow());
+            var selection  = getRangeAll(win).join(" ");
+            if (!selection) {
+                let element = document.commandDispatcher.focusedElement;
+                let isOnTextInput = function (elem) {
+                    return elem instanceof HTMLTextAreaElement ||
+                        (elem instanceof HTMLInputElement && elem.mozIsTextField(true));
+                };
+
+                if (isOnTextInput(element)) {
+                    selection = element.QueryInterface(Ci.nsIDOMNSEditableElement)
+                        .editor.selection.toString();
+                }
+            }
+
+            if (selection) {
+                selection = selection.replace(/^\s+/, "")
+                    .replace(/\s+$/, "")
+                    .replace(/\s+/g, " ");
+            }
+            return selection;
+        };
+
+        var clipboardWrite = function(str){
+            Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper)
+                .copyString(str);
+        };
+
+        var exec = function(path, args, blocking){
+            args || (args = []);
+            blocking || (blocking = false);
+
+            var file    = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
+            var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
+            try {
+                file.initWithPath(path);
+
+                if (!file.exists()) {
+                    Cu.reportError('File Not Found: ' + path);
+                }
+
+                if (file.isExecutable()) {
+                    process.init(file);
+                    process.run(blocking, args, args.length);
+                } else {
+                    file.launch();
+                }
+
+            } catch(e) {}
+        };
+
+        var safeTitle = function(title) {
+            return title.replace(/[\\\|\:\*\"\?\<\>]/g,"_");
+        };
+
+        return {
+            getSelection: getSelection,
+            clipboardWrite: clipboardWrite,
+            exec: exec,
+            safeTitle: safeTitle
+        };
+    })();
 
     var ns = window.externalVideoPlayer = {
         FILE_NAME: "externalVideoPlayer",
@@ -70,9 +163,10 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
         init: function(){
             var contextMenu = $("contentAreaContextMenu");
+            var ins = $("context-openlinkincurrent") || contextMenu.firstChild;
 
             this._menuitem = this.createMenuItem();
-            contextMenu.insertBefore(this._menuitem, contextMenu.firstChild);
+            contextMenu.insertBefore(this._menuitem, ins);
 
             contextMenu.addEventListener("popupshowing", this, false);
         },
@@ -132,15 +226,15 @@ if(typeof window.externalVideoPlayer != 'undefined'){
             menupopup.appendChild(menuitem);
 
             menuitem = $C("menuitem", {
-                label: "下载（内置）",
-                oncommand: "externalVideoPlayer.run(null, 'download_normal')",
+                label: "下载（IDM）",
+                hidden: ns.IDM_hidden,
+                oncommand: "externalVideoPlayer.run('super', 'download_IDM')",
             });
             menupopup.appendChild(menuitem);
 
             menuitem = $C("menuitem", {
-                label: "下载（IDM）",
-                hidden: ns.IDM_hidden,
-                oncommand: "externalVideoPlayer.run('super', 'download_IDM')",
+                label: "下载（内置）",
+                oncommand: "externalVideoPlayer.run(null, 'download_normal')",
             });
             menupopup.appendChild(menuitem);
 
@@ -178,6 +272,11 @@ if(typeof window.externalVideoPlayer != 'undefined'){
                 if(selection && LINK_SHOW_REGEXP.test(selection)){
                     this.execOnceURL = selection;
                     return true;
+                }
+
+                // 不在链接上时，排除首页
+                if(LINK_EXCLUDE.indexOf(content.location.href) != -1){
+                    return false;
                 }
             }
 
@@ -429,8 +528,8 @@ if(typeof window.externalVideoPlayer != 'undefined'){
                     break;
             }
 
-            return text;
-        },
+            return text
+;        },
         openFlvcd: function(flvcdUrl){
             flvcdUrl = flvcdUrl || ns._requestUrl;
             if(flvcdUrl){
@@ -464,17 +563,17 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
             var fileExt = this.getVideoExt(filelist[0].url);
 
-            var func = "(" + internalSave.toString()
+            var downloadFunc = "(" + internalSave.toString()
                     .replace("let ", "")
                     .replace("var fpParams", "fileInfo.fileExt=null;fileInfo.fileName=aDefaultFileName;var fpParams") + ")",
                 useDownloadDir = Services.prefs.getBoolPref("browser.download.useDownloadDir");
 
             filelist.forEach(function(file, i){
-                eval(func)(file.url, null, file.title + fileExt, null, null, null, null, null, null,
+                eval(downloadFunc)(file.url, null, file.title + fileExt, null, null, null, null, null, null,
                         document, useDownloadDir, null);
             });
         },
-        download_IDM: function(filelist){
+        download_IDM: function(filelist, activite){
             var fileExt = this.getVideoExt(filelist[0].url);
 
             filelist.forEach(function(file, i){
@@ -483,7 +582,9 @@ if(typeof window.externalVideoPlayer != 'undefined'){
             });
 
             // 再次运行，激活到前台
-            Util.exec(IDM_PATH);
+            if(typeof(activite) == "undefined" || activite){
+                Util.exec(IDM_PATH);
+            }
         },
         download_aria2: function(filelist){
 
@@ -514,87 +615,6 @@ if(typeof window.externalVideoPlayer != 'undefined'){
             return suConverter.ConvertFromUnicode(data);
         },
     };
-
-    var Util = (function(){
-        var getFocusWindow = function (){
-            return gContextMenu && gContextMenu.target ? gContextMenu.target.ownerDocument.defaultView : content;
-        };
-
-        var getRangeAll = function (win) {
-            win || (win = getFocusWindow());
-            var sel = win.getSelection();
-            var res = [];
-            for (var i = 0; i < sel.rangeCount; i++) {
-                res.push(sel.getRangeAt(i));
-            }
-            return res;
-        };
-
-        var getSelection = function(win) {
-            // from getBrowserSelection Fx19
-            win || (win = getFocusWindow());
-            var selection  = getRangeAll(win).join(" ");
-            if (!selection) {
-                let element = document.commandDispatcher.focusedElement;
-                let isOnTextInput = function (elem) {
-                    return elem instanceof HTMLTextAreaElement ||
-                        (elem instanceof HTMLInputElement && elem.mozIsTextField(true));
-                };
-
-                if (isOnTextInput(element)) {
-                    selection = element.QueryInterface(Ci.nsIDOMNSEditableElement)
-                        .editor.selection.toString();
-                }
-            }
-
-            if (selection) {
-                selection = selection.replace(/^\s+/, "")
-                    .replace(/\s+$/, "")
-                    .replace(/\s+/g, " ");
-            }
-            return selection;
-        };
-
-        var clipboardWrite = function(str){
-            Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper)
-                .copyString(str);
-        };
-
-        var exec = function(path, args, blocking){
-            args || (args = []);
-            blocking || (blocking = false);
-
-            var file    = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
-            var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
-            try {
-                file.initWithPath(path);
-
-                if (!file.exists()) {
-                    Cu.reportError('File Not Found: ' + path);
-                }
-
-                if (file.isExecutable()) {
-                    process.init(file);
-                    process.run(blocking, args, args.length);
-                } else {
-                    file.launch();
-                }
-
-            } catch(e) {}
-        };
-
-        var safeTitle = function(title) {
-            return title.replace(/[\\\|\:\*\"\?\<\>]/g,"_");
-        };
-
-        return {
-            getSelection: getSelection,
-            clipboardWrite: clipboardWrite,
-            exec: exec,
-            safeTitle: safeTitle
-        };
-    })();
-
 
     function debug() { Application.console.log("[ExternalVideoPlayer]" + Array.slice(arguments)); }
     function $(id) document.getElementById(id);

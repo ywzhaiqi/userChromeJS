@@ -284,14 +284,14 @@ var ns = window.uAutoPagerize = {
                           checked="'+ AUTO_START +'"\
                           oncommand="uAutoPagerize.toggle(event);"/>\
                 <menuitem label="重新载入配置"\
-                          tooltiptext="右键编辑"\
-                          oncommand="uAutoPagerize.loadSetting(true);uAutoPagerize.loadSetting_CN();"\
-                          onclick="if(event.button==2) { uAutoPagerize.edit(uAutoPagerize.file); return false;}"/>\
+                          tooltiptext="右键编辑配置文件"\
+                          onclick="uAutoPagerize.reloadMenuClick(event);"/>\
                 <menuitem label="更新中文规则" \
                           tooltiptext="包含 Super_preloader 的中文规则"\
                           oncommand="uAutoPagerize.resetSITEINFO_CN();"/>\
                 <hbox>\
-                    <textbox id="uAutoPagerize-blacklist-textbox" oninput="uAutoPagerize.checkUrl(event);"/>\
+                    <textbox id="uAutoPagerize-blacklist-textbox" oninput="uAutoPagerize.checkUrl(event);"\
+                        tooltiptext="绿色代表在黑名单中，红色代表不匹配当前网址"/>\
                     <toolbarbutton label="添加" id="uAutoPagerize-blacklist-icon" \
                         tooltiptext="添加到黑名单" onclick="uAutoPagerize.blacklistBtnClick(event);"/>\
                 </hbox>\
@@ -769,6 +769,21 @@ var ns = window.uAutoPagerize = {
                 content.ap.scroll();
                 updateIcon();
             }
+        }
+    },
+    reloadMenuClick: function(event){
+        switch(event.button){
+            case 0:
+                ns.loadSetting(true);
+                ns.loadSetting_CN();
+                break;
+            case 1:
+                ns.edit(ns.file_CN);
+                break;
+            case 2:
+                ns.edit(ns.file);
+                event.preventDefault();
+                break;
         }
     },
     immediatelyStart: function(){

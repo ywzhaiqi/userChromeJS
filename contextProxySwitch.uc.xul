@@ -118,7 +118,10 @@
         if(targetWindow.document.doctype){
             sel = targetWindow.getSelection();
         } else {
-            sel = targetWindow.getSelection().anchorNode.data;
+            sel = targetWindow.getSelection();
+            if(sel){
+                sel = sel.anchorNode.data;
+            }
         }
 
         // for textfields

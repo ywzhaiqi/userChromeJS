@@ -18,6 +18,7 @@
  - 视频链接、视频文字链接、百度云链接、flvcd 网站
  - 非分段：[音悦台](http://tv.letv.com/)、[乐视网](http://tv.letv.com/)、[56网](http://www.56.com)、[迅雷看看](http://www.kankan.com/)
  - 没法直接播放：[土豆网](http://www.tudou.com/)、[奇艺网](http://www.iqiyi.com/)、[搜狐视频](http://tv.sohu.com)、[PPTV](http://v.pptv.com)
+ - 百度盘分享的视频可直接观看，体验不错。
 
 ### 使用说明
 

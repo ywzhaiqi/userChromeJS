@@ -47,6 +47,7 @@ userChromeJS for Firefox
 ### 单文件
 
  - [chromejs.uc.js](chromejs.uc.js)，在地址栏运行uc代码，例：打开书签 `chromejs:PlacesCommandHook.showPlacesOrganizer('AllBookmarks');`
+ - [contextProxySwitch.uc.xul](contextProxySwitch.uc.xul)，修正本地文件下 getSelection 是一行的情况。
  - [copybookmark.uc.js](copybookmark.uc.js)，书签右键复制标题链接（修改版）。
  - [downloadPlus.uc.js](downloadPlus.uc.js)，多个下载脚本整合版。
  - [ExportHTMLFolderMod.uc.xul](ExportHTMLFolderMod.uc.xul)，书签右键 `导出到HTML`（修改版）。

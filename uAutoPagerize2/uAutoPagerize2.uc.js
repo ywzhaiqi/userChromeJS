@@ -103,6 +103,10 @@ var COLOR = {
 	error: '#f0f'
 };
 
+// 出在自动翻页信息附加显示真实相对页面信息，一般能智能识别出来。如果还有站点不能识别，可以把地址的特征字符串加到下面
+// 最好不要乱加，一些不规律的站点显示出来的数字也没有意义
+var REALPAGE_SITE_PATTERN = ['search?', 'search_', 'forum', 'thread'];
+
 
 let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
@@ -661,6 +665,8 @@ var ns = window.uAutoPagerize = {
 		}, timer||0);
 	},
     onPopupShowing: function(event){
+        if(event.target != event.currentTarget) return;
+
         var excludeStr;
         var locationHref = content.location.href;
         var blacklistBtn = $("uAutoPagerize-blacklist-icon");
@@ -1261,7 +1267,7 @@ AutoPager.prototype = {
 			}
 			this.setRemainHeight();
 		}
-		page = this.addPage(htmlDoc, page);
+		page = this.addPage(htmlDoc, page, url);
 		this.win.filters.forEach(function(i) { i(page) });
 		this.requestURL = url;
 		this.state = 'enable';
@@ -1276,7 +1282,7 @@ AutoPager.prototype = {
 		this.doc.dispatchEvent(ev);
         this.afterLoad();
     },
-    addPage : function(htmlDoc, page){
+    addPage : function(htmlDoc, page, nextPageUrl){
         var fragment = this.doc.createDocumentFragment();
         page.forEach(function(i) { fragment.appendChild(i); });
         this.win.fragmentFilters.forEach(function(i) { i(fragment, htmlDoc, page) }, this);
@@ -1295,14 +1301,16 @@ AutoPager.prototype = {
             fragment.appendChild(div);
         }
 
+        var ralativePageStr = getRalativePageStr(this.lastRequestURL, this.requestURL, nextPageUrl);
+
         var hr = this.doc.createElement('hr');
         hr.setAttribute('class', 'autopagerize_page_separator');
         hr.setAttribute('style', 'clear: both;');
         var p  = this.doc.createElement('p');
         p.setAttribute('class', 'autopagerize_page_info');
         p.setAttribute('style', 'clear: both;');
-        p.innerHTML = '<a class="autopagerize_link" href="' +
-            this.requestURL.replace(/&/g, '&amp;') + '">第 ' + (++this.pageNum) + '页 </a> ';
+        p.innerHTML = '<a class="autopagerize_link" href="' + this.requestURL.replace(/&/g, '&amp;') +
+            '">第 <font color="red">' + (++this.pageNum) + '</font> 页 ' + ralativePageStr + '</a> ';
 
         if (!this.isFrame) {
             var o = p.insertBefore(this.doc.createElement('div'), p.firstChild);
@@ -1813,6 +1821,7 @@ var SP = (function(){  // 来自 NLF 的 Super_preloader
         hrefInc: hrefInc
     };
 })();
+
 uAutoPagerize.autoGetLink = SP.autoGetLink;
 
 function toRE(obj) {
@@ -1846,6 +1855,80 @@ function createIframe(id) {
     frame.webNavigation.allowSubframes = false;  //子窗口,frame,iframe
     return frame;
 }
+
+// By lastDream2013，原版只能用于 Firefox
+function getRalativePageStr(lastUrl, currentUrl, nextUrl) {
+    function getRalativePageNumArray(lasturl, url) {
+        if (!lasturl || !url) {
+            return [0, 0];
+        }
+
+        var lasturlarray = lasturl.split(/-|\.|\&|\/|=|#/),
+            urlarray = url.split(/-|\.|\&|\/|=|#/),
+            url_info,
+            lasturl_info;
+        while (urlarray.length != 0) {
+            url_info = urlarray.pop(),
+            lasturl_info = lasturlarray.pop();
+            if (url_info != lasturl_info) {
+                if (/[0-9]+/.test(lasturl_info) && /[0-9]+/.test(url_info))
+                    return [parseInt(lasturl_info), parseInt(url_info)];
+            }
+        }
+        return [0, 0];
+    }
+
+    //论坛和搜索引擎网页显示实际页面信息
+    var ralativePageNumarray = [];
+    if (nextUrl) {
+        ralativePageNumarray = getRalativePageNumArray(currentUrl, nextUrl);
+    } else {
+        ralativePageNumarray = getRalativePageNumArray(lastUrl, currentUrl);
+        var ralativeOff = ralativePageNumarray[1] - ralativePageNumarray[0]; //用的上一页的相对信息比较的，要补充差值……
+        ralativePageNumarray[1] = ralativePageNumarray[1] + ralativeOff;
+        ralativePageNumarray[0] = ralativePageNumarray[0] + ralativeOff;
+    }
+
+    var realPageSiteMatch = false;
+    var ralativeOff = ralativePageNumarray[1] - ralativePageNumarray[0];
+    //上一页与下一页差值为1，并最大数值不超过10000(一般论坛也不会超过这么多页……)
+    if (ralativeOff === 1 && ralativePageNumarray[1] < 10000) {
+        realPageSiteMatch = true;
+    }
+
+    //上一页与下一页差值不为1，但上一页与下一页差值能被上一页与下一面所整除的，有规律的页面
+    if (!realPageSiteMatch && ralativeOff !== 1) {
+        if ((ralativePageNumarray[1] % ralativeOff) == 0 && (ralativePageNumarray[0] % ralativeOff) == 0) {
+            realPageSiteMatch = true;
+        }
+    }
+
+    if (!realPageSiteMatch) { //不满足以上条件，再根据地址特征来匹配
+        var sitePattern;
+        for (var i = 0, length = REALPAGE_SITE_PATTERN.length; i < length; i++) {
+            sitePattern = REALPAGE_SITE_PATTERN[i];
+            if (currentUrl.toLocaleLowerCase().indexOf(sitePattern) >= 0) {
+                realPageSiteMatch = true;
+                break;
+            }
+        }
+    }
+
+    var ralativePageStr;
+    if (realPageSiteMatch) { //如果匹配就显示实际网页信息
+        if (ralativePageNumarray[1] - ralativePageNumarray[0] > 1) { //一般是搜索引擎的第xx - xx项……
+            ralativePageStr = ' [ 实际：第 <font color="red">' + ralativePageNumarray[0] + ' - ' + ralativePageNumarray[1] + '</font> 项 ]';
+        } else if ((ralativePageNumarray[1] - ralativePageNumarray[0]) == 1) { //一般的翻页数，差值应该是1
+            ralativePageStr = ' [ 实际：第 <font color="red">' + ralativePageNumarray[0] + '</font> 页 ]';
+        } else if ((ralativePageNumarray[0] == 0 && ralativePageNumarray[1]) == 0) { //找不到的话……
+            ralativePageStr = ' [ 实际网页结束 ]';
+        }
+    } else {
+        ralativePageStr = '';
+    }
+    return ralativePageStr;
+}
+
 
 //-------- 来自 Super_preloader, 为了兼容 Super_preloader 数据库 -------------
 //获取单个元素,混合。

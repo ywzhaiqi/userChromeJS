@@ -1583,7 +1583,6 @@ var SP = (function(){  // 来自 NLF 的 Super_preloader
                             .replace(/\//g, '\\/'));
             };
 
-            var autoMatch = SP.autoMatch;
             var pfwordl= autoMatch.pfwordl,
                 sfwordl = autoMatch.sfwordl;
 
@@ -1633,7 +1632,7 @@ var SP = (function(){  // 来自 NLF 的 Super_preloader
         var curLHref = cplink;
         var _nextlink;
 
-        var DCEnable = SP.autoMatch.digitalCheck;
+        var DCEnable = autoMatch.digitalCheck;
         var DCRE = /^\s*\D{0,1}(\d+)\D{0,1}\s*$/;
 
         var i, a, ahref, atext, numtext;

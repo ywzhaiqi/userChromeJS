@@ -40,7 +40,7 @@
 
 (function(css) {
 
-var SEND_COOKIE = true;  // 是否发送 cookie？百度贴吧可能会有问题
+var SEND_COOKIE = true;  // 是否发送 cookie？百度有问题时需要清除 cookie
 
 var DB_FILENAME_CN =  "uSuper_preloader.db.js";   // 中文数据库的位置
 
@@ -124,12 +124,12 @@ var SCROLL_ONLY = false;
 var CACHE_EXPIRE = 24 * 60 * 60 * 1000;
 var XHR_TIMEOUT = 30 * 1000;
 
-// 我新增的
-var MAX_PAGER_NUM = -1;           // 默认最大翻页数， -1表示无限制
-var IMMEDIATELY_PAGER_NUM = 3;    // 立即加载的默认页数
-var USE_IFRAME = true;  // 是否启用 iframe 加载下一页（浏览器级，默认只允许JavaScript，在 createIframe 中可设置其它允许）
+// 新增的
+var MAX_PAGER_NUM = -1;        // 默认最大翻页数， -1表示无限制
+var IMMEDIATELY_PAGER_NUM = 3; // 立即加载的默认页数
+var USE_IFRAME = true;         // 是否启用 iframe 加载下一页（浏览器级，默认只允许JavaScript，在 createIframe 中可设置其它允许）
 var PRELOADER_NEXTPAGE = true; // 提前预读下一页..就是翻完第1页,立马预读第2页,翻完第2页,立马预读第3页..(大幅加快翻页快感-_-!!)
-
+var ADD_TO_HISTORY = false;    // 添加下一页链接到历史记录
 
 var ns = window.uAutoPagerize = {
     INCLUDE_REGEXP : /./,
@@ -287,8 +287,8 @@ var ns = window.uAutoPagerize = {
                           type="checkbox"\
                           checked="'+ AUTO_START +'"\
                           oncommand="uAutoPagerize.toggle(event);"/>\
-                <menuitem label="重新载入配置"\
-                          tooltiptext="右键编辑配置文件"\
+                <menuitem label="载入/编辑配置"\
+                          tooltiptext="左键载入配置，中键编辑中文规则，右键编辑配置文件"\
                           onclick="uAutoPagerize.reloadMenuClick(event);"/>\
                 <menuitem label="更新中文规则" \
                           tooltiptext="包含 Super_preloader 的中文规则"\
@@ -314,6 +314,7 @@ var ns = window.uAutoPagerize = {
                           checked="'+ PRELOADER_NEXTPAGE +'"\
                           oncommand="uAutoPagerize.PRELOADER_NEXTPAGE = !uAutoPagerize.PRELOADER_NEXTPAGE;"/>\
                 <menuitem label="新标签打开链接"\
+                          tooltiptext="下一页的链接设置成在新标签页打开"\
                           id="uAutoPagerize-FORCE_TARGET_WINDOW"\
                           type="checkbox"\
                           autoCheck="false"\
@@ -447,10 +448,11 @@ var ns = window.uAutoPagerize = {
                 break;
             case "TabClose":  // 如果有 iframe 则移除
                 let browser = gBrowser.getBrowserForTab(event.target);
-                if(browser.uAutoPagerizeIframe){
-                    var parent = browser.uAutoPagerizeIframe.parentNode;
-                    parent.removeChild(browser.uAutoPagerizeIframe);
-                    browser.uAutoPagerizeIframe = null;
+                if(browser.uAutoPagerizeIframes){
+                    browser.uAutoPagerizeIframes.forEach(function(i){
+                        i.parentNode.removeChild(i);
+                    });
+                    browser.uAutoPagerizeIframes = null
                 }
                 break;
             case "uAutoPagerize_destroy":
@@ -519,7 +521,7 @@ var ns = window.uAutoPagerize = {
             };
 
             if (info.autopager) {
-                ["pageElement", "useiframe", "iloaded", "itimeout", "documentFilter", "filter"].forEach(function(name){
+                ["pageElement", "useiframe", "newIframe", "iloaded", "itimeout", "documentFilter", "filter"].forEach(function(name){
                     if(info.autopager[name]){
                         newInfo[name] = info.autopager[name];
                     }
@@ -595,7 +597,7 @@ var ns = window.uAutoPagerize = {
 
         // 已经移到外置规则，便于更新
         if (/\bgoogle\.(?:com|co\.jp|com\.hk)$/.test(win.location.host)) {
-            if (!timer || timer < 400) timer = 400;
+            if (!timer || timer < 400) timer = 1500;
             hashchange = true;
         }else if (win.location.host === 'www.newsmth.net') {  // 水木清华社区延迟加载及下一页加载的修复
             timer = 1000;
@@ -604,7 +606,7 @@ var ns = window.uAutoPagerize = {
 
         if(hashchange){
             win.addEventListener("hashchange", function(event) {
-                debug("Add Hashchang Event listener" + win.location.href);
+                debug("Add Hashchang Event listener" + locationHref);
                 if (!win.ap) {
                     win.setTimeout(function(){
                         let [index, info] = [-1, null];
@@ -769,7 +771,7 @@ var ns = window.uAutoPagerize = {
             ns.AUTO_START = true;
             if (!content.ap){
                 ns.launch(content);
-                content.ap.scroll();
+                content.ap && content.ap.scroll();
             }
             else{
                 content.ap.scroll();
@@ -863,7 +865,9 @@ var ns = window.uAutoPagerize = {
         if (!aFile || !aFile.exists() || !aFile.isFile()) return;
         var editor = Services.prefs.getCharPref("view_source.editor.path");
         if (!editor) {
-            alert("编辑器的路径未设定。\n 请设置 view_source.editor.path");
+            alert("编辑器的路径未设定。\n请设置 view_source.editor.path");
+            var url = "about:config?filter=view_source.editor";
+            openLinkIn(url, "tab", { inBackground: false});
             return;
         }
 
@@ -932,8 +936,13 @@ var ns = window.uAutoPagerize = {
         var win = document.commandDispatcher.focusedWindow;
         return (!win || win == window) ? content : win;
     },
+    autoGetLink: function(doc){
+        if(!doc){
+            doc = content.document;
+        }
+        return SP.autoGetLink(doc);
+    },
     getElementsByXPath: getElementsByXPath,
-    autoGetLink: null,
     getElementMix: getElementMix,
     getElementsMix: getElementsMix
 };
@@ -1162,10 +1171,18 @@ AutoPager.prototype = {
     iframeRequest: function(){
         var self = this;
         this.state = 'loading';
+
         var browser = gBrowser.getBrowserForDocument(this.doc);
-        var iframe = browser.uAutoPagerizeIframe;
-        if(!iframe){
-            iframe = browser.uAutoPagerizeIframe = createIframe("uAutoPagerize-iframe");
+        if (typeof browser.uAutoPagerizeIframes == 'undefined') {
+            browser.uAutoPagerizeIframes = [];
+        }
+
+        var iframe;
+        if(this.info.newIframe || browser.uAutoPagerizeIframes.length === 0){
+            iframe = createIframe("uAutoPagerize-iframe");
+            browser.uAutoPagerizeIframes.push(iframe);
+        } else {
+            iframe = browser.uAutoPagerizeIframes[0];
         }
 
         //两个地址都要改?mdc是按照第二个写的,真正有效的也是第二个,第一个是以后用来比较用的
@@ -1269,6 +1286,10 @@ AutoPager.prototype = {
 		}
 		page = this.addPage(htmlDoc, page, url);
 		this.win.filters.forEach(function(i) { i(page) });
+        if(ADD_TO_HISTORY){  // 添加到历史记录
+            this.doc.title = htmlDoc.title;
+            this.win.history.pushState(null, '', this.requestURL);
+        }
 		this.requestURL = url;
 		this.state = 'enable';
 		// if (!ns.SCROLL_ONLY)
@@ -1277,9 +1298,11 @@ AutoPager.prototype = {
 			debug('nextLink not found.', this.info.nextLink, htmlDoc);
 			this.state = 'terminated';
 		}
+
 		var ev = this.doc.createEvent('Event');
 		ev.initEvent('GM_AutoPagerizeNextPageLoaded', true, false);
 		this.doc.dispatchEvent(ev);
+
         this.afterLoad();
     },
     addPage : function(htmlDoc, page, nextPageUrl){
@@ -1535,8 +1558,8 @@ function launchAutoPager_org(list, win) {
     updateIcon();
 }
 
-var SP = (function(){  // 来自 NLF 的 Super_preloader
-    var nextPageKey = [  //下一页关键字
+var SP = (function() { // 来自 NLF 的 Super_preloader
+    var nextPageKey = [ //下一页关键字
         '下一页', '下一頁', '下1页', '下1頁', '下页', '下頁',
         '翻页', '翻頁', '翻下頁', '翻下页',
         '下一张', '下一張', '下一幅', '下一章', '下一节', '下一節', '下一篇',
@@ -1544,87 +1567,72 @@ var SP = (function(){  // 来自 NLF 的 Super_preloader
         '前进', '下篇', '后页', '往后', 'Next', 'Next Page', '次へ'
     ];
     var autoMatch = {
-        digitalCheck:true,  //对数字连接进行检测,从中找出下一页的链接
-        cases:false,  //关键字区分大小写....
-        pfwordl:{     //关键字前面的字符限定.
-            next:{    //下一页关键字前面的字符
-                enable:true,
-                maxPrefix:2,
-                character:[' ','　','[','［','『','「','【','(']
+        digitalCheck: true, //对数字连接进行检测,从中找出下一页的链接
+        cases: false, //关键字区分大小写....
+        pfwordl: { //关键字前面的字符限定.
+            next: { //下一页关键字前面的字符
+                enable: true,
+                maxPrefix: 2,
+                character: [' ', '　', '[', '［', '『', '「', '【', '(']
             }
         },
-        sfwordl:{//关键字后面的字符限定.
-            next:{//下一页关键字后面的字符
-                enable:true,
+        sfwordl: { //关键字后面的字符限定.
+            next: { //下一页关键字后面的字符
+                enable: true,
                 maxSubfix: 3,
-                character:[' ','　',']','］','>','﹥','›','»','>>','』','」','】',')','→']
+                character: [' ', '　', ']', '］', '>', '﹥', '›', '»', '>>', '』', '」', '】', ')', '→']
             }
         }
     };
 
-    var re_nextPageKey;
-    function parseKWRE(){
-        function modifyPageKey(name,pageKey,pageKeyLength){
-            function strMTE(str){
-                return (str.replace(/\\/g, '\\\\')
-                            .replace(/\+/g, '\\+')
-                            .replace(/\./g, '\\.')
-                            .replace(/\?/g, '\\?')
-                            .replace(/\{/g, '\\{')
-                            .replace(/\}/g, '\\}')
-                            .replace(/\[/g, '\\[')
-                            .replace(/\]/g, '\\]')
-                            .replace(/\^/g, '\\^')
-                            .replace(/\$/g, '\\$')
-                            .replace(/\*/g, '\\*')
-                            .replace(/\(/g, '\\(')
-                            .replace(/\)/g, '\\)')
-                            .replace(/\|/g, '\\|')
-                            .replace(/\//g, '\\/'));
-            };
+    function parseKWRE() {
+        function modifyPageKey(name, pageKey, pageKeyLength) {
+            function strMTE(str) {
+                return str.replace(/[()\[\]{}|+.,^$?\\]/g, "\\$&");
+            }
 
-            var pfwordl= autoMatch.pfwordl,
+            var pfwordl = autoMatch.pfwordl,
                 sfwordl = autoMatch.sfwordl;
 
-            var RE_enable_a=pfwordl[name].enable,
-                        RE_maxPrefix=pfwordl[name].maxPrefix,
-                        RE_character_a=pfwordl[name].character,
-                        RE_enable_b=sfwordl[name].enable,
-                        RE_maxSubfix=sfwordl[name].maxSubfix,
-                        RE_character_b=sfwordl[name].character;
+            var RE_enable_a = pfwordl[name].enable,
+                RE_maxPrefix = pfwordl[name].maxPrefix,
+                RE_character_a = pfwordl[name].character,
+                RE_enable_b = sfwordl[name].enable,
+                RE_maxSubfix = sfwordl[name].maxSubfix,
+                RE_character_b = sfwordl[name].character;
             var plwords,
-                        slwords,
-                        rep;
+                slwords,
+                rep;
 
-            plwords=RE_maxPrefix>0? ('['+(RE_enable_a? strMTE(RE_character_a.join('')) : '.')+']{0,'+RE_maxPrefix+'}') : '';
-            plwords='^\\s*' + plwords;
-            slwords=RE_maxSubfix>0? ('['+(RE_enable_b? strMTE(RE_character_b.join('')) : '.')+']{0,'+RE_maxSubfix+'}') : '';
-            slwords=slwords + '\\s*$';
+            plwords = RE_maxPrefix > 0 ? ('[' + (RE_enable_a ? strMTE(RE_character_a.join('')) : '.') + ']{0,' + RE_maxPrefix + '}') : '';
+            plwords = '^\\s*' + plwords;
+            slwords = RE_maxSubfix > 0 ? ('[' + (RE_enable_b ? strMTE(RE_character_b.join('')) : '.') + ']{0,' + RE_maxSubfix + '}') : '';
+            slwords = slwords + '\\s*$';
             rep = autoMatch.cases ? '' : 'i';
 
-            for(var i=0;i<pageKeyLength;i++){
-                pageKey[i]=new RegExp(plwords + strMTE(pageKey[i]) + slwords,rep);
+            for (var i = 0; i < pageKeyLength; i++) {
+                pageKey[i] = new RegExp(plwords + strMTE(pageKey[i]) + slwords, rep);
             }
             return pageKey;
         }
         //转成正则.
         return modifyPageKey('next', nextPageKey, nextPageKey.length);
     }
-    // doc 必须，后面2个可选
-    function autoGetLink(doc, win, cplink) {
+
+    var re_nextPageKey;
+
+    function autoGetLink(doc, cplink) {
         if (!re_nextPageKey)
             re_nextPageKey = parseKWRE();
-
-        win = win || doc.defaultView;
 
         var startTime = new Date();
 
         var _nextPageKey = re_nextPageKey;
         var _nPKL = _nextPageKey.length;
         var _getAllElementsByXpath = getElementsByXPath;
-        cplink = cplink || doc.URL || win.location.href;
+        cplink = cplink || doc.URL || doc.location.href;
         var m = cplink.match(/https?:\/\/([^\/]+)/);
-        if(!m) return;
+        if (!m) return;
         var _domain_port = m[1]; //端口和域名,用来验证是否跨域.
         var alllinks = doc.links;
         var alllinksl = alllinks.length;
@@ -1736,8 +1744,9 @@ var SP = (function(){  // 来自 NLF 的 Super_preloader
 
         return _nextlink || null;
     }
+
     // 地址栏递增
-    function hrefInc(obj,doc,win){
+    function hrefInc(obj, doc, win) {
         var _cplink = doc._cplink || doc.URL;
         // _cplink = _cplink.replace(/#.*$/, ''); //url 去掉hash
 
@@ -1821,8 +1830,6 @@ var SP = (function(){  // 来自 NLF 的 Super_preloader
     };
 })();
 
-uAutoPagerize.autoGetLink = SP.autoGetLink;
-
 function toRE(obj) {
     if (obj instanceof RegExp) {
         return obj;
@@ -1836,10 +1843,10 @@ function toRE(obj) {
     }
 }
 
-function createIframe(id) {
+function createIframe(name) {
     let frame = document.createElement("iframe");
-    if (id)
-        frame.setAttribute("id", id);
+    if (name)
+        frame.setAttribute("name", name);
     frame.setAttribute("type", "content");
     //iframe是没有history的
     frame.setAttribute("collapsed", "true");
@@ -1940,14 +1947,14 @@ function getElementMix(selector, doc, win) {
         if (selector.search(/^css;/i) == 0) {
             ret = doc.querySelector(selector.slice(4));
         } else if (selector.toLowerCase() == 'auto;') {
-            ret = SP.autoGetLink(doc, win);
+            ret = SP.autoGetLink(doc);
         } else {
             ret = getFirstElementByXPath(selector, doc);
         }
     } else if (type == 'function') {
         ret = selector(doc, win, doc.URL);
     } else if (type == 'undefined') {
-        ret = SP.autoGetLink(doc, win);
+        ret = SP.autoGetLink(doc);
     } else {
         var url = SP.hrefInc(selector, doc, win);
         if (url) {

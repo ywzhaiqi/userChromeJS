@@ -107,9 +107,9 @@
                 gContextMenu.target.style.color = LINK_CLICKED_COLOR;
             }
 
-            // 迅雷云播磁力链接不支持
+            // 迅雷云播磁力链接
             if (apiName == "迅雷云播" && url.startsWith("magnet:")) {
-                this.copy(url);
+                url = encodeURIComponent(url);
             }
 
             url = API_URLS[apiName] + url;

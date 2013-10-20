@@ -17,12 +17,11 @@ modify the firebug key
 	page({
 		id: "menu_firebug_firebugInspect",
 		accesskey: "F",
-        // clone: false
+        clone: false
 	});
 
 
-中文说明
---------
+## 中文说明
 
 #### 可添加的范围
 
@@ -51,6 +50,7 @@ modify the firebug key
 
     id          标签的ID（我新增的，修改原菜单用）
     position/insertBefore/insertAfter: 位置的设置（3选1），position: 1,  insertBefore: "id",  insertAfter: "id"
+    clone       false 为不克隆，直接改在原菜单上，再次修改必须重启生效
 
 
 #### 可利用的变量
@@ -93,8 +93,7 @@ modify the firebug key
     %u               URL
 
 
-示例
---------
+## 示例
 
 示例：页面右键添加一个菜单
 
@@ -149,6 +148,18 @@ modify the firebug key
         oncommand: "snapLinks.init();"
     });
 
+示例：隐藏 App 菜单的 Web 开发者
+
+    css("#appmenu_webDeveloper { display: none; }");
+
+示例："字符编码" 移动到 "web开发者" 的位置
+
+    tab({
+        id: "appmenu_developer_charsetMenu",
+        insertAfter: "appmenu_webDeveloper",
+        // clone: false,  // 不克隆，直接改在原来的菜单上面
+    });
+
 示例：修改 firebug 快捷键
 
     page({
@@ -165,7 +176,7 @@ modify the firebug key
         exec: "\\Chrome"  // 打开当前配置下的Chrome文件夹
     });
 
-示例：添加图标
+示例：添加图标，如果是原有的菜单需要加上 `class`，menuitem-iconic 或 menu-iconic，前一个是菜单，后一个是菜单项。
 
     page({
         label: "图标测试菜单",
@@ -173,6 +184,107 @@ modify the firebug key
         // 或
         // image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABxElEQVQ4jZXQzYsScRzH8d/f16lTFCwRdOoSUYddtlrUaXTVEdR1xqfysLtUrC2EujNjbplPjIGtJIZB6YLMjqu105/w7tQhMB8+99f7C18hVpiiKGiaRjqdJplMsor5B6dSKWzbxnVdVFVdL6CqKuPxmMlkgmmaxOPx9QKapmHbNt1uF0VREEKISCRCOBxmd3d3eSyRSDAcDmk2m4RCIYLBIPl8nsFggCzLiwOyLBOLxej3+7TbbSqVCuVymVqtRqPRQJKk+QE5bSLnPhGNRrEsi06ng2VZtFot6vU61WoVn883Hz/TDLLmhOSJQ/j1N3q9HqVSiUAggCzLSJKE1+udjyXNIKs7VLq/KZ+5hI/HbGd6+P3+5c/yqQYp3eHdmcvL6pT900sK7V94Ds656/+4OOBN6CSLDuXPLocfpqjFC56bE45bP9nKjbjjNf8f2Eno7BUcjI7L4fspe4ULMrrDm8aMzRcjbnuMxde3ckP0zhX7p5fE3tqkTxzy9RmPsiM2dpZgIYS4r32n0L4iY0xIFh2O6jMeZkfceroCFkKIe4qF5+Cco9qMV9UZD1I/uPl4Rfx3G7LFdd9Xrj35wo3t9fAfyK1fDftrXK0AAAAASUVORK5CYII="
     });
+
+示例：输入框右键增加 "重做" 菜单
+    page({
+        label: "重做",
+        condition: "input",
+        insertAfter: "context-undo",
+        command: "cmd_redo",
+        accesskey: "y"
+    });
+
+示例：输入框右键增加 "粘贴并确定" 菜单，先增加一个空格，然后粘贴，再确定
+
+    page({
+        label: "粘贴并确定",
+        condition: "input",
+        insertAfter: "context-paste",
+        oncommand: function(event) {
+            function $(id) document.getElementById(id)
+
+            // 给原输入框增加空格
+            var input = gContextMenu.target;
+            input.value = input.value + " ";
+
+            // $('context-selectall').doCommand();  // 全选
+            // $('context-cut').doCommand();  // 剪切
+            // $('context-copy').doCommand();  // 复制
+            $('context-paste').doCommand();  // 粘贴
+
+            // 回车键
+            window.QueryInterface(Ci.nsIInterfaceRequestor)
+                .getInterface(Ci.nsIDOMWindowUtils)
+                .sendKeyEvent("keypress", KeyEvent.DOM_VK_ENTER, 0, 0);
+        }
+    });
+
+示例：标签右键增加 `复制地址（BBS、MD）` 菜单，左键复制 BBS 格式，中键原标题，右键 MD 格式，可去除标题一定内容。
+
+    tab({
+        label: "复制地址（BBS、MD）",
+        tooltiptext: "左键复制 BBS 格式，右键 MD 格式",
+        onclick: function(event){
+            var title = addMenu.convertText("%TITLE%"),
+                url = addMenu.convertText("%URL%");
+
+            [" - 互助分享 - 大气谦和!", "_小说阅读页|小说下载"].forEach(function(r){ title = title.replace(r, ""); });
+
+            switch(event.button){
+                case 0:
+                    addMenu.copy("[url=" + url + "]" + title + "[/url]");
+                    break;
+                case 1:
+                    addMenu.copy(title);
+                    event.target.parentNode.hidePopup();
+                    break;
+                case 2:
+                    addMenu.copy("[" + title + "](" + url + ")");
+                    break;
+            }
+        }
+    });
+
+示例：链接右键增加 `复制地址（BBS、MD）` 菜单，基本同上，略加修改
+
+    page({
+        label: "复制地址（BBS、MD）",
+        condition: "link",
+        tooltiptext: "左键复制 BBS 格式，右键 MD 格式",
+        onclick: function(event){
+            var title = addMenu.convertText("%RLINK_TEXT%"),
+                url = addMenu.convertText("%RLINK%");
+
+            [" - 互助分享 - 大气谦和!"].forEach(function(r){ title = title.replace(r, ""); });
+
+            switch(event.button){
+                case 0:
+                    addMenu.copy("[url=" + url + "]" + title + "[/url]");
+                    break;
+                case 1:
+                    addMenu.copy(title);
+                    event.target.parentNode.hidePopup();
+                    break;
+                case 2:
+                    addMenu.copy("[" + title + "](" + url + ")");
+                    break;
+            }
+        }
+    });
+
+
+示例：标签的右键菜单中加入复制图标网址的功能，左键 base64，右键 URL
+    tab({
+       label: "复制 Favicon 的 base64/URL",
+       tooltiptext: "左键 base64，右键 URL",
+       onclick: function(e){
+           if (e.button === 0) {
+               addMenu.copy(addMenu.convertText("%FAVICON_BASE64%"));
+           } else if(e.button == 2) {
+               addMenu.copy(addMenu.convertText("%FAVICON%"));
+           }
+       }
+    })
 
 示例：子菜单中的 测试视频链接 只在 youku 页面显示，其它页面隐藏。
 
@@ -202,3 +314,8 @@ modify the firebug key
  3. 添加 %FAVICON_BASE64% 参数，站点图标的 base64
  4. 添加 %IMAGE_BASE64% 参数，图片的 BASE64
 
+## 可调用的方法
+
+    addMenu.copy()  // 复制
+    addMenu.exec(path, arg)  // 启动程序
+    addMenu.$$('a:not(:empty)', null, true)  // 获取所有被选中的链接

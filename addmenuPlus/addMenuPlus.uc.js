@@ -124,6 +124,8 @@ PageMenu, TabMenu, ToolMenu, AppMenu 関数を使って自由に追加できま�
 
 (function(css){
 
+var STATUS_CLOSE_TIME = 2 * 1000;  // 复制后状态栏的信息多少秒后消失
+
 let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 if (window.addMenu) {
@@ -280,40 +282,6 @@ window.addMenu = {
 			openNewTabWith(uri.spec);
 		else openUILink(uri.spec, event);
 	},
-	exec: function(path, arg){
-		var file    = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
-		var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
-		try {
-			var a = (typeof arg == 'string' || arg instanceof String) ? arg.split(/\s+/) : [arg];
-			file.initWithPath(path);
-
-            if (!file.exists()) {
-                Cu.reportError('File Not Found: ' + path);
-                return;
-            }
-
-            if (file.isExecutable()) {
-                process.init(file);
-                process.run(false, a, a.length);
-            } else {
-                file.launch();
-            }
-
-		} catch(e) {
-			this.log(e);
-		}
-	},
-    handleRelativePath: function(path) {
-        if (path) {
-            path = path.replace(/\//g, '\\').toLocaleLowerCase();
-            var ffdir = Components.classes['@mozilla.org/file/directory_service;1'].getService(Components.interfaces.nsIProperties).get("ProfD", Components.interfaces.nsILocalFile).path;
-            if (/^(\\)/.test(path)) {
-                return ffdir + path;
-            }else{
-                return path;
-            }
-        }
-    },
 	rebuild: function(isAlert) {
 		var aFile = this.FILE;
 		if (!aFile || !aFile.exists() || !aFile.isFile()) {
@@ -802,11 +770,57 @@ window.addMenu = {
 	copy: function(aText) {
 		Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(aText);
 		XULBrowserWindow.statusTextField.label = "Copy: " + aText;
+        setTimeout(function(){
+            XULBrowserWindow.statusTextField.label = null;
+        }, STATUS_CLOSE_TIME);
 	},
 	alert: function(aString, aTitle) {
 		Cc['@mozilla.org/alerts-service;1'].getService(Ci.nsIAlertsService)
 			.showAlertNotification("", aTitle||"addMenu" , aString, false, "", null);
 	},
+    exec: function(path, arg){
+        var file    = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
+        var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
+        path = this.handleRelativePath(path);
+        try {
+            var a;
+            if (typeof arg == 'string' || arg instanceof String) {
+                a = arg.split(/\s+/);
+            } else if (typeof arg == 'object' && arg instanceof Array) {
+                a = arg;
+            } else {
+                a = [arg];
+            }
+
+            file.initWithPath(path);
+
+            if (!file.exists()) {
+                Cu.reportError('File Not Found: ' + path);
+                return;
+            }
+
+            if (file.isExecutable()) {
+                process.init(file);
+                process.run(false, a, a.length);
+            } else {
+                file.launch();
+            }
+
+        } catch(e) {
+            this.log(e);
+        }
+    },
+    handleRelativePath: function(path) {
+        if (path) {
+            path = path.replace(/\//g, '\\').toLocaleLowerCase();
+            var ffdir = Components.classes['@mozilla.org/file/directory_service;1'].getService(Components.interfaces.nsIProperties).get("ProfD", Components.interfaces.nsILocalFile).path;
+            if (/^(\\)/.test(path)) {
+                return ffdir + path;
+            }else{
+                return path;
+            }
+        }
+    },
 	$$: function(exp, context, aPartly) {
 		context || (context = this.focusedWindow.document);
 		var doc = context.ownerDocument || context;

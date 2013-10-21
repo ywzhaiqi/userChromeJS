@@ -125,11 +125,12 @@ var CACHE_EXPIRE = 24 * 60 * 60 * 1000;
 var XHR_TIMEOUT = 30 * 1000;
 
 // 新增的
-var MAX_PAGER_NUM = -1;        // 默认最大翻页数， -1表示无限制
-var IMMEDIATELY_PAGER_NUM = 3; // 立即加载的默认页数
-var USE_IFRAME = true;         // 是否启用 iframe 加载下一页（浏览器级，默认只允许JavaScript，在 createIframe 中可设置其它允许）
-var PRELOADER_NEXTPAGE = true; // 提前预读下一页..就是翻完第1页,立马预读第2页,翻完第2页,立马预读第3页..(大幅加快翻页快感-_-!!)
-var ADD_TO_HISTORY = false;    // 添加下一页链接到历史记录
+var MAX_PAGER_NUM = -1;          // 默认最大翻页数， -1表示无限制
+var IMMEDIATELY_PAGER_NUM = 3;   // 立即加载的默认页数
+var USE_IFRAME = true;           // 是否启用 iframe 加载下一页（浏览器级，默认只允许JavaScript，在 createIframe 中可设置其它允许）
+var PRELOADER_NEXTPAGE = true;   // 提前预读下一页..就是翻完第1页,立马预读第2页,翻完第2页,立马预读第3页..(大幅加快翻页快感-_-!!)
+var ADD_TO_HISTORY = false;      // 添加下一页链接到历史记录
+var SEPARATOR_RELATIVELY = true; // 分隔符.在使用上滚一页或下滚一页的时候是否保持相对位置..
 
 var ns = window.uAutoPagerize = {
     INCLUDE_REGEXP : /./,
@@ -801,6 +802,66 @@ var ns = window.uAutoPagerize = {
             content.ap.loadImmediately(pages);
         }
     },
+
+    getInfo: function (list, win) {
+        if (!list) list = ns.SITEINFO_CN;
+        if (!win)  win  = content;
+        var doc = win.document;
+        var locationHref = doc.location.href;
+        for (let [index, info] in Iterator(list)) {
+            try {
+                var exp = info.url_regexp || Object.defineProperty(info, "url_regexp", {
+                        enumerable: false,
+                        value: toRE(info.url)
+                    }).url_regexp;
+                if ( !exp.test(locationHref) ) continue;
+
+                var nextLink = getElementMix(info.nextLink, doc);
+                if (!nextLink) {
+                    // FIXME microformats case detection.
+                    // limiting greater than 12 to filter microformats like SITEINFOs.
+                    if (info.url.length > 12)
+                        debug('nextLink not found.', info.nextLink);
+                    continue;
+                }
+                var pageElement = getElementMix(info.pageElement, doc);
+                if (!pageElement) {
+                    if (info.url.length > 12)
+                        debug('pageElement not found.', info.pageElement);
+                    continue;
+                }
+                return [index, info, nextLink, pageElement];
+            } catch(e) {
+                log('error at launchAutoPager() : ' + e);
+            }
+        }
+        return [-1, null];
+    },
+    getInfoFromURL: function (url) {
+        if (!url) url = content.location.href;
+        var list = ns.SITEINFO_CN;
+        return list.filter(function(info, index, array) {
+            try {
+                var exp = info.url_regexp || Object.defineProperty(info, "url_regexp", {
+                        enumerable: false,
+                        value: toRE(info.url)
+                    }).url_regexp;
+                return exp.test(url);
+            } catch(e){ }
+        });
+    },
+    getInfoFromKeyword: function(keyword){
+        if(!keyword) return;
+        var list = ns.MY_SITEINFO.concat(ns.SITEINFO_CN);
+        return list.filter(function(info, index, array){
+            return (info.name && info.name.indexOf(keyword) > 0) || info.url.toString().indexOf(keyword) > 0;
+        });
+    },
+    getFocusedWindow: function() {
+        var win = document.commandDispatcher.focusedWindow;
+        return (!win || win == window) ? content : win;
+    },
+
     search: function(){
         var url = content.location.href;
         if(!url.startsWith("http")) return;
@@ -861,6 +922,90 @@ var ns = window.uAutoPagerize = {
         if(m)
             m.parentNode.removeChild(m);
     },
+    gototop: function(win){
+        if(!win) win = content;
+        win.scroll(win.scrollX, 0);
+    },
+    gotobottom: function(win){
+        if(!win) win = content;
+        var doc = win.document;
+        win.scroll(win.scrollX, Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight));
+    },
+    gotoprev: function(win, sepSelector, insertPoint){
+        if(!win)
+            win = content;
+        if(!sepSelector)
+            sepSelector = ".autopagerize_link";
+        if(!insertPoint && win.ap)
+            insertPoint = win.ap.insertPoint.parentNode;
+
+        var [preDS, , divS] = ns.getSeparators(win, sepSelector, insertPoint);
+        divS = divS || 0;
+        if(SEPARATOR_RELATIVELY){
+            preDS = win.scrollY - (divS - preDS);
+        }else{
+            preDS += win.scrollY - 6;
+        }
+
+        win.scroll(win.scrollY, preDS);
+    },
+    gotonext: function(win, sepSelector, insertPoint){
+        if(!win)
+            win = content;
+        if(!sepSelector)
+            sepSelector = ".autopagerize_link";
+        if(!insertPoint && win.ap)
+            insertPoint = win.ap.insertPoint.parentNode;
+
+        var [, nextDS, divS] = this.getSeparators(win, sepSelector, insertPoint);
+        divS = divS || 0;
+        if(SEPARATOR_RELATIVELY){
+            nextDS = win.scrollY + (-divS + nextDS);
+        }else{
+            nextDS += win.scrollY - 6;
+        }
+
+        win.scroll(win.scrollY, nextDS);
+    },
+    // 找到窗口视野内前后2个分隔条的位置
+    getSeparators: function(win, separatorSelector, insertPoint){
+        var doc = win.document;
+        if(!insertPoint)
+            insertPoint = doc.documentElement;
+
+        var separators = doc.querySelectorAll(separatorSelector);
+        var insData = insertPoint.getBoundingClientRect();
+        var viewportHeight = win.innerHeight;
+
+        // 得到一个数组
+        var heightArr = [insData.top];
+        for (var i = 0; i < separators.length; i++) {
+            heightArr.push(separators[i].getBoundingClientRect().top);
+        }
+        if(insData.bottom > viewportHeight)
+            heightArr.push(insData.bottom);
+        else
+            heightArr.push(viewportHeight + 1);
+
+        // 查找
+        for (var i = 0; i < heightArr.length; i++) {
+            if(heightArr[i] > viewportHeight){
+                if(heightArr[i - 1] > 0){
+                    return [heightArr[i - 2], heightArr[i], heightArr[i - 1]];
+                }else{
+                    return [heightArr[i - 1], heightArr[i]];
+                }
+            }
+        }
+
+        return [];
+    },
+    autoGetLink: function(doc){
+        if(!doc){
+            doc = content.document;
+        }
+        return SP.autoGetLink(doc);
+    },
     edit: function(aFile) {
         if (!aFile || !aFile.exists() || !aFile.isFile()) return;
         var editor = Services.prefs.getCharPref("view_source.editor.path");
@@ -877,70 +1022,6 @@ var ns = window.uAutoPagerize = {
             var path = UI.ConvertFromUnicode(aFile.path);
             exec(editor, path);
         } catch (e) {}
-    },
-    getInfo: function (list, win) {
-        if (!list) list = ns.SITEINFO_CN;
-        if (!win)  win  = content;
-        var doc = win.document;
-        var locationHref = doc.location.href;
-        for (let [index, info] in Iterator(list)) {
-            try {
-                var exp = info.url_regexp || Object.defineProperty(info, "url_regexp", {
-                        enumerable: false,
-                        value: toRE(info.url)
-                    }).url_regexp;
-                if ( !exp.test(locationHref) ) continue;
-
-                var nextLink = getElementMix(info.nextLink, doc);
-                if (!nextLink) {
-                    // FIXME microformats case detection.
-                    // limiting greater than 12 to filter microformats like SITEINFOs.
-                    if (info.url.length > 12)
-                        debug('nextLink not found.', info.nextLink);
-                    continue;
-                }
-                var pageElement = getElementMix(info.pageElement, doc);
-                if (!pageElement) {
-                    if (info.url.length > 12)
-                        debug('pageElement not found.', info.pageElement);
-                    continue;
-                }
-                return [index, info, nextLink, pageElement];
-            } catch(e) {
-                log('error at launchAutoPager() : ' + e);
-            }
-        }
-        return [-1, null];
-    },
-    getInfoFromURL: function (url) {
-        if (!url) url = content.location.href;
-        var list = ns.SITEINFO_CN;
-        return list.filter(function(info, index, array) {
-            try {
-                var exp = info.url_regexp || Object.defineProperty(info, "url_regexp", {
-                        enumerable: false,
-                        value: toRE(info.url)
-                    }).url_regexp;
-                return exp.test(url);
-            } catch(e){ }
-        });
-    },
-    getInfoFromKeyword: function(keyword){
-        if(!keyword) return;
-        var list = ns.MY_SITEINFO.concat(ns.SITEINFO_CN);
-        return list.filter(function(info, index, array){
-            return (info.name && info.name.indexOf(keyword) > 0) || info.url.toString().indexOf(keyword) > 0;
-        });
-    },
-    getFocusedWindow: function() {
-        var win = document.commandDispatcher.focusedWindow;
-        return (!win || win == window) ? content : win;
-    },
-    autoGetLink: function(doc){
-        if(!doc){
-            doc = content.document;
-        }
-        return SP.autoGetLink(doc);
     },
     getElementsByXPath: getElementsByXPath,
     getElementMix: getElementMix,
@@ -1935,7 +2016,6 @@ function getRalativePageStr(lastUrl, currentUrl, nextUrl) {
     return ralativePageStr;
 }
 
-
 //-------- 来自 Super_preloader, 为了兼容 Super_preloader 数据库 -------------
 //获取单个元素,混合。
 function getElementMix(selector, doc, win) {
@@ -1953,8 +2033,11 @@ function getElementMix(selector, doc, win) {
         }
     } else if (type == 'function') {
         ret = selector(doc, win, doc.URL);
-    } else if (type == 'undefined') {
-        ret = SP.autoGetLink(doc);
+    } else if (Array.isArray(selector)) {
+        ret = getElementMix(selector[0], doc, win);
+        if(!ret){
+            ret = getElementMix(selector[1], doc, win);
+        }
     } else {
         var url = SP.hrefInc(selector, doc, win);
         if (url) {

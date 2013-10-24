@@ -263,7 +263,7 @@ var ns = window.uAutoPagerize = {
 
         ns.icon = $('status-bar').appendChild($C("statusbarpanel", {
             id: "uAutoPagerize-icon",
-            class: "statusbarpanel-iconic-text",
+            class: "statusbarpanel-iconic",
             state: "disable",
             tooltiptext: "disable",
             onclick: "if (event.button != 2) uAutoPagerize.iconClick(event);",

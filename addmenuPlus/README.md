@@ -99,7 +99,24 @@ modify the firebug key
 
     page({
         label: "复制链接文本",
+        accesskey: "C",
         text: "%LINK_TEXT%",
+        insertAfter: "context-copylink",
+        condition: "link noimage"
+    });
+
+示例：右键添加 翻译整个页面 菜单（可用于 https），[来源](http://bbs.kafan.cn/thread-1642576-1-1.html)
+
+    page({
+        label: "翻译整个页面",
+        insertAfter: "context-selectall",
+        image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABsElEQVQ4jZXTsWsTYRjH8Zf+AYX+HTd0cM9SyOoglXLg1ryDU5Fwi90iWsiikFaOOEkGl2IsSEGwoggh8JLUJSC14qB3yZWQXlKTJrn3vg7JncmZqn3ggXf5fXjeh/cVQggh0ln+qxdWOstVFQI6hEDDMAivQBYA15sonYXdXTg4iMPXmyidhaMjWFqCfP7vwDQ8CkL6o1kAYHsblpcXAitbdYRUfPreZzAOGYxCepcJQJjGpBOA/eEMIRU3HjTYfP6NwXgSPu/r34AwDWqdErVOCWEac8C6fcq6fcrDQ5eVrToXw0m4/TMCpuFCJUOhkiG1sxYjJ94QIRVP35/F58dvW7QvNF5vCtQ6JYpKUqhksKsWdtWKkUeHLkIqWt0x/VHIaq7Bzb0veD1NqzszgTANikpy98WteBfRdYRUf/SJN6TZTewgCRSVjJFXxz4v6+c8+9hGSMX9soPrJ4Dcmzvc27/Nux82r78+ia9jVy2EaeD1NE1fk8p/ZjXXwPWD+dcoTIPUzlrcVnkDq7wR76Ppa1xf4/gaxw9w5oCoorcwg0VhJxFeDMx8sCj8r8/0C7G+ixTa1p4GAAAAAElFTkSuQmCC",
+        oncommand: function(){
+            var tab = document.getElementById('content');
+            var win = tab.selectedBrowser.contentWindow.top.window;
+            //var cur_url = win.location.href;
+            d=win.document;b=d.body;o=d.createElement('scri'+'pt');o.setAttribute('src','https://translate.google.cn/translate_a/element.js?cb=googleTranslateElementInit');o.setAttribute('type','text/javascript');b.appendChild(o);v=b.insertBefore(d.createElement('div'),b.firstChild);v.id='google_translate_element';v.style.display='none';p=d.createElement('scri'+'pt');p.text='function googleTranslateElementInit(){new google.translate.TranslateElement({pageLanguage:\"\"},\"google_translate_element\");}';p.setAttribute('type','text/javascript');b.appendChild(p);
+        }
     });
 
 示例：页面右键添加多个菜单
@@ -274,15 +291,21 @@ modify the firebug key
 
 
 示例：标签的右键菜单中加入复制图标网址的功能，左键 base64，右键 URL
+
     tab({
        label: "复制 Favicon 的 base64/URL",
        tooltiptext: "左键 base64，右键 URL",
        onclick: function(e){
-           if (e.button === 0) {
-               addMenu.copy(addMenu.convertText("%FAVICON_BASE64%"));
-           } else if(e.button == 2) {
-               addMenu.copy(addMenu.convertText("%FAVICON%"));
-           }
+            switch(e.button){
+                case 0:
+                    addMenu.copy(addMenu.convertText("%FAVICON_BASE64%"));
+                    break;
+                case 1:
+                    break;
+                case 2:
+                    addMenu.copy(addMenu.convertText("%FAVICON%"));
+                    break;
+            }
        }
     })
 

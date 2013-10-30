@@ -7,8 +7,9 @@
 // @compatibility  Firefox 17
 // @charset        UTF-8
 // @include        main
-// @version        0.0.7
+// @version        0.0.8
 // @note           增加延迟及 super_preloader 加载下一页高亮的支持 By ywzhaiqi
+// @note           0.0.8 Firefox 25 でエラーが出ていたのを修正
 // @note           0.0.7 ツールバーが自動で消えないことがあったのを修正
 // @note           0.0.6 アイコンを作って検索時の強調を ON/OFF できるようにした
 // @note           0.0.6 背面のタブを複数開いた際の引き継ぎを修正
@@ -23,8 +24,8 @@
 (function(CSS){
 "use strict";
 
-var USE_FIX_AUTOPAGER = true;  // 是否启用通用的下一页高亮，如果用 uAutoPagerize 则不需要
-var enableBooklink = true;  // 来自 booklink.me 的百度搜索不要高亮。
+var USE_FIX_AUTOPAGER = true;  // 增加通用检测下一页后重新高亮，用 uAutoPagerize 不需要
+var disableBooklink = true;  // 来自 booklink.me 的百度搜索不要高亮。
 
 if (window.gWHT) {
     window.gWHT.destroy();
@@ -51,6 +52,10 @@ window.gWHT = {
             keyword キーワード。スペース区切り。省略可。
             input   検索ボックスの CSS Selector。
         **/
+	{
+		url: '.*\\btbm=isch\\b.*',
+		keyword: ' '
+	},
         {
             url: '^https?://\\w+\\.google\\.[a-z.]+/search',
             input: 'input[name="q"]'
@@ -78,14 +83,14 @@ window.gWHT = {
             url: '^https?://developer\\.mozilla\\.org/.*/search',
             input: 'input[name="q"][value]'
         },
-        {
-            url: '^http?://[\\w.]+\\.yahoo\\.co\\.jp/search',
-            input: 'input[name="p"]'
-        },
-        {
-            url: '^http://[\\w.]+\\.nicovideo\\.jp/(?:search|tag)/.*',
-            input: '#search_united, #bar_search'
-        },
+        //{
+        //    url: '^http?://[\\w.]+\\.yahoo\\.co\\.jp/search',
+        //    input: 'input[name="p"]'
+        //},
+        //{
+        //    url: '^http://[\\w.]+\\.nicovideo\\.jp/(?:search|tag)/.*',
+        //    input: '#search_united, #bar_search'
+        //},
         // {// MICROFORMAT
         //  url: '^https?://.*[?&](?:q|word|keyword|search|query|search_query)=([^&]+)',
         //  input: 'input[type="text"]:-moz-any([name="q"],[name="word"],[name="keyword"],[name="search"],[name="query"],[name="search_query"]), input[type="search"]'
@@ -246,7 +251,7 @@ window.gWHT = {
                 var doc = event.target;
                 var win = doc.defaultView;
                 // frame 内では動作しない
-                if (win != win.parent) return;
+                if (win && win != win.parent) return;
                 // HTMLDocument じゃない場合
                 if (!checkDoc(doc)) return;
 
@@ -307,7 +312,7 @@ window.gWHT = {
     },
 
     delayLaunch: function(doc, win){
-        if(enableBooklink && doc.URL.indexOf("baidu.com") > -1 && doc.referrer.indexOf("booklink.me") > -1){
+        if(disableBooklink && doc.URL.indexOf("baidu.com") > -1 && doc.referrer.indexOf("booklink.me") > -1){
             return;
         }
 
@@ -734,7 +739,7 @@ window.gWHT = {
     },
     find: function(aWord, isBack) {
         var res;
-        var fastFind = gBrowser.fastFind;
+		var fastFind = gBrowser.mCurrentBrowser.fastFind;
         if (fastFind.searchString != aWord) {
             res = fastFind.find(aWord, false);
             if (isBack) {
@@ -753,7 +758,8 @@ window.gWHT = {
         var node = sel.getRangeAt(0).startContainer;
         var span = node.parentNode;
         if (!span.classList.contains(CLASS_SPAN)) return;
-        sel.collapse(node, 1);
+		isBack ? sel.collapseToStart() : sel.collapseToEnd();
+//		sel.collapse(node, 1);
         span.style.setProperty('outline', '4px solid #36F', 'important');
         win.setTimeout(function () {
             span.style.removeProperty('outline');
@@ -802,7 +808,9 @@ window.gWHT.ContentClass.prototype = {
         }
         this.doc.addEventListener("keypress", this, false);
         this.doc.addEventListener("GM_AutoPagerizeNextPageLoaded", this, false);
+		this.win.setTimeout(function() {
         this.fireEvent('initialized', this.doc);
+		}.bind(this), 100);
     },
     handleEvent: function(event) {
         switch (event.type) {

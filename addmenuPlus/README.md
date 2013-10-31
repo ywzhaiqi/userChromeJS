@@ -23,7 +23,23 @@ modify the firebug key
 
 ## 中文说明
 
-#### 可添加的范围
+addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文件可添加、修改、隐藏菜单，修改后无需重启生效。
+
+基于 [Griever/addMenu.uc.js](https://github.com/Griever/userChromeJS/tree/master/addMenu) 修改
+
+ - 新增**修改原有菜单**的功能
+ - 新增参数 `%FAVICON_BASE64%`：站点图标的 base64
+ - 新增参数 `%IMAGE_BASE64%`：图片的 BASE64
+ - 新增参数 `%TITLES%`：简短的标题
+
+### 使用技巧
+
+ - 菜单栏的 "工具" 菜单中有个 "addMenu 的重新载入和编辑" 菜单，左键点击重新载入配置，右键打开文件编辑
+ - ID 为 `addMenu-rebuild`，可添加 rebuild_userChrome.uc.xul 中统一进行管理
+
+## 配置的说明
+
+### 可添加的范围
 
  - page: 页面右键菜单
  - tab: 标签右键
@@ -34,7 +50,7 @@ modify the firebug key
 
     PageMenu, TabMenu, ToolMenu, AppMenu
 
-#### 标签的介绍
+### 标签的介绍
 
     label       标签的名字
     accesskey   快捷键
@@ -45,15 +61,16 @@ modify the firebug key
     where       打开的位置 (current, tab, tabshifted, window)
     condition   菜单出现的条件 (select, link, mailto, image, media, input, noselect, nolink, nomailto, noimage, nomedia, noinput)
     oncommand/command  自定义命令
+    onclick     点击的函数
     image       添加图标 （对应 图标 url 或 base64）
     style       添加样式
+    ...         Firefox 菜单的其它属性
 
     id          标签的ID（我新增的，修改原菜单用）
     position/insertBefore/insertAfter: 位置的设置（3选1），position: 1,  insertBefore: "id",  insertAfter: "id"
     clone       false 为不克隆，直接改在原菜单上，再次修改必须重启生效
 
-
-#### 可利用的变量
+### 可利用的变量
 
     %EOL%            改行(\r\n)
     %TITLE%          标题
@@ -81,7 +98,7 @@ modify the firebug key
     %XXX_HTML%       转义后的变量
     %XXX_ENCODE%     encodeURIComponent 后的变量
 
-简易的变量
+简短的变量
 
     %h               当前网页(域名)
     %i               图片的 URL
@@ -289,7 +306,6 @@ modify the firebug key
         }
     });
 
-
 示例：标签的右键菜单中加入复制图标网址的功能，左键 base64，右键 URL
 
     tab({
@@ -329,13 +345,6 @@ modify the firebug key
         }
     ]);
 
-
-## 我修改的说明
-
- 1. 增加 修改原菜单的功能（克隆一个，隐藏原来的）。可修改菜单名称、快捷键等各种属性或移动位置。
- 2. 添加 %TITLES% 参数，简短的标题。
- 3. 添加 %FAVICON_BASE64% 参数，站点图标的 base64
- 4. 添加 %IMAGE_BASE64% 参数，图片的 BASE64
 
 ## 可调用的方法
 

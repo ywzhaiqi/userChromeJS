@@ -7,9 +7,10 @@
 // @license        MIT License
 // @compatibility  Firefox 21
 // @charset        UTF-8
-// @version        0.0.7
+// @version        0.0.8
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
+// @note           0.0.8 Firefox 25 の getShortcutOrURI 廃止に仮対応
 // @note           0.0.7 Firefox 21 の Favicon 周りの変更に対応
 // @note           0.0.6 Firefox 19 に合わせて修正
 // @note           0.0.5 Remove E4X
@@ -123,8 +124,6 @@ PageMenu, TabMenu, ToolMenu, AppMenu 関数を使って自由に追加できま�
 */
 
 (function(css){
-
-var STATUS_CLOSE_TIME = 2 * 1000;  // 复制后状态栏的信息多少秒后消失
 
 let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
@@ -282,6 +281,40 @@ window.addMenu = {
 			openNewTabWith(uri.spec);
 		else openUILink(uri.spec, event);
 	},
+	exec: function(path, arg){
+		var file    = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
+		var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
+		try {
+			var a = (typeof arg == 'string' || arg instanceof String) ? arg.split(/\s+/) : [arg];
+			file.initWithPath(path);
+
+            if (!file.exists()) {
+                Cu.reportError('File Not Found: ' + path);
+                return;
+            }
+
+            if (file.isExecutable()) {
+                process.init(file);
+                process.run(false, a, a.length);
+            } else {
+                file.launch();
+            }
+
+		} catch(e) {
+			this.log(e);
+		}
+	},
+    handleRelativePath: function(path) {
+        if (path) {
+            path = path.replace(/\//g, '\\').toLocaleLowerCase();
+            var ffdir = Components.classes['@mozilla.org/file/directory_service;1'].getService(Components.interfaces.nsIProperties).get("ProfD", Components.interfaces.nsILocalFile).path;
+            if (/^(\\)/.test(path)) {
+                return ffdir + path;
+            }else{
+                return path;
+            }
+        }
+    },
 	rebuild: function(isAlert) {
 		var aFile = this.FILE;
 		if (!aFile || !aFile.exists() || !aFile.isFile()) {
@@ -770,57 +803,11 @@ window.addMenu = {
 	copy: function(aText) {
 		Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(aText);
 		XULBrowserWindow.statusTextField.label = "Copy: " + aText;
-        setTimeout(function(){
-            XULBrowserWindow.statusTextField.label = null;
-        }, STATUS_CLOSE_TIME);
 	},
 	alert: function(aString, aTitle) {
 		Cc['@mozilla.org/alerts-service;1'].getService(Ci.nsIAlertsService)
 			.showAlertNotification("", aTitle||"addMenu" , aString, false, "", null);
 	},
-    exec: function(path, arg){
-        var file    = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
-        var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
-        path = this.handleRelativePath(path);
-        try {
-            var a;
-            if (typeof arg == 'string' || arg instanceof String) {
-                a = arg.split(/\s+/);
-            } else if (typeof arg == 'object' && arg instanceof Array) {
-                a = arg;
-            } else {
-                a = [arg];
-            }
-
-            file.initWithPath(path);
-
-            if (!file.exists()) {
-                Cu.reportError('File Not Found: ' + path);
-                return;
-            }
-
-            if (file.isExecutable()) {
-                process.init(file);
-                process.run(false, a, a.length);
-            } else {
-                file.launch();
-            }
-
-        } catch(e) {
-            this.log(e);
-        }
-    },
-    handleRelativePath: function(path) {
-        if (path) {
-            path = path.replace(/\//g, '\\').toLocaleLowerCase();
-            var ffdir = Components.classes['@mozilla.org/file/directory_service;1'].getService(Components.interfaces.nsIProperties).get("ProfD", Components.interfaces.nsILocalFile).path;
-            if (/^(\\)/.test(path)) {
-                return ffdir + path;
-            }else{
-                return path;
-            }
-        }
-    },
 	$$: function(exp, context, aPartly) {
 		context || (context = this.focusedWindow.document);
 		var doc = context.ownerDocument || context;
@@ -881,6 +868,90 @@ function loadFile(aLeafName) {
 	sstream.close();
 	fstream.close();
 	return data;
+}
+
+function getShortcutOrURI(aURL, aPostDataRef, aMayInheritPrincipal) {
+  // Initialize outparam to false
+  if (aMayInheritPrincipal)
+    aMayInheritPrincipal.value = false;
+
+  var shortcutURL = null;
+  var keyword = aURL;
+  var param = "";
+
+  var offset = aURL.indexOf(" ");
+  if (offset > 0) {
+    keyword = aURL.substr(0, offset);
+    param = aURL.substr(offset + 1);
+  }
+
+  if (!aPostDataRef)
+    aPostDataRef = {};
+
+  var engine = Services.search.getEngineByAlias(keyword);
+  if (engine) {
+    var submission = engine.getSubmission(param);
+    aPostDataRef.value = submission.postData;
+    return submission.uri.spec;
+  }
+
+  [shortcutURL, aPostDataRef.value] =
+    PlacesUtils.getURLAndPostDataForKeyword(keyword);
+
+  if (!shortcutURL)
+    return aURL;
+
+  var postData = "";
+  if (aPostDataRef.value)
+    postData = unescape(aPostDataRef.value);
+
+  if (/%s/i.test(shortcutURL) || /%s/i.test(postData)) {
+    var charset = "";
+    const re = /^(.*)\&mozcharset=([a-zA-Z][_\-a-zA-Z0-9]+)\s*$/;
+    var matches = shortcutURL.match(re);
+    if (matches)
+      [, shortcutURL, charset] = matches;
+    else {
+      // Try to get the saved character-set.
+      try {
+        // makeURI throws if URI is invalid.
+        // Will return an empty string if character-set is not found.
+        charset = PlacesUtils.history.getCharsetForURI(makeURI(shortcutURL));
+      } catch (e) {}
+    }
+
+    // encodeURIComponent produces UTF-8, and cannot be used for other charsets.
+    // escape() works in those cases, but it doesn't uri-encode +, @, and /.
+    // Therefore we need to manually replace these ASCII characters by their
+    // encodeURIComponent result, to match the behavior of nsEscape() with
+    // url_XPAlphas
+    var encodedParam = "";
+    if (charset && charset != "UTF-8")
+      encodedParam = escape(convertFromUnicode(charset, param)).
+                     replace(/[+@\/]+/g, encodeURIComponent);
+    else // Default charset is UTF-8
+      encodedParam = encodeURIComponent(param);
+
+    shortcutURL = shortcutURL.replace(/%s/g, encodedParam).replace(/%S/g, param);
+
+    if (/%s/i.test(postData)) // POST keyword
+      aPostDataRef.value = getPostDataStream(postData, param, encodedParam,
+                                             "application/x-www-form-urlencoded");
+  }
+  else if (param) {
+    // This keyword doesn't take a parameter, but one was provided. Just return
+    // the original URL.
+    aPostDataRef.value = null;
+
+    return aURL;
+  }
+
+  // This URL came from a bookmark, so it's safe to let it inherit the current
+  // document's principal.
+  if (aMayInheritPrincipal)
+    aMayInheritPrincipal.value = true;
+
+  return shortcutURL;
 }
 
 

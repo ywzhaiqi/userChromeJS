@@ -203,7 +203,7 @@ window.addMenu = {
 		ins = $("devToolsSeparator");
 		ins.parentNode.insertBefore($C("menuitem", {
 			id: "addMenu-rebuild",
-			label: "addMenu 的编辑和重新载入",
+			label: "addMenu 重新载入/编辑配置",
             tooltiptext: "左键重新载入配置，右键打开文件编辑",
 			oncommand: "setTimeout(function(){ addMenu.rebuild(true); }, 10);",
 			onclick: "if (event.button == 2) { event.preventDefault(); addMenu.edit(addMenu.FILE); }",

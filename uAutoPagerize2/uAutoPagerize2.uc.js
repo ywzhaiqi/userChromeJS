@@ -441,7 +441,7 @@ var ns = window.uAutoPagerize = {
         switch(event.type) {
             case "DOMContentLoaded":
                 if (this.AUTO_START)
-                    this.launch(event.target.defaultView);
+                    this.launch(event.target.defaultView, null, true);
                 break;
             case "TabSelect":
                 if (this.AUTO_START)
@@ -539,7 +539,7 @@ var ns = window.uAutoPagerize = {
 
         return true;
     },
-	launch: function(win, timer){
+	launch: function(win, timer, DOMLoad){
         // 监测文件是否更新
         if(ns.isModified){
             ns.loadSetting(true);
@@ -598,7 +598,9 @@ var ns = window.uAutoPagerize = {
 
         // 已经移到外置规则，便于更新
         if (/\bgoogle\.(?:com|co\.jp|com\.hk)$/.test(win.location.host)) {
-            if (!timer || timer < 400) timer = 1500;
+            if (!timer || timer < 400) {
+                timer = 1500;
+            }
             hashchange = true;
         }else if (win.location.host === 'www.newsmth.net') {  // 水木清华社区延迟加载及下一页加载的修复
             timer = 1000;
@@ -625,6 +627,11 @@ var ns = window.uAutoPagerize = {
                     updateIcon();
                 }, timer);
             }, false);
+        }
+
+        // 不是加载文档时启用则不需要延迟
+        if (!DOMLoad) {
+            timer = 0;
         }
 
 		win.setTimeout(function(){

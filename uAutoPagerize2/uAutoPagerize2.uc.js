@@ -58,8 +58,7 @@ var EXCLUDE = [
     '*://www.dropbox.com/*',
     '*://www.toodledo.com/*',
     '*://www.wumii.com/*',
-    'http://www.cnbeta.com/*',
-    '*/archives/*'
+    'http://www.cnbeta.com/*'
 ];
 
 var MY_SITEINFO = [
@@ -257,6 +256,12 @@ var ns = window.uAutoPagerize = {
         if (m) m.setAttribute("checked", PRELOADER_NEXTPAGE = !!bool);
         return bool;
     },
+    get ADD_TO_HISTORY() ADD_TO_HISTORY,
+    set ADD_TO_HISTORY(bool) {
+        let m = $("uAutoPagerize-ADD_TO_HISTORY");
+        if (m) m.setAttribute("checked", ADD_TO_HISTORY = !!bool);
+        return bool;
+    },
 
     init: function() {
         ns.style = addStyle(css);
@@ -289,7 +294,7 @@ var ns = window.uAutoPagerize = {
                           checked="'+ AUTO_START +'"\
                           oncommand="uAutoPagerize.toggle(event);"/>\
                 <menuitem label="载入/编辑配置"\
-                          tooltiptext="左键载入配置，中键编辑中文规则，右键编辑配置文件"\
+                          tooltiptext="左键载入配置，右键编辑配置文件和中文规则文件"\
                           onclick="uAutoPagerize.reloadMenuClick(event);"/>\
                 <menuitem label="更新中文规则" \
                           tooltiptext="包含 Super_preloader 的中文规则"\
@@ -314,6 +319,12 @@ var ns = window.uAutoPagerize = {
                           autoCheck="false"\
                           checked="'+ PRELOADER_NEXTPAGE +'"\
                           oncommand="uAutoPagerize.PRELOADER_NEXTPAGE = !uAutoPagerize.PRELOADER_NEXTPAGE;"/>\
+                <menuitem label="添加下一页到历史记录"\
+                          id="uAutoPagerize-ADD_TO_HISTORY"\
+                          type="checkbox"\
+                          autoCheck="false"\
+                          checked="'+ ADD_TO_HISTORY +'"\
+                          oncommand="uAutoPagerize.ADD_TO_HISTORY = !uAutoPagerize.ADD_TO_HISTORY;"/>\
                 <menuitem label="新标签打开链接"\
                           tooltiptext="下一页的链接设置成在新标签页打开"\
                           id="uAutoPagerize-FORCE_TARGET_WINDOW"\
@@ -502,6 +513,7 @@ var ns = window.uAutoPagerize = {
 
         // 替换 unsafeWindow
         data = data.replace(/unsafeWindow/g, "this.wrappedJSObject")
+        data = data.replace(/window/g, "this")
 
         try {
             Cu.evalInSandbox(data, sandbox, '1.8');
@@ -522,7 +534,8 @@ var ns = window.uAutoPagerize = {
             };
 
             if (info.autopager) {
-                ["pageElement", "useiframe", "newIframe", "iloaded", "itimeout", "documentFilter", "filter"].forEach(function(name){
+                ["pageElement", "useiframe", "newIframe", "iloaded", "itimeout", "documentFilter", "filter", 
+                    "startFilter"].forEach(function(name){
                     if(info.autopager[name]){
                         newInfo[name] = info.autopager[name];
                     }
@@ -794,9 +807,8 @@ var ns = window.uAutoPagerize = {
                 ns.loadSetting_CN();
                 break;
             case 1:
-                ns.edit(ns.file_CN);
-                break;
             case 2:
+                ns.edit(ns.file_CN);
                 ns.edit(ns.file);
                 event.preventDefault();
                 break;

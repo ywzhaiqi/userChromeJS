@@ -483,14 +483,19 @@ var ns = window.uAutoPagerize = {
         // sandbox.EXCLUDE = null;
         sandbox.MY_SITEINFO = [];
         sandbox.MICROFORMAT = [];
-        sandbox.USE_MY_SITEINFO = true;
+        sandbox.USE_MY_SITEINFO = false;
         sandbox.USE_MICROFORMAT = true;
+
+        // 替换 unsafeWindow
+        data = data.replace(/unsafeWindow/g, "this.wrappedJSObject");
 
 		try {
 			Cu.evalInSandbox(data, sandbox, '1.8');
 		} catch (e) {
 			return log('load error.', e);
 		}
+        sandbox.MY_SITEINFO = this.convertSiteInfos(sandbox.MY_SITEINFO);
+
 		ns.MY_SITEINFO = sandbox.USE_MY_SITEINFO ? sandbox.MY_SITEINFO.concat(MY_SITEINFO): sandbox.MY_SITEINFO;
 		ns.MICROFORMAT = sandbox.USE_MICROFORMAT ? sandbox.MICROFORMAT.concat(MICROFORMAT): sandbox.MICROFORMAT;
 		if (sandbox.INCLUDE)
@@ -512,8 +517,8 @@ var ns = window.uAutoPagerize = {
         sandbox.SITEINFO_comp = [];
 
         // 替换 unsafeWindow
-        data = data.replace(/unsafeWindow/g, "this.wrappedJSObject")
-        data = data.replace(/window/g, "this")
+        data = data.replace(/unsafeWindow/g, "this.wrappedJSObject");
+        data = data.replace(/window/g, "this");
 
         try {
             Cu.evalInSandbox(data, sandbox, '1.8');
@@ -521,21 +526,38 @@ var ns = window.uAutoPagerize = {
             return log('载入中文数据库错误', e);
         }
 
-        var list = sandbox.SITEINFO.concat(sandbox.SITEINFO_TP).concat(sandbox.SITEINFO_comp),
-            newList = [];
+        var list = sandbox.SITEINFO.concat(sandbox.SITEINFO_TP).concat(sandbox.SITEINFO_comp);
+
+        ns.SITEINFO_CN = this.convertSiteInfos(list);
+
+        if (isAlert)
+            alerts('uAutoPagerize', '中文数据库已经重新载入');
+
+        return true;
+    },
+    convertSiteInfos: function(list) {
+        var newList = [];
         // 转换
         for(let [index, info] in Iterator(list)){
             let newInfo = {
-                name: info.name || info.siteName || '',
                 url: info.url,
                 nextLink: info.nextLink,
                 pageElement: info.pageElement,
-                exampleUrl: info.exampleUrl || info.siteExample || '',
             };
 
+            let name = info.name || info.siteName;
+            if (name) {
+                newInfo.name = name;
+            }
+
+            let exampleUrl = info.exampleUrl || info.siteExample;
+            if (exampleUrl) {
+                newInfo.exampleUrl = exampleUrl;
+            }
+            
             if (info.autopager) {
                 ["pageElement", "useiframe", "newIframe", "iloaded", "itimeout", "documentFilter", "filter", 
-                    "startFilter"].forEach(function(name){
+                    "startFilter", "stylish", 'replaceE'].forEach(function(name){
                     if(info.autopager[name]){
                         newInfo[name] = info.autopager[name];
                     }
@@ -544,13 +566,7 @@ var ns = window.uAutoPagerize = {
 
             newList.push(newInfo);
         }
-
-        ns.SITEINFO_CN = newList;
-
-        if (isAlert)
-            alerts('uAutoPagerize', '中文数据库已经重新载入');
-
-        return true;
+        return newList;
     },
 	launch: function(win, timer, DOMLoad){
         // 监测文件是否更新
@@ -887,8 +903,8 @@ var ns = window.uAutoPagerize = {
 
         var keyword = Services.eTLD.getBaseDomainFromHost(content.location.host);
 
-        gBrowser.selectedTab = gBrowser.addTab('http://wedata.net/databases/AutoPagerize/items?query=' + keyword);
-        gBrowser.addTab('http://ap.teesoft.info/?exp=0&url=' + encodeURIComponent(url));
+        // gBrowser.addTab('http://wedata.net/databases/AutoPagerize/items?query=' + keyword);
+        gBrowser.selectedTab = gBrowser.addTab('http://ap.teesoft.info/?exp=0&url=' + encodeURIComponent(url));
     },
     showUI: function(){
         var splitter = $C("splitter", {
@@ -1386,10 +1402,12 @@ AutoPager.prototype = {
 		}
 		page = this.addPage(htmlDoc, page, url);
 		this.win.filters.forEach(function(i) { i(page) });
+
         if(ADD_TO_HISTORY){  // 添加到历史记录
             this.doc.title = htmlDoc.title;
             this.win.history.pushState(null, '', this.requestURL);
         }
+
 		this.requestURL = url;
 		this.state = 'enable';
 		// if (!ns.SCROLL_ONLY)
@@ -1484,6 +1502,24 @@ AutoPager.prototype = {
                     img.src = src;
                 }
             }, 99);
+        }
+
+        // 来自Super_preloader，需要替换的部分 xpath 或 CSS选择器 一般是页面的本来的翻页导航
+        if (this.info.replaceE) {
+            var oldE = getElementsMix(this.info.replaceE, this.doc);
+            var oldE_lt = oldE.length;
+            if (oldE_lt > 0) {
+                var newE = getElementsMix(this.info.replaceE, htmlDoc);
+                var newE_lt = newE.length;
+                if (newE_lt == oldE_lt) {
+                    for (i = 0; i < newE_lt; i++) {
+                        let oldE_x = oldE[i];
+                        let newE_x = newE[i];
+                        newE_x = this.doc.importNode(newE_x, true);
+                        oldE_x.parentNode.replaceChild(newE_x, oldE_x);
+                    }
+                }
+            }
         }
 
         return page.map(function(pe) {
@@ -2053,9 +2089,9 @@ function getElementMix(selector, doc, win) {
     } else if (type == 'function') {
         ret = selector(doc, win, doc.URL);
     } else if (Array.isArray(selector)) {
-        ret = getElementMix(selector[0], doc, win);
-        if(!ret){
-            ret = getElementMix(selector[1], doc, win);
+        for (var i = 0, l = selector.length; i < l; i++) {
+            ret = getElementMix(selector[i], doc, win);
+            if(ret) break;
         }
     } else {
         var url = SP.hrefInc(selector, doc, win);

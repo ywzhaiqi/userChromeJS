@@ -569,6 +569,8 @@ var ns = window.uAutoPagerize = {
         return newList;
     },
 	launch: function(win, timer, DOMLoad){
+        if (!win) return;
+
         // 监测文件是否更新
         if(ns.isModified){
             ns.loadSetting(true);

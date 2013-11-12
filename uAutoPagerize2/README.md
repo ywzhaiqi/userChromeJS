@@ -21,6 +21,7 @@ uAutoPagerize 中文规则简化改进版。跟 [uAutoPagerize](../uAutoPagerize
 使用技巧和说明
 --------------
 
+- 默认为附加组件栏，可通过 `isUrlbar` 更改，0 为附加组件栏，1 为地址栏
 - 文件 *_uAutoPagerize.js* 为自定义配置文件，自定义规则放在这里。
 - 文件 *uSuper_preloader.db.js* 为中文规则数据库文件，会被下载替换。
 - 鼠标中键点击图标会同时载入配置文件和中文规则数据库文件。

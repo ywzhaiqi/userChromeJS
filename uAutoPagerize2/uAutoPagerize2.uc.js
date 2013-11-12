@@ -40,6 +40,8 @@
 
 (function(css) {
 
+var isUrlbar = 0;  // 放置的位置，0 为附加组件栏，1 为地址栏
+
 var SEND_COOKIE = true;  // 是否发送 cookie？百度有问题时需要清除 cookie
 
 var DB_FILENAME_CN =  "uSuper_preloader.db.js";   // 中文数据库的位置
@@ -112,6 +114,21 @@ if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
 
 if (typeof window.uAutoPagerize != 'undefined') {
     window.uAutoPagerize.destroy();
+
+    // 补上 siteinfo_writer 菜单
+    (function(){
+        if (!window.siteinfo_writer) return;
+
+        var menuitem = $C("menuitem", {
+            id: "sw-popup-menuitem",
+            class: "sw-add-element",
+            label: "辅助定制翻页规则",
+            oncommand: "siteinfo_writer.show();",
+        });
+        setTimeout(function(){
+            document.getElementById("uAutoPagerize-popup").appendChild(menuitem);
+        }, 2000);
+    })();
 }
 
 // 以下 設定が無いときに利用する
@@ -266,23 +283,25 @@ var ns = window.uAutoPagerize = {
     init: function() {
         ns.style = addStyle(css);
 
-        ns.icon = $('status-bar').appendChild($C("statusbarpanel", {
-            id: "uAutoPagerize-icon",
-            class: "statusbarpanel-iconic",
-            state: "disable",
-            tooltiptext: "disable",
-            onclick: "if (event.button != 2) uAutoPagerize.iconClick(event);",
-            context: "uAutoPagerize-popup",
-        }));
-
-        // ns.icon = $('urlbar-icons').appendChild($C("image", {
-        //  id: "uAutoPagerize-icon",
-        //  state: "disable",
-        //  tooltiptext: "disable",
-        //  onclick: "if (event.button != 2) uAutoPagerize.iconClick(event);",
-        //  context: "uAutoPagerize-popup",
-        //  style: "padding: 0px 2px;",
-        // }));
+        if (isUrlbar) {
+            ns.icon = $('urlbar-icons').appendChild($C("image", {
+                id: "uAutoPagerize-icon",
+                state: "disable",
+                tooltiptext: "disable",
+                onclick: "if (event.button != 2) uAutoPagerize.iconClick(event);",
+                context: "uAutoPagerize-popup",
+                style: "padding: 0px 2px;",
+            }));
+        } else {
+            ns.icon = $('status-bar').appendChild($C("statusbarpanel", {
+                id: "uAutoPagerize-icon",
+                class: "statusbarpanel-iconic",
+                state: "disable",
+                tooltiptext: "disable",
+                onclick: "if (event.button != 2) uAutoPagerize.iconClick(event);",
+                context: "uAutoPagerize-popup",
+            }));
+        }
 
         var xml = '\
             <menupopup id="uAutoPagerize-popup" position="after_start"\
@@ -419,6 +438,8 @@ var ns = window.uAutoPagerize = {
         }, ns);
 
         ns.prefs.setCharPref("EXCLUDE", ns.EXCLUDE.join(","));
+
+        ns.IMMEDIATELY_PAGER_NUM = $("uAutoPagerize-immedialate-pages").value;
     },
     theEnd: function() {
         var ids = ["uAutoPagerize-icon", "uAutoPagerize-popup"];
@@ -430,8 +451,8 @@ var ns = window.uAutoPagerize = {
         ns.removeListener();
     },
     destroy: function() {
-        ns.theEnd();
         ns.uninit();
+        ns.theEnd();
         delete window.uAutoPagerize;
     },
     addListener: function() {
@@ -628,12 +649,11 @@ var ns = window.uAutoPagerize = {
         var hashchange = false;
 
         // 已经移到外置规则，便于更新
-        if (/\bgoogle\.(?:com|co\.jp|com\.hk)$/.test(win.location.host)) {
-            if (!timer || timer < 400) {
-                timer = 1500;
-            }
+        // Google 搜索的一些网址需要加 hashchange
+        if (/^https?:\/\/(www|encrypted)\.google\..{2,9}\/(webhp|#|$|\?)/.test(locationHref)) {
+            timer = 1500;
             hashchange = true;
-        }else if (win.location.host === 'www.newsmth.net') {  // 水木清华社区延迟加载及下一页加载的修复
+        } else if (win.location.host === 'www.newsmth.net') {  // 水木清华社区延迟加载及下一页加载的修复
             timer = 1000;
             hashchange = true;
         }

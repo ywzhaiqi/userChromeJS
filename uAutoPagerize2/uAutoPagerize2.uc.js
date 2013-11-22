@@ -560,30 +560,29 @@ var ns = window.uAutoPagerize = {
         var newList = [];
         // 转换
         for(let [index, info] in Iterator(list)){
+            if (!info.autopager){
+                newList.push(info);
+                continue;
+            }
+
             let newInfo = {
                 url: info.url,
                 nextLink: info.nextLink,
                 pageElement: info.pageElement,
+                name: info.name || info.siteName,
+                exampleUrl: info.exampleUrl || info.siteExample
             };
 
-            let name = info.name || info.siteName;
-            if (name) {
-                newInfo.name = name;
-            }
-
-            let exampleUrl = info.exampleUrl || info.siteExample;
-            if (exampleUrl) {
-                newInfo.exampleUrl = exampleUrl;
-            }
+            ['name', 'exampleUrl'].forEach(function(n){
+                if (!newInfo[n]) delete newInfo[n];
+            });
             
-            if (info.autopager) {
-                ["pageElement", "useiframe", "newIframe", "iloaded", "itimeout", "documentFilter", "filter", 
-                    "startFilter", "stylish", 'replaceE'].forEach(function(name){
-                    if(info.autopager[name]){
-                        newInfo[name] = info.autopager[name];
-                    }
-                });
-            }
+            ["pageElement", "useiframe", "newIframe", "iloaded", "itimeout", "documentFilter", "filter", 
+                "startFilter", "stylish", 'replaceE', 'lazyImgSrc'].forEach(function(name){
+                if(info.autopager[name]){
+                    newInfo[name] = info.autopager[name];
+                }
+            });
 
             newList.push(newInfo);
         }
@@ -1435,7 +1434,7 @@ AutoPager.prototype = {
 		// if (!ns.SCROLL_ONLY)
 		// 	this.scroll();
 		if (!url) {
-			debug('nextLink not found.', this.info.nextLink, htmlDoc);
+			debug('nextLink not found.', this.info.nextLink, htmlDoc.body.innerHTML);
 			this.state = 'terminated';
 		}
 
@@ -1449,6 +1448,20 @@ AutoPager.prototype = {
         var fragment = this.doc.createDocumentFragment();
         page.forEach(function(i) { fragment.appendChild(i); });
         this.win.fragmentFilters.forEach(function(i) { i(fragment, htmlDoc, page) }, this);
+
+        if (this.info.lazyImgSrc) {
+            var imgAttrs = this.info.lazyImgSrc.split('|');
+            imgAttrs.forEach(function(attr){
+                attr = attr.trim();
+                [].forEach.call(fragment.querySelectorAll("img[" + attr + "]"), function(img){
+                    var newSrc = img.getAttribute(attr);
+                    if (newSrc && newSrc != img.src) {
+                        img.setAttribute("src", newSrc);
+                        img.removeAttribute(attr);
+                    } 
+                });
+            });
+        }
 
         //收集所有图片
         var imgs;

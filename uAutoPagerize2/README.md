@@ -32,16 +32,36 @@ uAutoPagerize 中文规则简化改进版。跟 [uAutoPagerize](../uAutoPagerize
 - 百度如果无法翻页，请清除 cookie
 - [uAutoPagerizeUI](uAutoPagerizeUI)：图形管理规则，待完善。
 
+SITEINFO_Writer.uc.js
+--------------------
+
+规则辅助工具。
+
+- 略加改进的选取 xpath 生成
+- xpath 正确与否的颜色提示
+- 简易自动补全
+- 右键查看元素、查看元素（Firebug）
+- 其它看图
+
+![SITEINFO_Writer效果图](SITEINFO_Writer.jpg)
+
+
 手势调用（FireGestures）
 -----------------------
 
-#### 启用禁用
+启用禁用
 
 ```js
 	uAutoPagerize.toggle()
 ```
 
-#### 立即加载3页
+启用禁用（仅当前页面）
+
+```js
+	if (content.ap) content.ap.stateToggle();
+```
+
+立即加载3页
 
 ```js
 	var node = FireGestures.sourceNode;
@@ -52,7 +72,7 @@ uAutoPagerize 中文规则简化改进版。跟 [uAutoPagerize](../uAutoPagerize
 	    win.ap.loadImmediately(3);
 ```
 
-### 增强型后退，没前进翻到上一页
+增强型后退，没前进翻到上一页
 
 ```js
 	var doc = FireGestures.sourceNode.ownerDocument;
@@ -81,7 +101,7 @@ uAutoPagerize 中文规则简化改进版。跟 [uAutoPagerize](../uAutoPagerize
 	}
 ```
 
-### 增强型前进，没前进翻到下一页
+增强型前进，没前进翻到下一页
 
 ```js
 	var doc = FireGestures.sourceNode.ownerDocument;
@@ -112,7 +132,7 @@ uAutoPagerize 中文规则简化改进版。跟 [uAutoPagerize](../uAutoPagerize
 	}
 ```
 
-#### 向上滚一页（5合1）
+向上滚一页（5合1）
 
 依次查找：uAutoPagerize、uSuper_preloader.uc.js、小说阅读脚本、Super_preloader 脚本、FireGestures滚到底部。
 
@@ -134,7 +154,7 @@ uAutoPagerize 中文规则简化改进版。跟 [uAutoPagerize](../uAutoPagerize
 	}
 ```
 
-#### 向下滚一页（5合1）
+向下滚一页（5合1）
 
 同上
 

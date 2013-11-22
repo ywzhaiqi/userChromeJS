@@ -4,7 +4,7 @@
 // @namespace      http://d.hatena.ne.jp/Griever/
 // @author         Griever
 // @modified       ywzhaiqi
-// @update         2013-7-24
+// @update         2013-11-22
 // @include        main
 // @compatibility  Firefox 5 - firefox 23a1
 // @charset        UTF-8
@@ -30,8 +30,8 @@ window.siteinfo_writer = {
 	      <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" \
 	               xmlns:html="http://www.w3.org/1999/xhtml"> \
 	        <window id="main-window">\
-				<vbox id="sw-container" class="sw-add-element" hidden="true">\
-				    <hbox id="sw-hbox">\
+				<vbox id="sw-container" class="sw-add-element" hidden="true" collapsed="false">\
+				    <hbox id="sw-hbox" collapsed="false">\
 				      <toolbarbutton label="查看规则" oncommand="siteinfo_writer.toJSON();"/>\
 				      <toolbarbutton label="查看规则(SP)" oncommand="siteinfo_writer.toSuperPreLoaderFormat();"/>\
 				      <toolbarbutton id="sw-curpage-info" label="读取当前页面规则" oncommand="siteinfo_writer.getCurPageInfo();"/>\
@@ -98,11 +98,17 @@ window.siteinfo_writer = {
 				        </row>\
 				      </rows>\
 				    </grid>\
-				  </vbox>\
-                  <panel id="autocompletePanel" fade="fast">\
-                    <richlistbox id="autocompleteList" seltype="single"\
+                    <panel id="sw-autocompletePanel" fade="fast">\
+                        <richlistbox id="sw-autocompleteList" seltype="single"\
                                  maxheight="250" minwidth="100"/>\
-                  </panel>\
+                    </panel>\
+                    <hbox height="0">\
+                        <html:span id="sw-measurer" collapsed="true" style=":0;padding:0;border:none;position:absolute;z-index:-1;visibility: hidden;width: auto;">\
+                            aaaaaa\
+                        </html:span>\
+                        <spacer flex="1"/>\
+                    </hbox>\
+				</vbox>\
 			</window>\
 	      </overlay>';
     	overlay = "data:application/vnd.mozilla.xul+xml;charset=utf-8," + encodeURI(overlay);
@@ -110,7 +116,19 @@ window.siteinfo_writer = {
 
         gBrowser.mPanelContainer.addEventListener('DOMContentLoaded', this, true);
 	},
-	observe : function (aSubject, aTopic, aData) {
+	uninit : function ()  {
+		gBrowser.mPanelContainer.removeEventListener('DOMContentLoaded', this, true);
+	},
+    destroy: function() {
+        $A(document.getElementsByClassName("sw-add-element")).forEach(function(e){
+            e.parentNode.removeChild(e);
+        });
+
+        this.style && this.style.parentNode.removeChild(this.style);
+
+        this.uninit();
+    },
+    observe : function (aSubject, aTopic, aData) {
         if (aTopic == "xul-overlay-merged") {
             this.popup = $("mainPopupSet").appendChild($C("menupopup", {
                 id: "sw-popup",
@@ -129,7 +147,7 @@ window.siteinfo_writer = {
                 if (!window.uAutoPagerize) {
                     $("sw-launch").hidden = true;
                     return;
-                };
+                }
 
                 let aupPopup = $("uAutoPagerize-popup");
                 if (aupPopup) {
@@ -154,20 +172,15 @@ window.siteinfo_writer = {
             this.pageElement.addEventListener("popupshowing", siteinfo_writer.textboxPopupShowing, false);
             this.insertBefore.addEventListener("popupshowing", siteinfo_writer.textboxPopupShowing, false);
 
+            // 自动补全
+            this.url.addEventListener('keypress', function(event){
+                if (event.keyCode == 13) {
+                    siteinfo_writer.urlTest();
+                }
+            }, false);
             setupAutoCompleter(this.nextLink);
             setupAutoCompleter(this.pageElement);
         }
-	},
-	uninit : function ()  {
-		gBrowser.mPanelContainer.removeEventListener('DOMContentLoaded', this, true);
-	},
-    destroy: function() {
-        $A(document.getElementsByClassName("sw-add-element")).forEach(function(e){
-            e.parentNode.removeChild(e);
-        })
-        this.style.parentNode.removeChild(this.style);
-
-        this.uninit();
     },
 	handleEvent: function(event){
 		switch(event.type){
@@ -199,6 +212,19 @@ window.siteinfo_writer = {
         popup.appendChild($C("menuseparator", {}));
 
         popup.appendChild($C("menuitem", {
+            label: '查看元素',
+            accesskey: 'Q',
+            oncommand: "siteinfo_writer.inspectMix('" + type + "');",
+        }));
+
+        popup.appendChild($C("menuitem", {
+            label: '查看元素(Firebug)',
+            accesskey: 'F',
+            hidden: !window.Firebug,
+            oncommand: "siteinfo_writer.inspectMix('" + type + "', true);",
+        }));
+
+        popup.appendChild($C("menuitem", {
             label: '@class="xxx" → contains()',
             oncommand: "siteinfo_writer.class2contains('" + type + "');",
         }));
@@ -221,7 +247,7 @@ window.siteinfo_writer = {
                 insertBefore: "",
             };
 
-        this.setAllValue(info);
+        this.setTextBoxValue(info);
         this.setUrl();
 		this.container.hidden = false;
 	},
@@ -229,21 +255,23 @@ window.siteinfo_writer = {
 		this.container.hidden = true;
 	},
     setUrl: function() {
-        this.url.value = "^" + content.location.href.replace(/[()\[\]{}|+.,^$?\\]/g, '\\$&');
+        var location = content.location;
+        // var url = location.protocol + "//" + location.host + location.pathname;
+        var url = location.href;
+        this.url.value = "^" + url.replace(/[()\[\]{}|+.,^$?\\]/g, '\\$&');
         this.url.className = "";
     },
-    setAllValue: function(info){
+    setTextBoxValue: function(info, test){
         this.siteName.value = info.siteName || info.name || content.document.title;
         this.nextLink.value = info.nextLink || "";
         this.pageElement.value = info.pageElement || "";
-        this.useiframe.checked = info.useiframe || false;
+        this.useiframe.checked = !!info.useiframe;
         this.insertBefore.value = info.insertBefore || "";
 
-        if(info.url){  // 转为字符串
-            let url = info.url;
-            let type = typeof(url);
-            let urlValue;
-            switch(type){
+        var url = info.url,
+            urlValue;
+        if(url){  // 转为字符串
+            switch(typeof(url)){
                 case "object":
                     urlValue = String(url).replace(/^\//, '').replace(/\/[img]*$/, '').replace(/\\\//g, '/');
                     break;
@@ -254,11 +282,21 @@ window.siteinfo_writer = {
                         urlValue = url.replace(/\\\//g, '/').replace(/\\\\/g, '\\');
                     break;
             }
+        }
 
-            if(!urlValue)
-                urlValue = "^" + content.location.href.replace(/[()\[\]{}|+.,^$?\\]/g, '\\$&');
-
+        if(urlValue)
             this.url.value = urlValue;
+        else
+            this.setUrl();
+
+        if (test) {
+            this.urlTest();
+            this.xpathTest('nextLink');
+            this.xpathTest('pageElement');
+        } else {
+            this.url.style.color = '';
+            this.nextLink.style.color = '';
+            this.pageElement.style.color = '';
         }
     },
 	toJSON: function() {
@@ -285,7 +323,7 @@ window.siteinfo_writer = {
 	},
 	toSuperPreLoaderFormat: function() {
         var spdb = "\t{";
-        spdb += "name: '" + this.siteName.value + "',\n";
+        spdb += "siteName: '" + this.siteName.value + "',\n";
         spdb += "\t\turl: /" + this.url.value.replace(/\//g, "\\\/") + "/i,\n";
         spdb += "\t\texampleUrl: '" + content.location.href + "',\n";
         spdb += "\t\tnextLink: '" + this.nextLink.value + "',\n";
@@ -349,7 +387,7 @@ window.siteinfo_writer = {
                         self.setValueFromCurPage(info);
                     }else if (e.button == 2){
                         copyToClipboard(siteInfoToString(info));
-                        alert("该站点信息已经复制");
+                            // alert("该站点信息已经复制");
                     }
                 });
 			}
@@ -361,10 +399,8 @@ window.siteinfo_writer = {
 			info = this.curPageInfos[info];
 		}
 
-        this.setAllValue(info);
+        this.setTextBoxValue(info, true);
         this.urlTest();
-        this.xpathTest('nextLink');
-        this.xpathTest('pageElement');
 	},
     // autopager 查询网站 install(a36122) 没有引号的错误。
     fixAutoPagerBug: function(doc){
@@ -373,7 +409,7 @@ window.siteinfo_writer = {
         for (var i = links.length - 1; i >= 0; i--) {
             link = links[i];
             onclick = link.getAttribute("onclick").replace(/install\((\w+)\)/, "install('$1')");
-            link.setAttribute("onclick", onclick);
+            link.setAttribute("onclick", onclick + ";return false;");
         }
     },
 	requestInfoFromAP: function(ids){
@@ -406,29 +442,41 @@ window.siteinfo_writer = {
 
 			var urlPattern = getFirstElementByXPath("//urlPattern", site).textContent;
 			var urlIsRegex = getFirstElementByXPath("//urlIsRegex", site).textContent;
-			this.url.value = (urlIsRegex == 'false') ? wildcardToRegExpStr(urlPattern) : urlPattern;
 
-			this.siteName.value = getFirstElementByXPath("//desc", site).textContent.replace("AutoPager rule for ", "");
-			this.nextLink.value = getFirstElementByXPath("//linkXPath", site).textContent;
-			this.pageElement.value = getFirstElementByXPath("//contentXPath", site).textContent;
+            var info = {
+                name: getFirstElementByXPath("//desc", site).textContent.replace("AutoPager rule for ", ""),
+                url: (urlIsRegex == 'false') ? wildcardToRegExpStr(urlPattern) : urlPattern,
+                nextLink: getFirstElementByXPath("//linkXPath", site).textContent,
+                pageElement: getFirstElementByXPath("//contentXPath", site).textContent
+            };
+
+            this.setTextBoxValue(info, false);
+
+			// this.url.value = (urlIsRegex == 'false') ? wildcardToRegExpStr(urlPattern) : urlPattern;
+
+			// this.siteName.value = getFirstElementByXPath("//desc", site).textContent.replace("AutoPager rule for ", "");
+			// this.nextLink.value = getFirstElementByXPath("//linkXPath", site).textContent;
+			// this.pageElement.value = getFirstElementByXPath("//contentXPath", site).textContent;
 		}else{
 			log("parseInfoFromAP: JSON");
 			var info = JSON.parse(xhr.responseText);
 
-            this.setAllValue({
+            var newInfo = {
                 name: info.name,
                 url: info.data.url,
                 nextLink: info.data.nextLink,
                 pageElement: info.data.pageElement
-            });
+            }
+
+            this.setTextBoxValue(newInfo, false);
 		}
 	},
 	readFromClipboard: function(){
 		var dataStr = readFromClipboard();
 		if(dataStr){
-			var info = this.parseStringInfo(dataStr);
+            var info = this.parseStringInfo(dataStr);
 			if(info){
-                this.setAllValue(info);
+                this.setTextBoxValue(info, true);
 			}else{
 				alert("剪贴板的数据格式不正确");
 			}
@@ -485,12 +533,7 @@ window.siteinfo_writer = {
 				content.AutoPagerize.launchAutoPager([i]);
 			else alert("翻页规则语法正确，但uAutoPagerize无法执行，可能uAutoPagerize被禁用或没有安装脚本");
 		} else {
-            if(!nextLink)
-                alert("下一页链接没有找到");
-            else if(!pageElement)
-                alert("页面内容没有找到");
-            else
-                alert("其它错误");
+                alert("有错误发生，请分别检查 url、nextLink、pageElement 是否正确");
 		}
 	},
 	inspect: function(aType) {
@@ -515,37 +558,44 @@ window.siteinfo_writer = {
 			self._inspect = null;
 		});
 	},
+    urlTest: function() {
+        var urlValue = this.url.value;
+        if(urlValue.startsWith("wildc;"))
+            urlValue = wildcardToRegExpStr(urlValue.slice(6));
+        try {
+            var regexp = new RegExp(urlValue);
+
+            if (regexp.test(content.location.href)){
+                // this.url.classList.remove("error");
+                this.url.style.color = "green";
+            }else
+                this.url.style.color = "red";
+        } catch (e) {
+            this.url.style.color = "red";
+        }
+    },
+    inputTimer: null,
+    onInput: function(event) {
+        if (this.inputTimer) {
+            clearTimeout(this.inputTimer);
+        }
+        var self = this;
+        this.inputTimer = setTimeout(function() {
+            self.urlTest();
+        }, 100);
+    },
     toClearElements: [],
 	xpathTest: function(aType) {
 		var textbox = this[aType]
 		if (!textbox || !textbox.value) return;
 
         var selector = textbox.value;
-        var autoGetLink = uAutoPagerize.autoGetLink;
-        var doc = content.document;
-
-        var elements = null;
-        if(selector.startsWith("css;")){
-            selector = selector.slice(4);
-            if(selector)
-                elements = doc.querySelectorAll(selector);
-        }else if(autoGetLink && selector.trim() == "auto;"){
-            let nextLink = autoGetLink(doc);
-            if(nextLink)
-                elements = [nextLink];
-            else
-                alert("auto; 方式没有找到下一页");
-        }else{
-            try {
-                elements = getElementsByXPath(selector, doc);
-            } catch (e) {
-                // alert('xpath 错误，错误信息：' + e);
-            }
-        }
-
+        var elements = getElementsMix(selector);
         if(elements && elements.length){
             textbox.style.color = "green";
-            elements[0].scrollIntoView();
+            if (elements.length == 1){
+                elements[0].scrollIntoView();
+            }
         }else{
             textbox.style.color = "red";
             return;
@@ -581,32 +631,15 @@ window.siteinfo_writer = {
             self.toClearElements = [];
         }
 	},
-	urlTest: function() {
-		var urlValue = this.url.value;
-        if(urlValue.startsWith("wildc;"))
-            urlValue = wildcardToRegExpStr(urlValue.slice(6));
-        try {
-            var regexp = new RegExp(urlValue);
+    inspectMix: function(aType, useFirebug) {
+        let xpath = this[aType].value;
+        let doc = content.document;
 
-            if (regexp.test(content.location.href)){
-                // this.url.classList.remove("error");
-                this.url.style.color = "green";
-            }else
-                this.url.style.color = "red";
-        } catch (e) {
-            this.url.style.color = "red";
-        }
-	},
-	inputTimer: null,
-	onInput: function(event) {
-		if (this.inputTimer) {
-			clearTimeout(this.inputTimer);
-		}
-		var self = this;
-		this.inputTimer = setTimeout(function() {
-			self.urlTest();
-		}, 100);
-	},
+        var elems = getElementsMix(xpath);
+        if(!elems) return;
+
+        Inspect.start(elems[0], useFirebug);
+    },
 	class2contains: function(aType) {
 		this[aType].value = this.splitClass(this[aType].value);
 	},
@@ -700,8 +733,8 @@ Inspector.prototype = {
 	ATTR_NOT_CLASSID: 3,
 	ATTR_FULL: 4,
 	TEXT: 5,
-	NEXT_REG: /[下后][一]?[页张个篇章节步]/,
-	NEXT_REG_A: /^[下后][一]?[页张个篇章节步]$/,
+	NEXT_REG: /[下后][一]?[页张个篇章节步]|next/,
+        PAGE_KEY: /page|nav|pg/,
 	getXPath: function(originalTarget) {
 		var nodes = getElementsByXPath(
 			'ancestor-or-self::*[not(local-name()="html" or local-name()="HTML" or local-name()="body" or local-name()="BODY")]', originalTarget).reverse();
@@ -728,9 +761,14 @@ Inspector.prototype = {
         }
 
 		var hasId = current.getAttribute("id");
+            var hasPageKey = false;
 		for (let [i, elem] in Iterator(nodes)) {
 			obj.localnames = elem.localName + "/" + obj.localnames;
 
+                if(this.aType == "nextLink" && !(hasId || hasPageKey)){
+                    hasPageKey = this.PAGE_KEY.test(elem.getAttribute("class"));
+                    obj.ancestor_text = this.getElementXPath(elem, this.ATTR_CLASSID) + "/" + obj.ancestor_text;
+                }
 			if (!hasId) {
 				hasId = elem.getAttribute("id");
 				obj.ancestor_classid = this.getElementXPath(elem, this.ATTR_CLASSID) + "/" + obj.ancestor_classid;
@@ -746,8 +784,11 @@ Inspector.prototype = {
 
         if(this.type == "nextLink"){
             let xpaths = obj.ancestor_text.split("/");
-            if(xpaths.length >= 3)
-                obj.text_descendant = xpaths[0] + "/" + "descendant::" + xpaths[xpaths.length - 1];
+                if(xpaths.length >= 3){
+                    var lastXPath = xpaths.pop()
+                    xpaths.pop()  //去掉倒数第2个
+                    obj.text_descendant = xpaths.join("/") + "/descendant::" + lastXPath;
+                }
         }
 
 		for (let [key, val] in Iterator(obj)) {
@@ -761,10 +802,12 @@ Inspector.prototype = {
 				return b.length - a.length;
 			return bb? 1 : -1;
 		});
-		//var res = [[x, obj[x]] for(x in obj)].sort(function([a,], [b,]) a >= b);
-		////inspectObject([x for each(x in res)]);
-		//res = [x for each([,x] in res)].filter(function(e, i, a) a.indexOf(e) === i);
-		////inspectObject(res);
+
+            if(hasPageKey){
+                // 移动到第一个
+                let old_index = res.indexOf(obj.ancestor_text);
+                res.splice(0, 0, res.splice(old_index, 1)[0]);
+            }
 		return res;
 	},
 	getElementXPath: function(elem, constant) {
@@ -772,8 +815,9 @@ Inspector.prototype = {
 			return "";
 
 		if (this.ATTR_CLASSID == constant) {
-			if (elem.getAttribute("id"))
-				return 'id("'+ elem.getAttribute('id') +'")';
+                let elemId = elem.getAttribute("id")
+                if (elemId)
+                    return 'id("'+ elemId +'")';
 			if (elem.getAttribute("class"))
 				return elem.nodeName.toLowerCase() + '[@class="' + elem.getAttribute("class") + '"]';
 			return elem.nodeName.toLowerCase();
@@ -838,6 +882,7 @@ Inspector.prototype = {
  * 改自 UserStyleManager 扩展
  */
 const XUL = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+const XHTML = "http://www.w3.org/1999/xhtml";
 
 const XPathKeywordsList = [
     "comment()", "node()", "text()",
@@ -848,7 +893,7 @@ const XPathKeywordsList = [
     "floor(", "last()", "number(", "position()", "round(", "sum(", "boolean(", "contains(",
     "false()", "lang(", "not(", "starts-with(", "string-length(", "true()",
 
-    "and", "or","div", "mod",
+    // "and", "or","div", "mod",
 
     "child::", "parent::", 
     "descendant::", "ancestor::",
@@ -859,18 +904,27 @@ const XPathKeywordsList = [
     "self::", "attribute::",
 ];
 
-
 function setupAutoCompleter(textBox) {
     var ap = new XPathAutoCompleter(textBox);
-    textBox.addEventListener("keypress", ap.handleKeyPress.bind(ap), false);
+    textBox.addEventListener("keypress", function(event) {
+        ap.handleKeyPress(event);
+        if (event.keyCode != 13) return;
+        if (ap.panel.state != "open" || (ap.panel.state == "open" && !ap.list.selectedItem)) {  // 没有自动补全的情况
+            var type = event.target.id.replace("sw-", "");
+            siteinfo_writer.xpathTest(type);
+        }
+    }, false);
     textBox.addEventListener("keyup", ap.handleKeyUp.bind(ap), false);
+    return ap;
 }
 
 function XPathAutoCompleter(textBox){
     this.editor = textBox;
-    this.panel = document.getElementById("autocompletePanel");
-    this.list = document.getElementById("autocompleteList");
 
+    this.panel = document.getElementById("sw-autocompletePanel");
+    this.list = document.getElementById("sw-autocompleteList");
+    this.popupMeasurer = document.getElementById('sw-measurer');
+    
     this.list.addEventListener("click", this.autocompletePanelPress.bind(this), false);
     this.list.addEventListener("keypress", this.autocompletePanelPress.bind(this), false);
     this.list.addEventListener("popupshown", this.autocompletePanelOpen.bind(this), false);
@@ -970,19 +1024,7 @@ XPathAutoCompleter.prototype = {
                         this.setText(value, currentPos, currentPos);
                         this.setCaretOffset(currentPos + value.length);
                         this.panel.hidePopup();
-                        return;
                     }
-                }
-
-                // 不在自动补全状态时，检测 xpath
-                var type = event.target.id.replace("sw-", "");
-                switch (type) {
-                    case 'nextLink':
-                        siteinfo_writer.xpathTest('nextLink');
-                        break;
-                    case 'pageElement':
-                        siteinfo_writer.xpathTest('pageElement');
-                        break;
                 }
                 return;
         }
@@ -1100,15 +1142,28 @@ XPathAutoCompleter.prototype = {
                     richlist.appendChild(item);
                 }
 
-                var x = window.screenX + Math.min(currentPos * 6, window.innerWidth - (maxLen*8 + 30));
+                // // 不太准确
+                // var pos = this.editor.selectionStart;
+                // var offsetX = window.screenX + Math.min(position * 6, window.innerWidth - (maxLen*8 + 30));
 
-                this.panel.openPopup(this.editor, "before_start", x);
+                //
+                var preText = text.slice(0, currentPos);
+                var offsetX = this.getTextWidth(preText);
+
+                this.panel.openPopup(this.editor, "before_start", offsetX, 0, false, false);
 
                 richlist.focus();
                 richlist.currentIndex = richlist.selectedIndex = 0;
                 this.editor.focus();
             }
         }
+    },
+
+    getTextWidth: function(text){
+        var measurer = this.popupMeasurer;
+        measurer.style.fontSizeAdjust = this.editor.style.fontSizeAdjust;
+        measurer.textContent = text;
+        return measurer.offsetWidth;
     },
 
     //  function to handle click/enter on the panel
@@ -1134,6 +1189,93 @@ XPathAutoCompleter.prototype = {
     },
 };
 
+/**
+ * 调用自带的开发工具或 Firebug
+ */
+var Inspect = (function(){
+    let mainWin = window;
+
+    let Firebug = mainWin.Firebug;
+    let gDevTools = mainWin.gDevTools;
+    let gBrowser = mainWin.gBrowser;
+    let gDevToolsBrowser = mainWin.gDevToolsBrowser;
+
+    let devtools = (function(){
+        /*
+         * 有这么变的吗，四个版本，变了三次地址！！！
+         */
+        let devtools = {};
+        let version = Services.appinfo.version.split(".")[0];
+        let DEVTOOLS_URI;
+        if (version >= 24) {
+            DEVTOOLS_URI = "resource://gre/modules/devtools/Loader.jsm";
+            ({devtools} = Cu.import(DEVTOOLS_URI, {}));
+        } else if (version < 24 && version >= 23) {
+            DEVTOOLS_URI = "resource:///modules/devtools/gDevTools.jsm";
+            ({devtools} = Cu.import(DEVTOOLS_URI, {}));
+        } else if (version < 23 && version >= 20) {
+            DEVTOOLS_URI = "resource:///modules/devtools/Target.jsm";
+            devtools = Cu.import(DEVTOOLS_URI, {});
+        }
+        return devtools;
+    })();
+
+    let inspectWithDevtools = function (elem){
+        let tt = devtools.TargetFactory.forTab(mainWin.gBrowser.selectedTab);
+        return gDevTools.showToolbox(tt, "inspector").then((function (elem) {
+            return function(toolbox) {
+                let inspector = toolbox.getCurrentPanel();
+                inspector.selection.setNode(elem, "Siteinfo-writer-Inspector");
+            }
+        })(elem));
+    };
+
+    let inspectWithFirebug = function (elem){
+        Firebug.browserOverlay.startFirebug(function(Firebug){
+            Firebug.Inspector.inspectFromContextMenu(elem);
+        });
+    };
+
+    let start = function(elem, useFirebug){
+        if(!elem){
+            if(useFirebug && Firebug){
+                mainWin.document.getElementById("cmd_firebug_toggleInspecting").doCommand();
+            }else{
+                gDevToolsBrowser.selectToolCommand(gBrowser, "inspector");
+            }
+            return;
+        }
+
+        // 已经打开则直接启动
+        if(Firebug && Firebug.isInitialized && Firebug.currentContext){
+            Firebug.browserOverlay.startFirebug(function(Firebug){
+                Firebug.Inspector.inspectFromContextMenu(elem);
+            });
+            return;
+        }else{  // 检测自带开发工具是否已经启动
+            let target = devtools.TargetFactory.forTab(gBrowser.selectedTab);
+            let toolbox = gDevTools.getToolbox(target);
+            if(toolbox){
+                inspectWithDevtools(elem);
+                return;
+            }
+        }
+
+        // 没有打开则启动
+        if(useFirebug && Firebug){
+            inspectWithFirebug(elem);
+        }else{
+            inspectWithDevtools(elem);
+        }
+    };
+
+    return {
+        start: start,
+        inspectWithDevtools: inspectWithDevtools,
+        inspectWithFirebug: inspectWithFirebug
+    };
+})();
+
 
 function log(arg){ Application.console.log("[SITEINFO_Writer] " + arg); }
 function $(id) document.getElementById(id);
@@ -1142,6 +1284,27 @@ function $C(name, attr) {
 	var el = document.createElement(name);
 	if (attr) Object.keys(attr).forEach(function(n) el.setAttribute(n, attr[n]));
 	return el;
+}
+
+function getElementsMix(selector) {
+    var elements = null;
+    var autoGetLink = window.uAutoPagerize.autoGetLink;
+    var doc = content.document;
+    if(selector.startsWith("css;")){
+        selector = selector.slice(4);
+        if(selector)
+            elements = doc.querySelectorAll(selector);
+    }else if(autoGetLink && selector.trim() == "auto;"){
+        let nextLink = autoGetLink(doc);
+        if(nextLink)
+            elements = [nextLink];
+    }else{
+        try {
+            elements = getElementsByXPath(selector, doc);
+        } catch (e) {}
+    }
+
+    return elements;
 }
 
 function wildcardToRegExpStr(urlstr) {

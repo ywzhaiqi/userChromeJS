@@ -112,6 +112,33 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
 
 ## 示例
 
+打开方式(默认当前页面)，通过`where` 更改，具体`tab`(前台)、`tabshifted`(后台)、`window`(窗口)
+
+Google 相似图片搜索
+
+	page({
+	    label: 'Google 相似图片搜索',
+	    url : 'https://www.google.com/searchbyimage?image_url=%IMAGE_URL%',
+	    insertAfter: "context-viewimageinfo",
+	    condition: "image",
+	    where: 'tab',
+	});
+
+四引擎搜图
+
+	page({
+	    label: '四引擎搜图',
+	    condition: "image",
+	    image: 'http://www.tineye.com/favicon.ico',
+	    oncommand: function() {
+	        var url = encodeURIComponent(gContextMenu.mediaURL || gContextMenu.imageURL || gContextMenu.bgImageURL);
+	        gBrowser.addTab('https://www.google.com/searchbyimage?safe=off&image_url=' + url);
+	        gBrowser.addTab('http://www.tineye.com/search/?pluginver=firefox-1.0&sort=size&order=desc&url=' + url);
+	        gBrowser.addTab('http://stu.baidu.com/i?rt=0&rn=10&ct=1&tn=baiduimage&objurl=' + url);
+	        gBrowser.addTab('http://pic.sogou.com/ris?query=' + url);
+	    }
+	});
+
 示例：页面右键添加一个菜单
 
     page({
@@ -199,7 +226,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     page({
         id: "menu_firebug_firebugInspect",
         accesskey: "F",
-        clone: false  // 直接修改原菜单，还原回去需重启后生效
+        clone: false  // 直接修改原菜单，还原回去需重启生效
     });
 
 示例：打开相对路径程序或文件夹
@@ -253,57 +280,42 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
         }
     });
 
-示例：标签右键增加 `复制地址（BBS、MD）` 菜单，左键复制 BBS 格式，中键原标题，右键 MD 格式，可去除标题一定内容。
+示例：标签右键或链接右键增加 `复制地址（BBS、MD）` 菜单，左键复制 BBS 格式，中键原标题，右键 MD 格式，可去除标题一定内容。
+
+    function copyBBS_or_MD(event){
+        var title = addMenu.convertText("%RLINK_TEXT%") || addMenu.convertText("%TITLE%"),
+            url = addMenu.convertText("%RLINK%") || addMenu.convertText("%URL%");
+
+        [" - 互助分享 - 大气谦和!", "_免费高速下载|百度云 网盘-分享无限制", " - Powered by Discuz!",
+            "百度云 网盘-", "的分享", 
+        ].forEach(function(r){ title = title.replace(r, ""); });
+
+        switch(event.button){
+            case 0:
+                addMenu.copy("[url=" + url + "]" + title + "[/url]");
+                break;
+            case 1:
+                addMenu.copy(title);
+                event.target.parentNode.hidePopup();
+                break;
+            case 2:
+                addMenu.copy("[" + title + "](" + url + ")");
+                break;
+        }
+    }
 
     tab({
         label: "复制地址（BBS、MD）",
         tooltiptext: "左键复制 BBS 格式，右键 MD 格式",
-        onclick: function(event){
-            var title = addMenu.convertText("%TITLE%"),
-                url = addMenu.convertText("%URL%");
-
-            [" - 互助分享 - 大气谦和!", "_小说阅读页|小说下载"].forEach(function(r){ title = title.replace(r, ""); });
-
-            switch(event.button){
-                case 0:
-                    addMenu.copy("[url=" + url + "]" + title + "[/url]");
-                    break;
-                case 1:
-                    addMenu.copy(title);
-                    event.target.parentNode.hidePopup();
-                    break;
-                case 2:
-                    addMenu.copy("[" + title + "](" + url + ")");
-                    break;
-            }
-        }
+        onclick: copyBBS_or_MD
     });
 
-示例：链接右键增加 `复制地址（BBS、MD）` 菜单，基本同上，略加修改
-
     page({
-        label: "复制地址（BBS、MD）",
-        condition: "link",
+        label: "复制链接（BBS、MD）",
+        condition: "link noimage",
         tooltiptext: "左键复制 BBS 格式，右键 MD 格式",
-        onclick: function(event){
-            var title = addMenu.convertText("%RLINK_TEXT%"),
-                url = addMenu.convertText("%RLINK%");
-
-            [" - 互助分享 - 大气谦和!"].forEach(function(r){ title = title.replace(r, ""); });
-
-            switch(event.button){
-                case 0:
-                    addMenu.copy("[url=" + url + "]" + title + "[/url]");
-                    break;
-                case 1:
-                    addMenu.copy(title);
-                    event.target.parentNode.hidePopup();
-                    break;
-                case 2:
-                    addMenu.copy("[" + title + "](" + url + ")");
-                    break;
-            }
-        }
+        insertBefore: "context-sep-copylink",
+        onclick: copyBBS_or_MD
     });
 
 示例：标签的右键菜单中加入复制图标网址的功能，左键 base64，右键 URL

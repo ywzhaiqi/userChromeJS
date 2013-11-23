@@ -4,7 +4,7 @@
 // @author       ywzhaiqi
 // @include      main
 // @charset      utf-8
-// @version      0.9
+// @version      2013.11.23
 // @downloadURL  https://raw.github.com/ywzhaiqi/userChromeJS/master/AddonsPage/AddonsPage.uc.js
 // @homepageURL  https://github.com/ywzhaiqi/userChromeJS/tree/master/AddonsPage
 // @reviewURL    http://bbs.kafan.cn/thread-1617407-1-1.html
@@ -22,8 +22,11 @@
 
 location == "chrome://browser/content/browser.xul" && (function(){
 
-    var iconURL = "";  // uc 脚本列表的图标，没法用 base64，类似下面的路径
-    //var iconURL = "chrome://scriptish/skin/third-party/uso_medium.png";
+    var iconURL = "";  // uc 脚本列表的图标
+    
+    var prefs = {
+        debug: 0,
+    };
 
     if(window.AM_Helper){
         window.AM_Helper.uninit();
@@ -34,7 +37,6 @@ location == "chrome://browser/content/browser.xul" && (function(){
         delete window.userChromeJSAddon;
     }
 
-    let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
     Cu.import("resource://gre/modules/Services.jsm");
     Cu.import("resource://gre/modules/AddonManager.jsm");
     Cu.import("resource://gre/modules/XPIProvider.jsm");
@@ -201,7 +203,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
             var editScriptItem = doc.getElementById("AM-edit-script"),
                 reloadUCItem = doc.getElementById("AM-reload-uc");
             editScriptItem.hidden = !isUserChromeJS;
-            reloadUCItem.hidden = !isUserChromeJS;
+            reloadUCItem.hidden = !prefs.debug || !isUserChromeJS;
 
             // install url
             var openInstallURLItem = doc.getElementById("AM-open-url");
@@ -336,15 +338,14 @@ location == "chrome://browser/content/browser.xul" && (function(){
         },
         launchEditor: function(path){
             var editor = Services.prefs.getCharPref("view_source.editor.path");
-            var UI = Cc['@mozilla.org/intl/scriptableunicodeconverter'].createInstance(Ci.nsIScriptableUnicodeConverter);
-
-            var platform = window.navigator.platform.toLowerCase();
-            if (platform.indexOf('win') > -1) {
-                UI.charset = 'GB2312'; // Shift_JIS
-            } else {
-                UI.charset = 'UTF-8';
+            if (!editor) {
+                toOpenWindowByType('pref:pref', 'about:config?filter=view_source.editor.path');
+                return;
             }
 
+            var UI = Cc['@mozilla.org/intl/scriptableunicodeconverter'].createInstance(Ci.nsIScriptableUnicodeConverter);
+            var platform = window.navigator.platform.toLowerCase();
+            UI.charset = platform.indexOf('win') > -1 ? 'GB2312' : 'UTF-8';
             path = UI.ConvertFromUnicode(path);
 
             var appfile = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);

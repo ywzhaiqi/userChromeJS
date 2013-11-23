@@ -9,6 +9,7 @@ AddonsPage.uc.js
  - 附件组件详细信息页面新增GM脚本、扩展、主题安装地址和插件路径，右键即复制。
  - 新增 uc脚本管理页面
  - 右键菜单 "查看附加组件" 需要 DOM Inspector
+ - **AddonsPageSimple.uc.js** 是精简版，仅在附加组件页面添加 uc脚本面板，无右键菜单等。
 
 #### 右键菜单
 

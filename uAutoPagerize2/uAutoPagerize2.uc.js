@@ -116,9 +116,7 @@ if (typeof window.uAutoPagerize != 'undefined') {
     window.uAutoPagerize.destroy();
 
     // 补上 siteinfo_writer 菜单
-    (function(){
-        if (!window.siteinfo_writer) return;
-
+    if (window.siteinfo_writer) {
         var menuitem = $C("menuitem", {
             id: "sw-popup-menuitem",
             class: "sw-add-element",
@@ -127,8 +125,8 @@ if (typeof window.uAutoPagerize != 'undefined') {
         });
         setTimeout(function(){
             document.getElementById("uAutoPagerize-popup").appendChild(menuitem);
-        }, 2000);
-    })();
+        }, 1000);
+    }
 }
 
 // 以下 設定が無いときに利用する
@@ -147,6 +145,10 @@ var USE_IFRAME = true;           // 是否启用 iframe 加载下一页（浏览
 var PRELOADER_NEXTPAGE = true;   // 提前预读下一页..就是翻完第1页,立马预读第2页,翻完第2页,立马预读第3页..(大幅加快翻页快感-_-!!)
 var ADD_TO_HISTORY = false;      // 添加下一页链接到历史记录
 var SEPARATOR_RELATIVELY = true; // 分隔符.在使用上滚一页或下滚一页的时候是否保持相对位置..
+// 额外的设置，在配置文件中
+var prefs = {
+    pauseA: false,            // 快速停止翻页开关
+};
 
 var ns = window.uAutoPagerize = {
     INCLUDE_REGEXP : /./,
@@ -523,9 +525,12 @@ var ns = window.uAutoPagerize = {
 			ns.INCLUDE = sandbox.INCLUDE;
 		// if (sandbox.EXCLUDE)
 		// 	ns.EXCLUDE = sandbox.EXCLUDE;
+        
+        if (sandbox.prefs) {
+            prefs = sandbox.prefs;
+        }
 
-		if (isAlert)
-            alerts('uAutoPagerize', '配置文件已经重新载入');
+		if (isAlert) alerts('uAutoPagerize', '配置文件已经重新载入');
 
 		return true;
 	},
@@ -1092,6 +1097,7 @@ AutoPager.prototype = {
     req: null,
     pageNum: 1,
     _state: 'disable',
+    myRemoves: [],
     get state() this._state,
     set state(state) {
         if (this.state !== "terminated" && this.state !== "error") {
@@ -1157,6 +1163,8 @@ AutoPager.prototype = {
         if (this.getScrollHeight() == this.win.innerHeight)
             this.body.style.minHeight = (this.win.innerHeight + 1) + 'px';
 
+        this.addPauseContrl();
+
         if (PRELOADER_NEXTPAGE) {  // 提前预读
             this.request();
         }
@@ -1166,6 +1174,10 @@ AutoPager.prototype = {
         this.win.removeEventListener("pagehide", this, false);
         this.removeListener();
         this.abort();
+
+        this.myRemoves.forEach(function(func){
+            func();
+        });
 
         if (isRemoveAddPage) {
             var separator = this.doc.querySelector('.autopagerize_page_separator, .autopagerize_page_info');
@@ -1221,6 +1233,47 @@ AutoPager.prototype = {
             case "AutoPagerizeDisableRequest":
                 this.state = "disable";
                 break;
+        }
+    },
+    addPauseContrl: function() {
+        if (!prefs.pauseA) return;
+
+        var self = this;
+
+        var Sbutton = ['target', 'shiftKey', 'ctrlKey', 'altKey'];
+        var ltype = prefs.mouseA ? 'mousedown' : 'dblclick';
+
+        var button_1 = Sbutton[prefs.Pbutton[0]];
+        var button_2 = Sbutton[prefs.Pbutton[1]];
+        var button_3 = Sbutton[prefs.Pbutton[2]];
+
+        this.doc.addEventListener(ltype, pausehandler, false);
+        this.myRemoves.push(function() {
+            self.doc.removeEventListener(ltype, pausehandler, false);
+        });
+
+        var Sctimeout;
+        
+        function pausehandler(e) {
+            if (e[button_1] && e[button_2] && e[button_3]) {
+                if (e.type == 'mousedown') {
+                    self.doc.addEventListener('mouseup', clearPause, false);
+                    Sctimeout = self.win.setTimeout(pauseIt, prefs.Atimeout);
+                } else {
+                    pauseIt();
+                }
+            }
+        }
+
+        function clearPause() {
+            self.win.clearTimeout(Sctimeout);
+            self.doc.removeEventListener('mouseup', arguments.callee, false);
+        }
+
+        function pauseIt() {
+            self.stateToggle();
+            if (prefs.stop_ipage) self.ipagesMode = false;
+            self.scroll();
         }
     },
     stateToggle: function() {

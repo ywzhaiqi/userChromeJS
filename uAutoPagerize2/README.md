@@ -7,6 +7,7 @@ uAutoPagerize 中文规则简化改进版。跟 [uAutoPagerize](../uAutoPagerize
  - **中文规则数据库**为：[Super_preloaderPlus_one for Greasemonkey](http://userscripts.org/scripts/show/178900)，这是我用于其它浏览器的翻页脚本 + 数据库。
  - **按钮默认位置**为状态栏（可改为地址栏），不可移动，也不会有按钮找不到的问题。
  - 新增 `添加下一页到历史记录`。
+ - 新增 `鼠标双击或按键暂停翻页`，在配置文件中。
  - 配置文件的 EXCLUDE（黑名单）已经不可用，改在右键菜单里设置，存储在 about:config 中。
  - 无多功能的分隔条，无强制翻页（功能的实现不完美），SITEINFO_Writer.uc.js 可能有问题（我已经不再使用）。
 

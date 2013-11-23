@@ -128,7 +128,7 @@ window.siteinfo_writer = {
 
         this.uninit();
     },
-    observe : function (aSubject, aTopic, aData) {
+    observe: function (aSubject, aTopic, aData) {
         if (aTopic == "xul-overlay-merged") {
             this.popup = $("mainPopupSet").appendChild($C("menupopup", {
                 id: "sw-popup",
@@ -323,7 +323,7 @@ window.siteinfo_writer = {
 	},
 	toSuperPreLoaderFormat: function() {
         var spdb = "\t{";
-        spdb += "siteName: '" + this.siteName.value + "',\n";
+        spdb += "name: '" + this.siteName.value + "',\n";
         spdb += "\t\turl: /" + this.url.value.replace(/\//g, "\\\/") + "/i,\n";
         spdb += "\t\texampleUrl: '" + content.location.href + "',\n";
         spdb += "\t\tnextLink: '" + this.nextLink.value + "',\n";
@@ -345,9 +345,9 @@ window.siteinfo_writer = {
         }
 	},
 	getCurPageInfo: function(){
-		if(!uAutoPagerize) return;
+		if(!window.uAutoPagerize) return;
 
-		var list = uAutoPagerize.getInfoFromURL();
+		var list = window.uAutoPagerize.getInfoFromURL();
 		if(!list) return;
 
 		var self = this;
@@ -404,11 +404,10 @@ window.siteinfo_writer = {
 	},
     // autopager 查询网站 install(a36122) 没有引号的错误。
     fixAutoPagerBug: function(doc){
-        var link, links, onclick;
-        links = doc.querySelectorAll("a.install");
+        var links = doc.querySelectorAll("a.install");
         for (var i = links.length - 1; i >= 0; i--) {
-            link = links[i];
-            onclick = link.getAttribute("onclick").replace(/install\((\w+)\)/, "install('$1')");
+            let link = links[i];
+            let onclick = link.getAttribute("onclick").replace(/install\((\w+)\)/, "install('$1')");
             link.setAttribute("onclick", onclick + ";return false;");
         }
     },
@@ -734,7 +733,7 @@ Inspector.prototype = {
 	ATTR_FULL: 4,
 	TEXT: 5,
 	NEXT_REG: /[下后][一]?[页张个篇章节步]|next/,
-        PAGE_KEY: /page|nav|pg/,
+    PAGE_KEY: /page|nav|pg/,
 	getXPath: function(originalTarget) {
 		var nodes = getElementsByXPath(
 			'ancestor-or-self::*[not(local-name()="html" or local-name()="HTML" or local-name()="body" or local-name()="BODY")]', originalTarget).reverse();

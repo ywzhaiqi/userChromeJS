@@ -3,7 +3,8 @@ userChromeJS for Firefox
 
 修改、原创、自用的uc脚本。注： **以下uc脚本可能包含个人使用习惯**
 
-## 资源地址
+资源地址
+--------
 
  - [userChrome.js 维基（日文）](http://wiki.nothing.sh/page/userChrome.js%CD%D1%A5%B9%A5%AF%A5%EA%A5%D7%A5%C8)，最全的uc脚本维基。
  - [Griever/userChromeJS · GitHub（日文）](https://github.com/Griever/userChromeJS)，原创作者。
@@ -12,15 +13,18 @@ userChromeJS for Firefox
 
 以下中文
 
- - [UserChromeJS脚本 - 紫云飞](http://www.cnblogs.com/ziyunfei/archive/2011/11/25/2263756.html)，原创作者。
  - [卡饭论坛uc脚本索引](http://bbs.kafan.cn/forum.php?mod=viewthread&tid=1340501&page=1#pid25548028)
  - [Mozest.com uc脚本论坛区](https://g.mozest.com/forum-75-1)
  - [Mozest.com uc脚本下载区](https://j.mozest.com/zh-CN/ucscript/)
- - [ywzhaiqi/userChromeJS · GitHub](https://github.com/ywzhaiqi/userChromeJS)，本人地址。
+ - [UserChromeJS脚本 - 紫云飞](http://www.cnblogs.com/ziyunfei/archive/2011/11/25/2263756.html)，原创作者。
+ - [zbinlin — Bitbucket](https://bitbucket.org/zbinlin)
  - [lastdream2013/userChrome · GitHub](https://github.com/lastdream2013/userChrome)
+ - [feiruo/userChromeJS · GitHub](https://github.com/feiruo/userChromeJS)
+ - [黒仪大螃蟹](http://pan.baidu.com/share/home?uk=2467242534#category/type=0)
 
 
-## 说明
+说明
+----
 
 ### 文件夹
 

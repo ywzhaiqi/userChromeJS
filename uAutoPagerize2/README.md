@@ -1,7 +1,7 @@
 uAutoPagerize2.uc.js
 ====================
 
-uAutoPagerize 中文规则简化改进版。跟 [uAutoPagerize](../uAutoPagerize) 比
+uAutoPagerize 中文规则简化改进版，原作者链接：[Griever/userChromeJS](https://github.com/Griever/userChromeJS/tree/master/uAutoPagerize)。跟 [uAutoPagerize](../uAutoPagerize) 比
 
  - 基于日文原版重新改写。
  - **中文规则数据库**为：[Super_preloaderPlus_one for Greasemonkey](http://userscripts.org/scripts/show/178900)，这是我用于其它浏览器的翻页脚本 + 数据库。
@@ -9,7 +9,7 @@ uAutoPagerize 中文规则简化改进版。跟 [uAutoPagerize](../uAutoPagerize
  - 新增 `添加下一页到历史记录`。
  - 新增 `鼠标双击或按键暂停翻页`，在配置文件中。
  - 配置文件的 EXCLUDE（黑名单）已经不可用，改在右键菜单里设置，存储在 about:config 中。
- - 无多功能的分隔条，无强制翻页（功能的实现不完美），SITEINFO_Writer.uc.js 可能有问题（我已经不再使用）。
+ - 无多功能的分隔条，无强制翻页。
 
 ### 右键菜单
 
@@ -33,10 +33,23 @@ uAutoPagerize 中文规则简化改进版。跟 [uAutoPagerize](../uAutoPagerize
 - 百度如果无法翻页，请清除 cookie
 - [uAutoPagerizeUI](uAutoPagerizeUI)：图形管理规则，待完善。
 
+### Google 搜索的问题
+
+下面的是 [Super_preloaderPlus_one](http://userscripts.org/scripts/show/178900) 脚本的问题，uc 脚本无问题。
+
+不支持从主页搜索的翻页，只能用这样的搜索
+
+	https://www.google.com/search?q=firefox
+
+这几类都不支持
+
+	https://www.google.com/#newwindow=1&q=firefox
+	https://www.google.com/webhp?hl=en&tab=ww&ei=dhFeUuHaBo2aiAeNm4CgCw&ved=0CBgQ1S4#hl=en&newwindow=1&q=firefox
+
 SITEINFO_Writer.uc.js
 --------------------
 
-规则辅助工具。
+规则辅助工具，原作者链接：[SITEINFOを書く.uc.js](https://gist.github.com/Griever/1044551)。
 
 - 略加改进的选取 xpath 生成
 - xpath 正确与否的颜色提示

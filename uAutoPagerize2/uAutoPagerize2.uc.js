@@ -589,12 +589,20 @@ var ns = window.uAutoPagerize = {
                 }
             });
 
+            if (info.autopager.uAutoPagerize2) {
+                for (var name in info.autopager.uAutoPagerize2) {
+                    newInfo[name] = info.autopager.uAutoPagerize2[name];
+                }
+            }
+
             newList.push(newInfo);
         }
         return newList;
     },
 	launch: function(win, timer, DOMLoad){
         if (!win) return;
+        var doc = win.document;
+        if (!doc) return;
 
         // 监测文件是否更新
         if(ns.isModified){
@@ -613,7 +621,6 @@ var ns = window.uAutoPagerize = {
             }
         }
 
-        var doc = win.document;
         if (!/html|xml/i.test(doc.contentType) ||
             doc.body instanceof HTMLFrameSetElement ||
             win.frameElement && !(win.frameElement instanceof HTMLFrameElement) ||
@@ -1069,19 +1076,23 @@ var ns = window.uAutoPagerize = {
     },
     edit: function(aFile) {
         if (!aFile || !aFile.exists() || !aFile.isFile()) return;
-        var editor = Services.prefs.getCharPref("view_source.editor.path");
-        if (!editor) {
+        var editor = Services.prefs.getComplexValue("view_source.editor.path", Ci.nsILocalFile);
+        if (!editor.exists()) {
             alert("编辑器的路径未设定。\n请设置 view_source.editor.path");
-            var url = "about:config?filter=view_source.editor";
+            var url = "about:config?filter=view_source.editor.path";
             openLinkIn(url, "tab", { inBackground: false});
             return;
         }
 
-        try {
-            var UI = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
+        var UI = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
             UI.charset = window.navigator.platform.toLowerCase().indexOf("win") >= 0? "gbk": "UTF-8";
+        var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
+
+        try {
             var path = UI.ConvertFromUnicode(aFile.path);
-            exec(editor, path);
+            var args = [path];
+            process.init(editor);
+            process.run(false, args, args.length);
         } catch (e) {}
     },
     getElementsByXPath: getElementsByXPath,
@@ -2542,117 +2553,6 @@ function saveFile(name, data) {
     foStream.init(file, 0x02 | 0x08 | 0x20, 0664, 0);
     foStream.write(data, data.length);
     foStream.close();
-}
-
-function exec(path, arg){
-    var file    = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
-    var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
-    try {
-        var a = (typeof arg == 'string' || arg instanceof String) ? arg.split(/\s+/) : [arg];
-        file.initWithPath(path);
-
-        if (!file.exists()) {
-            Cu.reportError('File Not Found: ' + path);
-            return;
-        }
-
-        if (file.isExecutable()) {
-            process.init(file);
-            process.run(false, a, a.length);
-        } else {
-            file.launch();
-        }
-
-    } catch(e) {
-        debug(e);
-    }
-}
-
-function xToString(x) {
-    function toStr(x) {
-        switch (typeof x) {
-            case 'undefined':
-                return Str(x);
-            case 'boolean':
-                return Str(x);
-            case 'number':
-                return Str(x);
-            case 'string':
-                return ('"' +
-                    (x.replace(/(?:\r\n|\n|\r|\t|\\|")/g, function(a) {
-                        var ret;
-                        switch (a) { //转成字面量
-                            case '\r\n':
-                                ret = '\\r\\n'
-                                break;
-                            case '\n':
-                                ret = '\\n';
-                                break;
-                            case '\r':
-                                ret = '\\r'
-                                break;
-                            case '\t':
-                                ret = '\\t'
-                                break;
-                            case '\\':
-                                ret = '\\\\'
-                                break;
-                            case '"':
-                                ret = '\\"'
-                                break;
-                            default:
-                                break;
-                        }
-                        return ret;
-                    })) + '"');
-            case 'function':
-                var fnStr = Str(x);
-                return fnStr.indexOf('native code') == -1 ? fnStr : 'function(){}';
-            case 'object':
-                //注,object的除了单纯{},其他的对象的属性会造成丢失..
-                if (x === null) {
-                    return Str(x);
-                }
-                switch (x.constructor.name) {
-                    case "Object":
-                        var i;
-                        var rStr = '';
-                        for (i in x) {
-                            if (!x.hasOwnProperty(i)) { //去掉原型链上的属性.
-                                continue;
-                            }
-                            // rStr += toStr(i) + ':' + toStr(x[i]) + ',';
-                            rStr += i + ':' + toStr(x[i]) + ',';
-                        }
-                        return ('{' + rStr.replace(/,$/i, '') + '}');
-                    case "Array":
-                        var i;
-                        var rStr = '';
-                        for (i in x) {
-                            if (!x.hasOwnProperty(i)) { //去掉原型链上的属性.
-                                continue;
-                            }
-                            rStr += toStr(x[i]) + ',';
-                        }
-                        return '[' + rStr.replace(/,$/i, '') + ']';
-                    case "String":
-                        return toStr(Str(x));
-                    case "RegExp":
-                        return Str(x);
-                    case "Number":
-                        return Str(x);
-                    case "Boolean":
-                        return Str(x);
-                    default:
-                        //alert(x.constructor);//漏了什么类型么?
-                        break;
-                }
-            default:
-                break;
-        }
-    }
-    var Str = String;
-    return toStr(x);
 }
 
 })('\

@@ -4,11 +4,12 @@
 // @namespace      http://d.hatena.ne.jp/Griever/
 // @author         Griever
 // @modified       ywzhaiqi
-// @update         2013-11-22
 // @include        main
 // @compatibility  Firefox 5 - firefox 23a1
 // @charset        UTF-8
-// @version        下書き1
+// @version        2013.11.23
+// @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/uAutoPagerize2/SITEINFO_Writer.uc.js
+// @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/uAutoPagerize2
 // @note           增加下一页中文选择xpath
 // @note           fix compatibility for firefox 23a1 by lastdream2013
 // @note           まだこれからつくり込む段階

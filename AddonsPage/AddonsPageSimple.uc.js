@@ -4,7 +4,7 @@
 // @author       ywzhaiqi
 // @include      main
 // @charset      utf-8
-// @version      2013.11.23
+// @version      2013.11.27
 // @downloadURL  https://raw.github.com/ywzhaiqi/userChromeJS/master/AddonsPage/AddonsPage.uc.js
 // @homepageURL  https://github.com/ywzhaiqi/userChromeJS/tree/master/AddonsPage
 // @reviewURL    http://bbs.kafan.cn/thread-1617407-1-1.html
@@ -30,6 +30,8 @@ location == "chrome://browser/content/browser.xul" && (function(){
         unloads: [],
 
         init: function(){
+            if ('userchromejs' in AddonManager.addonTypes) return;
+
             this.initScripts();
             this.registerProvider();
             this.addStyle();

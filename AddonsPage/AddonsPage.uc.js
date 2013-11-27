@@ -455,6 +455,8 @@ location == "chrome://browser/content/browser.xul" && (function(){
         unloads: [],
 
         init: function(){
+	        if ('userchromejs' in AddonManager.addonTypes) return;
+	        
             this.initScripts();
             this.registerProvider();
             this.addStyle();

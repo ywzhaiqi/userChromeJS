@@ -857,7 +857,7 @@ var ns = window.uAutoPagerize = {
                 break;
             case 1:
             case 2:
-                ns.edit(ns.file_CN);
+                ns.edit(ns.file_CN, true);
                 ns.edit(ns.file);
                 event.preventDefault();
                 break;
@@ -1074,13 +1074,19 @@ var ns = window.uAutoPagerize = {
         }
         return SP.autoGetLink(doc);
     },
-    edit: function(aFile) {
+    edit: function(aFile, showError) {
         if (!aFile || !aFile.exists() || !aFile.isFile()) return;
-        var editor = Services.prefs.getComplexValue("view_source.editor.path", Ci.nsILocalFile);
-        if (!editor.exists()) {
-            alert("编辑器的路径未设定。\n请设置 view_source.editor.path");
-            var url = "about:config?filter=view_source.editor.path";
-            openLinkIn(url, "tab", { inBackground: false});
+        var editor;
+        try {
+            editor = Services.prefs.getComplexValue("view_source.editor.path", Ci.nsILocalFile);
+        } catch(e) {}
+        
+        if (!editor || !editor.exists()) {
+            if (showError) {
+                alert("编辑器的路径未设置!!!\n请设置 view_source.editor.path");
+                var url = "about:config?filter=view_source.editor.path";
+                openLinkIn(url, "tab", { inBackground: false});
+            }
             return;
         }
 
@@ -1093,7 +1099,9 @@ var ns = window.uAutoPagerize = {
             var args = [path];
             process.init(editor);
             process.run(false, args, args.length);
-        } catch (e) {}
+        } catch (e) {
+            alert("编辑器不正确");
+        }
     },
     getElementsByXPath: getElementsByXPath,
     getElementMix: getElementMix,

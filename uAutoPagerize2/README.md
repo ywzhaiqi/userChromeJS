@@ -33,11 +33,13 @@ uAutoPagerize 中文规则简化改进版，原作者链接：[Griever/userChrom
 - 百度如果无法翻页，请清除 cookie
 - [uAutoPagerizeUI](uAutoPagerizeUI)：图形管理规则，待完善。
 
+### uc 脚本与 GM 脚本的问题
+
+- GM 脚本不支持一些特殊的如 Google 搜索（详细如下）和水木社区页面，而 uc 脚本无此问题。
+
 ### Google 搜索的问题
 
-下面的是 [Super_preloaderPlus_one](http://userscripts.org/scripts/show/178900) 脚本的问题，uc 脚本无问题。
-
-不支持从主页搜索的翻页，只能用这样的搜索
+[Super_preloaderPlus_one](http://userscripts.org/scripts/show/178900) 脚本不支持从 Google 主页搜索的翻页，只能用这样的搜索
 
 	https://www.google.com/search?q=firefox
 

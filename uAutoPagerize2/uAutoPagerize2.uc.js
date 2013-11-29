@@ -42,7 +42,7 @@
 
 var isUrlbar = 0;  // 放置的位置，0 为附加组件栏，1 为地址栏
 
-var SEND_COOKIE = true;  // 是否发送 cookie？百度有问题时需要清除 cookie
+var SEND_COOKIE = false;  // 是否发送 cookie？百度有问题时需要清除 cookie
 
 var DB_FILENAME_CN =  "uSuper_preloader.db.js";   // 中文数据库的位置
 
@@ -624,7 +624,7 @@ var ns = window.uAutoPagerize = {
         if (!/html|xml/i.test(doc.contentType) ||
             doc.body instanceof HTMLFrameSetElement ||
             win.frameElement && !(win.frameElement instanceof HTMLFrameElement) ||
-            doc.querySelector('meta[http-equiv="refresh"]'))
+            doc.querySelector('meta[http-equiv="refresh"]') && win.location.host != 'www.shooter.cn')
             return updateIcon();
 
         if (typeof win.AutoPagerize == 'undefined') {
@@ -708,7 +708,7 @@ var ns = window.uAutoPagerize = {
 					win.requestFilters.push(info.requestFilter.bind(win));
 				if (info.responseFilter)
 					win.responseFilters.push(info.responseFilter.bind(win));
-				if (info.documentFilter)
+				if (info.documentFilter)    
 					win.documentFilters.push(info.documentFilter.bind(win));
 				if (info.filter && typeof(info.filter) === "function")
 					win.filters.push(info.filter.bind(win));
@@ -872,7 +872,7 @@ var ns = window.uAutoPagerize = {
     },
 
     getInfo: function (list, win) {
-        if (!list) list = ns.SITEINFO_CN;
+        if (!list) list = ns.MY_SITEINFO.concat(ns.SITEINFO_CN);
         if (!win)  win  = content;
         var doc = win.document;
         var locationHref = doc.location.href;
@@ -907,7 +907,7 @@ var ns = window.uAutoPagerize = {
     },
     getInfoFromURL: function (url) {
         if (!url) url = content.location.href;
-        var list = ns.SITEINFO_CN;
+        var list = ns.MY_SITEINFO.concat(ns.SITEINFO_CN);
         return list.filter(function(info, index, array) {
             try {
                 var exp = info.url_regexp || Object.defineProperty(info, "url_regexp", {
@@ -1151,7 +1151,7 @@ AutoPager.prototype = {
 
         this.iframeMode = USE_IFRAME && this.info.useiframe || false;
         this.ipagesMode = false;
-        this.log = this.win.wrappedJSObject.console.log;
+        this.C = this.win.wrappedJSObject.console;
 
         var url = this.getNextURL(nextLink ? nextLink : this.doc);
         if ( !url ) {
@@ -1468,13 +1468,13 @@ AutoPager.prototype = {
         }
 
 		if (!page || page.length < 1 ) {
-			debug('pageElement not found.' , this.info.pageElement);
+			this.C.error('pageElement not found.' , this.info.pageElement);
 			this.state = 'terminated';
 			return;
 		}
 
 		if (this.loadedURLs[this.requestURL]) {
-			debug('page is already loaded.', this.requestURL, this.info.nextLink);
+			this.C.error('page is already loaded.', this.requestURL, this.info.nextLink);
 			this.state = 'terminated';
 			return;
 		}
@@ -1487,7 +1487,7 @@ AutoPager.prototype = {
 		if (this.insertPoint.compareDocumentPosition(this.doc) >= 32) {
 			this.setInsertPoint();
 			if (!this.insertPoint) {
-				debug("insertPoint not found.", this.info.pageElement);
+				this.C.error("insertPoint not found.", this.info.pageElement);
 				this.state = 'terminated';
 				return;
 			}
@@ -1506,7 +1506,7 @@ AutoPager.prototype = {
 		// if (!ns.SCROLL_ONLY)
 		// 	this.scroll();
 		if (!url) {
-			debug('nextLink not found.', this.info.nextLink, htmlDoc.body.innerHTML);
+			this.C.error('nextLink not found.', this.info.nextLink, htmlDoc.body.innerHTML);
 			this.state = 'terminated';
 		}
 

@@ -280,6 +280,27 @@ Google 相似图片搜索
         }
     });
 
+示例：输入框右键增加菜单，在光标处插入自定义字符。
+
+	page({
+	    label: "在输入框光标处插入字符（测试）",
+	    condition: "input",
+	    insertAfter: "context-paste",
+	    oncommand: function(event) {
+	        var aText = "123";
+
+	        var input = gContextMenu.target;
+	        var aStart = aEnd = input.selectionStart;
+
+	        // 在光标处插入字符
+	        input.value = input.value.slice(0, aStart) + aText + input.value.slice(aEnd);
+
+	        // 移动光标到插入字符的后面
+	        var aOffset = aStart + aText.length;
+	        input.setSelectionRange(aOffset, aOffset);
+	    }
+	});
+
 示例：标签右键或链接右键增加 `复制地址（BBS、MD）` 菜单，左键复制 BBS 格式，中键原标题，右键 MD 格式，可去除标题一定内容。
 
     function copyBBS_or_MD(event){

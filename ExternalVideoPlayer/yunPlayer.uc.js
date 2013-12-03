@@ -5,28 +5,29 @@
 // @author         ywzhaiqi
 // @include        main
 // @charset        UTF-8
-// @version        0.9
+// @version        2013-12-3
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/blob/master/ExternalVideoPlayer/yunPlayer.uc.js
 // ==/UserScript==
 
 (function (){
 
     var API_URLS = {
-        "迅雷云播": "http://vod.xunlei.com/iplay.html?url=",
-        "快乐云点播": "http://www.happyfuns.com/happyvod/api.php#!url=",
+        "迅雷云播": "http://vod.xunlei.com/nplay.html?uvs=_4_&url=",
+        // "迅雷离线": "http://lixian.vip.xunlei.com/lixian_login.html?furl=",
+        // "远程下载": "http://yuancheng.xunlei.com/3/#a=newtask&url=",
+
         "火焰云点播": "http://www.huoyan.tv/index.php#!u=",
+        "快乐云点播": "http://www.happyfuns.com/happyvod/api.php#!url=",
         "997m云点播": "http://www.997m.com/?u=",
         "福利吧云点播": "http://fuliba.net/yun.php?u=",
         "帝国云点播": "http://vod.dgyun.com/index.htm?url=",
         "如意云点播": "http://www.ruyiba.cn/index.php#!u=",
-        "云播": "http://vod.yundianbo.info/?u=",
+        "云播": "http://vod.yundianbo.info/?from=un_567&u=",
         "CloudPlayer": "http://zdfans.com/cloudplayer/vod.html?url="
-
-        // "yktime": "http://vod.yktime.com/index.php#!u=",
-        // "亦轩云点播": "http://cs.17xbc.com/index.php#!u="
     };
 
     var LINK_CLICKED_COLOR = "#666666";
+    // var LINK_REGEXP = /.*/;
     var LINK_REGEXP = /^(?:thunder|ed2k|magnet|flashget|qqdl):|\.(?:mp4|flv|rm|rmvb|mkv|asf|wmv|avi|mpeg|mpg|mov|qt)$|^http:\/\/dl[^\/]+sendfile.vip.xunlei.com/i;
 
     if(window.yunPlayer){

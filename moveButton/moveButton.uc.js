@@ -5,7 +5,7 @@
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
-// @version        0.0.5
+// @version        2013-12-5
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/moveButton
 // @reviewURL      http://bbs.kafan.cn/thread-1572303-1-1.html
 // @note           2013/06/03 ver0.0.3  改进一些情况下无法移动的问题。
@@ -44,14 +44,14 @@
     主要参考了 addMenu.uc.js 和 rebuild_userChrome.uc.xul
  */
 
-(function(){
+location == "chrome://browser/content/browser.xul" && (function(){
 
 var moveButton = {
     buttons:[
         // { id: "autoReaderButton", bar: "PersonalToolbar", pos: 1 },
         // { id: "translatorButton",  insertAfter: "jsoff-statusbar" },
-        { id: "ScrapBookStatusPanel", insertBefore: "scriptish-button" },
-        { id: "autoReaderButton", insertAfter: "uAutoPagerize-icon"}
+        // { id: "showFlagS-icon", insertBefore: "bookmarks-menu-button" },
+        // { id: "autoReaderButton", insertAfter: "uAutoPagerize-icon"}
     ],
 
     interval: 200, // 0.2秒间隔
@@ -60,23 +60,18 @@ var moveButton = {
     timer: null,
 
     init: function(){
-        setTimeout(function(self){
+        this.delayRun();
+
+        window.addEventListener('aftercustomization', this.delayRun.bind(this), false);
+    },
+    delayRun: function(time){
+        var self = this;
+        setTimeout(function(){
             self.run();
-        }, 100, this);
-
-    },
-    uninit: function(){
-
-    },
-    handleEvent: function(e){
-        switch (e.type){
-            case "beforecustomization":
-                break;
-            case "aftercustomization":
-                break;
-        }
+        }, time || 100);
     },
     run: function(){
+        // debug('run');
         this.timer = setInterval(function(self) {
             if (++self.count > self.maxcount || self.move())
                 clearInterval(self.timer);
@@ -129,7 +124,7 @@ var moveButton = {
 moveButton.init();
 
 
-function debug() { content.console.log(arguments); }
+function debug() { Application.console.log('[moveButton DEBUG] ' + Array.slice(arguments)); }
 function $(id) { return document.getElementById(id); }
 function $A(args) { return Array.prototype.slice(args); }
 

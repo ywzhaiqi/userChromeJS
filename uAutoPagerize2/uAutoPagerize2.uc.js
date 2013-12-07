@@ -624,7 +624,7 @@ var ns = window.uAutoPagerize = {
         if (!/html|xml/i.test(doc.contentType) ||
             doc.body instanceof HTMLFrameSetElement ||
             win.frameElement && !(win.frameElement instanceof HTMLFrameElement) ||
-            doc.querySelector('meta[http-equiv="refresh"]') && win.location.host != 'www.shooter.cn')
+            doc.querySelector('meta[http-equiv="refresh"]') && /shooter\.cn/.test(win.location.host))
             return updateIcon();
 
         if (typeof win.AutoPagerize == 'undefined') {
@@ -1438,6 +1438,7 @@ AutoPager.prototype = {
         } else {
             htmlDoc = res.response;
         }
+
         this.win.documentFilters.forEach(function(i) { i(htmlDoc, this.requestURL, this.info) }, this);
 
         this.beforeLoad(htmlDoc);
@@ -2058,9 +2059,9 @@ var SP = (function() { // 来自 NLF 的 Super_preloader
         if (nbStr !== bStr) {
             var ilresult;
             try {
-                ilresult = obj.isLast(doc, win, _cplink);
+                ilresult = obj.isLast(doc, win.wrappedJSObject, _cplink);
             } catch (e) {
-                // debug("Error: getNextUrl hrefInc().", e);
+                debug("Error: hrefInc().", e);
             }
             if (ilresult) return;
             return aStr + nbStr;

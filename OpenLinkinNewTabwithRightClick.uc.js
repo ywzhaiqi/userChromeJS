@@ -10,6 +10,7 @@
     case 'B': case 'I': case 'SPAN': case 'SMALL':
     case 'STRONG': case 'EM': case 'BIG': case 'SUB':
     case 'SUP': case 'IMG': case 'S':
+    case 'FONT':
       var parent = element.parentNode;
       return parent && findLink(parent);
 

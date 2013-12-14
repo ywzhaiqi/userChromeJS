@@ -4,18 +4,23 @@
   var gTimer = null;
 
   function findLink(element) {
+		// Super_start
+		if (element.className == 'site-snapshot') {
+			return element.parentNode;
+		}
+	  
     switch (element.tagName) {
-    case 'A': return element;
+	    case 'A': return element;
 
-    case 'B': case 'I': case 'SPAN': case 'SMALL':
-    case 'STRONG': case 'EM': case 'BIG': case 'SUB':
-    case 'SUP': case 'IMG': case 'S':
-    case 'FONT':
-      var parent = element.parentNode;
-      return parent && findLink(parent);
+	    case 'B': case 'I': case 'SPAN': case 'SMALL':
+	    case 'STRONG': case 'EM': case 'BIG': case 'SUB':
+	    case 'SUP': case 'IMG': case 'S':
+	    case 'FONT':
+	      var parent = element.parentNode;
+	      return parent && findLink(parent);
 
-    default:
-      return null;
+	    default:
+	      return null;
     }
   }
 

@@ -7,52 +7,52 @@
 // @include        chrome://messenger/content/messageWindow.xul
 // @compatibility  Firefox 10, Thunderbird 10
 // @author         Alice0775
-// @version        2013/05/15
 // @note           Left DblClick        : open link on  new tab
 // @note           ctrl + Left DblClick : open current tab
 // @note           shift + Left DblClick: save as link
 // @note           全角で書かれたURLを解釈するには,user.jsにおいて,user_pref("network.enableIDN", true);
-// @note           2013/05/15 06:00 should open like http://graphs.mozilla.org/graph.html#tests=[[205,63,8]]&sel=none&displayrange=90&datatype=running
-// @note           2013/03/28 06:00 should not react by dblclick on yyy ,like <a href="http://xxx.xxx/?xxx">http://xxx.xxx/?xxx</a><br>yyy
-// @note           2013/01/18 23:00 Bug 795065 Add privacy status to nsDownload
-// @note           2013/01/08 02:00 Bug 827546
-// @note           checkLoadURIStrWithPrincipal
-// @note           2012/07/26 15:00 .hoge とか ..huga はスキップ
-// @note           2011/11/28 09:00 update TLD リスト
-// @note           2011/11/23 19:00 エラー修正
-// @note           2011/11/05 11:00 textNodeの隣がnullで親の隣がbrなら探索を終わりにしてみる
-// @note           2011/10/25 19:00 contextmenuは閉じる
-// @note           2011/10/25 19:00 選してみる
-// @note           2011/09/28 20:00 openLinkIn
-// @note           2011/09/14 13:00 url ad hoc修正
-// @note           2011/08/11 11:00 url regexp修正
-// @note           2010/10/18 18:00 探索足切り
-// @note           2010/09/29 22:00 aタグは無視するように
-// @note           2010/09/15 18:00 input要素で誤動作していた
-// @note           2010/03/22 19:00 tldcheck正規表現修正
-// @note           2009/11/30 01:00 ブロックレベル要素としてblockquote忘れてた
-// @note           2009/08/30 01:00 "|"も追加
-// @note           2009/07/05 09:00 末尾の.,削除するようにした
-// @note           2009/06/29 09:00 末尾の/の処理やんぺ (何で削除するようにしたか忘れた)
-// @note           2009/06/07 22:00 末尾の]の処理
-// @note           2009/05/06 22:00 mailto:
-// @note           2009/05/02 19:00 readonlyなtextarea等に対応させた
-// @note           2009/05/01 19:30 tldがorg等gTLDのとき動かなくなっていた2009/05/01 19:00のregression
-// @note           2009/05/01 19:00 tldの最後が. のも通るように
-// @note           2009/04/23 00:00 Thunderbirdでも, <pre>にも
-// @note           2009/03/10 00:00 <br>は区切りと見なすようにした が壊れていた修正
-// @note           2009/02/24 00:00 fixup後の末尾の/削除するようにした
-// @note           2009/01/07 22:00 tldをcheck
-// @note           2008/10/22 22:00 修正
-// @note           2008/08/22 14:00 ちょっと修正してみた
-// @note           2008/07/11 エンバグ(2008/03/01 17:00)修正
-// @note           2008/04/15 loadURIの使用やめ
-// @note           2008/03/10 12:00 例外
-// @note           2008/03/01 17:00 <br>は区切りと見なすようにした
-// @note           2008/02/24 01:00 ftp不具合修正
-// @note           2007/12/26 18:00 カンマ除外
-// @note           2007/11/07 22:00
+// @version        2013/09/13 00:00 Bug 856437 Remove Components.lookupMethod
+// @version        2013/05/15 06:00 should open like http://graphs.mozilla.org/graph.html#tests=[[205,63,8]]&sel=none&displayrange=90&datatype=running
+// @version        2013/03/28 06:00 should not react by dblclick on yyy ,like <a href="http://xxx.xxx/?xxx">http://xxx.xxx/?xxx</a><br>yyy
+// @version        2013/01/18 23:00 Bug 795065 Add privacy status to nsDownload
+// @version        2013/01/08 02:00 Bug 827546
 // ==/UserScript==
+// @version        checkLoadURIStrWithPrincipal
+// @version        2012/07/26 15:00 .hoge とか ..huga はスキップ
+// @version        2011/11/28 09:00 update TLD リスト
+// @version        2011/11/23 19:00 エラー修正
+// @version        2011/11/05 11:00 textNodeの隣がnullで親の隣がbrなら探索を終わりにしてみる
+// @version        2011/10/25 19:00 contextmenuは閉じる
+// @version        2011/10/25 19:00 選してみる
+// @version        2011/09/28 20:00 openLinkIn
+// @version        2011/09/14 13:00 url ad hoc修正
+// @version        2011/08/11 11:00 url regexp修正
+// @version        2010/10/18 18:00 探索足切り
+// @version        2010/09/29 22:00 aタグは無視するように
+// @version        2010/09/15 18:00 input要素で誤動作していた
+// @version        2010/03/22 19:00 tldcheck正規表現修正
+// @version        2009/11/30 01:00 ブロックレベル要素としてblockquote忘れてた
+// @version        2009/08/30 01:00 "|"も追加
+// @version        2009/07/05 09:00 末尾の.,削除するようにした
+// @version        2009/06/29 09:00 末尾の/の処理やんぺ (何で削除するようにしたか忘れた)
+// @version        2009/06/07 22:00 末尾の]の処理
+// @version        2009/05/06 22:00 mailto:
+// @version        2009/05/02 19:00 readonlyなtextarea等に対応させた
+// @version        2009/05/01 19:30 tldがorg等gTLDのとき動かなくなっていた2009/05/01 19:00のregression
+// @version        2009/05/01 19:00 tldの最後が. のも通るように
+// @version        2009/04/23 00:00 Thunderbirdでも, <pre>にも
+// @version        2009/03/10 00:00 <br>は区切りと見なすようにした が壊れていた修正
+// @version        2009/02/24 00:00 fixup後の末尾の/削除するようにした
+// @version        2009/01/07 22:00 tldをcheck
+// @version        2008/10/22 22:00 修正
+// @version        2008/08/22 14:00 ちょっと修正してみた
+// @version        2008/07/11 エンバグ(2008/03/01 17:00)修正
+// @version        2008/04/15 loadURIの使用やめ
+// @version        2008/03/10 12:00 例外
+// @version        2008/03/01 17:00 <br>は区切りと見なすようにした
+// @version        2008/02/24 01:00 ftp不具合修正
+// @version        2007/12/26 18:00 カンマ除外
+// @version        2007/11/07 22:00
 /* ***** BEGIN LICENSE BLOCK *****
 * Version: MPL 1.1
 *
@@ -108,7 +108,7 @@ function ucjs_textlink(event){
      && doc.contentType != 'application/xhtml+xml') return;
 
   //designModeなら何もしない
-  if (Components.lookupMethod(doc, 'designMode').call(doc) == 'on') return;
+  if (doc.designMode == 'on') return;
 
   var win = doc.defaultView;
   if(!win)return;
@@ -417,7 +417,7 @@ debug(url);
   }
 
   function isParentEditableNode(node){
-    //if (Components.lookupMethod(node.ownerDocument, 'designMode').call(node.ownerDocument) == 'on')
+    //if (node.ownerDocument.designMode == 'on')
     //  return node;
     while (node && node.parentNode) {
       try {

@@ -125,21 +125,20 @@
     }
   }, false);
 
-  // gBrowser.mPanelContainer.addEventListener('dblclick', function(e) {
-  //   content.console.log(e.button)
-  //   if (gTimer) {
-  //     try {
-  //       clearTimeout(gTimer);
-  //       var link = findLink(e.target);
-  //       if (link) {
-  //         var href = link.href;
-  //         if (href.match(/^(https?|ftp):\/\//) && click(link, e.view)) {
-  //           followLink({ link: link, window: e.view, newTab: true, activate: false });
-  //         }
-  //       }
-  //     } finally {
-  //       gTimer = null;
-  //     }
-  //   }
-  // }, false);
+  // 书签工具栏右键后台打开
+  document.getElementById("PlacesToolbar").addEventListener('click', function (e) {
+    if (e.button == 2 && !e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey) {
+      let target = e.originalTarget;
+      let aNode = target._placesNode
+      if (aNode && PlacesUtils.nodeIsBookmark(aNode)) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        let aView = this._placesView;
+        let window = aView.ownerWindow;
+        PlacesUIUtils._openNodeIn(aNode, 'tabshifted', window);
+      }
+    }
+  }, false);
+
 })();

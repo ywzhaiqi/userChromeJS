@@ -128,10 +128,11 @@
   // 书签工具栏右键后台打开
   document.getElementById("PlacesToolbar").addEventListener('click', bookmarkClicked, false);
   // 书签按钮的书签右键后台打开
-  var BMB_bookmarksPopup = document.getElementById("BMB_bookmarksPopup");
-  if (BMB_bookmarksPopup) {
-	  BMB_bookmarksPopup.addEventListener('click', bookmarkClicked, false);
-  }
+  document.getElementById("nav-bar").addEventListener('click', bookmarkClicked, false);
+  //var BMB_bookmarksPopup = document.getElementById("BMB_bookmarksPopup");
+  //if (BMB_bookmarksPopup) {
+	 // BMB_bookmarksPopup.addEventListener('click', bookmarkClicked, false);
+  //}
   
   function bookmarkClicked(e) {
 	if (e.button == 2 && !e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey) {

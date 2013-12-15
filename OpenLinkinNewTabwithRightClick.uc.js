@@ -126,19 +126,24 @@
   }, false);
 
   // 书签工具栏右键后台打开
-  document.getElementById("PlacesToolbar").addEventListener('click', function (e) {
-    if (e.button == 2 && !e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey) {
+  document.getElementById("PlacesToolbar").addEventListener('click', bookmarkClicked, false);
+  // 书签按钮的书签右键后台打开
+  var BMB_bookmarksPopup = document.getElementById("BMB_bookmarksPopup");
+  if (BMB_bookmarksPopup) {
+	  BMB_bookmarksPopup.addEventListener('click', bookmarkClicked, false);
+  }
+  
+  function bookmarkClicked(e) {
+	if (e.button == 2 && !e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey) {
       let target = e.originalTarget;
       let aNode = target._placesNode
       if (aNode && PlacesUtils.nodeIsBookmark(aNode)) {
         e.preventDefault();
         e.stopPropagation();
-
-        let aView = this._placesView;
-        let window = aView.ownerWindow;
+        
         PlacesUIUtils._openNodeIn(aNode, 'tabshifted', window);
       }
     }
-  }, false);
+  }
 
 })();

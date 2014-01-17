@@ -124,7 +124,7 @@ Google 相似图片搜索
 	    where: 'tab',
 	});
 
-四引擎搜图
+示例：四引擎搜图
 
 	page({
 	    label: '四引擎搜图',
@@ -255,6 +255,25 @@ Google 相似图片搜索
         accesskey: "y"
     });
 
+示例：修改错误控制台的按键（Ctrl+J）为以前的版本的控制台
+
+	page({
+	    id: "key_browserConsole",
+	    command: "",
+	    oncommand: "toJavaScriptConsole();",
+	    clone: false
+	})
+
+示例：移动星星到书签栏后面，并修正图标大小（firefox 26）
+
+	page({
+	    id: 'star-button',
+	    insertAfter: 'personal-bookmarks',
+	    style: 'margin-top:5px;margin-bottom:5px;',
+	    clone: false
+	})
+
+
 示例：输入框右键增加 "粘贴并确定" 菜单，先增加一个空格，然后粘贴，再确定
 
     page({
@@ -358,6 +377,63 @@ Google 相似图片搜索
        }
     })
 
+[defpt 写的灌水的菜单 - 卡饭论坛](http://bbs.kafan.cn/thread-1671512-1-1.html)
+
+    //快捷回复
+    var Quickpostsub = PageMenu({
+        label:"Quick Reply With...",
+        condition:"input",
+        insertBefore:"context-undo",
+        oncommand: function(){
+            goDoCommand("cmd_paste");
+        }
+    });
+    Quickpostsub([
+        {label:"Outlook~~~",text: "xxxxxx@outlook.com",image:" "},
+        {label:"Gmail~~~",text: "xxxxxx@gmail.com",image:" "},
+        {},
+        {label:"谢谢你的解答~~~", text: "非常感谢你的解答！！！",image:" "},
+        {label:"不用客气~~~", text: "不用客气，大家互相帮助……\u256E\uFF08\u256F\u25C7\u2570\uFF09\u256D",image:" "},
+        {label:"看起来很不错~~~", text: "看起来很不错哦，收了~~~\n谢谢LZ啦！！！",image:" "},
+        {label:"谢谢楼主分享~~~", text: "谢谢楼主的分享!这个绝对要顶！！！",image:" "},
+        {label:"楼上正解~~~", text: "楼上正解……\u0285\uFF08\u00B4\u25D4\u0C6A\u25D4\uFF09\u0283",image:" "},
+        {label:"坐等楼下解答~~~", text: "坐等楼下高手解答……⊙_⊙",image:" "}
+    ]);
+
+示例：左键用傲游打开当前页，右键直接打开傲游，相对路径（上上层 parent）。
+
+	page({
+	    label: "傲游浏览器",
+	    tooltiptext: "左键：打开傲游\r\n右键：用傲游打开",
+	    onclick: function(e) {
+	        var maxthonPath = Services.dirsvc.get("ProfD", Ci.nsILocalFile).parent.parent.path + "\\Maxthon\\bin\\Maxthon.exe";
+	        switch (e.button) {
+	            case 0:
+	                var url = addMenu.convertText("%URL%");
+	                addMenu.exec(maxthonPath, url);
+	                break;
+	            case 2:
+	                addMenu.exec(maxthonPath);
+	                break;
+	        }
+	    },
+	})
+
+示例：使用 Everything 搜索选中的文字
+
+	page({
+	    label: "Everything 搜索",
+	    oncommand: function(){
+	        var str = addMenu.convertText("-search %s");
+
+	        var UI = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
+	        UI.charset = window.navigator.platform.toLowerCase().indexOf("win") >= 0? "GBK": "UTF-8";
+	        str = UI.ConvertFromUnicode(str);
+
+	        addMenu.exec("D:\\Program Files\\Everything\\Everything.exe", str);
+	    }
+	})
+
 示例：子菜单中的 测试视频链接 只在 youku 页面显示，其它页面隐藏。
 
     var testMenu = PageMenu({
@@ -378,6 +454,13 @@ Google 相似图片搜索
         }
     ]);
 
+## 使用了其它皮肤，右键错位的情况
+
+把代码最后几行的css删除
+
+    .addMenu > .menu-iconic-left {\
+      -moz-appearance: menuimage;\
+    }\
 
 ## 可调用的方法
 

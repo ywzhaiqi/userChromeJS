@@ -380,25 +380,30 @@ Google 相似图片搜索
 [defpt 写的灌水的菜单 - 卡饭论坛](http://bbs.kafan.cn/thread-1671512-1-1.html)
 
     //快捷回复
-    var Quickpostsub = PageMenu({
-        label:"Quick Reply With...",
-        condition:"input",
-        insertBefore:"context-undo",
-        oncommand: function(){
-            goDoCommand("cmd_paste");
-        }
-    });
-    Quickpostsub([
-        {label:"Outlook~~~",text: "xxxxxx@outlook.com",image:" "},
-        {label:"Gmail~~~",text: "xxxxxx@gmail.com",image:" "},
-        {},
-        {label:"谢谢你的解答~~~", text: "非常感谢你的解答！！！",image:" "},
-        {label:"不用客气~~~", text: "不用客气，大家互相帮助……\u256E\uFF08\u256F\u25C7\u2570\uFF09\u256D",image:" "},
-        {label:"看起来很不错~~~", text: "看起来很不错哦，收了~~~\n谢谢LZ啦！！！",image:" "},
-        {label:"谢谢楼主分享~~~", text: "谢谢楼主的分享!这个绝对要顶！！！",image:" "},
-        {label:"楼上正解~~~", text: "楼上正解……\u0285\uFF08\u00B4\u25D4\u0C6A\u25D4\uFF09\u0283",image:" "},
-        {label:"坐等楼下解答~~~", text: "坐等楼下高手解答……⊙_⊙",image:" "}
-    ]);
+	var Quickpostsub = PageMenu({
+	    label:"Quick Reply With...",
+	    condition:"input",
+	    insertBefore:"context-undo",
+	    oncommand: function(event){
+	        var text = event.target.getAttribute('txt');
+	        if(text) {
+	            addMenu.copy(text);
+	            goDoCommand("cmd_paste"); 
+	        }
+	    }
+	});
+
+	Quickpostsub([
+	    {label:"Outlook~~~",txt: "xxxxxx@outlook.com",image:" "},
+	    {label:"Gmail~~~",txt: "xxxxxx@gmail.com",image:" "},
+	    {},
+	    {label:"谢谢你的解答~~~", txt: "非常感谢你的解答！！！",image:" "},
+	    {label:"不用客气~~~", txt: "不用客气，大家互相帮助……\u256E\uFF08\u256F\u25C7\u2570\uFF09\u256D",image:" "},
+	    {label:"看起来很不错~~~", txt: "看起来很不错哦，收了~~~\n谢谢LZ啦！！！",image:" "},
+	    {label:"谢谢楼主分享~~~", txt: "谢谢楼主的分享!这个绝对要顶！！！",image:" "},
+	    {label:"楼上正解~~~", txt: "楼上正解……\u0285\uFF08\u00B4\u25D4\u0C6A\u25D4\uFF09\u0283",image:" "},
+	    {label:"坐等楼下解答~~~", txt: "坐等楼下高手解答……⊙_⊙",image:" "}
+	]);
 
 示例：左键用傲游打开当前页，右键直接打开傲游，相对路径（上上层 parent）。
 

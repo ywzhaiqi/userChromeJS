@@ -41,7 +41,7 @@ window.siteinfo_writer = {
                       <checkbox id="sw-useiframe" label="useiframe" checked="false"/>\
                       <toolbarbutton label="重置" oncommand="siteinfo_writer.show(true);"/>\
                       <spacer flex="1"/>\
-				      <toolbarbutton class="tabs-closebutton" oncommand="siteinfo_writer.hide();"/>\
+				      <toolbarbutton class="tabs-closebutton close-icon" oncommand="siteinfo_writer.hide();"/>\
 				    </hbox>\
 				    <grid id="sw-grid">\
 				      <columns>\

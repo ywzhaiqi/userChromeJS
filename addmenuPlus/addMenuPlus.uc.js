@@ -194,12 +194,14 @@ window.addMenu = {
         ins = $("context_closeTab");
         ins.parentNode.insertBefore(
             $C("menuseparator", { id: "addMenu-tab-insertpoint", class: "addMenu-insert-point" }), ins.nextSibling);
-        ins = $("prefSep");
+        ins = $("prefSep") || $("webDeveloperMenu");
         ins.parentNode.insertBefore(
             $C("menuseparator", { id: "addMenu-tool-insertpoint", class: "addMenu-insert-point" }), ins.nextSibling);
         ins = $("appmenu-quit");
-        ins.parentNode.insertBefore(
-            $C("menuseparator", { id: "addMenu-app-insertpoint", class: "addMenu-insert-point" }), ins.nextSibling);
+        if (ins) {
+            ins.parentNode.insertBefore(
+                $C("menuseparator", { id: "addMenu-app-insertpoint", class: "addMenu-insert-point" }), ins.nextSibling);
+        }
         ins = $("devToolsSeparator");
         ins.parentNode.insertBefore($C("menuitem", {
             id: "addMenu-rebuild",

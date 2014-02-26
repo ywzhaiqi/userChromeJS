@@ -63,7 +63,8 @@ WindowHook.register("chrome://stylish/content/edit.xul",
   function winhook(aWindow) {
 
     // EDITOR_PATH = "C:\\WINDOWS\\notepad.exe";     /* windows */
-    // 如果为空则为 about:config 中 view_source.editor.path，仅window下。
+    // EDITOR_PATH = "/bin/vi"; /* unix */
+    // 如果为空则为 about:config 中 view_source.editor.path。
     var EDITOR_PATH = "";
 
     var iText = {
@@ -238,13 +239,14 @@ WindowHook.register("chrome://stylish/content/edit.xul",
     var _ext, _encode, _target = [];
 
     function editinit() {
+      _editor = EDITOR_PATH || Services.prefs.getCharPref("view_source.editor.path");
       if (window.navigator.platform.toLowerCase().indexOf("win") != -1) {
         //_editor = "C:\\WINDOWS\\notepad.exe";             /* windows */
-        _editor = EDITOR_PATH || Services.prefs.getCharPref("view_source.editor.path"); /* windows */
+         /* windows */
         _dir_separator = '\\'; /* windows */
         _os = 'win'; /* windows */
       } else {
-        _editor = "/bin/vi"; /* unix */
+        // _editor = "/bin/vi"; /* unix */
         _dir_separator = '/'; /* unix */
         _os = 'unix'; /* unix */
       }

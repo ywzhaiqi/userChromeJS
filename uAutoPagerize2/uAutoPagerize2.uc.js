@@ -664,6 +664,9 @@ var ns = window.uAutoPagerize = {
         if (/^https?:\/\/(www|encrypted)\.google\..{2,9}\/(webhp|#|$|\?)/.test(locationHref)) {
             timer = 1500;
             hashchange = true;
+        } else if (/^https?:\/\/www\.baidu\.com\/($|#wd=)/.test(locationHref)) {
+            timer = 1000;
+            hashchange = true;
         } else if (win.location.host === 'www.newsmth.net') {  // 水木清华社区延迟加载及下一页加载的修复
             timer = 1000;
             hashchange = true;

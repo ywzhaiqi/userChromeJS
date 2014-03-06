@@ -1197,9 +1197,11 @@ AutoPager.prototype = {
         this.removeListener();
         this.abort();
 
-        this.myRemoves.forEach(function(func){
-            func();
-        });
+        try {
+            this.myRemoves.forEach(function(func){
+                func();
+            });
+        } catch (e) {}
 
         if (isRemoveAddPage) {
             var separator = this.doc.querySelector('.autopagerize_page_separator, .autopagerize_page_info');

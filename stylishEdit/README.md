@@ -7,9 +7,9 @@ stylish0.5_edit.uc
 
 ## 说明
 
- - 需要有 000-windowhook.uc.js 这个脚本。
+ - 需要 **000-windowhook.uc.js** 这个脚本。
  - 如果没有反应，请设置 第63行 "EDITOR\_PATH" 路径 或 about:config 中 "view_source.editor.path" 路径。类似：
     `var EDITOR_PATH = "C:\\Program Files\\Sublime Text 2\\sublime_text.exe";`
- - Stylish有个bug，中文输入法下输入的会为空，请切换输入法。
+ - 旧版本的 Stylish 有个bug，中文输入法下输入的会为空，请切换输入法。
 
  [原作者地址（日文）](https://github.com/alice0775/userChrome.js/blob/master/stylish0.5_edit.uc.js)

@@ -21,7 +21,10 @@ location == "chrome://browser/content/browser.xul" && (function(){
 
     Cu.import("resource://gre/modules/Services.jsm");
     Cu.import("resource://gre/modules/AddonManager.jsm");
-    Cu.import("resource://gre/modules/XPIProvider.jsm");
+    // ff 29 移除？
+    try {
+	    Cu.import("resource://gre/modules/XPIProvider.jsm");
+    } catch (e) {}
 
     const isCN = Services.prefs.getCharPref("general.useragent.locale").indexOf("zh") != -1;
 

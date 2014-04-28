@@ -34,7 +34,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
 
 ### 使用技巧
 
- - 菜单栏的 "工具" 菜单中有个 "addMenu 的重新载入和编辑" 菜单，左键点击重新载入配置，右键打开文件编辑
+ - 菜单栏的 "工具" 菜单中有个 "addMenu 的重新载入和编辑" 菜单，左键点击重新载入配置，右键打开文件编辑（要先设置 about:config 中 view_source.editor.path 的值）
  - ID 为 `addMenu-rebuild`，可添加 rebuild_userChrome.uc.xul 中统一进行管理
 
 ## 配置的说明

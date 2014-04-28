@@ -31,6 +31,7 @@ uAutoPagerize 中文规则简化改进版，原作者链接：[Griever/userChrom
 ### 其它说明
 
 - 百度如果无法翻页，请清除 cookie
+- 贴吧下一页有问题，可改用脚本 [Tieba Preload for Greasemonkey](http://userscripts.org/scripts/show/423917)
 - [uAutoPagerizeUI](uAutoPagerizeUI)：图形管理规则，待完善。
 
 ### uc 脚本与 GM 脚本的问题

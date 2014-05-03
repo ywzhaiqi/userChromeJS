@@ -40,7 +40,7 @@
 
 (function(css) {
 
-var isUrlbar = 0;  // 放置的位置，0 为附加组件栏，1 为地址栏
+var isUrlbar = 1;  // 放置的位置，0 为附加组件栏，1 为地址栏
 
 var SEND_COOKIE = false;  // 是否发送 cookie？百度有问题时需要清除 cookie
 
@@ -1007,7 +1007,7 @@ var ns = window.uAutoPagerize = {
             win = content;
         if(!sepSelector)
             sepSelector = ".autopagerize_link";
-        if(!insertPoint && win.ap)
+        if(!insertPoint && win.ap && win.ap.insertPoint)
             insertPoint = win.ap.insertPoint.parentNode;
 
         var [preDS, , divS] = ns.getSeparators(win, sepSelector, insertPoint);
@@ -1025,7 +1025,7 @@ var ns = window.uAutoPagerize = {
             win = content;
         if(!sepSelector)
             sepSelector = ".autopagerize_link";
-        if(!insertPoint && win.ap)
+        if(!insertPoint && win.ap && win.ap.insertPoint)
             insertPoint = win.ap.insertPoint.parentNode;
 
         var [, nextDS, divS] = this.getSeparators(win, sepSelector, insertPoint);
@@ -1512,7 +1512,7 @@ AutoPager.prototype = {
 		// if (!ns.SCROLL_ONLY)
 		// 	this.scroll();
 		if (!url) {
-			this.C.error('nextLink not found.', this.info.nextLink, htmlDoc.body.innerHTML);
+			this.C.error('nextLink not found.', this.info.nextLink);
 			this.state = 'terminated';
 		}
 
@@ -1527,8 +1527,9 @@ AutoPager.prototype = {
         page.forEach(function(i) { fragment.appendChild(i); });
         this.win.fragmentFilters.forEach(function(i) { i(fragment, htmlDoc, page) }, this);
 
-        if (this.info.lazyImgSrc) {
-            var imgAttrs = this.info.lazyImgSrc.split('|');
+        var lazyImgSrc = (this.info.lazyImgSrc === undefined) ? prefs.lazyImgSrc : this.info.lazyImgSrc;
+        if (lazyImgSrc) {
+            var imgAttrs = lazyImgSrc.split('|');
             imgAttrs.forEach(function(attr){
                 attr = attr.trim();
                 [].forEach.call(fragment.querySelectorAll("img[" + attr + "]"), function(img){

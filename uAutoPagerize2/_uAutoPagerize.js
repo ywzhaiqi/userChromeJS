@@ -6,6 +6,8 @@ var prefs = {
         mouseA: false,           // 按住鼠标左键..否则.双击;
             Atimeout: 200,      // 按住左键时..延时.多少生效..(单位:毫秒);
         stop_ipage: true,       // 如果在连续翻页过程中暂停.重新启用后.不在继续..连续翻页..
+    // 下一页图片的修正，是 image 的属性
+    lazyImgSrc: 'zoomfile|file|original|load-src|_src|imgsrc|real_src|src2|data-lazyload-src|data-ks-lazyload|data-lazyload|data-src|data-original|data-thumb|data-imageurl|data-defer-src|data-placeholder',
 };
 
 

@@ -205,8 +205,8 @@ window.addMenu = {
         ins = $("devToolsSeparator");
         ins.parentNode.insertBefore($C("menuitem", {
             id: "addMenu-rebuild",
-            label: "addMenu 重新载入/编辑配置",
-            tooltiptext: "左键重新载入配置，右键打开文件编辑",
+            label: "AddMenuPlus",
+            tooltiptext: "左键：重载配置\n右键：编辑配置",
             oncommand: "setTimeout(function(){ addMenu.rebuild(true); }, 10);",
             onclick: "if (event.button == 2) { event.preventDefault(); addMenu.edit(addMenu.FILE); }",
         }), ins);
@@ -286,8 +286,21 @@ window.addMenu = {
     exec: function(path, arg){
         var file    = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
         var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
+        var UI = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
+        UI.charset = window.navigator.platform.toLowerCase().indexOf("win") >= 0? "GBK": "UTF-8";
         try {
-            var a = (typeof arg == 'string' || arg instanceof String) ? arg.split(/\s+/) : [arg];
+            var a;
+            if (typeof arg == 'string' || arg instanceof String) {
+                a = arg.split(/\s+/)
+            } else if (Array.isArray(arg)) {
+                a = arg;
+            } else {
+                a = [arg];
+            }
+            // 转换每个参数的编码
+            a.forEach(function(str, i){
+                a[i] = UI.ConvertFromUnicode(str);
+            });
             file.initWithPath(path);
 
             if (!file.exists()) {
@@ -798,7 +811,7 @@ window.addMenu = {
             var UI = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
             UI.charset = window.navigator.platform.toLowerCase().indexOf("win") >= 0? "GBK": "UTF-8";
             var path = UI.ConvertFromUnicode(aFile.path);
-            this.exec(editor, path);
+            this.exec(editor, [path]);
         } catch (e) {}
     },
     copy: function(aText) {

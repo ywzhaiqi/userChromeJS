@@ -256,10 +256,12 @@ window.addMenu = {
 
         if (keyword) {
             let kw = keyword + (text? " " + (text = this.convertText(text)) : "");
-            let newurl = getShortcutOrURI(kw);
+            let loc = getShortcutOrURI(kw);
+            let newurl = loc[0];
+            let postData = loc[1].value;
             if (newurl == kw && text)
                 return this.log(U("未找到关键字: ") + keyword);
-            this.openCommand(event, newurl, where);
+            this.openCommand(event, newurl, where, postData);
         }
         else if (url)
             this.openCommand(event, this.convertText(url), where);
@@ -268,7 +270,7 @@ window.addMenu = {
         else if (text)
             this.copy(this.convertText(text));
     },
-    openCommand: function(event, url, where) {
+    openCommand: function(event, url, where, postData) {
         var uri;
         try {
             uri = Services.io.newURI(url, null, null);
@@ -278,7 +280,7 @@ window.addMenu = {
         if (uri.scheme === "javascript")
             loadURI(url);
         else if (where)
-            openUILinkIn(uri.spec, where);
+            openUILinkIn(uri.spec, where, false, postData || null);
         else if (event.button == 1)
             openNewTabWith(uri.spec);
         else openUILink(uri.spec, event);
@@ -630,7 +632,7 @@ window.addMenu = {
             }
         }
 
-        let url = obj.keyword ? getShortcutOrURI(obj.keyword) : obj.url ? obj.url.replace(this.regexp, "") : "";
+        let url = obj.keyword ? getShortcutOrURI(obj.keyword)[0] : obj.url ? obj.url.replace(this.regexp, "") : "";
         if (!url) return;
 
         let uri, iconURI;
@@ -906,7 +908,7 @@ function getShortcutOrURI(aURL, aPostDataRef, aMayInheritPrincipal) {
   if (engine) {
     var submission = engine.getSubmission(param);
     aPostDataRef.value = submission.postData;
-    return submission.uri.spec;
+    return [submission.uri.spec, aPostDataRef];
   }
 
   [shortcutURL, aPostDataRef.value] =
@@ -957,7 +959,7 @@ function getShortcutOrURI(aURL, aPostDataRef, aMayInheritPrincipal) {
     // the original URL.
     aPostDataRef.value = null;
 
-    return aURL;
+    return [aURL, aPostDataRef];
   }
 
   // This URL came from a bookmark, so it's safe to let it inherit the current
@@ -965,7 +967,7 @@ function getShortcutOrURI(aURL, aPostDataRef, aMayInheritPrincipal) {
   if (aMayInheritPrincipal)
     aMayInheritPrincipal.value = true;
 
-  return shortcutURL;
+  return [shortcutURL, aPostDataRef];
 }
 
 

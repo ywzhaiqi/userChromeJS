@@ -733,7 +733,7 @@ Inspector.prototype = {
 	ATTR_NOT_CLASSID: 3,
 	ATTR_FULL: 4,
 	TEXT: 5,
-	NEXT_REG: /[下后][一]?[页张个篇章节步]|next/,
+	NEXT_REG: /[下后][一]?[页张个篇章节步]|next/i,
     PAGE_KEY: /page|nav|pg/,
 	getXPath: function(originalTarget) {
 		var nodes = getElementsByXPath(

@@ -92,7 +92,7 @@ var SITEINFO_IMPORT_URLS = [
 ];
 
 // Super_preloaderPlus 地址
-var SITEINFO_CN_IMPORT_URL = "http://userscripts.org/scripts/source/178900.user.js";
+var SITEINFO_CN_IMPORT_URL = "https://greasyfork.org/scripts/293-super-preloaderplus-one/code/Super_preloaderPlus_one.user.js";
 
 var COLOR = {
 	on: '#0f0',
@@ -583,8 +583,8 @@ var ns = window.uAutoPagerize = {
             });
             
             ["pageElement", "useiframe", "newIframe", "iloaded", "itimeout", "documentFilter", "filter", 
-                "startFilter", "stylish", 'replaceE', 'lazyImgSrc'].forEach(function(name){
-                if(info.autopager[name]){
+                "startFilter", "stylish", 'replaceE', 'lazyImgSrc', 'separatorReal'].forEach(function(name){
+                if(info.autopager[name] != undefined){
                     newInfo[name] = info.autopager[name];
                 }
             });
@@ -1103,7 +1103,7 @@ var ns = window.uAutoPagerize = {
             process.init(editor);
             process.run(false, args, args.length);
         } catch (e) {
-            alert("编辑器不正确");
+            alert("编辑器路径不正确");
         }
     },
     getElementsByXPath: getElementsByXPath,
@@ -1556,7 +1556,7 @@ AutoPager.prototype = {
             fragment.appendChild(div);
         }
 
-        var ralativePageStr = getRalativePageStr(this.lastRequestURL, this.requestURL, nextPageUrl);
+        var ralativePageStr = (this.info.separatorReal === false) ? '' : getRalativePageStr(this.lastRequestURL, this.requestURL, nextPageUrl);
 
         var hr = this.doc.createElement('hr');
         hr.setAttribute('class', 'autopagerize_page_separator');

@@ -57,6 +57,22 @@ snapLinks.init();
                 id="SnapLinksCopyLinksReverse"
                       class="hasLink"
                       oncommand="snapLinks.copyLinks(null, true);" />
+            <menuitem label="复制所有链接标题 + URL"
+                id="SnapLinksCopyLinksAndTitles"
+                      class="hasLink"
+                      oncommand="snapLinks.copyLinks(null, false, '%TITLE%\n%URL%');" />
+            <menuitem label="复制所有链接标题 + URL (MD)"
+                id="SnapLinksCopyLinksAndTitlesMD"
+                      class="hasLink"
+                      oncommand="snapLinks.copyLinks(null, false, '[%TITLE%](%URL%)');" />
+            <menuitem label="复制所有链接标题 + URL (BBS)"
+                id="SnapLinksCopyLinksAndTitlesBBS"
+                      class="hasLink"
+                      oncommand="snapLinks.copyLinks(null, false, '[url=%TITLE%]%URL%[/url]');" />
+            <menuitem label="复制所有链接URL (筛选)"
+                id="SnapLinksCopyLinksRegExp"
+                      class="hasLink"
+                      oncommand="var reg=prompt('请输入需要筛选的 RegExp', '');snapLinks.copyLinks(new RegExp(reg));" />
 			<menuitem label="在新标签页打开所有图片链接" hidden="true"
 			          id="SnapLinksOpenImageLinks"
 			          class="hasImageLink"
@@ -89,9 +105,9 @@ snapLinks.init();
 			</menupopup>
             <popup id="contentAreaContextMenu">
 				<menuitem id="snaplinksMenuEntry"
-				label="snaplinks批量操作模式"
+						label="SnapLinks"
 				oncommand="snapLinks.init();"
-				insertafter="context-viewinfo"
+						insertbefore="context-savepage"
 				class="menuitem-iconic"
 				image="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAALUlEQVQ4jWNgkEv8TxHGJ/nr18//v379HDWALgbAFJKKqWfAwIfBqAF4JInAAIZN/GgepyNAAAAAAElFTkSuQmCC"
                 />
@@ -353,7 +369,10 @@ var snapLinks = {
 		var data = {
 			"SnapLinksOpenLinks": "在新标签打开所有链接 (" + linkcount + ")",
 			"SnapLinksCopyLinks": "复制所有链接URL (" + linkcount + ")",
-			"SnapLinksCopyLinksReverse": "复制所有链接URL (" + linkcount + ")(反向)",
+			"SnapLinksCopyLinksReverse": "复制所有链接URL (" + linkcount + ") (反向)",
+			"SnapLinksCopyLinksAndTitles": "复制所有链接标题 + URL (" + linkcount + ")",
+			"SnapLinksCopyLinksAndTitlesMD": "复制所有链接标题 + URL (" + linkcount + ") (MD)",
+			"SnapLinksCopyLinksAndTitlesBBS": "复制所有链接标题 + URL (" + linkcount + ") (BBS)",
 			"SnapLinksOpenImageLinks": "在新标签页打开所有图片链接 (" + imagecount + ")",
 			"SnapLinksImageLinksOnePage": "在一个标签页显示所有图片链接 (" + imagecount + ")",
 			"SnapLinksCheckBoxSelect": "复选框 - 选中 (" + checkboxcount + ")",
@@ -385,10 +404,16 @@ var snapLinks = {
 			gBrowser.addTab(key, { ownerTab: gBrowser.mCurrentTab });
 		}
 	},
-	copyLinks : function(regexp, reverse){
+	copyLinks : function(regexp, reverse, format){
 		var links = this.elements.filter(function(elem){
 			return elem instanceof HTMLAnchorElement && (!regexp || regexp.test(elem.href))
-		}).map(function(e) e.href);
+		}).map(function(e) {
+			if (format) {
+				return format.replace('%TITLE%', e.textContent)
+								 .replace('%URL%', e.href);
+			}
+			return e.href;
+		});
 
         // 筛选出重复的
         links = this.unique(links);

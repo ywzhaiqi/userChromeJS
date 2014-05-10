@@ -1180,14 +1180,15 @@ AutoPager.prototype = {
         this.win.addEventListener("pagehide", this, false);
         this.addListener();
 
-        if (!ns.SCROLL_ONLY)
+        if (!ns.SCROLL_ONLY && !this.info.scroll_only)
             this.scroll();
         if (this.getScrollHeight() == this.win.innerHeight)
             this.body.style.minHeight = (this.win.innerHeight + 1) + 'px';
 
         this.addPauseContrl();
 
-        if (PRELOADER_NEXTPAGE) {  // 提前预读
+        if (this.state !== 'loading' && PRELOADER_NEXTPAGE) {  // 提前预读
+            this.firstPreload = true;
             this.request();
         }
     },
@@ -1308,9 +1309,13 @@ AutoPager.prototype = {
         if (this.state !== 'enable' || !ns.AUTO_START) return;
         var remain = this.getScrollHeight() - this.win.innerHeight - this.win.scrollY;
         if (remain < this.remainHeight || this.ipagesMode) {
-            if(this.tmpDoc)
+            if(this.tmpDoc) {
+                if (this.firstPreload) {
+                    this.firstPreload = false;
+                } else {
                 this.load(this.tmpDoc);
-            else
+                }
+            } else
                 this.request();
         }
     },
@@ -1457,7 +1462,7 @@ AutoPager.prototype = {
     beforeLoad: function(htmlDoc){
         if(PRELOADER_NEXTPAGE && !this.ipagesMode){
             this.tmpDoc = htmlDoc;
-            this.state = 'enable';
+            this.state = 'enable';  // 让 scroll 能继续下去
             this.scroll();
         }else{
             this.load(htmlDoc);
@@ -1474,13 +1479,13 @@ AutoPager.prototype = {
         }
 
 		if (!page || page.length < 1 ) {
-			this.C.error('pageElement not found.' , this.info.pageElement);
+			this.C.error('[uAutoPagerize] pageElement not found.', this.info.pageElement, htmlDoc.body.innerHTML);
 			this.state = 'terminated';
 			return;
 		}
 
 		if (this.loadedURLs[this.requestURL]) {
-			this.C.error('page is already loaded.', this.requestURL, this.info.nextLink);
+			this.C.error('[uAutoPagerize] page is already loaded.', this.requestURL, this.info.nextLink);
 			this.state = 'terminated';
 			return;
 		}
@@ -1493,7 +1498,7 @@ AutoPager.prototype = {
 		if (this.insertPoint.compareDocumentPosition(this.doc) >= 32) {
 			this.setInsertPoint();
 			if (!this.insertPoint) {
-				this.C.error("insertPoint not found.", this.info.pageElement);
+				this.C.error("[uAutoPagerize] insertPoint not found.", this.info.pageElement);
 				this.state = 'terminated';
 				return;
 			}
@@ -1512,7 +1517,7 @@ AutoPager.prototype = {
 		// if (!ns.SCROLL_ONLY)
 		// 	this.scroll();
 		if (!url) {
-			this.C.error('nextLink not found.', this.info.nextLink);
+			this.C.error('[uAutoPagerize] nextLink not found.', this.info.nextLink);
 			this.state = 'terminated';
 		}
 
@@ -1527,6 +1532,19 @@ AutoPager.prototype = {
         page.forEach(function(i) { fragment.appendChild(i); });
         this.win.fragmentFilters.forEach(function(i) { i(fragment, htmlDoc, page) }, this);
 
+        // 移除部分内容
+        if (typeof(this.info.filter) == 'string') { //功能未完善.
+            var nodes = []
+            try {
+                nodes = getElementsMix(this.info.filter, fragment);
+            } catch (e) {};
+            var nodes_x;
+            for (i = nodes.length - 1; i >= 0; i--) {
+                nodes_x = nodes[i];
+                nodes_x.parentNode.removeChild(nodes_x);
+            }
+        }
+        // 修正延迟加载的图片
         var lazyImgSrc = (this.info.lazyImgSrc === undefined) ? prefs.lazyImgSrc : this.info.lazyImgSrc;
         if (lazyImgSrc) {
             var imgAttrs = lazyImgSrc.split('|');

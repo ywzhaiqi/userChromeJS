@@ -60,19 +60,23 @@ snapLinks.init();
             <menuitem label="复制所有链接标题 + URL"
                 id="SnapLinksCopyLinksAndTitles"
                       class="hasLink"
-                      oncommand="snapLinks.copyLinks(null, false, '%TITLE%\n%URL%');" />
+                      oncommand="snapLinks.copyLinks(null, false, '%t\n%u');" />
             <menuitem label="复制所有链接标题 + URL (MD)"
                 id="SnapLinksCopyLinksAndTitlesMD"
                       class="hasLink"
-                      oncommand="snapLinks.copyLinks(null, false, '[%TITLE%](%URL%)');" />
+                      oncommand="snapLinks.copyLinks(null, false, '[%t](%u)');" />
             <menuitem label="复制所有链接标题 + URL (BBS)"
                 id="SnapLinksCopyLinksAndTitlesBBS"
                       class="hasLink"
-                      oncommand="snapLinks.copyLinks(null, false, '[url=%TITLE%]%URL%[/url]');" />
+                      oncommand="snapLinks.copyLinks(null, false, '[url=%t]%u[/url]');" />
             <menuitem label="复制所有链接URL (筛选)"
                 id="SnapLinksCopyLinksRegExp"
                       class="hasLink"
                       oncommand="var reg=prompt('请输入需要筛选的 RegExp', '');snapLinks.copyLinks(new RegExp(reg));" />
+            <menuitem label="复制所有链接URL (设置复制格式)"
+                id="SnapLinksCopyLinksSetFormat"
+                      class="hasLink"
+                      oncommand="var format=prompt('请输入需要设置的格式（%t：标题，%u：链接，%n：序号，%nr：反向序号）', '%t %u');snapLinks.copyLinks(null, false, format);" />
 			<menuitem label="在新标签页打开所有图片链接" hidden="true"
 			          id="SnapLinksOpenImageLinks"
 			          class="hasImageLink"
@@ -373,6 +377,8 @@ var snapLinks = {
 			"SnapLinksCopyLinksAndTitles": "复制所有链接标题 + URL (" + linkcount + ")",
 			"SnapLinksCopyLinksAndTitlesMD": "复制所有链接标题 + URL (" + linkcount + ") (MD)",
 			"SnapLinksCopyLinksAndTitlesBBS": "复制所有链接标题 + URL (" + linkcount + ") (BBS)",
+			"SnapLinksCopyLinksRegExp": "复制所有链接URL (" + linkcount + ") (筛选)",
+			"SnapLinksCopyLinksSetFormat": "复制所有链接URL (" + linkcount + ") (设置复制格式)",
 			"SnapLinksOpenImageLinks": "在新标签页打开所有图片链接 (" + imagecount + ")",
 			"SnapLinksImageLinksOnePage": "在一个标签页显示所有图片链接 (" + imagecount + ")",
 			"SnapLinksCheckBoxSelect": "复选框 - 选中 (" + checkboxcount + ")",
@@ -407,10 +413,15 @@ var snapLinks = {
 	copyLinks : function(regexp, reverse, format){
 		var links = this.elements.filter(function(elem){
 			return elem instanceof HTMLAnchorElement && (!regexp || regexp.test(elem.href))
-		}).map(function(e) {
+		});
+		var num = 1,
+		numReverse = links.length;
+		links = links.map(function(e) {
 			if (format) {
-				return format.replace('%TITLE%', e.textContent)
-								 .replace('%URL%', e.href);
+				return format.replace('%t', e.textContent)
+								 .replace('%u', e.href)
+								 .replace('%nr', numReverse--)
+								 .replace('%n', num++);
 			}
 			return e.href;
 		});

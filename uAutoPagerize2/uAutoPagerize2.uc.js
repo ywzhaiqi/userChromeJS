@@ -9,7 +9,7 @@
 // @version        0.3.0
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/uAutoPagerize2
 // @reviewURL      http://bbs.kafan.cn/thread-1555846-1-1.html
-// @optionsURL     about:config?filter=uAutoPagerize
+// @optionsURL     about:config?filter=uAutoPagerize.
 // @note           0.3.0 本家に倣って Cookie の処理を変更した
 // @note           0.2.9 remove E4X
 // @note           0.2.8 履歴に入れる機能を廃止
@@ -42,9 +42,11 @@
 
 var isUrlbar = 1;  // 放置的位置，0 为附加组件栏，1 为地址栏
 
+var DB_FILENAME_MY = "_uAutoPagerize.js",       // 自定义数据库的位置
+	DB_FILENAME_CN = "uSuper_preloader.db.js",  // 中文数据库的位置
+	DB_FILENAME_EN = "uAutoPagerize.json";      // 默认的 JSON 数据库位置
 var SEND_COOKIE = false;  // 是否发送 cookie？百度有问题时需要清除 cookie
-
-var DB_FILENAME_CN =  "uSuper_preloader.db.js";   // 中文数据库的位置
+var UPDATE_CN_SITEINFO_DAYS = 3;  // 更新中文规则的间隔（天）
 
 // ワイルドカード(*)で記述する
 var INCLUDE = [
@@ -116,7 +118,7 @@ if (typeof window.uAutoPagerize != 'undefined') {
     window.uAutoPagerize.destroy();
 
     // 补上 siteinfo_writer 菜单
-    if (window.siteinfo_writer) {
+    if (window.siteinfo_writer && !document.getElementById("sw-popup-menuitem")) {
         var menuitem = $C("menuitem", {
             id: "sw-popup-menuitem",
             class: "sw-add-element",
@@ -164,7 +166,7 @@ var ns = window.uAutoPagerize = {
     },
     get file() {
         var aFile = Services.dirsvc.get('UChrm', Ci.nsILocalFile);
-        aFile.appendRelativePath('_uAutoPagerize.js');
+        aFile.appendRelativePath(DB_FILENAME_MY);
         delete this.file;
         return this.file = aFile;
     },
@@ -281,6 +283,13 @@ var ns = window.uAutoPagerize = {
         if (m) m.setAttribute("checked", ADD_TO_HISTORY = !!bool);
         return bool;
     },
+    lastCheckTime: 0,
+    setLastCheckTime: function() {
+        var time = parseInt(new Date().getTime()/1000);
+        try {
+            ns.prefs.setIntPref('lastCheckTime', ns.lastCheckTime = time);
+        } catch(e) {}
+    },
 
     init: function() {
         ns.style = addStyle(css);
@@ -393,7 +402,7 @@ var ns = window.uAutoPagerize = {
                 ns[name] = ns.prefs.getBoolPref(name);
             } catch (e) {}
         }, ns);
-        ["BASE_REMAIN_HEIGHT", "MAX_PAGER_NUM", "IMMEDIATELY_PAGER_NUM"].forEach(function(name) {
+        ["BASE_REMAIN_HEIGHT", "MAX_PAGER_NUM", "IMMEDIATELY_PAGER_NUM", "lastCheckTime"].forEach(function(name) {
             try {
                 ns[name] = ns.prefs.getIntPref(name);
             } catch (e) {}
@@ -415,6 +424,10 @@ var ns = window.uAutoPagerize = {
 
         if(!ns.loadSetting_CN()){
             requestSITEINFO_CN();
+        } else {  // 检查更新规则的间隔
+            if (UPDATE_CN_SITEINFO_DAYS > 0 && (new Date().getTime() - ns.lastCheckTime * 1000) > UPDATE_CN_SITEINFO_DAYS * 24 * 3600 * 1000) {
+                requestSITEINFO_CN();
+            }
         }
 
         if (!getCache()){
@@ -910,7 +923,7 @@ var ns = window.uAutoPagerize = {
     },
     getInfoFromURL: function (url) {
         if (!url) url = content.location.href;
-        var list = ns.MY_SITEINFO.concat(ns.SITEINFO_CN);
+        var list = ns.MY_SITEINFO.concat(ns.SITEINFO_CN).concat(ns.SITEINFO);
         return list.filter(function(info, index, array) {
             try {
                 var exp = info.url_regexp || Object.defineProperty(info, "url_regexp", {
@@ -1188,7 +1201,6 @@ AutoPager.prototype = {
         this.addPauseContrl();
 
         if (this.state !== 'loading' && PRELOADER_NEXTPAGE) {  // 提前预读
-            this.firstPreload = true;
             this.request();
         }
     },
@@ -1310,11 +1322,7 @@ AutoPager.prototype = {
         var remain = this.getScrollHeight() - this.win.innerHeight - this.win.scrollY;
         if (remain < this.remainHeight || this.ipagesMode) {
             if(this.tmpDoc) {
-                if (this.firstPreload) {
-                    this.firstPreload = false;
-                } else {
                 this.load(this.tmpDoc);
-                }
             } else
                 this.request();
         }
@@ -2358,7 +2366,7 @@ function getCookie(host, needSecureCookie) {
 // end utility functions.
 function getCache() {
     try{
-        var cache = loadFile('uAutoPagerize.json');
+        var cache = loadFile(DB_FILENAME_EN);
         if (!cache) return false;
         cache = JSON.parse(cache);
         ns.SITEINFO = cache;
@@ -2382,6 +2390,7 @@ function requestSITEINFO_CN(){
         onload: function(res) {
             xhrState = 'loaded';
             getCacheCallback_CN(res, url);
+            uAutoPagerize.setLastCheckTime();
         },
         onerror: function(res) {
             xhrState = 'error';url
@@ -2411,7 +2420,7 @@ function getCacheCallback_CN(res, url) {
         }
     }
 
-    saveFile(DB_FILENAME_CN, matches[1]);
+    saveFile(DB_FILENAME_CN, "    " + matches[1]);
     ns.loadSetting_CN();
     alerts("uAutoPagerize", "中文规则已经更新完毕");
 
@@ -2480,7 +2489,7 @@ function getCacheCallback(res, url) {
         } catch (e) {}
     });
     info.sort(function(a, b) b.url.length - a.url.length);
-    saveFile('uAutoPagerize.json', JSON.stringify(info));
+    saveFile(DB_FILENAME_EN, JSON.stringify(info));
 
     ns.SITEINFO = info;
     log('getCacheCallback:' + url);

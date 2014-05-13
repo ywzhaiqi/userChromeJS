@@ -251,6 +251,13 @@ window.siteinfo_writer = {
         this.setTextBoxValue(info);
         this.setUrl();
 		this.container.hidden = false;
+        // 设置总规则数量
+        if (window.uAutoPagerize) {
+            var list = uAutoPagerize.MY_SITEINFO.concat(uAutoPagerize.SITEINFO_CN).concat(uAutoPagerize.SITEINFO);
+            $('sw-curpage-info').setAttribute('tooltiptext', '共有 ' + list.length + 
+                    ' 个规则。其中中文规则 ' + uAutoPagerize.SITEINFO_CN.length + ' 个，默认规则 ' +
+                    uAutoPagerize.SITEINFO.length + ' 个。');
+        }
 	},
 	hide: function() {
 		this.container.hidden = true;
@@ -348,7 +355,20 @@ window.siteinfo_writer = {
 	getCurPageInfo: function(){
 		if(!window.uAutoPagerize) return;
 
-		var list = window.uAutoPagerize.getInfoFromURL();
+        var getInfoFromURL = function (url) {
+            if (!url) url = content.location.href;
+            var list = uAutoPagerize.MY_SITEINFO.concat(uAutoPagerize.SITEINFO_CN).concat(uAutoPagerize.SITEINFO);
+            return list.filter(function(info, index, array) {
+                try {
+                    var exp = info.url_regexp || Object.defineProperty(info, "url_regexp", {
+                            enumerable: false,
+                            value: toRE(info.url)
+                        }).url_regexp;
+                    return exp.test(url);
+                } catch(e){ }
+            });
+        };
+		var list = getInfoFromURL();
 		if(!list) return;
 
 		var self = this;

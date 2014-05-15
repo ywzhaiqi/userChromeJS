@@ -44,9 +44,9 @@ var isUrlbar = 1;  // 放置的位置，0 为附加组件栏，1 为地址栏
 var ORIGINAL_SITEINFO = false;  // 原版JSON规则是否启用？以国外网站为主
 var UPDATE_CN_SITEINFO_DAYS = 7;  // 更新中文规则的间隔（天）
 
-var DB_FILENAME_MY = "Local\\_uAutoPagerize.js",       // 自定义数据库的位置
-    DB_FILENAME_CN = "Local\\uSuper_preloader.db.js",  // 中文数据库的位置
-    DB_FILENAME_EN = "Local\\uAutoPagerize.json";      // 默认的 JSON 数据库位置
+var DB_FILENAME_MY = "_uAutoPagerize.js",       // 自定义数据库的位置
+    DB_FILENAME_CN = "uSuper_preloader.db.js",  // 中文数据库的位置
+    DB_FILENAME_EN = "uAutoPagerize.json";      // 默认的 JSON 数据库位置
 
 var SEND_COOKIE = false;  // 是否发送 cookie？百度有问题时需要清除 cookie
 

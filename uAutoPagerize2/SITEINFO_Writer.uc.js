@@ -255,7 +255,7 @@ window.siteinfo_writer = {
         if (window.uAutoPagerize) {
             var list = uAutoPagerize.MY_SITEINFO.concat(uAutoPagerize.SITEINFO_CN).concat(uAutoPagerize.SITEINFO);
             $('sw-curpage-info').setAttribute('tooltiptext', '共有 ' + list.length + 
-                    ' 个规则。其中中文规则 ' + uAutoPagerize.SITEINFO_CN.length + ' 个，默认规则 ' +
+                    ' 个规则。其中中文规则 ' + uAutoPagerize.SITEINFO_CN.length + ' 个，原版JSON规则 ' +
                     uAutoPagerize.SITEINFO.length + ' 个。');
         }
 	},

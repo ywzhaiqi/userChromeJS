@@ -41,16 +41,18 @@
 (function(css) {
 
 var isUrlbar = 1;  // 放置的位置，0 为附加组件栏，1 为地址栏
-
-var DB_FILENAME_MY = "_uAutoPagerize.js",       // 自定义数据库的位置
-	DB_FILENAME_CN = "uSuper_preloader.db.js",  // 中文数据库的位置
-	DB_FILENAME_EN = "uAutoPagerize.json";      // 默认的 JSON 数据库位置
-var SEND_COOKIE = false;  // 是否发送 cookie？百度有问题时需要清除 cookie
+var ORIGINAL_SITEINFO = false;  // 原版JSON规则是否启用？以国外网站为主
 var UPDATE_CN_SITEINFO_DAYS = 7;  // 更新中文规则的间隔（天）
+
+var DB_FILENAME_MY = "Local\\_uAutoPagerize.js",       // 自定义数据库的位置
+    DB_FILENAME_CN = "Local\\uSuper_preloader.db.js",  // 中文数据库的位置
+    DB_FILENAME_EN = "Local\\uAutoPagerize.json";      // 默认的 JSON 数据库位置
+
+var SEND_COOKIE = false;  // 是否发送 cookie？百度有问题时需要清除 cookie
 
 // ワイルドカード(*)で記述する
 var INCLUDE = [
-	"*"
+    "*"
 ];
 var EXCLUDE = [
     'https://mail.google.com/*',
@@ -66,12 +68,6 @@ var EXCLUDE = [
 ];
 
 var MY_SITEINFO = [
-    // {
-    //     url         : '^https?://(?:images|www)\\.google(?:\\.[^./]{2,3}){1,2}/(images\\?|search\\?.*tbm=isch)'
-    //     ,nextLink   : 'id("nn")/parent::a | id("navbar navcnt nav")//td[last()]/a'
-    //     ,pageElement: 'id("ImgCont ires")/table | id("ImgContent")'
-    //     ,exampleUrl : 'http://images.google.com/images?ndsp=18&um=1&safe=off&q=image&sa=N&gbv=1&sout=1'
-    // },
     {
         url          : '^https?://mobile\\.twitter\\.com/'
         ,nextLink    : '//div[contains(concat(" ",normalize-space(@class)," "), " w-button-more ")]/a[@href]'
@@ -89,15 +85,15 @@ var MICROFORMAT = [
     }
 ];
 
-var SITEINFO_IMPORT_URLS = [
-    // 'http://wedata.net/databases/AutoPagerize/items.json'
-];
+var SITEINFO_IMPORT_URLS = ORIGINAL_SITEINFO ? [
+        'http://wedata.net/databases/AutoPagerize/items.json',
+    ] : [];
 
 // Super_preloaderPlus 地址
 var SITEINFO_CN_IMPORT_URL = "https://greasyfork.org/scripts/293-super-preloaderplus-one/code/Super_preloaderPlus_one.user.js";
 
 var COLOR = {
-	on: '#0f0',
+    on: '#0f0',
 	off: '#ccc',
 	enable: '#0f0',
 	disable: '#ccc',
@@ -111,25 +107,8 @@ var COLOR = {
 var REALPAGE_SITE_PATTERN = ['search?', 'search_', 'forum', 'thread'];
 
 
-let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
 
-if (typeof window.uAutoPagerize != 'undefined') {
-    window.uAutoPagerize.destroy();
 
-    // 补上 siteinfo_writer 菜单
-    if (window.siteinfo_writer && !document.getElementById("sw-popup-menuitem")) {
-        var menuitem = $C("menuitem", {
-            id: "sw-popup-menuitem",
-            class: "sw-add-element",
-            label: "辅助定制翻页规则",
-            oncommand: "siteinfo_writer.show();",
-        });
-        setTimeout(function(){
-            document.getElementById("uAutoPagerize-popup").appendChild(menuitem);
-        }, 1000);
-    }
-}
 
 // 以下 設定が無いときに利用する
 var FORCE_TARGET_WINDOW = true;
@@ -151,6 +130,23 @@ var SEPARATOR_RELATIVELY = true; // 分隔符.在使用上滚一页或下滚一�
 var prefs = {
     pauseA: false,            // 快速停止翻页开关
 };
+let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
+if (typeof window.uAutoPagerize != 'undefined') {
+    window.uAutoPagerize.destroy();
+    // 补上 siteinfo_writer 菜单
+    if (window.siteinfo_writer && !document.getElementById("sw-popup-menuitem")) {
+        var menuitem = $C("menuitem", {
+            id: "sw-popup-menuitem",
+            class: "sw-add-element",
+            label: "辅助定制翻页规则",
+            oncommand: "siteinfo_writer.show();",
+        });
+        setTimeout(function(){
+            document.getElementById("uAutoPagerize-popup").appendChild(menuitem);
+        }, 1000);
+    }
+}
 
 var ns = window.uAutoPagerize = {
     INCLUDE_REGEXP : /./,
@@ -329,8 +325,8 @@ var ns = window.uAutoPagerize = {
                 <menuitem label="更新中文规则" \
                           tooltiptext="包含 Super_preloader 的中文规则"\
                           oncommand="uAutoPagerize.resetSITEINFO_CN();"/>\
-                <menuitem label="更新JSON规则" \
-                          tooltiptext="默认 JSON 规则（以外国网站为主）"\
+                <menuitem label="更新原版规则" hidden="' + !ORIGINAL_SITEINFO + '" \
+                          tooltiptext="原版 JSON 规则，以外国网站为主" \
                           oncommand="uAutoPagerize.resetSITEINFO();"/>\
                 <hbox>\
                     <textbox id="uAutoPagerize-blacklist-textbox" oninput="uAutoPagerize.checkUrl(event);"\

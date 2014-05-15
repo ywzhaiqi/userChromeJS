@@ -1905,7 +1905,10 @@ var SP = (function() { // 来自 NLF 的 Super_preloader
 
         var _nextPageKey = re_nextPageKey;
         var _nPKL = _nextPageKey.length;
-        var _getAllElementsByXpath = getElementsByXPath;
+        var _getAllElementsByXpath = function (xpath, contextNode, doc) {
+            contextNode = contextNode || doc;
+            return doc.evaluate(xpath, contextNode, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+        };
         cplink = cplink || doc.URL || doc.location.href;
         var m = cplink.match(/https?:\/\/([^\/]+)/);
         if (!m) return;

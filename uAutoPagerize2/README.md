@@ -49,6 +49,20 @@ uAutoPagerize 中文规则简化改进版，原作者链接：[Griever/userChrom
 	https://www.google.com/#newwindow=1&q=firefox
 	https://www.google.com/webhp?hl=en&tab=ww&ei=dhFeUuHaBo2aiAeNm4CgCw&ved=0CBgQ1S4#hl=en&newwindow=1&q=firefox
 
+### 原 json 数据库
+
+uAutoPagerize2 默认禁用原 json 数据库（国外网站为主），如需启用，修改代码
+
+	var SITEINFO_IMPORT_URLS = [
+	    // 'http://wedata.net/databases/AutoPagerize/items.json'
+	];
+为
+
+	var SITEINFO_IMPORT_URLS = [
+	    'http://wedata.net/databases/AutoPagerize/items.json'
+	];
+
+
 SITEINFO_Writer.uc.js
 --------------------
 

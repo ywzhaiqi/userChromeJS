@@ -329,6 +329,9 @@ var ns = window.uAutoPagerize = {
                 <menuitem label="更新中文规则" \
                           tooltiptext="包含 Super_preloader 的中文规则"\
                           oncommand="uAutoPagerize.resetSITEINFO_CN();"/>\
+                <menuitem label="更新JSON规则" \
+                          tooltiptext="默认 JSON 规则（以外国网站为主）"\
+                          oncommand="uAutoPagerize.resetSITEINFO();"/>\
                 <hbox>\
                     <textbox id="uAutoPagerize-blacklist-textbox" oninput="uAutoPagerize.checkUrl(event);"\
                         tooltiptext="绿色代表在黑名单中，红色代表不匹配当前网址"/>\
@@ -2496,6 +2499,7 @@ function getCacheCallback(res, url) {
 
     ns.SITEINFO = info;
     log('getCacheCallback:' + url);
+    alerts("uAutoPagerize", "JSON 规则已经更新完毕");
 }
 
 function getCacheErrorCallback(url) {

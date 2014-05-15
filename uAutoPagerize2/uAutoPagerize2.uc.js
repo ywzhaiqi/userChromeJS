@@ -46,7 +46,7 @@ var DB_FILENAME_MY = "_uAutoPagerize.js",       // 自定义数据库的位置
 	DB_FILENAME_CN = "uSuper_preloader.db.js",  // 中文数据库的位置
 	DB_FILENAME_EN = "uAutoPagerize.json";      // 默认的 JSON 数据库位置
 var SEND_COOKIE = false;  // 是否发送 cookie？百度有问题时需要清除 cookie
-var UPDATE_CN_SITEINFO_DAYS = 3;  // 更新中文规则的间隔（天）
+var UPDATE_CN_SITEINFO_DAYS = 7;  // 更新中文规则的间隔（天）
 
 // ワイルドカード(*)で記述する
 var INCLUDE = [
@@ -397,7 +397,7 @@ var ns = window.uAutoPagerize = {
         range.insertNode(range.createContextualFragment(xml.replace(/\n|\t/g, '')));
         range.detach();
 
-        ["DEBUG", "AUTO_START", "FORCE_TARGET_WINDOW", "SCROLL_ONLY", "PRELOADER_NEXTPAGE"].forEach(function(name) {
+        ["DEBUG", "AUTO_START", "FORCE_TARGET_WINDOW", "SCROLL_ONLY", "PRELOADER_NEXTPAGE", "ADD_TO_HISTORY"].forEach(function(name) {
             try {
                 ns[name] = ns.prefs.getBoolPref(name);
             } catch (e) {}
@@ -441,7 +441,7 @@ var ns = window.uAutoPagerize = {
     },
     uninit: function() {
         ns.removeListener();
-        ["DEBUG", "AUTO_START", "FORCE_TARGET_WINDOW", "SCROLL_ONLY", "PRELOADER_NEXTPAGE"].forEach(function(name) {
+        ["DEBUG", "AUTO_START", "FORCE_TARGET_WINDOW", "SCROLL_ONLY", "PRELOADER_NEXTPAGE", "ADD_TO_HISTORY"].forEach(function(name) {
             try {
                 ns.prefs.setBoolPref(name, ns[name]);
             } catch (e) {}

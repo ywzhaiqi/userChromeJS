@@ -67,8 +67,8 @@ userChromeJS for Firefox
  - [SidebarGestures.uc.js](SidebarGestures.uc.js)，给侧边栏网页加上鼠标手势，左：后退，右：前进，上下：刷新。
  - [SimpleDragModY.uc.js](SimpleDragModY.uc.js)，简单拖曳的修改版。
  	- 2014-5-20
+ 	 	- 增加：对 `http://pan.baidu.com/s/1bn7uGmb 密码: jl4b` 的识别
  		- 增加：如果在链接上选择文字，会优先打开该文字而不是链接。
- 		- 增加：对 `http://pan.baidu.com/s/1bn7uGmb 密码: jl4b` 的识别
  - [SnapLinksMod.uc.xul](SnapLinksMod.uc.xul)，改自 lastDream 2013 的版本，复制链接去重复和反向复制。
  - [speedupErrorConsole.uc.js](speedupErrorConsole.uc.js)，加速错误控制台。
  - [statusbarButtonScrapbook.uc.js](statusbarButtonScrapbook.uc.js)，更改 Scrapbook 状态栏图标为鼠标中键打开侧边栏。

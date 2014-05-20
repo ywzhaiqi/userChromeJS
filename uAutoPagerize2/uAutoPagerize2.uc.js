@@ -7,6 +7,7 @@
 // @compatibility  Firefox 17
 // @charset        UTF-8
 // @version        0.3.0
+// @update         2014-5-21
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/uAutoPagerize2
 // @reviewURL      http://bbs.kafan.cn/thread-1555846-1-1.html
 // @optionsURL     about:config?filter=uAutoPagerize.
@@ -1701,13 +1702,7 @@ AutoPager.prototype = {
             var nextValue = nextLink.getAttribute('href') ||
                 nextLink.getAttribute('action') || nextLink.value;
 
-            if (nextValue && nextValue.indexOf('http') != 0) {
-                var anc = this.doc.createElement('a');
-                anc.setAttribute('href', nextValue);
-                nextValue = anc.href;
-                anc = null;
-            }
-            return nextValue;
+            return this.getFullUrl(nextValue);
         }
     },
     getPageElementsBottom : function() {
@@ -1777,6 +1772,15 @@ AutoPager.prototype = {
 
         this.scroll();
     },
+    getFullUrl: function (url) {
+        if (url && url.indexOf('http') != 0) {
+            var anc = this.doc.createElement('a');
+            anc.setAttribute('href', url);
+            url = anc.href;
+            anc = null;
+        }
+        return url;
+    }
 };
 
 var stateTooltip = {
@@ -2218,7 +2222,7 @@ function getRalativePageStr(lastUrl, currentUrl, nextUrl) {
 function getElementMix(selector, doc, win) {
     var ret;
     if (!selector) return ret;
-    win = win || content.window;
+    win = win || doc.defaultView;
     var type = typeof selector;
     if (type == 'string') {
         if (selector.search(/^css;/i) == 0) {
@@ -2229,7 +2233,7 @@ function getElementMix(selector, doc, win) {
             ret = getFirstElementByXPath(selector, doc);
         }
     } else if (type == 'function') {
-        ret = selector(doc, win, doc.URL);
+        ret = selector.apply(win, [doc, win, doc.URL]);
     } else if (Array.isArray(selector)) {
         for (var i = 0, l = selector.length; i < l; i++) {
             ret = getElementMix(selector[i], doc, win);
@@ -2237,10 +2241,12 @@ function getElementMix(selector, doc, win) {
         }
     } else {
         var url = SP.hrefInc(selector, doc, win);
-        if (url) {
-            ret = doc.createElement('a');
-            ret.setAttribute('href', url);
+
         }
+    if (typeof ret == 'string') {
+        var elem = doc.createElement('a');
+        elem.setAttribute('href', ret);
+        ret = elem;
     }
     return ret;
 }

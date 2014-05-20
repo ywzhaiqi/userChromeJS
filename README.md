@@ -65,6 +65,8 @@ userChromeJS for Firefox
  - [openLinkTabThirdPart.uc.js](openLinkTabThirdPart.uc.js)，域名第三方新标签页打开，否则当前标签页打开。
  - [placesToolbarMiddleClick.uc.js](placesToolbarMiddleClick.uc.js)，禁用书签栏文件夹的鼠标中键打开所有标签页。
  - [SidebarGestures.uc.js](SidebarGestures.uc.js)，给侧边栏网页加上鼠标手势，左：后退，右：前进，上下：刷新。
+ - [SimpleDragModY.uc.js](SimpleDragModY.uc.js)，简单拖曳的修改版。
+ 	- 2014-5-20，增加对 `http://pan.baidu.com/s/1bn7uGmb 密码: jl4b` 的识别
  - [SnapLinksMod.uc.xul](SnapLinksMod.uc.xul)，改自 lastDream 2013 的版本，复制链接去重复和反向复制。
  - [speedupErrorConsole.uc.js](speedupErrorConsole.uc.js)，加速错误控制台。
  - [statusbarButtonScrapbook.uc.js](statusbarButtonScrapbook.uc.js)，更改 Scrapbook 状态栏图标为鼠标中键打开侧边栏。
@@ -135,3 +137,8 @@ UA切换，基于 [lastdream2013 的版本](http://bbs.kafan.cn/thread-1534937-1
 
  - 去除右键菜单，自己用 addMenu.uc 添加，菜单只出现在一般情况下，在链接、图片、输入框等情况下不会出现。
 
+
+一些 uc 脚本的链接
+---------------
+
+- [【UC 脚本·FireSpider】一个图片采集器 - 百度贴吧](http://tieba.baidu.com/p/3038754959)

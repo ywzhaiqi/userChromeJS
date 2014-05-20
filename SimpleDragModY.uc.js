@@ -24,6 +24,17 @@ location == "chrome://browser/content/browser.xul" && (function(event) {
 				self.startPoint = [event.screenX, event.screenY];
 				self.sourceNode = event.target;
 				event.target.localName == "img" && event.dataTransfer.setData("application/x-moz-file-promise-url", event.target.src);
+
+				if (event.target.nodeName == "A") {
+				    var selectLinkText = document.commandDispatcher.focusedWindow.getSelection().toString();
+				    if (selectLinkText != "" && event.explicitOriginalTarget == document.commandDispatcher.focusedWindow.getSelection().focusNode) {
+				        event.dataTransfer.setData("text/plain", selectLinkText);
+				        event.dataTransfer.clearData("text/x-moz-url");
+				        event.dataTransfer.clearData("text/x-moz-url-desc");
+				        event.dataTransfer.clearData("text/x-moz-url-data");
+				        event.dataTransfer.clearData("text/uri-list");
+				    }
+				}
 				break;
 			}
 		case "dragover":

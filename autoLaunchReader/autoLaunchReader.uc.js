@@ -88,12 +88,21 @@ if (typeof window.autoReader != "undefined") {
             // addon-bar, urlbar-icons, nav-bar, PersonalToolbar
             ns.makeIcon("addon-bar");
 
-            ns.loadSetting();
+            // 载入设置
+            ["AUTO_START"].forEach(function(name) {
+                try{
+                    ns[name] = ns.prefs.getBoolPref(name);
+                }catch(e) {}
+            }, ns);
 
-            // addEventListener
+            ["AUTO_SITE_TEXT"].forEach(function(name) {
+                try{
+                    ns[name] = ns.prefs.getCharPref(name);
+                }catch(e) {}
+            }, ns);
+
             gBrowser.mPanelContainer.addEventListener('DOMContentLoaded', this, true);
-            gBrowser.mPanelContainer.addEventListener('load', this, true);
-
+            // gBrowser.mPanelContainer.addEventListener('load', this, true);
             window.addEventListener('unload', this, false);
         },
         uninit: function() {
@@ -101,7 +110,7 @@ if (typeof window.autoReader != "undefined") {
             ns.icon.parentNode.removeChild(ns.icon);
 
             gBrowser.mPanelContainer.removeEventListener('DOMContentLoaded', this, true);
-            gBrowser.mPanelContainer.removeEventListener('load', this, true);
+            // gBrowser.mPanelContainer.removeEventListener('load', this, true);
             window.removeEventListener('unload', this, false);
 
             ["AUTO_START"].forEach(function(name) {
@@ -161,6 +170,7 @@ if (typeof window.autoReader != "undefined") {
                 image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABOUlEQVQ4jZ2TsUrDUBSGvxvzAg7qJA5BdBARI1ishYJ26uZLOBQtUpEMjhUr6KAgqC/gC7ipIKSCoiKOQTI4dnQ1N7kOkpomuZb6w4Fz7v3/w38O9wqlFAAV56UKbABzwBj56ACvQPO6Zd8DCKUUK9uP+4CjEeng3B4uHohyvV0FrgYUA4RAwYyCoPYPMcAQ0DAjKe30jXu+mmGX1m8yZwqKRijlaCglyYhhWRaWZXWbpnmRlONG9JP0RBIjy8fdvHNXy3DNKAi0Q/q+3+MGIM3/00EsijFstzLcviPMr1123eRx+zZI1p9vu7k76KB/upmZU7VnRFI+p7vOVC5+l5ZTJ+JJTJdPl4A2IHQuNPgCZoVSiqnSyQ6wB5gDiOueu3km4u88WThaALaAIjChEX4ALtB8f2h4AN/8SQfIa3maJAAAAABJRU5ErkJggg=="
             }));
 
+            // ? 用 css 添加图标可能一开始会撑大地址栏
             setTimeout(function(icon){
                 icon.removeAttribute("image");
             }, 500, ns.icon);
@@ -196,19 +206,6 @@ if (typeof window.autoReader != "undefined") {
             range.collapse(false);
             range.insertNode(range.createContextualFragment(xml.replace(/\n|\t/g, '')));
             range.detach();
-        },
-        loadSetting: function(){
-            ["AUTO_START"].forEach(function(name) {
-                try{
-                    ns[name] = ns.prefs.getBoolPref(name);
-                }catch(e) {}
-            }, ns);
-
-            ["AUTO_SITE_TEXT"].forEach(function(name) {
-                try{
-                    ns[name] = ns.prefs.getCharPref(name);
-                }catch(e) {}
-            }, ns);
         },
         handleAutoSiteText: function(text) {
             ns.auto_sites_reg = [];
@@ -251,7 +248,6 @@ if (typeof window.autoReader != "undefined") {
             }
 
             win.setTimeout(function() {
-
                 var wrappedJS = win.wrappedJSObject;
 
                 var other_launch = function(){
@@ -259,17 +255,21 @@ if (typeof window.autoReader != "undefined") {
                     if (window.__readable_by_evernote) {
                         if(isAutoLaunch){
                             __readable_by_evernote__launch(win.document);
-                            debug("后台加载 __readable_by_evernote__launch")
+                            // debug("后台加载 __readable_by_evernote__launch")
                         }else{
                             __readable_by_evernote.__readable_by_evernote__launch();
                         }
                     } else if (window.ya && W) {
-                        win.addEventListener('load', function(){
-                            win.removeEventListener('load', arguments.callee, false);
-                            setTimeout(function(){
-                                autoReader.launch_iReader(win.document);
-                            }, 100)
-                        }, false);
+                        if (isAutoLaunch) {
+                            win.addEventListener('load', function(){
+                                win.removeEventListener('load', arguments.callee, false);
+                                win.setTimeout(function(){
+                                    autoReader.launch_iReader(win.document);
+                                }, 100)
+                            }, false);
+                        } else {
+                             autoReader.launch_iReader();
+                        }
                     } else if (wrappedJS.X_readability) {
                         wrappedJS.X_readability();
                     } else {

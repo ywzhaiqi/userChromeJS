@@ -7,8 +7,9 @@
 // @description    Snap Links for userChromeJS
 // @include        main
 // @charset        UTF-8
-// @version        2012/08/22
+// @version        2014/05/21
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/blob/master/SnapLinksMod.uc.xul
+// @note           2014/05/21 增加百度盘的特殊多选框的批量点击
 // @note           2012/08/22 add copy links Reverse by ywzhaiqi
 // @note           2012/06/28 add radiobox options.
 // @note           2012/06/01 hide entry menu on link, image, text input area or context selected.
@@ -30,13 +31,15 @@ snapLinks.init();
 %23snapLinksMenupopup.hasLink .hasLink,
 %23snapLinksMenupopup.hasImageLink .hasImageLink,
 %23snapLinksMenupopup.hasCheckbox .hasCheckbox,
-%23snapLinksMenupopup.hasRadio .hasRadio
+%23snapLinksMenupopup.hasRadio .hasRadio,
+%23snapLinksMenupopup.hasSpecialLink .hasSpecialLink
   { display: -moz-box !important; }
 
 %23snapLinksMenupopup:not(.hasLink) .hasLink,
 %23snapLinksMenupopup:not(.hasImageLink) .hasImageLink,
 %23snapLinksMenupopup:not(.hasCheckbox) .hasCheckbox,
-%23snapLinksMenupopup:not(.hasRadio) .hasRadio
+%23snapLinksMenupopup:not(.hasRadio) .hasRadio,
+%23snapLinksMenupopup:not(.hasSpecialLink) .hasSpecialLink
   { display: none !important; }
 
 " type="text/css"?>
@@ -106,6 +109,10 @@ snapLinks.init();
 		                 id="SnapLinksRadioCancel"
 			          class="hasRadio"
 			          oncommand="snapLinks.radio(false);" />
+			<menuitem label="特殊单选框 - 选中"
+			      	id="SnapLinksClickLinks"
+			          class="hasSpecialLink"
+			          oncommand="snapLinks.clickLinks();" />
 			</menupopup>
             <popup id="contentAreaContextMenu">
 				<menuitem id="snaplinksMenuEntry"
@@ -270,6 +277,7 @@ var snapLinks = {
 	highlightAll: function() {
 		var a = '[href]:not([href^="javascript:"]):not([href^="mailto:"]):not([href^="#"])';
 		var selector = a + ', ' + a + ' img, input[type="checkbox"],  input[type="radio"]';
+		selector += ', a.b-in-blk.input-cbx[href^="javascript:"]';  // 百度盘的特殊多选框
 
 		var contains = this.getContainsElements();
 		contains.reverse();
@@ -338,12 +346,13 @@ var snapLinks = {
 		var cls = [];
 
 		var linkcount = 0;
+		var specialLinkCount = 0;  // 特殊的类似多选框的链接
 		var imagecount = 0;
 		var checkboxcount = 0;
 		var radiocount = 0;
 		for (let [i, elem] in Iterator(this.elements)) {
-			if (elem instanceof HTMLAnchorElement)
-			   linkcount++;
+			if (elem instanceof HTMLAnchorElement) 
+			   elem.href.indexOf('javascript:') == 0 ? specialLinkCount++ : linkcount++;
 		}
 		for (let [i, elem] in Iterator(this.elements)) {
 			if (elem instanceof HTMLAnchorElement && /\.(jpe?g|png|gif|bmp)$/i.test(elem.href))
@@ -363,6 +372,7 @@ var snapLinks = {
 		if ( imagecount > 0 ) cls.push("hasImageLink");
 		if ( checkboxcount > 0 ) cls.push("hasCheckbox");
 		if ( radiocount > 0 ) cls.push("hasRadio");
+		if ( specialLinkCount > 0 ) cls.push("hasSpecialLink");
 
 		var setCount = function(id, label){
 			let currentEntry = document.getElementById(id);
@@ -386,6 +396,7 @@ var snapLinks = {
 			"SnapLinksCheckBoxTaggle": "复选框 - 反选 (" + checkboxcount + ")",
 			"SnapLinksRadioSelect": "单选框 - 选中 (" + radiocount + ")",
 			"SnapLinksRadioCancel": "单选框 - 取消 (" + radiocount + ")",
+			"SnapLinksClickLinks": "特殊单选框 - 选中 (" + specialLinkCount + ")",
 		};
 
 		for(let id in data){
@@ -408,6 +419,13 @@ var snapLinks = {
 		}
 		for (let [key, val] in Iterator(obj)) {
 			gBrowser.addTab(key, { ownerTab: gBrowser.mCurrentTab });
+		}
+	},
+	clickLinks : function(){
+		for (let [i, elem] in Iterator(this.elements)) {
+			if (!elem.href || /^(?:javascript:|mailto:|#)/i.test(elem.href)) {
+				elem.click();
+			}
 		}
 	},
 	copyLinks : function(regexp, reverse, format){

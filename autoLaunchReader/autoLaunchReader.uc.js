@@ -5,8 +5,9 @@
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
-// @version        0.0.6
+// @version        0.0.7
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/autoLaunchReader
+// @note           2014/05/21 ver0.007 增加 iReader 的支持（可能部分网站会有问题）
 // @note           2013/06/06 ver0.004 调用小说脚本失败后，再次调用其它工具。clearly 后台加载网页的支持
 // @note           2013/06/04 ver0.003 修复诸多bug
 // @note           2013/06/03 ver0.002 改用 Overlay
@@ -24,6 +25,36 @@ if (typeof window.autoReader != "undefined") {
     var middleButtonClicked = function(){
 
     };
+
+    // var readers = [
+    //     { name: "Clearly",
+    //         isExist: function() {
+    //             return !!window.__readable_by_evernote;
+    //         },
+    //         iloaded: false,
+    //         launch: function(doc) {
+    //             __readable_by_evernote__launch(doc);
+    //         },
+    //     },
+    //     { name: "iReader",
+    //         isExist: function() {
+    //             return !! (window.ya && W);
+    //         },
+    //         iloaded: true,
+    //         launch: function(doc) {
+    //             ya && ya(doc) && xa[doc.uuid] && W.tabs.sendRequest(doc, {
+    //                 action: "toggleReader",
+    //                 pageHTML: wa,
+    //                 settings: Ga(),
+    //                 favIconUrl: null
+    //             })
+    //         }
+    //     },
+    //     { name: "Clearly",
+
+    //     }
+    // ];
+
 
     var AUTO_SITE_TEXT = "";
     var AUTO_START = true;
@@ -61,6 +92,7 @@ if (typeof window.autoReader != "undefined") {
 
             // addEventListener
             gBrowser.mPanelContainer.addEventListener('DOMContentLoaded', this, true);
+            gBrowser.mPanelContainer.addEventListener('load', this, true);
 
             window.addEventListener('unload', this, false);
         },
@@ -69,7 +101,7 @@ if (typeof window.autoReader != "undefined") {
             ns.icon.parentNode.removeChild(ns.icon);
 
             gBrowser.mPanelContainer.removeEventListener('DOMContentLoaded', this, true);
-
+            gBrowser.mPanelContainer.removeEventListener('load', this, true);
             window.removeEventListener('unload', this, false);
 
             ["AUTO_START"].forEach(function(name) {
@@ -94,6 +126,15 @@ if (typeof window.autoReader != "undefined") {
                         }
                         this.autoLaunch(win);
                       }
+                    break;
+                case "load":
+                    // if (this.AUTO_START && event.originalTarget instanceof HTMLDocument) {
+                    //     var win = event.originalTarget.defaultView;
+                    //     if (win.frameElement) {
+                    //         return;
+                    //     }
+                    //     this.autoLaunch(win);
+                    //   }
                     break;
                 case "unload":
                     this.uninit(event);
@@ -146,6 +187,7 @@ if (typeof window.autoReader != "undefined") {
                     <menuitem label="Evernote Clearly" oncommand="autoReader.launch_clearly();" />\
                     <menuitem label="Readability 中文版" oncommand="autoReader.launch_readability_cn();" />\
                     <menuitem label="小说阅读脚本" oncommand="autoReader.launch_myNovelReader();" />\
+                    <menuitem label="iReader" oncommand="autoReader.launch_iReader();" />\
                 </menupopup>\
             ';
 
@@ -221,6 +263,13 @@ if (typeof window.autoReader != "undefined") {
                         }else{
                             __readable_by_evernote.__readable_by_evernote__launch();
                         }
+                    } else if (window.ya && W) {
+                        win.addEventListener('load', function(){
+                            win.removeEventListener('load', arguments.callee, false);
+                            setTimeout(function(){
+                                autoReader.launch_iReader(win.document);
+                            }, 100)
+                        }, false);
                     } else if (wrappedJS.X_readability) {
                         wrappedJS.X_readability();
                     } else {
@@ -256,6 +305,15 @@ if (typeof window.autoReader != "undefined") {
             if(content.wrappedJSObject.readx){
                 content.wrappedJSObject.readx();
             }
+        },
+        launch_iReader: function(doc) {
+            doc || (doc = gBrowser.selectedBrowser.contentDocument);
+            ya && ya(doc) && xa[doc.uuid] && W.tabs.sendRequest(doc, {
+                action: "toggleReader",
+                pageHTML: wa,
+                settings: Ga(),
+                favIconUrl: null
+            })
         },
         // launch_readability_online: function(){
         //     run_readability_online(content.document);

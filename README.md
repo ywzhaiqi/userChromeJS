@@ -22,7 +22,6 @@ userChromeJS for Firefox
  - [feiruo/userChromeJS · GitHub](https://github.com/feiruo/userChromeJS)
  - [黒仪大螃蟹](http://pan.baidu.com/share/home?uk=2467242534#category/type=0)
 
-
 说明
 ----
 
@@ -35,7 +34,7 @@ userChromeJS for Firefox
  - [ExternalVideoPlayer](ExternalVideoPlayer)，调用外部播放器播放网络视频（原创）。[yunPlayer.uc.js](ExternalVideoPlayer/yunPlayer.uc.js)，右键菜单云播放视频。
  - [moveButton](moveButton)，移动或克隆按钮/菜单到任意位置（原创）。
  - [MyNovelReader](MyNovelReader)，小说阅读uc版（原创），已弃用，请用 [小说阅读GM版](https://userscripts.org/scripts/show/165951)（原创）和[autoLanuchReader](autoLanuchReader)。
- - [rebuild_userChrome](rebuild_userChrome)，脚本管理器（菜单修改版）。
+ - [rebuild_userChrome](rebuild_userChrome)，脚本管理器（菜单修改版），**已弃用，请改用 dannylee 的 [UC脚本管理器](http://g.mozest.com/thread-41292-1-1)**。
  - [SaveUserChromeJS](SaveUserChromeJS)，像 Greasemonkey 一样保存 uc脚本（原创）。
  - [SidebarModfix](SidebarModfix)，侧边栏增强（修改版）。
  - [simpleAppButton](simpleAppButton)，简易启动应用程序按钮，左中右3键分别启动3个程序（参考用）。
@@ -43,7 +42,7 @@ userChromeJS for Firefox
  - [stylishEdit](stylishEdit)，为 Stylish 增加外部编辑器等（修复版）。
  - [ThunderLixianExporterPatch](ThunderLixianExporterPatch)，迅雷离线直接导出 IDM.ef2（原创）。
  - [uAutoPagerize](uAutoPagerize)，中文规则增强版（大幅修改版）。
- - [uc\_google\_translator](uc_google_translator)，google 翻译脚本（修改版）。
+ - [uc\_google\_translator](uc_google_translator)，google 翻译脚本（修改版），**已弃用，请改用原 [dannylee 的版本](http://j.mozest.com/zh-CN/ucscript/script/115/)**。
  - [uSuper_preloader](uSuper_preloader)，基于 Super_preloader GM脚本修改而来。
  - [viewSourceModoki](viewSourceModoki)，右键菜单增加 `View Source With: All、Document、css、js`。
  - [WordHighlightToolbarFix](WordHighlightToolbarFix)，搜索高亮（修改版）。
@@ -77,8 +76,7 @@ userChromeJS for Firefox
  - [statusbarButtonScrapbook.uc.js](statusbarButtonScrapbook.uc.js)，更改 Scrapbook 状态栏图标为鼠标中键打开侧边栏。
  - [textLink.uc.js](textLink.uc.js)，双击打开文字链接，未修改，[原链接](https://github.com/alice0775/userChrome.js/blob/master/textLink.uc.js)。
  - [userChrome.js](userChrome.js)，修改版。默认载入编码改为 UTF-8，增加对 @homepageURL 等参数的解析，在 AddonsPage.uc.js 的uc脚本详细页面就会有主页等链接。
- - [userChrome-26.js](userChrome-26.js)，适合 FF26,在24下会让 xul 的脚本没法加载。
-
+ - [userChrome-26.js](userChrome-26.js)，适合 FF26,在FF24下会让 xul 的脚本没法加载。
 
 ### Disable文件夹
 
@@ -147,3 +145,4 @@ UA切换，基于 [lastdream2013 的版本](http://bbs.kafan.cn/thread-1534937-1
 ---------------
 
 - [【UC 脚本·FireSpider】一个图片采集器 - 百度贴吧](http://tieba.baidu.com/p/3038754959)
+- [dannylee 的多个脚本](http://g.mozest.com/thread-43513-1-1)，包括 AddonbarforUC.uc.js、RequestpolicyRuleFor ABP .uc.js、SmartProxyForChina.uc.js、zResetForUCbutton.uc.xul、uc_ google _translator.uc.js、ucClearMonitor.uc.js、MouseGesturesMOD(描绘轨迹版)、MouseGesturesMOD(描绘轨迹版).uc.js 等脚本。

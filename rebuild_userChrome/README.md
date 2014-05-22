@@ -1,9 +1,9 @@
 rebuild_userChrome.uc.xul
 -------------------------
 
-脚本管理器，自用菜单版（系统橙色按钮菜单）。
+脚本管理器，自用菜单版（系统橙色按钮菜单）。[原作者地址（日文）](https://github.com/alice0775/userChrome.js/blob/master/rebuild_userChrome.uc.xul)
 
-[原作者地址（日文）](https://github.com/alice0775/userChrome.js/blob/master/rebuild_userChrome.uc.xul)
+**已弃用，请改用 dannylee 的 [UC脚本管理器](http://g.mozest.com/thread-41292-1-1)**。
 
 ## 修改如下
 

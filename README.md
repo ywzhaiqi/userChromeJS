@@ -65,11 +65,14 @@ userChromeJS for Firefox
  - [openLinkTabThirdPart.uc.js](openLinkTabThirdPart.uc.js)，域名第三方新标签页打开，否则当前标签页打开。
  - [placesToolbarMiddleClick.uc.js](placesToolbarMiddleClick.uc.js)，禁用书签栏文件夹的鼠标中键打开所有标签页。
  - [SidebarGestures.uc.js](SidebarGestures.uc.js)，给侧边栏网页加上鼠标手势，左：后退，右：前进，上下：刷新。
- - [SimpleDragModY.uc.js](SimpleDragModY.uc.js)，简单拖曳的修改版。
+ - [SimpleDragModY.uc.js](SimpleDragModY.uc.js)，简单拖曳的修改版，默认向下后台，其它方向前台。
+  	- 2014-5-21
+  		- 增加：向下后台搜索文字。
  	- 2014-5-20
- 	 	- 增加：对 `http://pan.baidu.com/s/1bn7uGmb 密码: jl4b` 的识别
- 		- 增加：如果在链接上选择文字，会优先打开该文字而不是链接。
+ 	 	- 增加：对选择文字 `http://pan.baidu.com/s/1bn7uGmb 密码: jl4b` 会转为 `http://pan.baidu.com/s/1bn7uGmb#jl4b` 的链接打开，可配合 [网盘自动填写提取密码](https://greasyfork.org/scripts/1002) 脚本。
+ 		- 增加：如果在链接上选择文字，会优先搜索该文字而不是打开链接。
  - [SnapLinksMod.uc.xul](SnapLinksMod.uc.xul)，改自 lastDream 2013 的版本，复制链接去重复和反向复制。
+ 	- 2014-5-21，增加百度盘的特殊多选框的批量选中
  - [speedupErrorConsole.uc.js](speedupErrorConsole.uc.js)，加速错误控制台。
  - [statusbarButtonScrapbook.uc.js](statusbarButtonScrapbook.uc.js)，更改 Scrapbook 状态栏图标为鼠标中键打开侧边栏。
  - [textLink.uc.js](textLink.uc.js)，双击打开文字链接，未修改，[原链接](https://github.com/alice0775/userChrome.js/blob/master/textLink.uc.js)。

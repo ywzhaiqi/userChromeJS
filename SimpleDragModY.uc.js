@@ -3,8 +3,9 @@
 // @description    简单拖曳修改版 By ywzhiqi
 // @include        chrome://browser/content/browser.xul
 // @charset        UTF-8
-// @version        1.0
+// @version        1.1
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS
+// @note           2014-5-21，增加：向下后台搜索文字。
 // @note           2014-5-20，增加：“http://pan.baidu.com/s/1bn7uGmb 密码: jl4b” 的识别
 // @note           2014-5-20，增加：如果在链接上选择文字，会优先打开该文字而不是链接。
 // ==/UserScript==
@@ -60,7 +61,8 @@ window.SimpleDragModY = {
 					else
 						direction = subY < 0 ? "U" : "D";
 
-					var url;
+					var url, searchText, 
+						inBackground = (direction == "D") ? true : false;
 
 					if (event.dataTransfer.types.contains("application/x-moz-file-promise-url")) { // 图片
 						url = event.dataTransfer.getData("application/x-moz-file-promise-url");
@@ -68,13 +70,13 @@ window.SimpleDragModY = {
 						url = event.dataTransfer.getData("text/x-moz-url").split("\n")[0];
 					} else {
 						// http://pan.baidu.com/s/1bn7uGmb 密码: jl4b
-						var searchStr = event.dataTransfer.getData("text/unicode").trim();
-						// console.log(searchStr)
-						if (searchStr.match(/^(?:http:|pan\.).*[\n\s]*密[码|碼][:：]?/i)) {
-							url = searchStr.replace(/\s*(提取)?密[码|碼][:：]?\s*/, '#');
+						searchText = event.dataTransfer.getData("text/unicode").trim();
+						// console.log(searchText)
+						if (searchText.match(/^(?:http:|pan\.).*[\n\s]*密[码|碼][:：]?/i)) {
+							url = searchText.replace(/\s*(提取)?密[码|碼][:：]?\s*/, '#');
 							if (url.indexOf("...") != -1) {  // url 不完整的
-								var html = event.dataTransfer.getData("text/html");
-								var node = new DOMParser().parseFromString(html, 'text/html');
+								let html = event.dataTransfer.getData("text/html");
+								let node = new DOMParser().parseFromString(html, 'text/html');
 								if (node.links.length > 0)
 									url = node.links[0].href + '#' + url.split('#')[1];
 							}
@@ -82,17 +84,29 @@ window.SimpleDragModY = {
 					}
 
 					if (url) {
-						var doc = event.target.ownerDocument || getBrowser().contentDocument;
+						let doc = event.target.ownerDocument || getBrowser().contentDocument;
 						gBrowser.loadOneTab(url, {
 							referrerURI: doc.documentURIObject, 
-							inBackground: (direction == "D") ? true : false, 
+							inBackground: inBackground, 
 							relatedToCurrent: true
 						});
 						// openUILinkIn(data, 'tab');
 						// gBrowser.addTab(data);
-					} else { // 搜索框搜索选中文字(后台)
-						var searchStr = event.dataTransfer.getData("text/unicode");
-						BrowserSearch.loadSearch(searchStr, true);
+					} else {
+						// 搜索框搜索选中文字
+						searchText = event.dataTransfer.getData("text/unicode");
+
+						let useNewTab = true;
+						// BrowserSearch.loadSearch(searchText, true);
+						let engine = Services.search.defaultEngine;
+						let submission = engine.getSubmission(searchText, null); // HTML response
+						if (submission) {
+							openLinkIn(submission.uri.spec,
+						               useNewTab ? "tab" : "current",
+						               { postData: submission.postData,
+						                 inBackground: inBackground,
+						                 relatedToCurrent: true });
+						}
 					}
 
 					this.startPoint = 0;

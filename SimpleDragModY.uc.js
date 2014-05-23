@@ -136,11 +136,11 @@ window.SimpleDragModY = {
 	},
 	seemAsURL: function(url) {  // 以下几个函数来自 Easy DragToGo+ 扩展
 		// url test
-		var DomainName = /(\w+(\-+\w+)*\.)+\w{2,7}/;
+		var DomainName = /(\w+(\-+\w+)*\.)+\w{2,7}/i;
 		var HasSpace = /\S\s+\S/;
-		var KnowNameOrSlash = /^(www|bbs|forum|blog)|\//;
-		var KnowTopDomain1 = /\.(com|net|org|gov|edu|info|mobi|mil|asia)$/;
-		var KnowTopDomain2 = /\.(de|uk|eu|nl|it|cn|be|us|br|jp|ch|fr|at|se|es|cz|pt|ca|ru|hk|tw|pl|me|tv|cc)$/;
+		var KnowNameOrSlash = /^(www|bbs|forum|blog)|\//i;
+		var KnowTopDomain1 = /\.(com|net|org|gov|edu|info|mobi|mil|asia)$/i;
+		var KnowTopDomain2 = /\.(de|uk|eu|nl|it|cn|be|us|br|jp|ch|fr|at|se|es|cz|pt|ca|ru|hk|tw|pl|me|tv|cc)$/i;
 		var IsIpAddress = /^([1-2]?\d?\d\.){3}[1-2]?\d?\d/;
 		var seemAsURL = !HasSpace.test(url) && DomainName.test(url) && (KnowNameOrSlash.test(url) || KnowTopDomain1.test(url) || KnowTopDomain2.test(url) || IsIpAddress.test(url));
 		return seemAsURL;

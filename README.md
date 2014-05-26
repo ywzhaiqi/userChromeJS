@@ -29,7 +29,7 @@ userChromeJS for Firefox
 
  - [addmenuPlus](addmenuPlus)，增加修改 Firefox 菜单（修改版）。
  - [AddonsPage](AddonsPage)，附件组件页面（about:addons）右键新增查看所在目录，详细信息页面新增安装地址或路径，新增 uc脚本管理页面。
- - [autoLaunchReader](autoLaunchReader)，自动启用阅读器（原创）。
+ - [autoLaunchReader](autoLaunchReader)，自动启用阅读器（原创）。[专注阅读扩展简测](http://www.firefox.net.cn/read-49260)
  - [ExternalEditor](ExternalEditor)，输入框右键添加 `用外部编辑器打开` 功能（修改版）。
  - [ExternalVideoPlayer](ExternalVideoPlayer)，调用外部播放器播放网络视频（原创）。[yunPlayer.uc.js](ExternalVideoPlayer/yunPlayer.uc.js)，右键菜单云播放视频。
  - [moveButton](moveButton)，移动或克隆按钮/菜单到任意位置（原创）。
@@ -64,12 +64,10 @@ userChromeJS for Firefox
  - [openLinkTabThirdPart.uc.js](openLinkTabThirdPart.uc.js)，域名第三方新标签页打开，否则当前标签页打开。
  - [placesToolbarMiddleClick.uc.js](placesToolbarMiddleClick.uc.js)，禁用书签栏文件夹的鼠标中键打开所有标签页。
  - [SidebarGestures.uc.js](SidebarGestures.uc.js)，给侧边栏网页加上鼠标手势，左：后退，右：前进，上下：刷新。
- - [SimpleDragModY.uc.js](SimpleDragModY.uc.js)，简单拖曳的修改版，默认向下后台，其它方向前台。
-  	- 2014-5-21
-  		- 增加：向下后台搜索文字。
- 	- 2014-5-20
- 	 	- 增加：对选择文字 `http://pan.baidu.com/s/1bn7uGmb 密码: jl4b` 会转为 `http://pan.baidu.com/s/1bn7uGmb#jl4b` 的链接打开，可配合 [网盘自动填写提取密码](https://greasyfork.org/scripts/1002) 脚本。
- 		- 增加：如果在链接上选择文字，会优先搜索该文字而不是打开链接。
+ - [SimpleDragModY.uc.js](SimpleDragModY.uc.js)，简单拖曳的修改版，向上拖曳前台，其它方向后台。
+ 	- 对选择文字 `http://pan.baidu.com/s/1bn7uGmb 密码: jl4b` 会转换为 `http://pan.baidu.com/s/1bn7uGmb#jl4b` 链接打开，可配合 [网盘自动填写提取密码](https://greasyfork.org/scripts/1002) 等脚本。
+ 	- 忽略了 javascript: 开头的链接，增加了文字链接、file:// 和 about:config?filter 开头链接的识别。
+ 	- 如果在链接上选择文字，会优先搜索该文字而不是打开链接。
  - [SnapLinksMod.uc.xul](SnapLinksMod.uc.xul)，改自 lastDream 2013 的版本，复制链接去重复和反向复制。
  	- 2014-5-21，增加百度盘的特殊多选框的批量选中
  - [speedupErrorConsole.uc.js](speedupErrorConsole.uc.js)，加速错误控制台。

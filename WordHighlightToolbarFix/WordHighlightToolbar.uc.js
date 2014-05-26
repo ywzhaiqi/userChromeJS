@@ -24,7 +24,7 @@
 (function(CSS){
 "use strict";
 
-var USE_FIX_AUTOPAGER = true;  // 增加通用检测下一页后重新高亮，用 uAutoPagerize 不需要
+var USE_FIX_AUTOPAGER = false;  // 增加通用检测下一页后重新高亮，用 uAutoPagerize 不需要
 var disableBooklink = true;  // 来自 booklink.me 的百度搜索不要高亮。
 
 if (window.gWHT) {
@@ -123,7 +123,7 @@ window.gWHT = {
         var menuitem = $(PREFIX + "menuitem");
         if(menuitem){
             menuitem.setAttribute("checked", bool);
-			menuitem.setAttribute("label", bool ? "高亮工具条已启用" : "高亮工具条已禁用");
+            menuitem.setAttribute("label", "搜索高亮工具条已" + (bool ? "启用" :"禁用"));
         }
 
         return GET_KEYWORD = bool;
@@ -543,10 +543,9 @@ window.gWHT = {
         box.setAttribute("ordinal", "5");
 
         var closebutton = toolbar.appendChild(document.createElement("toolbarbutton"));
-        //closebutton.setAttribute("class", PREFIX + "closebutton tabs-closebutton");
-		closebutton.setAttribute("class", PREFIX + "tab-close-button close-icon");
+        closebutton.setAttribute("class", PREFIX + "tab-close-button tabs-closebutton close-icon");
         closebutton.setAttribute("oncommand", "gWHT.destroyToolbar();");
-		closebutton.setAttribute("tooltiptext", "关闭高亮工具条");
+        closebutton.setAttribute("tooltiptext", "关闭高亮工具条");
         closebutton.setAttribute("ordinal", "1");
 
         var reloadbutton = toolbar.appendChild(document.createElement("toolbarbutton"));

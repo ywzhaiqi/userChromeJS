@@ -64,6 +64,9 @@ userChromeJS for Firefox
  - [openLinkTabThirdPart.uc.js](openLinkTabThirdPart.uc.js)，域名第三方新标签页打开，否则当前标签页打开。
  - [placesToolbarMiddleClick.uc.js](placesToolbarMiddleClick.uc.js)，禁用书签栏文件夹的鼠标中键打开所有标签页。
  - [SidebarGestures.uc.js](SidebarGestures.uc.js)，给侧边栏网页加上鼠标手势，左：后退，右：前进，上下：刷新。
+ - [SimpleBaiduMusicPlayer.uc.js](SimpleBaiduMusicPlayer.uc.js)，简单版百度随心听，改自百度随心听播放栏UC脚本，默认采用手机版界面。
+ 	- 只有一个按钮，默认在地址栏。
+ 	- 第一次点击按钮时临时设置 UA 为手机版 firefox，然后马上复原。
  - [SimpleDragModY.uc.js](SimpleDragModY.uc.js)，简单拖曳的修改版，向上拖曳前台打开链接或搜索文字，其它方向后台。
  	- 忽略了 javascript: 开头的链接，增加了文字链接、file:// 和 about:config?filter 开头链接的识别。
  	- 如果在链接上选择文字，会优先搜索该文字而不是打开链接。

@@ -302,6 +302,7 @@ var ns = window.uAutoPagerize = {
             }));
         } else {
             ns.icon = $('status-bar').appendChild($C("statusbarpanel", {
+            // ns.icon = $('addon-bar').appendChild($C("statusbarpanel", {
                 id: "uAutoPagerize-icon",
                 class: "statusbarpanel-iconic",
                 state: "disable",
@@ -904,13 +905,16 @@ var ns = window.uAutoPagerize = {
                 if (!nextLink) {
                     // FIXME microformats case detection.
                     // limiting greater than 12 to filter microformats like SITEINFOs.
-                    if (info.url.length > 12)
+                    if (info.url.length > 12) {
                         debug('nextLink not found.', info.nextLink);
+                    } else if (info.url.length == undefined) {
+                        console.log('[uAutoPagerize] ', 'nextLink not found.', info.nextLink)
+                    }
                     continue;
                 }
                 var pageElement = getElementMix(info.pageElement, doc);
                 if (!pageElement) {
-                    if (info.url.length > 12)
+                    if (!info.url.length || info.url.length > 12)
                         debug('pageElement not found.', info.pageElement);
                     continue;
                 }
@@ -1211,9 +1215,7 @@ AutoPager.prototype = {
         this.abort();
 
         try {
-            this.myRemoves.forEach(function(func){
-                func();
-            });
+            this.myRemoves.forEach(function(func){ func(); });
         } catch (e) {}
 
         if (isRemoveAddPage) {
@@ -2240,7 +2242,7 @@ function getElementMix(selector, doc, win) {
             if(ret) break;
         }
     } else {
-        var url = SP.hrefInc(selector, doc, win);
+        ret = SP.hrefInc(selector, doc, win);
 
         }
     if (typeof ret == 'string') {

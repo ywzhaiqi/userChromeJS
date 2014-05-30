@@ -1,11 +1,11 @@
 ﻿// ==UserScript==
 // @name           SimpleMusicPlayer.uc.js
-// @namespace      铭心
-// @modified       ywzhaiqi
-// @description    简单版百度随心听，改自百度随心听播放栏UC脚本，默认采用手机版界面。
+// @author         ywzhaiqi
+// @namespace      https://github.com/ywzhaiqi
+// @description    简单音乐播放面板，支持多个站点，参考了百度随心听播放栏UC脚本。
 // @include        main
-// @version        2014.05.29
-// @note           添加可设置手机 UA
+// @charset        UTF-8
+// @version        2014.05.30
 // ==/UserScript==
 
 (function(){
@@ -13,24 +13,60 @@
 	var Config = {
 		isUrlBar: 1,
 		isMobile: 1,
-		url: "http://fm.baidu.com/",
-		normal: {
-			panelStyle: "width: 700px; height: 520px;",
-			iframeStyle: "\
-			    html { overflow-y: hidden !important; }\
-			    #right-wrapper { display:none; }\
-				",
-		},
-		mobile: {
-			panelStyle: 'width: 320px; height: 480px;',
-			iframeStyle: '#ad { display:none; }',
+		iframeStyle: {
+			normal: "width: 960px; height: 600px;",
+			mobile: "width: 320px; height: 480px;",
 		},
 		logo: {
-			//百度随心听logo
 			main: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABX0lEQVQ4jZ2TT0sCQRiH50uYSS0YehGkS9D3EAIDQSJv0i3QDuGho1AggZ4i8OihTmEHr3boPVfg7Ap9gd2dZZkZ9fDrsLm06Wp2eC7vn4cf8zKMMcZs28Z/YIwxJoSA7/uYTCYb4fs+hBBgnudhOp2uJFsbIF3tIV3twSi3w7rneesF2doARrmNRKGJRKGJXGMYFQghVkbdOrpBvt5HrjHEYesNRBT2hBDrBalSB/l6H0QUWf6zwKh0FxYjAtd1obWOJV3tgYiW9lzXXS/YO3tYL1BKRXh8t3Hx/InM+VOY4PeMUmq5wKh0cXD9gf2rl+Du328QK3AcB1LKkFSpg52TO+ye3iNz+YpUqQMiiszMcRwnSPCzSERIFlvYPr5FstiKXZZSBgmEENBaR6LNbx4XXSkFrXVwxtFoBCklZrPZRkgpwTkPfiTnHJxzmKYJ0zRhWRbG4/EClmWFM/PlL1Rejfxv4Dc3AAAAAElFTkSuQmCC"
 		},
 		mobileUAString: 'Mozilla/5.0 (Android; Mobile; rv:29.0) Gecko/29.0 Firefox/29.0',
 	};
+
+	var Sites = [
+		{
+			name: "百度随心听（手机版）",
+			url: "http://fm.baidu.com/",
+			changeUA: true,
+			iframeStyle: "mobile",
+			css: "#ad { display:none !important; }",
+		},
+		{
+			name: "百度随心听",
+			url: "http://fm.baidu.com/",
+			iframeStyle: "width: 740px; height: 570px;",
+			// 自写的样式
+			css: "#logo-wrap{display:none}#channelbar-wrap{left:0!important}#user-bar{left:260px!important}#main{width:auto!important}#right-wrapper,#playerpanel-share{display:none!important}.footer,#promotionbar-text{display:none}",
+		},
+		{
+			name: "豆瓣FM（私人版）",
+			url: "http://douban.fm/partner/firefox",
+			iframeStyle: "mobile", 
+		},
+		/*
+			下2个无法暂停，按钮无法点击。
+			在 iframe 无法点击播放？
+		 */
+		// {
+		// 	name: "豆瓣FM",
+		// 	url: "http://douban.fm/",
+		// },
+		// // 
+		// {
+		// 	name: "豆瓣FM（手机版）",
+		// 	disabled: true,  
+		// 	url: "http://douban.fm/partner/sidebar",
+		// 	changeUA: true,
+		// 	iframeStyle: "mobile",
+		// },
+		{
+			name: "落网电台",
+			url: "http://www.luoo.net/",
+			iframeStyle: "mobile",
+			// 该样式来自 http://bbs.kafan.cn/thread-1703995-1-2.html，略加修改
+			css: ".head{min-width:auto!important}BODY,#main,.clearfix,.volindex-aside,.volindex-article,.widget-content{width:300px!important;margin-left:auto!important;margin-right:auto!important}.volindex-article{position:absolute!important;margin-top:1180px!important}.head-content.clearfix{width:36px!important;margin-top:-31px!important;position:absolute!important}LI,#nav1,#nav2,#nav3,#nav4,#nav5,#nav6,#nav7,#nav8{width:36px!important}#main{margin-top:-35px!important}.track-info.clearfix{width:200px!important;margin-left:auto!important;margin-right:auto!important;border:1px solid rgba(111,0,255,.9)!important;border-radius:5px;text-align:center}.cover{margin-left:20px!important;margin-right:auto!important;border:1px solid rgba(156,0,0,.9)!important;border-radius:2px}.toolbar{width:200px!important;margin-left:auto!important;margin-right:auto!important}.btn-action-like.icon-like-large-actived,.btn-action-like.icon-like-large{position:absolute!important;margin-top:-85px!important;margin-left:142px!important}.luoo-scroller-page.clearfix.current-page{width:180px!important;margin-left:auto!important;margin-right:auto!important;text-align:center}.widget.luoo-scroller.relative-vols{position:absolute!important;margin-top:-25px!important;width:300px!important}.widget-title.clearfix{width:280px!important;margin-left:auto!important;margin-right:auto!important}.ad-wrapper,.foot-content.clearfix,.fm-cover,.comment.index-comment,.fm-info,.top-toolbar,.main-nav,.logo,.progress.jp-volume-bar{display:none!important}",
+		},
+	];
 
 
 	// 来自 User Agent Overrider 扩展
@@ -195,104 +231,165 @@
 	    } else {
 	        return normalWay();
 	    }
-
 	})();
 
-
-	window.PlaySoundBar = {
-		addBar : function () {
-			var overlay = '<overlay id="MusicBar" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" xmlns:html="http://www.w3.org/1999/xhtml">\
-							<toolbarpalette id="' + (Config.isUrlBar ? 'urlbar-icons' : 'addon-bar') + '">\
-								<image id="MusicBar-logo" label="百度随心听" tooltiptext="百度随心听" style="list-style-image:url(' + Config.logo.main + ')"/>\
-							</toolbarpalette>\
-						</overlay>';
-			overlay = "data:application/vnd.mozilla.xul+xml;charset=utf-8," + encodeURI(overlay);
-			window.userChrome_js.loadOverlay(overlay, PlaySoundBar);
-			var css = '	#MusicBar-logo{\
-			                padding: 0px 2px;\
-						}';
-			function addStyle(css) {
-				var pi = document.createProcessingInstruction(
-						'xml-stylesheet',
-						'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"');
-				return document.insertBefore(pi, document.documentElement);
-			}
-			PlaySoundBar.style = addStyle(css);
-		},
-		observe : function () {
-			this.bar = this.getById('Music-bar');
-			this.hbox = this.getById('MusicBar-hbox');
-			this.btns.logo = this.getById('MusicBar-logo');
-			this.btns.logo.addEventListener('click', this.onclick.bind(this), false);
-		},
-		getById : function (id) {
-			return document.getElementById(id);
-		},
-		getBaiduFMBrowser : function () {
-			return PlaySoundBar.getById("MusicBar-iframe");
-		},
-		onclick : function (e) {
-			var panel = PlaySoundBar.getById("MusicBar-panel");
-			if (panel) {
-				panel.openPopup(PlaySoundBar.btns.logo, "after_end", -8, 0, false, null, null);
-				return;
-			} 
-
-			if (!document.getElementById("MusicBar-iframe")) {
-				var mainPopupSet = PlaySoundBar.getById("mainPopupSet");
-
-				// 设置 UA
-				if (Config.isMobile) {
-					UAManager.change(Config.mobileUAString);
-				}
-
-				// 添加
-				panel = PlaySoundBar.addPanel(mainPopupSet);
-				panel.openPopup(PlaySoundBar.btns.logo, "after_start", -8, 0, false, null, null); //第一次点击的弹窗
-
-				// 还原 UA
-				if (Config.isMobile) {
-					UAManager.revert();
-				}
-
-				var iframe = document.getElementById('MusicBar-iframe');
-				var doc = iframe.contentWindow.document;
-				doc.addEventListener('load', function(event) {
-					iframe.removeEventListener('load', arguments.callee, false);
-
-					// 添加样式
-					var style = doc.createElement('style');
-					style.textContent = PlaySoundBar.panelContentStyle;
-					doc.head.appendChild(style);
-				}, false);
-			}
-		},
-		addPanel : function (mainPopupSet) {
-			var panel = document.createElement("panel");
-			panel.id = "MusicBar-panel";
-			panel.setAttribute("type", "arrow");
-			panel.setAttribute("flip", "both");
-			panel.setAttribute("side", "top");
-			panel.setAttribute("consumeoutsideclicks", "false");
-			panel.setAttribute("noautofocus", "false");
-			panel.setAttribute("panelopen", "true");
-			mainPopupSet.appendChild(panel);
-			var iframe = panel.appendChild(document.createElement("iframe"));
-			iframe.id = "MusicBar-iframe";
-			iframe.setAttribute("type", "content");
-			iframe.setAttribute("flex", "1");
-			iframe.setAttribute("transparent", "transparent");
-			iframe.setAttribute("showcaret", "true");
-			iframe.setAttribute("autocompleteenabled", "true");
-			iframe.setAttribute("style", Config.isMobile ? Config.mobile.panelStyle : Config.normal.panelStyle);
-			iframe.setAttribute('src', Config.url);
-
-			return panel;
-		},
-		btns : {}
+	if (window.SimpleMusicPlayer) {
+		window.SimpleMusicPlayer.uninit();
+		delete window.SimpleMusicPlayer;
 	}
 
-	PlaySoundBar.addBar();
+	window.SimpleMusicPlayer = {
+		init: function() {
+			var self = this;
 
+			this.curSiteIndex = 0;
+
+			// 添加 icon
+			this.icon = $("addon-bar").appendChild($C("toolbarbutton", {
+				id: "SimpleMusicPlayer",
+				class: "toolbarbutton-1",
+				label: "百度随心听",
+				tooltiptext: "百度随心听",
+				image: Config.logo.main,
+				// type: "menu",
+				context: "SimpleMusicPlayer-popup",
+				onclick: "if (event.button != 2) SimpleMusicPlayer.iconClick(event);",
+			}));
+
+			// 右键菜单
+			var menuPopup = $C("menupopup", {
+				id: "SimpleMusicPlayer-popup",
+				position: "after_start",
+				onpopupshowing: "SimpleMusicPlayer.onPopupShowing(event);"
+			});
+			// 根据站点添加菜单到右键菜单
+			Sites.forEach(function(site, index){
+				menuPopup.appendChild($C('menuitem', {
+					label: site.name,
+					type: "radio",
+					checked: self.curSiteIndex == index,
+					oncommand: "SimpleMusicPlayer.openPanel(" + index + ");",
+					index: index,
+					image: site.image || "",
+					disabled: site.disabled || false,
+				}));
+			});
+
+			// panel
+			var panel = $C("panel", {
+				id: "SimpleMusicPlayer-panel",
+				type: "arrow",
+				flip: "both",
+				side: "top",
+				consumeoutsideclicks: "false",
+				noautofocus: "false",
+				panelopen: "true",
+			});
+
+			// panel 里添加 iframe
+			panel.appendChild($C("iframe", {
+				id: "SimpleMusicPlayer-iframe",
+				type: "content",
+				flex: "1",
+				transparent: "transparent",
+				showcaret: "true",
+				autocompleteenabled: "true",
+				style: Config.iframeStyle.mobile
+			}));
+
+			var mainPopupSet = $("mainPopupSet");
+			mainPopupSet.appendChild(menuPopup);
+			mainPopupSet.appendChild(panel);
+		},
+		uninit: function() {
+			["SimpleMusicPlayer", "SimpleMusicPlayer-popup", "SimpleMusicPlayer-panel"].forEach(function(id){
+				var elem = $(id);
+				if (elem) {
+					elem.parentNode.removeChild(elem);
+				}
+			});
+		},
+		iconClick: function(event) {
+			this.openPanel();
+		},
+		onPopupShowing: function(event) {
+
+		},
+		reloadPage: function() {
+
+		},
+		openPanel: function(siteIndex) {
+			var self = this;
+			var panel = $("SimpleMusicPlayer-panel"),
+				iframe = $("SimpleMusicPlayer-iframe");
+
+			var openPopup = function() {
+				panel.openPopup(self.icon, "after_end", -8, 0, false, null, null);
+			};
+
+			// 已经在播放的页面直接打开
+			if (siteIndex == undefined && iframe.src) {
+				openPopup();
+				return;
+			}
+
+			// this.curSiteIndex = siteIndex;
+			siteIndex || (siteIndex = this.curSiteIndex);
+			var curSite = Sites[siteIndex],
+				url = curSite.url;
+
+			// set iframe style
+			var iStyle = curSite.iframeStyle;
+			if (iStyle) {
+				if (iStyle == "mobile") {
+					iStyle = Config.iframeStyle.mobile;
+				}
+			} else {
+				iStyle = curSite.changeUA ? Config.iframeStyle.mobile : Config.iframeStyle.normal
+			}
+			iframe.setAttribute('style', iStyle);
+
+			// 设置 UA
+			if (curSite.changeUA) {
+				UAManager.change(Config.mobileUAString);
+			}
+
+			// 两个地址都要改?mdc是按照第二个写的,真正有效的也是第二个,第一个是以后用来比较用的
+			iframe.src = url;
+			iframe.contentDocument.location.href = url;
+
+			var onload = function(event){
+				var doc = event.originalTarget;
+				if (doc.location.href == "about:blank") {  // NoScript 会引起空白调用
+				    return;
+				}
+
+				iframe.removeEventListener(event.type, onload, false);
+
+				// 添加样式
+				var style = doc.createElement('style');
+				style.textContent = curSite.css;
+				doc.head.appendChild(style);
+			};
+			iframe.addEventListener("DOMContentLoaded", onload, false);
+
+			openPopup();
+
+			// 还原 UA
+			if (curSite.changeUA) {
+				UAManager.revert();
+			}
+		},
+	};
+
+
+	window.SimpleMusicPlayer.init();
+
+	function $(id, doc) (doc || document).getElementById(id);
+	function $C(name, attr) {
+	    var el = document.createElement(name);
+	    if (attr) Object.keys(attr).forEach(function(n) el.setAttribute(n, attr[n]));
+	    return el;
+	}
 })()
 

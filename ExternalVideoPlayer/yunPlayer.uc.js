@@ -12,13 +12,15 @@
 (function (){
 
     var API_URLS = {
-        "迅雷云播": "http://vod.xunlei.com/nplay.html?uvs=_4_&url=",
+        "迅雷云播": "http://vod.xunlei.com/share.html?url=",
         // "迅雷离线": "http://lixian.vip.xunlei.com/lixian_login.html?furl=",
         // "远程下载": "http://yuancheng.xunlei.com/3/#a=newtask&url=",
 
+        "997m云点播": "http://www.997m.com/?u=",
+        "iboku云点播": "http://www.iboku.cn/vod/vod.html#!url=",
+        "奇客云播放": "http://vod.7ibt.com/index.php?url=",
         "火焰云点播": "http://www.huoyan.tv/index.php#!u=",
         "快乐云点播": "http://www.happyfuns.com/happyvod/api.php#!url=",
-        "997m云点播": "http://www.997m.com/?u=",
         "福利吧云点播": "http://fuliba.net/yun.php?u=",
         "帝国云点播": "http://vod.dgyun.com/index.htm?url=",
         "如意云点播": "http://www.ruyiba.cn/index.php#!u=",

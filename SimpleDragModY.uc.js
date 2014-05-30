@@ -5,8 +5,8 @@
 // @charset        UTF-8
 // @version        1.3
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS
-// @note           2014-5-27，修正百度盘密码链接的识别，略微调整下结构。
-// @note           2014-5-26，调整为向上前台，其它方向拖曳后台。
+// @note           2014-5-27，提升链接的优先级为图片之前，修改百度盘密码链接的识别，略微调整下结构。
+// @note           2014-5-26，修改为向上前台，其它方向拖曳后台。
 // @note           2014-5-23，忽略 javascript: 开头的链接，完善百度盘特殊密码链接，
 //                            增加文字链接、file:// 开头的链接和 about:config?filter 开头的链接的识别。
 // @note           2014-5-21，增加：向下后台搜索文字。
@@ -58,10 +58,10 @@ window.SimpleDragModY = {
                     
                     var direction = this.getDirection(event);
 
-                    var where = 'tab';  // current
-                    var inBackground = (direction != "U") ? true : false;
-                    
-                    this.dragdrop(event, where, inBackground);
+                    this.dragdrop(event, direction, {
+                        where: 'tab',   // current
+                        inBackground: (direction != "U") ? true : false
+                    });
 
                     this.startPoint = 0;
                 }
@@ -86,7 +86,10 @@ window.SimpleDragModY = {
             }
         }
     },
-    dragdrop: function(event, where, inBackground) {
+    dragdrop: function(event, direction, params) {
+        var where = params.where;
+        var aInBackground = params.inBackground;
+
         var transfer = event.dataTransfer;
         var url, searchText;
 
@@ -113,17 +116,17 @@ window.SimpleDragModY = {
                     }
                     url = this.getDroppedURL_Fixup(url);
                     break;
-                case this.seemAsURL(searchText):
-                    // 文字链接
-                    url = this.getDroppedURL_Fixup(searchText);
-                    break;
                 case this.localLinkRegExp.test(searchText):
                     // 本地链接
                     url = searchText;
                     break;
-                case searchText.indexOf('about:config?filter=') == 0:
+                case !!searchText.match(/^\s*(?:data:|about:config\?filter=)/i):
                     url = searchText;
-                    brea;
+                    break;
+                case this.seemAsURL(searchText):
+                    // 文字链接
+                    url = this.getDroppedURL_Fixup(searchText);
+                    break;
             }
         }
 
@@ -131,7 +134,7 @@ window.SimpleDragModY = {
             let doc = event.target.ownerDocument || getBrowser().contentDocument;
             openLinkIn(url, where, {
                 referrerURI: doc.documentURIObject, 
-                inBackground: inBackground, 
+                inBackground: aInBackground, 
                 relatedToCurrent: true
             });
         } else if (searchText){
@@ -142,7 +145,7 @@ window.SimpleDragModY = {
             if (submission) {
                 openLinkIn(submission.uri.spec, where, {
                     postData: submission.postData,
-                    inBackground: inBackground,
+                    inBackground: aInBackground,
                     relatedToCurrent: true
                 });
             }

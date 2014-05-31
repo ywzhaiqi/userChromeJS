@@ -4,7 +4,7 @@
 // @author       ywzhaiqi
 // @include      main
 // @charset      utf-8
-// @version      2013.11.23
+// @version      2014.05.31
 // @downloadURL  https://raw.github.com/ywzhaiqi/userChromeJS/master/AddonsPage/AddonsPage.uc.js
 // @homepageURL  https://github.com/ywzhaiqi/userChromeJS/tree/master/AddonsPage
 // @reviewURL    http://bbs.kafan.cn/thread-1617407-1-1.html
@@ -25,10 +25,10 @@ location == "chrome://browser/content/browser.xul" && (function(){
     var iconURL = "";  // uc 脚本列表的图标
     
     var prefs = {
-        debug: 0,
+        debug: 0,  // 1 则uc管理界面右键菜单会有 "重载 uc 脚本" 的菜单
     };
 
-    if(window.AM_Helper){
+    if(window.AM_Helper){  // 修改调试用，重新载入无需重启
         window.AM_Helper.uninit();
         delete window.AM_Helper;
     }
@@ -43,7 +43,6 @@ location == "chrome://browser/content/browser.xul" && (function(){
 	    Cu.import("resource://gre/modules/XPIProvider.jsm");
     } catch (e) {}
 
-    const debug = Application.console.log;
     const isCN = Services.prefs.getCharPref("general.useragent.locale").indexOf("zh") != -1;
     const usoRegx = /^https?:\/\/userscripts.org\/scripts\/source\/\d+.\w+.js$/;
 
@@ -51,7 +50,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
         init: function(){
             document.addEventListener("DOMContentLoaded", this, false);
 
-            this.addHomePageForScriptish();
+            // this.addHomePageForScriptish();
         },
         uninit: function(){
             document.removeEventListener("DOMContentLoaded", this, false);
@@ -133,7 +132,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
                 id: "AM-reload-uc",
                 hidden: true,
                 label: isCN ? "重载 uc 脚本（慎用）" : "Reload uc script",
-                style: "color:red;",
+                style: "font-weight:bold",
                 tooltiptext: "仅部分脚本支持。如有问题，重启解决。",
                 oncommand: "AM_Helper.getAddon(AM_Helper.getPopupNode(this).value, AM_Helper.reloadUserChromeJS);"
             });
@@ -330,7 +329,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
         reloadUserChromeJS: function (aAddon) {
             if(aAddon.type != "userchromejs") return;
 
-            var result = confirm("确定要重载吗？");
+            var result = confirm("确定要重载吗？\n慎用，仅部分脚本支持，不支持的脚本会出现重复添加按钮或菜单或事件等问题。\n如有问题，重启火狐。");
             if(!result) return;
 
             var script = aAddon._script;
@@ -436,7 +435,8 @@ location == "chrome://browser/content/browser.xul" && (function(){
                     }else{
                         xul = xul.replace(/\%/g,"");
                     }
-                    doc.getElementById("detail-rows").innerHTML += xul;
+                    // doc.getElementById("detail-rows").innerHTML += xul;
+                    doc.getElementById("detail-rows").appendChild(doc.createElement("row")).outerHTML = xul;
                 }
             }
         },

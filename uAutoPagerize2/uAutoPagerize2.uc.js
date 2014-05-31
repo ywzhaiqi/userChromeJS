@@ -2146,9 +2146,9 @@ function createIframe(name) {
     return frame;
 }
 
-// By lastDream2013，原版只能用于 Firefox
+// By lastDream2013，已修正过，原版只能用于 Firefox
 function getRalativePageStr(lastUrl, currentUrl, nextUrl) {
-    function getRalativePageNumArray(lasturl, url) {
+    var getRalativePageNumArray = function (lasturl, url) {
         if (!lasturl || !url) {
             return [0, 0];
         }
@@ -2158,15 +2158,15 @@ function getRalativePageStr(lastUrl, currentUrl, nextUrl) {
             url_info,
             lasturl_info;
         while (urlarray.length != 0) {
-            url_info = urlarray.pop(),
-            lasturl_info = lasturlarray.pop();
+            url_info = urlarray.pop().replace('p', ''),
+            lasturl_info = lasturlarray.pop().replace('p', '');
             if (url_info != lasturl_info) {
                 if (/[0-9]+/.test(lasturl_info) && /[0-9]+/.test(url_info))
                     return [parseInt(lasturl_info), parseInt(url_info)];
             }
         }
         return [0, 0];
-    }
+    };
 
     //论坛和搜索引擎网页显示实际页面信息
     var ralativePageNumarray = [];
@@ -2177,6 +2177,9 @@ function getRalativePageStr(lastUrl, currentUrl, nextUrl) {
         var ralativeOff = ralativePageNumarray[1] - ralativePageNumarray[0]; //用的上一页的相对信息比较的，要补充差值……
         ralativePageNumarray[1] = ralativePageNumarray[1] + ralativeOff;
         ralativePageNumarray[0] = ralativePageNumarray[0] + ralativeOff;
+    }
+    if (ralativePageNumarray[0] == NaN) {
+        return '';
     }
 
     var realPageSiteMatch = false;

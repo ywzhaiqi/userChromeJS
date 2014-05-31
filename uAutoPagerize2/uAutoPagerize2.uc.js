@@ -2211,7 +2211,7 @@ function getRalativePageStr(lastUrl, currentUrl, nextUrl) {
         } else if ((ralativePageNumarray[1] - ralativePageNumarray[0]) == 1) { //一般的翻页数，差值应该是1
             ralativePageStr = ' [ 实际：第 <font color="red">' + ralativePageNumarray[0] + '</font> 页 ]';
         } else if ((ralativePageNumarray[0] == 0 && ralativePageNumarray[1]) == 0) { //找不到的话……
-            ralativePageStr = ' [ 实际网页结束 ]';
+            ralativePageStr = ' [ <font color="red">实际网页结束</font> ]';
         }
     } else {
         ralativePageStr = '';

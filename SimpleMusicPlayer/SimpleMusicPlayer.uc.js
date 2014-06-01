@@ -57,7 +57,7 @@
                 "play-pause": function(win) {
                     var player = win.player;
                     if (player.getState() == 'play') {
-                    player.pause();
+                        player.pause();
                     } else {
                         player.play();
                     }
@@ -123,7 +123,7 @@
         {
             name: "Jing+ Music",
             url: "http://jing.fm/",
-            iframeStyle: "",
+            // iframeStyle: "",
             // css: "",
             control: {
                 "play-pause": "#playCtl",
@@ -459,11 +459,6 @@
                 panelopen: "true",
             });
 
-
-
-
-
-
             // panel 里添加 iframe
             panel.appendChild($C("iframe", {
                 id: "SimpleMusicPlayer-iframe",
@@ -548,8 +543,8 @@
                     // 如果是当前选中的激活，否则关闭上一个窗口，打开新窗口。
                     if (this.curSiteIndex == siteIndex) {
                         try {
-                        this.newWindow.focus();
-                        return;
+                            this.newWindow.focus();
+                            return;
                         } catch(ex) {
                             this.newWindow = null;
                         }
@@ -571,6 +566,7 @@
                         addStyle(curSite.css, this.newWindow.document)
                     }, 500);
                 }
+                
                 this.curSiteIndex = siteIndex;
                 this.rebuildControls();
                 return;
@@ -586,15 +582,16 @@
                     iStyle = Config.iframeStyle.mobile;
                 }
             } else {
-                iStyle = curSite.changeUA ? Config.iframeStyle.mobile : Config.iframeStyle.normal
+                iStyle = curSite.changeUA ? Config.iframeStyle.mobile : Config.iframeStyle.normal;
             }
             iframe.setAttribute('style', iStyle);
 
-            // 链接强制在 iframe 里打开。只能用字符串的形式
+            // 链接强制在 iframe 里打开。只能用字符串的形式？
             var onclick = curSite.openLinkInsided == true ?
                     this.openLinkInIframe.toString().replace(/^[^{]+\{/, '').replace(/\}$/, '') :
                     '';
             iframe.setAttribute('onclick', onclick)
+            
             // 设置 UA
             if (curSite.changeUA) {
                 UAManager.change(Config.mobileUAString);

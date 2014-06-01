@@ -25,12 +25,31 @@ SimpleMusicPlayer.uc.js
 
 站点示例，更多示例请查看代码。
 
+### iframe 的方式
+
 	{
-		name: "百度随心听（手机版）",
-		url: "http://fm.baidu.com/",
-		changeUA: true,
-		iframeStyle: "mobile",
-		css: "#ad { display:none !important; }",
+	    name: "百度随心听（手机版）",
+	    url: "http://fm.baidu.com/",
+	    changeUA: true,
+	    iframeStyle: "width: 320px; height: 440px;",
+	    css: "#ad { display:none !important; }",
+	    control: {
+	        "play-pause": function(win) {
+	            var player = win.player;
+	            if (player.getState() == 'play') {
+	                player.pause();
+	            } else {
+	                player.play();
+	            }
+	        },
+	        // "play": "win.player.play()",
+	        // "pause": "win.player.pause()",
+	        // "stop": "win.player.stop()",
+	        "love": "#playerpanel-btnlove",
+	        "hate": "#playerpanel-btnhate",
+	        "next": "#playerpanel-btnskip",
+	        // "reset": "win.player.reset()",
+	    }
 	},
 
 - **name**: 右键菜单显示的名字。
@@ -38,14 +57,33 @@ SimpleMusicPlayer.uc.js
 - **changeUA**: 会临时设置 UA 为手机版，如果不需要不要填。
 - **iframeStyle**: 主要用于设置面板的宽度和高度，`mobile` 为内置的 mobile 大小，也可自行设置，例如 `width: 740px; height: 570px;`
 - **css**: 插入到页面的样式，可隐藏广告或简化网站的界面使得弹出的面板变小。
+- **control**
+	- "play-pause"、"love"、"hate"、"next" 等为该站点的控制菜单
+	- 最简单的是该按钮的 css 选择器，如 "next": "#playerpanel-btnskip"
+	- 写法二（特殊）："play": "win.player.play()"，已 `win` 开头，`win` 为 GM 脚本的 unsafeWindow。后面的 `player.play()` 则是该网页的 js 对象。
+	- 写法三：函数，如 "play-pause" 的函数
+- **openLinkInsided**：为 true 则强制打开链接在 iframe 内，**可能有bug**。
+
+### 窗口方式
+
+豆瓣FM 等网站因为在 iframe 无法点击播放，故采用窗口方式。
+
+        {
+			name: "豆瓣FM（窗口）",
+			url: "http://douban.fm/",
+			isWindow: true,
+			windowFeatures: 'width=1110px,height=626px,resizable,scrollbars=yes',
+        },
+
+- **isWindow**：该参数为 true 则是窗口方式
+- **windowFeatures**：打开窗口的属性，详见 [window.open - DOM | MDN](https://developer.mozilla.org/zh-CN/docs/DOM/window.open#Position_and_size_features)
 
 TODO
 ----
 
-### 豆瓣FM 的问题
-
-- [豆瓣FM](http://douban.fm/) 和 [豆瓣FM（手机版）](http://douban.fm/partner/sidebar) 在面板里点击按钮无反应，是因为 iframe 的原因？
-- 目前用窗口方式解决。
+- 是否在播放中
+- 是否加星号
+- 如果使用了 `UserAgentChange.uc.js`，则 "百度随心听（手机版）" 打开界面会多个下载按钮，且没有歌词。**原因不明**
 
 ### Flashgot 捕获音频？
 

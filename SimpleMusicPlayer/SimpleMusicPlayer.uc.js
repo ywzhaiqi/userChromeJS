@@ -162,9 +162,12 @@
         {
             name: "蜻蜓fm",
             url: "http://qingting.fm/",
+            openLinkInsided: true,
+            iframeStyle: "width: 1000px; height: 600px;",
             control: {
-                "play-pause": "#btn-play"
-            }
+                // "play-pause": "#btn-play"
+                "play-pause": "a[title='播放/暂停']"
+            },
         },
         {
             name: "倾听网络收音机",
@@ -444,32 +447,10 @@
                 panelopen: "true",
             });
 
-            var openLinkInIframe = function(event) {
-                var findLink = function (element) {
-                    switch (element.tagName) {
-                        case 'A': return element;
 
-                        case 'B': case 'I': case 'SPAN': case 'SMALL':
-                        case 'STRONG': case 'EM': case 'BIG': case 'SUB':
-                        case 'SUP': case 'IMG': case 'S':
-                            var parent = element.parentNode;
-                            return parent && findLink(parent);
 
-                        default:
-                            return null;
-                    }
-                };
-                var link = findLink(event.target);
-                if(!link) return;
 
-                var href = link.href;
 
-                if (href && href.match(/^(https?|ftp):\/\//)) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    SimpleMusicPlayer.setIframeSrc(href);
-                }
-            };
 
             // panel 里添加 iframe
             panel.appendChild($C("iframe", {
@@ -478,13 +459,13 @@
                 flex: "1",
                 transparent: "transparent",
                 style: Config.iframeStyle.mobile,
-                // 链接强制在 iframe 里打开。只能用字符串的形式
-                onclick: openLinkInIframe.toString().replace(/^[^{]+\{/, '').replace(/\}$/, ''),
                 // 以下需要？
-                clickthrough: "never",
-                autoscroll: "false",
-                disablehistory: "false",
-                context: "contentAreaContextMenu",
+                // showcaret: "true",
+                // autocompleteenabled: "true",
+                // clickthrough: "never",
+                // autoscroll: "false",
+                // disablehistory: "false",
+                // context: "contentAreaContextMenu",
             }));
 
             var mainPopupSet = $("mainPopupSet");
@@ -586,6 +567,11 @@
             }
             iframe.setAttribute('style', iStyle);
 
+            // 链接强制在 iframe 里打开。只能用字符串的形式
+            var onclick = curSite.openLinkInsided == true ?
+                    this.openLinkInIframe.toString().replace(/^[^{]+\{/, '').replace(/\}$/, '') :
+                    '';
+            iframe.setAttribute('onclick', onclick)
             // 设置 UA
             if (curSite.changeUA) {
                 UAManager.change(Config.mobileUAString);
@@ -709,6 +695,32 @@
                 var e = doc.createEvent('HTMLEvents');
                 e.initEvent(type, true, true);
                 return !el.dispatchEvent(e);　
+            }
+        },
+        openLinkInIframe: function(event) {
+            var findLink = function (element) {
+                switch (element.tagName) {
+                    case 'A': return element;
+
+                    case 'B': case 'I': case 'SPAN': case 'SMALL':
+                    case 'STRONG': case 'EM': case 'BIG': case 'SUB':
+                    case 'SUP': case 'IMG': case 'S':
+                        var parent = element.parentNode;
+                        return parent && findLink(parent);
+
+                    default:
+                        return null;
+                }
+            };
+            var link = findLink(event.target);
+            if(!link) return;
+
+            var href = link.href;
+
+            if (href && href.match(/^(https?|ftp):\/\//)) {
+                event.preventDefault();
+                event.stopPropagation();
+                SimpleMusicPlayer.setIframeSrc(href);
             }
         }
     };

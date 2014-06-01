@@ -554,8 +554,12 @@
                 if (this.newWindow) {
                     // 如果是当前选中的激活，否则关闭上一个窗口，打开新窗口。
                     if (this.curSiteIndex == siteIndex) {
+                        try {
                         this.newWindow.focus();
                         return;
+                        } catch(ex) {
+                            this.newWindow = null;
+                        }
                     } else {
                         this.close();
                     }

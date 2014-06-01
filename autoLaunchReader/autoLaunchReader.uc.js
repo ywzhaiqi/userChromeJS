@@ -5,8 +5,9 @@
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
-// @version        0.0.7
+// @version        2014.6.1
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/autoLaunchReader
+// @note           2014/06/01 修正新版 Clearly 调用的问题
 // @note           2014/05/21 ver0.007 增加 iReader 的支持（可能部分网站会有问题）
 // @note           2013/06/06 ver0.004 调用小说脚本失败后，再次调用其它工具。clearly 后台加载网页的支持
 // @note           2013/06/04 ver0.003 修复诸多bug
@@ -294,7 +295,7 @@ if (typeof window.autoReader != "undefined") {
             }, timer || 0);
         },
         launch_clearly: function(){
-            __readable_by_evernote.readable_by_evernote__button__call();
+            document.getElementById("readable_by_evernote__button").doCommand();
         },
         launch_readability_cn: function(){
             if(content.wrappedJSObject.X_readability){
@@ -383,7 +384,26 @@ if (typeof window.autoReader != "undefined") {
     }
 
     // 代码来自 __readable_by_evernote.__readable_by_evernote__launch
-    function __readable_by_evernote__launch(doc){
+    function __readable_by_evernote__launch(__doc){
+
+        var $R = window.__readable_by_evernote;
+
+        //  current
+        var __win = __doc.defaultView;
+            
+        //  invalid page?
+        if (__win && __win.location && __win.location.href && $R.valid_url(__win.location.href)) {}else
+        {
+            __win.location = 'chrome://readable-by-evernote/content/blank.html';
+            return;
+        }
+            
+        //  inject
+        $R.inject(__doc);
+
+        return;
+
+        // 以下是旧版，已失效
         var
             _d = doc,
             _b = _d.getElementsByTagName('body')[0],

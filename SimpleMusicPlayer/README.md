@@ -42,4 +42,18 @@ SimpleMusicPlayer.uc.js
 TODO
 ----
 
+### 豆瓣FM 的问题
+
 - [豆瓣FM](http://douban.fm/) 和 [豆瓣FM（手机版）](http://douban.fm/partner/sidebar) 在面板里点击按钮无反应，是因为 iframe 的原因？
+- 目前用窗口方式解决。
+
+### Flashgot 捕获音频？
+
+需要修改 Flashgot 扩展的代码？
+
+文件 MediaSniffer.js
+
+	updateUI: function (win) {
+		var bw = DOM.mostRecentBrowserWindow;
+		if (bw && bw.gFlashGot && bw.content == win.top) bw.gFlashGot.updateMediaUI();
+	},

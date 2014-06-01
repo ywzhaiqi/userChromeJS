@@ -86,6 +86,18 @@
             }
         },
         {
+            name: "百度音乐盒",
+            url: "http://play.baidu.com/",
+            iframeStyle: "width: 960px; height: 600px;",
+            css: ".down-mobile,.m-client-product,.column4,#pauseAd{display:none!important}#lrcCol{right:0!important}.mb-layout-bd.column2{margin-right:-165px!important}",
+            control: {
+                "play-pause": ".play",
+                love: ".icons .favor",
+                next: ".next",
+                prev: ".prev"
+            }
+        },
+        {
             name: "豆瓣FM（私人版）",
             url: "http://douban.fm/partner/firefox",
             iframeStyle: "width: 360px; height: 290px;",
@@ -548,6 +560,17 @@
 
                 this.newWindow = window.open(curSite.url, '', curSite.windowFeatures);
 
+                // 向窗口插入 css
+                var addStyle = function (css, doc) {
+                    var style = doc.createElement('style');
+                    style.textContent = css;
+                    doc.head.appendChild(style);
+                };
+                if (curSite.css) {
+                    setTimeout(function(){
+                        addStyle(curSite.css, this.newWindow.document)
+                    }, 500);
+                }
                 this.curSiteIndex = siteIndex;
                 this.rebuildControls();
                 return;

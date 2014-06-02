@@ -42,7 +42,8 @@ userChromeJS for Firefox
  - [Space_nextpage](Space_nextpage)，空格键页面底部翻页（依次调用 uAutoPagerize、uSuper_preloader、nextPage.uc.xul）
  - [stylishEdit](stylishEdit)，为 Stylish 增加外部编辑器等（修复版）。
  - [ThunderLixianExporterPatch](ThunderLixianExporterPatch)，迅雷离线直接导出 IDM.ef2（原创）。
- - [uAutoPagerize](uAutoPagerize)，中文规则增强版（大幅修改版）。
+ - [uAutoPagerize](uAutoPagerize)，中文规则增强版（大幅修改版），我已改用下面的 uAutoPagerize2。
+ - [uAutoPagerize2](uAutoPagerize2)，中文规则增强版，数据库为 Super_preloaderPlus_one 脚本。
  - [uc\_google\_translator](uc_google_translator)，google 翻译脚本（修改版），**已弃用，请改用原 [dannylee 的版本](http://j.mozest.com/zh-CN/ucscript/script/115/)**。
  - [uSuper_preloader](uSuper_preloader)，基于 Super_preloader GM脚本修改而来。
  - [viewSourceModoki](viewSourceModoki)，右键菜单增加 `View Source With: All、Document、css、js`。
@@ -75,7 +76,6 @@ userChromeJS for Firefox
  - [statusbarButtonScrapbook.uc.js](statusbarButtonScrapbook.uc.js)，更改 Scrapbook 状态栏图标为鼠标中键打开侧边栏。
  - [textLink.uc.js](textLink.uc.js)，双击打开文字链接，未修改，[原链接](https://github.com/alice0775/userChrome.js/blob/master/textLink.uc.js)。
  - [userChrome.js](userChrome.js)，修改版。默认载入编码改为 UTF-8，增加对 @homepageURL 等参数的解析，在 AddonsPage.uc.js 的uc脚本详细页面就会有主页等链接。
- - [userChrome-26.js](userChrome-26.js)，适合 FF26,在FF24下会让 xul 的脚本没法加载。
 
 ### Disable文件夹
 

@@ -36,6 +36,22 @@ moveButton.uc.js
 
     { id: "tools-menu", insertAfter: "appmenu_customize", clone: true }
 
+示例7：修改 Greasemonkey 按钮为右键弹出菜单的类型
+
+	{
+        id: "greasemonkey-tbb",
+        attr: {
+            type: "",
+            context: "greasemonkey-popup"
+        }
+    }, {
+        id: "#greasemonkey-tbb > menupopup",
+        attr: {
+            id: "greasemonkey-popup"
+        }
+    },
+
+
 参考的工具栏或按钮的Id
 -----------------------
 

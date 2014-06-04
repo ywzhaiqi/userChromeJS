@@ -7,7 +7,7 @@
 // @compatibility  Firefox 17
 // @charset        UTF-8
 // @version        0.3.0
-// @update         2014-5-21
+// @update         2014-06-04
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/uAutoPagerize2
 // @reviewURL      http://bbs.kafan.cn/thread-1555846-1-1.html
 // @optionsURL     about:config?filter=uAutoPagerize.
@@ -596,7 +596,7 @@ var ns = window.uAutoPagerize = {
                 if (!newInfo[n]) delete newInfo[n];
             });
             
-            ["pageElement", "useiframe", "newIframe", "iloaded", "itimeout", "documentFilter", "filter", 
+            ["enable", "pageElement", "useiframe", "newIframe", "iloaded", "itimeout", "documentFilter", "filter", 
                 "startFilter", "stylish", 'replaceE', 'lazyImgSrc', 'separatorReal'].forEach(function(name){
                 if(info.autopager[name] != undefined){
                     newInfo[name] = info.autopager[name];
@@ -746,7 +746,13 @@ var ns = window.uAutoPagerize = {
             if (!info) [, info, nextLink] = ns.getInfo(ns.SITEINFO, win);
             //debug(index + 'th/' + (new Date().getTime() - s) + 'ms');
             if (!info) [, info, nextLink] = ns.getInfo(ns.MICROFORMAT, win);
-			if (info) win.ap = new AutoPager(win.document, info, nextLink);
+            if (info) {
+                if (info.enable == false) {
+                    debug('找到规则：', info, '但默认禁用');
+                } else {
+                    win.ap = new AutoPager(win.document, info, nextLink);
+                }
+            }
 
             debug('总耗时:' + (new Date() - startTime) + '毫秒, 地址为：' + locationHref);
 
@@ -907,9 +913,10 @@ var ns = window.uAutoPagerize = {
                     // limiting greater than 12 to filter microformats like SITEINFOs.
                     if (info.url.length > 12) {
                         debug('nextLink not found.', info.nextLink);
-                    } else if (info.url.length == undefined) {
-                        console.log('[uAutoPagerize] ', 'nextLink not found.', info.nextLink)
                     }
+                    // else if (info.url.length == undefined) {
+                    //     console.log('[uAutoPagerize] ', 'nextLink not found.', info.nextLink)
+                    // }
                     continue;
                 }
                 var pageElement = getElementMix(info.pageElement, doc);
@@ -1169,8 +1176,10 @@ AutoPager.prototype = {
             this.info[key] = val;
         }
 
+        // 新加的
         this.iframeMode = USE_IFRAME && this.info.useiframe || false;
         this.ipagesMode = false;
+        this.lastPageURL = doc.location.href.replace(/#.*$/, ''); // url 去掉hash;
         this.C = this.win.wrappedJSObject.console;
 
         var url = this.getNextURL(nextLink ? nextLink : this.doc);
@@ -1489,8 +1498,8 @@ AutoPager.prototype = {
         }
 
 		if (!page || page.length < 1 ) {
-			this.C.error('[uAutoPagerize] pageElement not found.', this.info.pageElement, htmlDoc.body.innerHTML);
 			this.state = 'terminated';
+            this.C.error('[uAutoPagerize] pageElement not found.', this.info.pageElement, htmlDoc.body && htmlDoc.body.innerHTML);
 			return;
 		}
 
@@ -1583,8 +1592,10 @@ AutoPager.prototype = {
             fragment = this.doc.createDocumentFragment();
             fragment.appendChild(div);
         }
-
-        var ralativePageStr = (this.info.separatorReal === false) ? '' : getRalativePageStr(this.lastRequestURL, this.requestURL, nextPageUrl);
+        var ralativePageStr = (this.info.separatorReal === false) ? 
+                '' : 
+                getRalativePageStr(this.lastPageURL, this.requestURL, nextPageUrl);
+        this.lastPageURL = this.requestURL;
 
         var hr = this.doc.createElement('hr');
         hr.setAttribute('class', 'autopagerize_page_separator');
@@ -1697,7 +1708,7 @@ AutoPager.prototype = {
         }
     },
     getNextURL : function(doc) {
-        var nextLink = doc instanceof HTMLElement ?
+        var nextLink = doc instanceof this.win.HTMLElement ?
             doc :
             getElementMix(this.info.nextLink, doc);
         if (nextLink) {
@@ -2146,23 +2157,30 @@ function createIframe(name) {
     return frame;
 }
 
-// By lastDream2013，已修正过，原版只能用于 Firefox
+// By lastDream2013 略加修改，原版只能用于 Firefox
 function getRalativePageStr(lastUrl, currentUrl, nextUrl) {
     var getRalativePageNumArray = function (lasturl, url) {
         if (!lasturl || !url) {
             return [0, 0];
         }
 
-        var lasturlarray = lasturl.split(/-|\.|\&|\/|=|#/),
-            urlarray = url.split(/-|\.|\&|\/|=|#/),
+        var lasturlarray = lasturl.split(/-|\.|\&|\/|=|#|\?/),
+            urlarray = url.split(/-|\.|\&|\/|=|#|\?/),
             url_info,
             lasturl_info;
+        // 一些 url_info 为 p1,p2,p3 之类的
+        var handleInfo = function(s) {
+            if (s) {
+                return s.replace('p', '');
+            }
+            return s;
+        };
         while (urlarray.length != 0) {
-            url_info = urlarray.pop().replace('p', ''),
-            lasturl_info = lasturlarray.pop().replace('p', '');
+            url_info = handleInfo(urlarray.pop()),
+            lasturl_info = handleInfo(lasturlarray.pop());
             if (url_info != lasturl_info) {
-                if (/[0-9]+/.test(lasturl_info) && /[0-9]+/.test(url_info))
-                    return [parseInt(lasturl_info), parseInt(url_info)];
+                if (/[0-9]+/.test(url_info) && (url_info == "2" || /[0-9]+/.test(lasturl_info)))
+                    return [parseInt(lasturl_info) || 1, parseInt(url_info)];
             }
         }
         return [0, 0];
@@ -2178,7 +2196,8 @@ function getRalativePageStr(lastUrl, currentUrl, nextUrl) {
         ralativePageNumarray[1] = ralativePageNumarray[1] + ralativeOff;
         ralativePageNumarray[0] = ralativePageNumarray[0] + ralativeOff;
     }
-    if (ralativePageNumarray[0] == NaN) {
+    // console.log('[获取实际页数] ', '要比较的3个页数：',arguments, '，得到的差值:', ralativePageNumarray);
+    if (isNaN(ralativePageNumarray[0]) || isNaN(ralativePageNumarray[1])) {
         return '';
     }
 

@@ -3,7 +3,7 @@
 // @description    简单拖曳修改版 By ywzhiqi
 // @include        chrome://browser/content/browser.xul
 // @charset        UTF-8
-// @version        1.3
+// @version        2014.06.06
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS
 // @note           2014-5-27，提升链接的优先级为图片之前，修改百度盘密码链接的识别，略微调整下结构。
 // @note           2014-5-26，修改为向上前台，其它方向拖曳后台。
@@ -35,12 +35,16 @@ window.SimpleDragModY = {
         gBrowser.mPanelContainer.addEventListener("dragstart", this, false);
         gBrowser.mPanelContainer.addEventListener("dragover", this, false);
         gBrowser.mPanelContainer.addEventListener("drop", this, false);
+        gBrowser.mPanelContainer.addEventListener("dragend", this, false);
+        // gBrowser.mPanelContainer.addEventListener("dragenter", this, false);
         window.addEventListener("unload", this, false);
     },
     uninit: function() {
         gBrowser.mPanelContainer.removeEventListener("dragstart", this, false);
         gBrowser.mPanelContainer.removeEventListener("dragover", this, false);
         gBrowser.mPanelContainer.removeEventListener("drop", this, false);
+        gBrowser.mPanelContainer.removeEventListener("dragend", this, false);
+        // gBrowser.mPanelContainer.removeEventListener("dragenter", this, false);
         window.removeEventListener("unload", this, false);
     },
     handleEvent: function(event) {
@@ -51,11 +55,15 @@ window.SimpleDragModY = {
             case "dragover":
                 this.startPoint && (Components.classes["@mozilla.org/widget/dragservice;1"].getService(Components.interfaces.nsIDragService).getCurrentSession().canDrop = true);
                 break;
+            // case "dragenter":
+            //     console.log('1111', event.type)
+            //     break;
+            case "dragend":
             case "drop":
                 if (this.startPoint && event.target.localName != "textarea" && (!(event.target.localName == "input" && (event.target.type == "text" || event.target.type == "password"))) && event.target.contentEditable != "true") {
                     event.preventDefault();
                     event.stopPropagation();
-                    
+
                     var direction = this.getDirection(event);
 
                     this.dragdrop(event, direction, {

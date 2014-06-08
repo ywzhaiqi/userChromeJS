@@ -92,6 +92,7 @@ var SITEINFO_IMPORT_URLS = ORIGINAL_SITEINFO ? [
 
 // Super_preloaderPlus 地址
 var SITEINFO_CN_IMPORT_URL = "https://greasyfork.org/scripts/293-super-preloaderplus-one/code/Super_preloaderPlus_one.user.js";
+// var SITEINFO_CN_IMPORT_URL = "https://github.com/ywzhaiqi/userscript/raw/master/Super_preloaderPlus/super_preloaderplus_one.user.js";
 
 var COLOR = {
     on: '#0f0',
@@ -302,7 +303,11 @@ var ns = window.uAutoPagerize = {
             }));
         } else {
             // ns.icon = $('status-bar').appendChild($C("statusbarpanel", {
-            ns.icon = $('addon-bar').appendChild($C("statusbarpanel", {
+            var bar = $('dactyl-status-bar');
+            if (!bar) {
+                bar = $('addon-bar');
+            }
+            ns.icon = bar.appendChild($C("statusbarpanel", {
                 id: "uAutoPagerize-icon",
                 class: "statusbarpanel-iconic",
                 state: "disable",
@@ -411,14 +416,7 @@ var ns = window.uAutoPagerize = {
 
         ns.INCLUDE = INCLUDE;
 
-        // 从 prefs 载入 EXCLUDE
-        try{
-            let str = ns.prefs.getCharPref("EXCLUDE");
-            ns.EXCLUDE = str.split(",");
-        }catch(e){}
-        if(!ns.EXCLUDE){
-            ns.EXCLUDE = EXCLUDE;
-        }
+        ns.loadExclude();
 
         ns.addListener();
         ns.loadSetting();
@@ -453,7 +451,7 @@ var ns = window.uAutoPagerize = {
             } catch (e) {}
         }, ns);
 
-        ns.prefs.setCharPref("EXCLUDE", ns.EXCLUDE.join(","));
+        ns.saveExclude();
 
         ns.IMMEDIATELY_PAGER_NUM = $("uAutoPagerize-immedialate-pages").value;
     },
@@ -518,13 +516,24 @@ var ns = window.uAutoPagerize = {
         if (aTopic == 'nsPref:changed') {
             switch(aData) {
                 case 'EXCLUDE':
-                    try {
-                        let str = ns.prefs.getCharPref("EXCLUDE");
-                        ns.EXCLUDE = str.split(",");
-                    } catch(e) {}
+                    ns.loadExclude();
                     break;
             }
         }
+    },
+    loadExclude: function() {
+        // 从 prefs 载入 EXCLUDE
+                    try {
+                        let str = ns.prefs.getCharPref("EXCLUDE");
+            ns.EXCLUDE = str.split(/,| |[\n\r]+/);
+                    } catch(e) {}
+        
+        if(!ns.EXCLUDE){
+            ns.EXCLUDE = EXCLUDE;
+            }
+    },
+    saveExclude: function() {  // 保存到 about:config 中
+        ns.prefs.setCharPref("EXCLUDE", ns.EXCLUDE.join("\r\n"));
     },
     loadSetting: function(isAlert) {
         var data = loadText(this.file);
@@ -863,6 +872,7 @@ var ns = window.uAutoPagerize = {
         }
 
         $('uAutoPagerize-popup').hidePopup();
+        ns.saveExclude();
     },
     resetSITEINFO: function() {
         if (confirm('reset SITEINFO?'))

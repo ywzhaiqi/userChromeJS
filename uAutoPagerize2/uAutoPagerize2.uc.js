@@ -7,7 +7,7 @@
 // @compatibility  Firefox 17
 // @charset        UTF-8
 // @version        0.3.0
-// @update         2014-06-04
+// @update         2014-06-08
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/uAutoPagerize2
 // @reviewURL      http://bbs.kafan.cn/thread-1555846-1-1.html
 // @optionsURL     about:config?filter=uAutoPagerize.
@@ -128,10 +128,45 @@ var USE_IFRAME = true;           // 是否启用 iframe 加载下一页（浏览
 var PRELOADER_NEXTPAGE = true;   // 提前预读下一页..就是翻完第1页,立马预读第2页,翻完第2页,立马预读第3页..(大幅加快翻页快感-_-!!)
 var ADD_TO_HISTORY = false;      // 添加下一页链接到历史记录
 var SEPARATOR_RELATIVELY = true; // 分隔符.在使用上滚一页或下滚一页的时候是否保持相对位置..
-// 额外的设置，在配置文件中
+// 额外的设置，具体在配置文件中
 var prefs = {
     pauseA: false,            // 快速停止翻页开关
+    ipages: [false, 2],
 };
+// 自造简化版 underscroe 库，仅 ECMAScript 5
+var _ = (function(){
+    var nativeIsArray = Array.isArray;
+    var _ = function(obj){
+        if(obj instanceof _) return obj;
+        if(!(this instanceof _)) return new _(obj);
+        this._wrapped = obj;
+    };
+    var toString = Object.prototype.toString;
+
+    _.isArray = nativeIsArray || function(obj) {
+        return toString.call(obj) == '[object Array]';
+    };
+
+    ['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp'].forEach(function(name){
+        _['is' + name] = function(obj) {
+            return toString.call(obj) == '[object ' + name + ']';
+        };
+    });
+
+    // Return the first value which passes a truth test. Aliased as `detect`.
+    _.find = function(obj, iterator, context){
+        var result;
+        obj.some(function(value, index, array){
+            if(iterator.call(context, value, index, array)){
+                result = value;
+                return true;
+            }
+        });
+        return result;
+    };
+
+    return _;
+})();
 let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
 if (typeof window.uAutoPagerize != 'undefined') {
@@ -157,6 +192,7 @@ var ns = window.uAutoPagerize = {
     MY_SITEINFO    : MY_SITEINFO.slice(),
     SITEINFO       : [],
     SITEINFO_CN    : [],
+    HashchangeSites: [],  // 页面不刷新的站点，在配置文件中修改
 
     get prefs() {
         delete this.prefs;
@@ -301,12 +337,22 @@ var ns = window.uAutoPagerize = {
                 context: "uAutoPagerize-popup",
                 style: "padding: 0px 2px;",
             }));
-        } else {
+        } 
+        // 29+ 可移动按钮，但有问题。
+        // else if (window.CustomizableUI) {
+        //     CustomizableUI.createWidget({
+        //         id: "uAutoPagerize-icon",
+        //         defaultArea : CustomizableUI.AREA_NAVBAR,
+        //         label : "uAutoPagerize",
+        //         tooltiptext : "disable",
+        //         state: "disable",
+        //         onclick: "if (event.button != 2) uAutoPagerize.iconClick(event);",
+        //         context: "uAutoPagerize-popup",
+        //     });
+        // }
+        else {
             // ns.icon = $('status-bar').appendChild($C("statusbarpanel", {
-            var bar = $('dactyl-status-bar');
-            if (!bar) {
-                bar = $('addon-bar');
-            }
+            var bar = $('dactyl-status-bar') || $('addon-bar');
             ns.icon = bar.appendChild($C("statusbarpanel", {
                 id: "uAutoPagerize-icon",
                 class: "statusbarpanel-iconic",
@@ -533,10 +579,10 @@ var ns = window.uAutoPagerize = {
             }
     },
     saveExclude: function() {  // 保存到 about:config 中
-        ns.prefs.setCharPref("EXCLUDE", ns.EXCLUDE.join("\r\n"));
+        ns.prefs.setCharPref("EXCLUDE", ns.EXCLUDE.join("\n"));
     },
     loadSetting: function(isAlert) {
-        var data = loadText(this.file);
+        var data = loadText(ns.file);
         if (!data) return false;
         var sandbox = new Cu.Sandbox( new XPCNativeWrapper(window) );
         sandbox.INCLUDE = null;
@@ -549,32 +595,33 @@ var ns = window.uAutoPagerize = {
         // 替换 unsafeWindow
         data = data.replace(/unsafeWindow/g, "this.wrappedJSObject");
 
-		try {
-			Cu.evalInSandbox(data, sandbox, '1.8');
-		} catch (e) {
+        try {
+            Cu.evalInSandbox(data, sandbox, '1.8');
+        } catch (e) {
             log('load error.', e);
             alerts('配置文件错误', e);
             return;
-		}
-        sandbox.MY_SITEINFO = this.convertSiteInfos(sandbox.MY_SITEINFO);
-
-		ns.MY_SITEINFO = sandbox.USE_MY_SITEINFO ? sandbox.MY_SITEINFO.concat(MY_SITEINFO): sandbox.MY_SITEINFO;
-		ns.MICROFORMAT = sandbox.USE_MICROFORMAT ? sandbox.MICROFORMAT.concat(MICROFORMAT): sandbox.MICROFORMAT;
-		if (sandbox.INCLUDE)
-			ns.INCLUDE = sandbox.INCLUDE;
-		// if (sandbox.EXCLUDE)
-		// 	ns.EXCLUDE = sandbox.EXCLUDE;
-        
-        if (sandbox.prefs) {
-            prefs = sandbox.prefs;
         }
+        sandbox.MY_SITEINFO = ns.convertSiteInfos(sandbox.MY_SITEINFO);
 
-		if (isAlert) alerts('uAutoPagerize', '配置文件已经重新载入');
+        ns.MY_SITEINFO = sandbox.USE_MY_SITEINFO ? sandbox.MY_SITEINFO.concat(MY_SITEINFO): sandbox.MY_SITEINFO;
+        ns.MICROFORMAT = sandbox.USE_MICROFORMAT ? sandbox.MICROFORMAT.concat(MICROFORMAT): sandbox.MICROFORMAT;
+        if (sandbox.INCLUDE)
+            ns.INCLUDE = sandbox.INCLUDE;
+        // if (sandbox.EXCLUDE)
+        //  ns.EXCLUDE = sandbox.EXCLUDE;
+        
+        if (sandbox.prefs)
+            prefs = sandbox.prefs;
+        if (sandbox.HashchangeSites)
+            ns.HashchangeSites = sandbox.HashchangeSites;
 
-		return true;
-	},
+        if (isAlert) alerts('uAutoPagerize', '配置文件已经重新载入');
+
+        return true;
+    },
     loadSetting_CN: function(isAlert) {
-        var data = loadText(this.file_CN);
+        var data = loadText(ns.file_CN);
         if (!data) return false;
         var sandbox = new Cu.Sandbox( new XPCNativeWrapper(window) );
         sandbox.SITEINFO = [];
@@ -593,7 +640,7 @@ var ns = window.uAutoPagerize = {
 
         var list = sandbox.SITEINFO.concat(sandbox.SITEINFO_TP).concat(sandbox.SITEINFO_comp);
 
-        ns.SITEINFO_CN = this.convertSiteInfos(list);
+        ns.SITEINFO_CN = ns.convertSiteInfos(list);
 
         if (isAlert)
             alerts('uAutoPagerize', '中文数据库已经重新载入');
@@ -622,11 +669,14 @@ var ns = window.uAutoPagerize = {
             });
             
             ["enable", "pageElement", "useiframe", "newIframe", "iloaded", "itimeout", "documentFilter", "filter", 
-                "startFilter", "stylish", 'replaceE', 'lazyImgSrc', 'separatorReal'].forEach(function(name){
+                "startFilter", "stylish", 'replaceE', 'lazyImgSrc', 'separatorReal', 'maxpage', 'ipages'].forEach(function(name){
                 if(info.autopager[name] != undefined){
                     newInfo[name] = info.autopager[name];
                 }
             });
+            if (newInfo.ipages == undefined) {
+                newInfo.ipages = prefs.ipages;
+            }
 
             if (info.autopager.uAutoPagerize2) {
                 for (var name in info.autopager.uAutoPagerize2) {
@@ -698,22 +748,17 @@ var ns = window.uAutoPagerize = {
         var index = -1, info, nextLink;
         var hashchange = false;
 
-        // 已经移到外置规则，便于更新
-        // Google 搜索的一些网址需要加 hashchange
-        if (/^https?:\/\/(www|encrypted)\.google\..{2,9}\/(webhp|#|$|\?)/.test(locationHref)) {
-            timer = 1500;
+        // 页面不刷新的站点
+        var hashSite = _.find(ns.HashchangeSites, function(x){ return toRE(x.url).test(locationHref); });
+        if (hashSite) {
+            timer = hashSite.timer;
             hashchange = true;
-        } else if (/^https?:\/\/www\.baidu\.com\/($|#wd=)/.test(locationHref)) {
-            timer = 1000;
-            hashchange = true;
-        } else if (win.location.host === 'www.newsmth.net') {  // 水木清华社区延迟加载及下一页加载的修复
-            timer = 1000;
-            hashchange = true;
+            debug('当前是页面不刷新的站点');
         }
 
         if(hashchange){
             win.addEventListener("hashchange", function(event) {
-                debug("Add Hashchang Event listener" + locationHref);
+                debug("触发 Hashchang 事件" + locationHref);
                 if (!win.ap) {
                     win.setTimeout(function(){
                         let [index, info] = [-1, null];
@@ -1137,8 +1182,7 @@ var ns = window.uAutoPagerize = {
         if (!editor || !editor.exists()) {
             if (showError) {
                 alert("编辑器的路径未设置!!!\n请设置 view_source.editor.path");
-                var url = "about:config?filter=view_source.editor.path";
-                openLinkIn(url, "tab", { inBackground: false});
+                toOpenWindowByType('pref:pref', 'about:config?filter=view_source.editor.path');
             }
             return;
         }
@@ -1204,7 +1248,8 @@ AutoPager.prototype = {
 
         // 新加的
         this.iframeMode = USE_IFRAME && this.info.useiframe || false;
-        this.ipagesMode = false;
+        this.ipagesMode = this.info.ipages[0];
+        this.ipagesNumber = this.info.ipages[1];
         this.lastPageURL = doc.location.href.replace(/#.*$/, ''); // url 去掉hash;
         this.C = this.win.wrappedJSObject.console;
 
@@ -1383,7 +1428,8 @@ AutoPager.prototype = {
         if (!this.requestURL || this.loadedURLs[this.requestURL]) return;
 
         // 最大页数自动停止
-        if(MAX_PAGER_NUM > 0 && this.pageNum > (MAX_PAGER_NUM - 1)){
+        var maxpage = this.info.maxpage || MAX_PAGER_NUM;
+        if(maxpage > 0 && this.pageNum > (maxpage - 1)){
             this.addEndSeparator();
             return;
         }

@@ -4,6 +4,7 @@ uAutoPagerize2.uc.js
 uAutoPagerize 中文规则简化改进版，原作者链接：[Griever/userChromeJS](https://github.com/Griever/userChromeJS/tree/master/uAutoPagerize)。跟 [uAutoPagerize](../uAutoPagerize) 比
 
  - 基于日文原版重新改写。
+ - 兼容 Super_preloader 规则。
  - **中文规则数据库**为：[Super_preloaderPlus_one for Greasemonkey](http://userscripts.org/scripts/show/178900)，这是我用于其它浏览器的翻页脚本 + 数据库。
  - **按钮默认位置**为地址栏（可改为状态栏），不可移动，也不会有按钮找不到的问题。
  - 新增 `添加下一页到历史记录`。
@@ -64,6 +65,20 @@ uAutoPagerize2 默认禁用原 json 数据库（国外网站为主），如需�
 	var SITEINFO_IMPORT_URLS = [
 	    'http://wedata.net/databases/AutoPagerize/items.json'
 	];
+
+### ipages 参数的使用
+
+示例：打开百度后立即加载3页。
+
+    {
+        // 通过更改 pageElement 解决清爽百度的问题
+        name: '百度搜索',
+        url: "^https?://www\\.baidu\\.com/(?:s|baidu)\\?",
+        nextLink: '//p[@id="page"]/a[contains(text(),"下一页")][@href]',
+        pageElement: 'css;div#content_left',
+        stylish: '.autopagerize_page_info { margin-bottom: 10px; }',
+        ipages: [true, 3]
+    },
 
 
 SITEINFO_Writer.uc.js

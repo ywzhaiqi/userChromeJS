@@ -57,13 +57,16 @@
   "use strict";
   // -- config --
   /*
-    EXPERIMENT：实验性的延迟加载？true 为不延迟，false 为延迟。为 true 则一些脚本可能会运行不正常。
+    EXPERIMENT：取消延迟加载（实验性的）？true 为不延迟，false 为延迟。为 true 则一些脚本可能会运行不正常。
+      true 和 false 区别2点：
+        1、对非主界面本来有个 500ms 的延迟，true 后就没了。
+        2、本来是一个个加载 xul 文件，而 true 则把所有的 xul 加起来一次性加载。 前不久卡饭还有个 userChromejs 扩展的优化版，优化 xul 文件的加载。 
     EXCLUDE_CHROMEHIDDEN：  排除隐藏的 window(popup等)
     USE_0_63_FOLDER：如果为 true，好像只支持这几种文件夹名字 /(uc|xul|ucjs)$/i.test(dirName)
     FORCESORTSCRIPT：对脚本进行排序，这可能对脚本的运行顺序有影响吧
     AUTOREMOVEBOM：对文件编码的检测，可是并不支持 gbk 等编码
   */
-  const EXPERIMENT = true; //実験:するtrue, しない[false]
+  const EXPERIMENT = false; //実験:するtrue, しない[false]
   const EXCLUDE_CHROMEHIDDEN = false; //chromehiddenなwindow(popup等)ではロード: しないtrue, する[false]
   const USE_0_63_FOLDER = false; //0.63のフォルダ規則を使う[true], 使わないfalse
   const FORCESORTSCRIPT = false; //強制的にスクリプトをファイル名順でソートするtrue, しない[false]

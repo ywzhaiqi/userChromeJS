@@ -301,8 +301,8 @@ var ns = window.uAutoPagerize = {
                 style: "padding: 0px 2px;",
             }));
         } else {
-            ns.icon = $('status-bar').appendChild($C("statusbarpanel", {
-            // ns.icon = $('addon-bar').appendChild($C("statusbarpanel", {
+            // ns.icon = $('status-bar').appendChild($C("statusbarpanel", {
+            ns.icon = $('addon-bar').appendChild($C("statusbarpanel", {
                 id: "uAutoPagerize-icon",
                 class: "statusbarpanel-iconic",
                 state: "disable",
@@ -477,6 +477,7 @@ var ns = window.uAutoPagerize = {
         gBrowser.mTabContainer.addEventListener('TabClose', this, false);
         window.addEventListener('uAutoPagerize_destroy', this, false);
         window.addEventListener('unload', this, false);
+        ns.prefs.addObserver('', this, false);
     },
     removeListener: function() {
         gBrowser.mPanelContainer.removeEventListener('DOMContentLoaded', this, true);
@@ -484,6 +485,7 @@ var ns = window.uAutoPagerize = {
         gBrowser.mTabContainer.removeEventListener('TabClose', this, false);
         window.removeEventListener('uAutoPagerize_destroy', this, false);
         window.removeEventListener('unload', this, false);
+        ns.prefs.removeObserver('', this, false);
     },
     handleEvent: function(event) {
         switch(event.type) {
@@ -512,6 +514,18 @@ var ns = window.uAutoPagerize = {
                 break;
         }
     },
+    observe: function(aSubject, aTopic, aData){
+        if (aTopic == 'nsPref:changed') {
+            switch(aData) {
+                case 'EXCLUDE':
+                    try {
+                        let str = ns.prefs.getCharPref("EXCLUDE");
+                        ns.EXCLUDE = str.split(",");
+                    } catch(e) {}
+                    break;
+            }
+        }
+    },
     loadSetting: function(isAlert) {
         var data = loadText(this.file);
         if (!data) return false;
@@ -529,7 +543,9 @@ var ns = window.uAutoPagerize = {
 		try {
 			Cu.evalInSandbox(data, sandbox, '1.8');
 		} catch (e) {
-			return log('load error.', e);
+            log('load error.', e);
+            alerts('配置文件错误', e);
+            return;
 		}
         sandbox.MY_SITEINFO = this.convertSiteInfos(sandbox.MY_SITEINFO);
 
@@ -2180,7 +2196,7 @@ function getRalativePageStr(lastUrl, currentUrl, nextUrl) {
             lasturl_info = handleInfo(lasturlarray.pop());
             if (url_info != lasturl_info) {
                 if (/[0-9]+/.test(url_info) && (url_info == "2" || /[0-9]+/.test(lasturl_info)))
-                    return [parseInt(lasturl_info) || 1, parseInt(url_info)];
+                    return [(parseInt(lasturl_info) || 1), parseInt(url_info)];
             }
         }
         return [0, 0];

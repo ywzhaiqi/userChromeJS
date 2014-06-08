@@ -5,11 +5,14 @@ uAutoPagerize 中文规则简化改进版，原作者链接：[Griever/userChrom
 
  - 基于日文原版重新改写。
  - **中文规则数据库**为：[Super_preloaderPlus_one for Greasemonkey](http://userscripts.org/scripts/show/178900)，这是我用于其它浏览器的翻页脚本 + 数据库。
- - **按钮默认位置**为状态栏（可改为地址栏），不可移动，也不会有按钮找不到的问题。
+ - **按钮默认位置**为地址栏（可改为状态栏），不可移动，也不会有按钮找不到的问题。
  - 新增 `添加下一页到历史记录`。
  - 新增 `鼠标双击或按键暂停翻页`，在配置文件中。
- - 配置文件的 EXCLUDE（黑名单）已经不可用，改在右键菜单里设置，存储在 about:config 中。
+ - 文件 `_uAutoPagerize.js` 是自己的配置文件。但里面的 EXCLUDE（黑名单）已经不可用，改在右键菜单里设置，存储在 about:config 中。
+ - 文件 `uSuper_preloader.db.js` 是中文规则数据库文件，每次更新后被覆盖。
  - 无多功能的分隔条，无强制翻页。
+ - **百度贴吧早已经不再支持，请改用 [Tieba Preload - Greasy Fork](https://greasyfork.org/scripts/282-tieba-preload) 脚本。**
+
 
 ### 右键菜单
 

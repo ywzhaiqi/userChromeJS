@@ -1,4 +1,3 @@
-
 Firefox 摘要
 ==========
 
@@ -28,7 +27,6 @@ Firefox 摘要
     # keyword -- 标题关键字搜索
     @ keyword -- URL关键字搜索
     （注意前面的特殊字符后面都要加一个空格）
-
 
 
 扩展
@@ -135,60 +133,17 @@ Firefox 摘要
 uc脚本
 -----
 
-- Griever / userChromeJS
-
+详见 [../README.md](../README.md)
 
 用户脚本
 --------
 
-### Greasemonkey 和 Scriptish 的区别
-
-- Greasemonkey 缺点
-    - 错误信息在系统控制台，跟 console.log 信息不在一起，需要开2个控制台。
-    - 文件名为数字，Sublime text 无法快速找到。
-    - 图标没有几个脚本运行的数字。
-- Scriptish 缺点
-	- 修改 `@include` 后需要刷新2次才会成功，可能有些页面需要再次刷新才能生效（小说脚本）。
-	- 输出到控制台的信息中文不正常。
-	- 安装脚本时没有进度条，如果 require 数量较多，需要等待安装窗口的出现。
-	- 不支持 GM_info、@grant。
-	- **严重bug**，同一个作者的2个中文文件名脚本，会被安装在同一个目录，同一时间只能安装一个脚本。
-
-### 常用脚本
-
-- [ywzhaiqi](http://userscripts.org/users/138842/scripts)
-    - [小说阅读脚本](http://userscripts.org/scripts/show/165951)
-    - [BaiduPanDownloadHelper](http://userscripts.org/scripts/show/162138)
-    - [Super_preloaderPlus_one](http://userscripts.org/scripts/show/178900)
-- [NLF](http://userscripts.org/users/202260/scripts)
-    - [picViewer](http://userscripts.org/scripts/show/105741)
-    - [search_engineJump](http://userscripts.org/scripts/show/84970)
-    - [YoukuSS](http://userscripts.org/scripts/show/84972)
-    - [Super_preloader](http://userscripts.org/scripts/show/84937)，[Super_preloader.db](http://userscripts.org/scripts/show/93080)
-- [binux](https://github.com/binux) / [ThunderLixianExporter](https://github.com/binux/ThunderLixianExporter)
-- [yulei](http://userscripts.org/users/494707/scripts)
-    - [Share easy downloads helper](http://userscripts.org/scripts/show/155175)
-    - [Crack Url Wait Code Login](http://userscripts.org/scripts/show/153190)
-    - [Music liker for Beauty](http://userscripts.org/scripts/show/161719)
-    - [True URL downloads 2(Ⅱ)](http://userscripts.org/scripts/show/157556)
-- [jixun67](http://userscripts.org/users/474953/scripts)
-    - [Crack Url Wait Code Login For Chrome](http://userscripts.org/scripts/show/157621)
-    - [Userscripts.org 风险脚本过滤器](http://userscripts.org/scripts/show/164600)
-- [LiuLang/monkey-videos](https://github.com/LiuLang/monkey-videos)：常用视频网站的油㺅脚本，解析得到视频地址。
-- [MiniblogImgPop - 微博浮图](http://userscripts.org/scripts/show/83994)
-- [豆藤 Bean vine](http://userscripts.org/scripts/show/49911)
-- [百度搜索反跳转](http://userscripts.org/scripts/show/161812)
-- [网盘工具箱](http://userscripts.org/scripts/show/159911)
-
-### 设置及转换
-
-- Scriptish 取消勾选 `要求用户脚本使用 HTTPS 更新`，该选项可能会让脚本更新失败
-- [How To: Manually transfer user scripts from Greasemonkey to Scriptish · scriptish/scriptish Wiki](https://github.com/scriptish/scriptish/wiki/How-To%3A--Manually-transfer-user-scripts-from-Greasemonkey-to-Scriptish)
-
+详见 [ywzhaiqi/userscript](https://github.com/ywzhaiqi/userscript)
 
 用户样式
 --------
 
+详见 [Firefox 样式.md](Firefox 样式.md)
 
 下载工具
 --------

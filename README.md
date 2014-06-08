@@ -61,7 +61,6 @@ userChromeJS for Firefox
  - [JSCSS_Highlight.uc.js](JSCSS_Highlight.uc.js)，在浏览器中打开的 js、css、ahk 代码着色。
  - [JSOff.uc.xul](JSOff.uc.xul)，js开关，图标在状态栏。
  - [MoreToolsMenu.uc.js](MoreToolsMenu.uc.js)，拆分工具菜单为2个。
- - [nextpage.uc.xul](nextpage.uc.xul)，下一页。
  - [OpenLinkinNewTabwithRightClick.uc.js](OpenLinkinNewTabwithRightClick.uc.js)，右键在新标签页打开链接，修改自`openlinkinnewtabwithleftdoubleclick.uc.js`。
  - [openLinkTabThirdPart.uc.js](openLinkTabThirdPart.uc.js)，域名第三方新标签页打开，否则当前标签页打开。
  - [placesToolbarMiddleClick.uc.js](placesToolbarMiddleClick.uc.js)，禁用书签栏文件夹的鼠标中键打开所有标签页。

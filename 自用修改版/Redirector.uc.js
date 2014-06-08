@@ -144,7 +144,7 @@
 					let icon = document.createElement("toolbarbutton");
 					icon.setAttribute("id", "redirector-icon");
 					icon.setAttribute("class", "toolbarbutton-1 chromeclass-toolbar-additional");
-					icon.setAttribute("type", "menu");
+					// icon.setAttribute("type", "menu");
 					icon.setAttribute("context", "redirector-menupopup");
 					icon.setAttribute("onclick", "if (event.button != 2) Redirector.iconClick(event);");
 					icon.setAttribute("tooltiptext", "Redirector");

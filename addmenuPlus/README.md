@@ -110,11 +110,14 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     %u               URL
 
 
-## 示例
+示例
+-----
 
-打开方式(默认当前页面)，通过`where` 更改，具体`tab`(前台)、`tabshifted`(后台)、`window`(窗口)
+打开方式(默认当前页面)，通过`where` 更改，具体`tab`(前台)、`tabshifted`(后台)、`window`(窗口)、`current`(当前页面)
 
-Google 相似图片搜索
+[defpt 的 addMenuPlus 配置](https://github.com/defpt/userChromeJs/tree/master/addMenuPlus)
+
+示例：Google 相似图片搜索
 
 	page({
 	    label: 'Google 相似图片搜索',
@@ -139,7 +142,7 @@ Google 相似图片搜索
 	    }
 	});
 
-示例：页面右键添加一个菜单
+示例：页面右键添加一个复制链接文本的菜单
 
     page({
         label: "复制链接文本",
@@ -149,16 +152,24 @@ Google 相似图片搜索
         condition: "link noimage"
     });
 
+示例：右键添加 Google Translate 菜单
+
+    page({label: "Google Translate",
+        url: "http://translate.google.cn/translate?u=%u",
+        accesskey: "t",
+        where: "tab",
+    })
+
 示例：右键添加 翻译整个页面 菜单（可用于 https），[来源](http://bbs.kafan.cn/thread-1642576-1-1.html)
 
     page({
         label: "翻译整个页面",
         insertAfter: "context-selectall",
-        image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABsElEQVQ4jZXTsWsTYRjH8Zf+AYX+HTd0cM9SyOoglXLg1ryDU5Fwi90iWsiikFaOOEkGl2IsSEGwoggh8JLUJSC14qB3yZWQXlKTJrn3vg7JncmZqn3ggXf5fXjeh/cVQggh0ln+qxdWOstVFQI6hEDDMAivQBYA15sonYXdXTg4iMPXmyidhaMjWFqCfP7vwDQ8CkL6o1kAYHsblpcXAitbdYRUfPreZzAOGYxCepcJQJjGpBOA/eEMIRU3HjTYfP6NwXgSPu/r34AwDWqdErVOCWEac8C6fcq6fcrDQ5eVrToXw0m4/TMCpuFCJUOhkiG1sxYjJ94QIRVP35/F58dvW7QvNF5vCtQ6JYpKUqhksKsWdtWKkUeHLkIqWt0x/VHIaq7Bzb0veD1NqzszgTANikpy98WteBfRdYRUf/SJN6TZTewgCRSVjJFXxz4v6+c8+9hGSMX9soPrJ4Dcmzvc27/Nux82r78+ia9jVy2EaeD1NE1fk8p/ZjXXwPWD+dcoTIPUzlrcVnkDq7wR76Ppa1xf4/gaxw9w5oCoorcwg0VhJxFeDMx8sCj8r8/0C7G+ixTa1p4GAAAAAElFTkSuQmCC",
+        image: "moz-anno:favicon:http://translate.google.cn/favicon.ico",
         oncommand: function(){
             var tab = document.getElementById('content');
             var win = tab.selectedBrowser.contentWindow.top.window;
-            //var cur_url = win.location.href;
+            var d, b, o, v, p;
             d=win.document;b=d.body;o=d.createElement('scri'+'pt');o.setAttribute('src','https://translate.google.cn/translate_a/element.js?cb=googleTranslateElementInit');o.setAttribute('type','text/javascript');b.appendChild(o);v=b.insertBefore(d.createElement('div'),b.firstChild);v.id='google_translate_element';v.style.display='none';p=d.createElement('scri'+'pt');p.text='function googleTranslateElementInit(){new google.translate.TranslateElement({pageLanguage:\"\"},\"google_translate_element\");}';p.setAttribute('type','text/javascript');b.appendChild(p);
         }
     });
@@ -178,28 +189,128 @@ Google 相似图片搜索
         }
     ]);
 
-示例：页面右键添加子菜单
+示例：页面右键添加多功能子菜单
 
-    var pagesub = PageMenu({ label: "子菜单", accesskey: "z" });
-    pagesub([
-        {
-            label: "Google Translate",
-            url: "http://translate.google.cn/translate?u=%u",
-            condition: "nolink",
-            accesskey: "t",
-        },
-        {
-            label: "Google docs",
-            url  : "http://docs.google.com/viewer?url=%l",
-            accesskey: "d",
-            where: "tab",
-        },
-        {
-            label: "重新加载配置",
-            accesskey: "r",
-            oncommand: "setTimeout(function(){ addMenu.rebuild(true); }, 10);"
+```js
+// 多功能菜单
+var pagesub = PageMenu({ label: "多功能菜单", accesskey: "z", condition: "normal" , insertBefore: 'context-reload'});
+pagesub([
+    {
+        label:"繁体转简体",
+        image:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADlSURBVDhPrVPJDYQwDEwRroMKkPJLFUj8+NNBPjxSwn4ogBrogAq2hW3Cm8NOAgkR0m6kUWTkGQ9jEH85r/cHm1gnBADs9HF6TvSrwIFDDwi9wcUR7T2MtrYCARPO9wJEdo3jhMpPNf5OAoBqrQpk5AiathvsXO1cxWEVB4uWliRx2PP6LMrTqwKMnBiDq7gg+k2IJODhSVvIoilA64LeBmhF3HR2k8JsbYFsdnorXDwTIJvcnK9QrfQKTxy4pOfi42GBtCWilxnkq0rpy3A3BfwGUkMEi3g0M2iB80k/FNF/OUJ8Aad+5VEArUCmAAAAAElFTkSuQmCC",
+        oncommand: function(){
+            content.document.documentElement.appendChild(content.document.createElement("script")).src = "http://tongwen.openfoundry.org/NewTongWen/tools/bookmarklet_cn2.js";
+            content.document.documentElement.appendChild(content.document.createElement("style")).textContent = 'body { font-family: "微软雅黑" }';
         }
-    ]);
+    },
+    {
+        label:"自动刷新",
+        url: "javascript:(function(p)%7Bopen('','',p).document.write('%3Cbody%20id=1%3E%3Cnobr%20id=2%3E%3C/nobr%3E%3Chr%3E%3Cnobr%20id=3%3E%3C/nobr%3E%3Chr%3E%3Ca%20href=%22#%22onclick=%22return!(c=t)%22%3E%E7%82%B9%E5%87%BB%E5%BC%BA%E5%88%B6%E5%88%B7%E6%96%B0%3C/a%3E%3Cscript%3Efunction%20i(n)%7Breturn%20d.getElementById(n)%7Dfunction%20z()%7Bc+=0.2;if(c%3E=t)%7Bc=0;e.location=u;r++%7Dx()%7Dfunction%20x()%7Bs=t-Math.floor(c);m=Math.floor(s/60);s-=m*60;i(1).style.backgroundColor=(r==0%7C%7Cc/t%3E2/3?%22fcc%22:c/t%3C1/3?%22cfc%22:%22ffc%22);i(2).innerHTML=%22%E5%88%B7%E6%96%B0%E8%AE%A1%E6%95%B0:%20%22+r;i(3).innerHTML=%22%E5%88%B7%E6%96%B0%E5%80%92%E8%AE%A1%E6%97%B6:%20%22+m+%22:%22+(s%3C10?%220%22+s:s)%7Dc=r=0;d=document;e=opener.top;u=prompt(%22%E9%93%BE%E6%8E%A5%E5%9C%B0%E5%9D%80%22,e.location.href);t=u?prompt(%22%E5%88%B7%E6%96%B0%E9%97%B4%E9%9A%94/%E7%A7%92%EF%BC%9A%22,300):0;setInterval(%22z()%22,200);if(!t)%7Bwindow.close()%7D%3C/script%3E%3C/body%3E')%7D)('status=0,scrollbars=0,width=240,height=160,left=1,top=1')",
+        image:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAK2SURBVDhPY0AGq/6HMs9/YFo794Hp8oUPrTIWP3Aymn/fXqC+noEJqoQwmHpT2nvybZlPU24p/pl0Tft130Xzox1n7YKg0vjBkmde8vMemkycekvu28Qb0v87Lyn8rzuu9q/ysG4DUJoRogoHWPLE3mD2PZ3DU27J/Zl8S+p/3zXZ/63nlP5XHtL4VLRP0xmqDDuY/9JUYvY97b2Tb0n/m3Jb6v+E69L/Oi/J/qg/qfKvdJ/WueKdemJQpWDwH+iaVaGhzFAuA8Os+zoZQH//mnRTCmTAvUk3ZTrazymmVB1Re160R2ti6CoGhGIgOCYjw3lYWVkbzJn535h1+h2lVZNuSnyfckNq6dS70nqr/jMw11/RYivZp92Wv0vPHawQCZy1sFA5qKraeMbYmJVh5lNJLmDIb5h8W7Jy4i0hPqgaMKifry+wONcMRey8u7vCUX39tfvl5HZukpTkYph5xph10i3J5CkvRXmgauDgsIGB/hETk/pjFhac++3tWU47OFgf1tU9sFdO7u9eaelVYBeAwJyH6lKrViEFChRsU1FJ2qqg8GafqWneAVPTtu1KSk+2SEn93ywp+WublFQmVBl2AAxppjVyctNXiIn9XyMl9XO1pOTfVUD2SjGxf2tERfevFRGRhCrFDlYpKfEvlpA4Ol9Y+D8ILwDihcLCfxeKiJxaKiJiDFWGG8yWl9ecLir6dKqg4P9pQDwdRAsJbZ8jLKwOlMafKoGAcaKoqHKvgMD+bn7+V718fD97+Pn/dfPwbAeyhaBqIGDlypWiixcvNl24cKH7okWLgoF0FJBOXrJwYeq87u7y2cXFk6bHx2+e7ONzo9/a+vn0zMxqkFqQHpBeBqBixSVLlgQB6WygYBWQ3QKkO4D0JKDYVBAGsRcvWNC5aN689oXz51eD1EL0LFIEAGnEJwptdKj6AAAAAElFTkSuQmCC"
+    }, {
+        label:"全页面截图",
+        image:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABISURBVDhPY6AOWPnmPwpGBuhy6PJggE8Buhy6PBjglEADA2/AMAAUhwHtDUDGyACbPAjDAV5JIMAmD8IkA7I1wgDFBmAABgYA9oelARp3ZZ4AAAAASUVORK5CYII=",
+        oncommand: function () {
+            var canvas = document.createElementNS("http://www.w3.org/1999/xhtml", "canvas");
+            canvas.width = content.document.documentElement.scrollWidth;
+            canvas.height = content.document.documentElement.scrollHeight;
+            var ctx = canvas.getContext("2d");
+            ctx.drawWindow(content, 0, 0, canvas.width, canvas.height, "rgb(255,255,255)");
+            saveImageURL(canvas.toDataURL(), content.document.title + ".png", null, null, null, null, document);
+        }
+    }, {
+        label: "宽度匹配",
+        url: "javascript:(function(){function%20t(f){a=d.createNodeIterator(d,1,f,false);while(a.nextNode()){}}var%20d=document;t(function(e){x=e.offsetLeft;l=e.offsetParent;while(l!=null){x+=l.offsetLeft;l=l.offsetParent}var%20w=d.documentElement.clientWidth-x;var%20s=e.style;if(s.marginLeft)w-=s.marginLeft;if(s.marginRight)w-=s.marginRight;if(s.paddingLeft)w-=s.paddingLeft;if(s.paddingRight)w-=s.paddingRight;if(s.borderSize)w-=s.borderSize;w-=d.defaultView.innerWidth-d.documentElement.offsetWidth;if(e.tagName=='IMG'){h=e.clientHeight*w/e.clientWidth;s.maxHeight=h}s.maxWidth=w+'px'})})();",
+        image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGXSURBVDhPYxh4MHHiRPv///8zQrlEA5Ce/v5+B4aWlpZX9fX1TFBxogFIT3Nz8yu4AatWrWI+fPiwIFAOp2tAtoLUgNSiGLB//36WdevWuU2YMKEZKMECVY8BQHIgNRs2bHABscEGtLa2vt66dasrkHOdm5v77Zw5c3iBhhpkZ2ebAA0W2bZtmyiI3d7ert/Z2ckLUgNUew1kCFDda4a2trbP4uLi30RERP5zcXG9rays1BESEvouLCz8u66uLrampiYOyP8NEisrK9MGqQGpFRMT+wbSCzLgG5Dzi4+P7z8nJ+fb9PR0fUFBwV8CAgL/srKykjIyMlJAbCD+mZycrMfBwfGWl5cXZMAvoOu/gb2wePHilLS0tBcgA2bOnCkC9F8YUGPsmjVrVEE4NTU1FuiaUJAcyACgQc8XLVqUDPYCKCCAfuVYsGBBOtC50/AFItASVqA3pgPVpoH0gAMRRAA1MQEDi/3IkSPK+BIVSA6kBqQWpAfFAKgaogHcAGDUhJOblDs6OiIYQKkKKkYyoEQvFDAwAACRUudRsBI1mwAAAABJRU5ErkJggg==",
+    }, {
+        label: "破解右键防复制",
+        url: "javascript:alert(document.body.oncontextmenu=document.body.onmouseup=document.body.onmousemove=document.body.onclick=document.body.onselectstart%20=document.body.oncopy=document.onmousedown%20=%20document.onkeydown%20=null)",
+        image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEZSURBVDhPjZExisJQEIYfrIW4HsBOq8VLLCoiKjYeQNAykHZBRQW9gPZewkJBiwVLL7B3sBRLC2c2M5mJL9FH/OEneZP//5L3Ykjj6Rxd5kCaXhVtS8wtDSb1NsQG2KWkJf4sDaQByFKJSx/aANjvEQYDnpFodqjVcdPuPEOSgNloglAoYJBEWK14vu71eX37yODS8+OQJIDvj8cQkM0i7HZ4/czzettoRhmpOwCBfr8r0VsZ1u3yXDNSdwNIUCyG5VwO8XLhmWak7gbovu8ECEyfT9KM1B8A23g+Pw7S98MrncfpFGWk/hoA1SqX/r7KvNbzgFIJFz9Dnkk9LnrAv9HzOKz7JhEUWq10gFqDrrVU4rIDaTbGmH8Vxu1dx2qGHAAAAABJRU5ErkJggg==",
+    }, 
+    {
+        label: "Google 站内搜索",
+        accesskey: "s",
+        url: "javascript:q%20=%20%22%22%20+%20(window.getSelection%20?%20window.getSelection()%20:%20document.getSelection%20?%20document.getSelection()%20:%20document.selection.createRange().text);%20if%20(!q)%20q%20=%20prompt(%22%E8%AF%B7%E8%BE%93%E5%85%A5%E5%85%B3%E9%94%AE%E8%AF%8D:%22,%20%22%22);%20if%20(q!=null)%20{var%20qlocation=%22%20%22;qlocation=('http://www.google.com/search?num=30&hl=zh-CN&newwindow=1&q='+q+'&sitesearch='+location.host+'');window.open(qlocation);}%20void%200"
+    },
+    {
+        label: "明文显示密码",
+        condition: "input",
+        url: "javascript:(function()%7Bvar%20IN,F;IN=document.getElementsByTagName('input');for(var%20i=0;i<IN.length;i++)%7BF=IN%5Bi%5D;if(F.type.toLowerCase()=='password')%7Btry%7BF.type='text'%7Dcatch(r)%7Bvar%20n,Fa;n=document.createElement('input');Fa=F.attributes;for(var%20ii=0;ii<Fa.length;ii++)%7Bvar%20k,knn,knv;k=Fa%5Bii%5D;knn=k.nodeName;knv=k.nodeValue;if(knn.toLowerCase()!='type')%7Bif(knn!='height'&&knn!='width'&!!knv)n%5Bknn%5D=knv%7D%7D;F.parentNode.replaceChild(n,F)%7D%7D%7D%7D)()"
+    },
+    {},
+    {
+        label:"复制扩展清单",
+        image:"chrome://mozapps/skin/extensions/extensionGeneric-16.png",
+        oncommand: function () {
+            Application.extensions ? Cc['@mozilla.org/widget/clipboardhelper;1'].getService(Ci.nsIClipboardHelper).copyString(Application.extensions.all.map(function (item, id) {
+                    return id + 1 + ": " + item._item.name;
+                }).join("\n")) : Application.getExtensions(function (extensions) {
+                Cc['@mozilla.org/widget/clipboardhelper;1'].getService(Ci.nsIClipboardHelper).copyString(extensions.all.map(function (item, id) {
+                        return id + 1 + ": " + item._item.name;
+                    }).join("\n"));
+            })
+        }
+    },
+    {
+        label: "复制GM脚本清单",
+        oncommand: function() {
+            // Cu.import("resource://gre/modules/AddonManager.jsm");
+            // 'userscript'
+            AddonManager.getAddonsByTypes(['greasemonkey-user-script'], function(items) {
+                var noLocalURL = confirm('是否过滤本地下载链接？');
+
+                var downURLs = [];
+                items.forEach(function(item) {
+                    var script = item._script,
+                        fileName = script.name + '.user.js',
+                        downURL = script._downloadURL;
+                    if (noLocalURL && downURL.startsWith('file://')) {
+                        return;
+                    }
+                    downURLs.push(fileName + ', ' + downURL);
+                });
+                addMenu.copy(downURLs.join('\n'));
+            });
+        }
+    },
+    {
+        label:"为此页搜索油侯脚本",
+        url: "https://www.google.com/search?q=site:userscripts.org%20%HOST%",
+        where: "tab",
+        image:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADSSURBVDhPnZK9DcIwEIXTsQBL0CAU15RQUtKwRAbIAlmCPuzADExAmwUyQHjPvrNs6zA/T/p0jvPe6Sy7MXQEE1ikXsBPWtzNRfD9DNvfqysadGH7s3RkMkh4kH2LLciUjW5Bj4prn0pkhlLoUXHtU1APHsAMpdAD9JixwSQ/r250cxlKgYesGYJ2UkODdmx9rQGvkkkn8JShEvGtQNQecPPMaoVSxLsBpv46xgGkP6pIE95ClNxsXfQVU0SJpS763jU4gTvgY9JHUjILGpY30DQvwsxGGOnZ9v8AAAAASUVORK5CYII="
+    },
+    {},
+    {label: "Google Web Cache",
+        url: "http://webcache.googleusercontent.com/search?q=cache:%u",
+        accesskey: "c",
+        where: "tab",
+    },
+    {label: "Web Archive",
+        url: "http://web.archive.org/web/*/%u",
+        accesskey: "w",
+        where: "tab",
+    },
+    {},
+    {
+        label: "Chrome",
+        exec: "\\chrome",
+    },
+    {
+        label: "gm_scripts",
+        exec: "\\gm_scripts",
+    },
+    {
+        label: "userChromeJS content",
+        exec: "\\extensions\\userChromeJS@mozdev.org\\content",
+    },
+    {},
+    {
+        label: "重新加载配置",
+        accesskey: "r",
+        oncommand: "setTimeout(function(){ addMenu.rebuild(true); }, 10);"
+    }
+])
+```
 
 示例：菜单出现的条件，排除了链接、图片、输入框、选择等多个条件
 
@@ -512,6 +623,7 @@ Google 相似图片搜索
             hidden: true
         }
     ]);
+
 
 ## 使用了其它皮肤，右键错位的情况
 

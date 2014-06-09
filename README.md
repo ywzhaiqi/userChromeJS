@@ -37,7 +37,7 @@ userChromeJS for Firefox
  - [rebuild_userChrome](rebuild_userChrome)，脚本管理器（菜单修改版），**已弃用，请改用 dannylee 的 [UC脚本管理器](http://g.mozest.com/thread-41292-1-1)**。
  - [SaveUserChromeJS](SaveUserChromeJS)，像 Greasemonkey 一样保存 uc脚本（原创）。
  - [SidebarModfix](SidebarModfix)，侧边栏增强（修改版）。
- - [simpleAppButton](simpleAppButton)，简易启动应用程序按钮，左中右3键分别启动3个程序（参考用）。
+ - [simpleAppButton](simpleAppButton)，简易启动应用程序的可移动按钮，左中右3键分别启动3个程序。
  - [SimpleMusicPlayer.uc.js](SimpleMusicPlayer)，简单音乐播放面板，支持多个站点，参考了百度随心听播放栏UC脚本。
  - [Space_nextpage](Space_nextpage)，空格键页面底部翻页（依次调用 uAutoPagerize、uSuper_preloader、nextPage.uc.xul）
  - [stylishEdit](stylishEdit)，为 Stylish 增加外部编辑器等（修复版）。

@@ -59,12 +59,12 @@
   /*
     EXPERIMENT：取消延迟加载（实验性的）？true 为不延迟，false 为延迟。为 true 则一些脚本可能会运行不正常。
       true 和 false 区别2点：
-        1、对非主界面本来有个 500ms 的延迟，true 后就没了。
-        2、本来是一个个加载 xul 文件，而 true 则把所有的 xul 加起来一次性加载。 前不久卡饭还有个 userChromejs 扩展的优化版，优化 xul 文件的加载。 
+        1、对非主界面的脚本本来有个 500ms 的延迟，true 后就没了。
+        2、本来是一个个加载 xul 文件，而 true 则把所有的 xul 加起来一次性加载。 前不久卡饭还有个 userChromejs 扩展的优化版，就是优化 xul 文件的加载。 
     EXCLUDE_CHROMEHIDDEN：  排除隐藏的 window(popup等)
-    USE_0_63_FOLDER：如果为 true，好像只支持这几种文件夹名字 /(uc|xul|ucjs)$/i.test(dirName)
-    FORCESORTSCRIPT：对脚本进行排序，这可能对脚本的运行顺序有影响吧
-    AUTOREMOVEBOM：对文件编码的检测，可是并不支持 gbk 等编码
+    USE_0_63_FOLDER：如果为 true，好像只支持这几种文件夹名字 uc、xul、ucjs
+    FORCESORTSCRIPT：对脚本进行排序，这可能对脚本的运行顺序有影响
+    AUTOREMOVEBOM：对文件编码进行检测，但并不支持 gbk 编码
   */
   const EXPERIMENT = false; //実験:するtrue, しない[false]
   const EXCLUDE_CHROMEHIDDEN = false; //chromehiddenなwindow(popup等)ではロード: しないtrue, する[false]
@@ -76,7 +76,7 @@
   var UCJS      = new Array("UCJSFiles","userContent","userMenu"); //UCJS Loader 仕様を適用 (NoScriptでfile:///を許可しておく)
   var arrSubdir = new Array("", "xul","TabMixPlus","withTabMixPlus", "SubScript", "UCJSFiles", "userCrome.js.0.8","userContent","userMenu");    //スクリプトはこの順番で実行される
   //===================================================================
-  const ALWAYSEXECUTE   = 'rebuild_userChrome.uc.xul'; //常に実行するスクリプト
+  const ALWAYSEXECUTE   = 'rebuild_userChrome.uc.xul'; // 强制运行的脚本，无视禁用列表
   var INFO = true;
   var BROWSERCHROME = "chrome://browser/content/browser.xul"; //Firfox
   //var BROWSERCHROME = "chrome://navigator/content/navigator.xul"; //SeaMonkey:

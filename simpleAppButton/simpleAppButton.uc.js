@@ -30,6 +30,8 @@ location == "chrome://browser/content/browser.xul" && (function() {
 
     /* 设置区结束  */
 	// 来自 User Agent Overrider 扩展
+    const log = function() { dump(Array.slice(arguments).join(' ') + '\n'); };
+    const trace = function(error) { log(error); log(error.stack); };
     const ToolbarManager = (function() {
 
         /**

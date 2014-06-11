@@ -5,7 +5,7 @@
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
-// @version        0.1.5
+// @version        2014.06.04
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/ExternalVideoPlayer
 // @reviewURL      http://bbs.kafan.cn/thread-1587228-1-1.html
 // @note           youku、悦台、网易视频、优米等调用外部播放器播放。土豆、奇艺等不支持外部播放的新页面打开 flvcd 网址。
@@ -13,11 +13,6 @@
 // @note           2013/06/21 ver0.002 修正几个错误
 // @note           2013/06/17 ver0.001 init
 // ==/UserScript==
-
-if(typeof window.externalVideoPlayer != 'undefined'){
-    window.externalVideoPlayer.uninit();
-    delete window.externalVideoPlayer;
-}
 
 (function(){
 
@@ -54,11 +49,17 @@ if(typeof window.externalVideoPlayer != 'undefined'){
         "http://www.iqiyi.com/"
     ];
 
-    var LINK_SHOW_REGEXP = new RegExp(LINK_SHOW.join("|"), "i");
     var HOST_REGEXP = /www\.soku\.com|youku|yinyuetai|ku6|umiwi|sina|163|56|joy|v\.qq|letv|(tieba|mv|zhangmen)\.baidu|wasu|pps|kankan|funshion|tangdou|acfun\.tv|www\.bilibili\.tv|v\.ifeng\.com|cntv\.cn/i;
 
+
     let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-    Components.utils.import("resource://gre/modules/FileUtils.jsm");
+    Cu.import("resource://gre/modules/FileUtils.jsm");
+    Cu.import("resource://gre/modules/NetUtil.jsm");
+
+    if (window.externalVideoPlayer) {
+        window.externalVideoPlayer.uninit();
+        delete window.externalVideoPlayer;
+    }
 
     var Instances = {
         get fp() Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker),
@@ -126,7 +127,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
                 if (file.isExecutable()) {
                     process.init(file);
-                    process.run(blocking, args, args.length);
+                    process["runw" in process ? "runw" : "run"](blocking, args, args.length);
                 } else {
                     file.launch();
                 }
@@ -162,6 +163,8 @@ if(typeof window.externalVideoPlayer != 'undefined'){
         },
 
         init: function(){
+            this.LINK_SHOW_REGEXP = new RegExp(LINK_SHOW.join("|"), "i");
+
             var contextMenu = $("contentAreaContextMenu");
             var ins = $("context-openlinkincurrent") || contextMenu.firstChild;
 
@@ -225,6 +228,20 @@ if(typeof window.externalVideoPlayer != 'undefined'){
             });
             menupopup.appendChild(menuitem);
 
+            // menuitem = $C("menuitem", {
+            //     label: "下载（Flashgot）",
+            //     hidden: true,
+            //     oncommand: "externalVideoPlayer.run('super', 'download_flashgot')",
+            // });
+            // menupopup.appendChild(menuitem);
+
+            // menuitem = $C("menuitem", {
+            //     label: "下载（DTA）",
+            //     hidden: true,
+            //     oncommand: "externalVideoPlayer.run('super', 'download_DTA')",
+            // });
+            // menupopup.appendChild(menuitem);
+
             menuitem = $C("menuitem", {
                 label: "下载（IDM）",
                 hidden: ns.IDM_hidden,
@@ -263,13 +280,13 @@ if(typeof window.externalVideoPlayer != 'undefined'){
             var hostname = content.location.hostname;
 
             if(gContextMenu.onLink){
-                if(hostname == "www.flvcd.com" || LINK_SHOW_REGEXP.test(gContextMenu.linkURL)){
+                if(hostname == "www.flvcd.com" || this.LINK_SHOW_REGEXP.test(gContextMenu.linkURL)){
                     this.execOnceURL = gContextMenu.linkURL;
                     return true;
                 }
             } else {
                 var selection = Util.getSelection();
-                if(selection && LINK_SHOW_REGEXP.test(selection)){
+                if(selection && this.LINK_SHOW_REGEXP.test(selection)){
                     this.execOnceURL = selection;
                     return true;
                 }
@@ -294,7 +311,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
             return false;
         },
-        run: function(format, type){
+        run: function(format, type, url){
             // 直接启动播放器
             if(this.execOnceURL){
                 this.launchPlayer(this.execOnceURL);
@@ -304,9 +321,29 @@ if(typeof window.externalVideoPlayer != 'undefined'){
                 return;
             }
 
-            var onLink = gContextMenu && gContextMenu.onLink,
-                url = onLink ? gContextMenu.linkURL : content.location.href,
-                toCloseTab = IS_CLOSE_TAB && !onLink ? gBrowser.mCurrentTab : null;
+            var tabToClose = null;
+            if (!url) {
+                var onLink = gContextMenu && gContextMenu.onLink;
+                url = onLink ? gContextMenu.linkURL : content.location.href;
+                if(IS_CLOSE_TAB && !onLink){
+                    tabToClose = gBrowser.mCurrentTab;
+                }
+            }
+
+            // // 如果用了 youkuHTML5 等解析地址脚本
+            // var playlistDiv = content.document.getElementById("playlist");
+            // if (type.indexOf('download') != -1 && playlistDiv) {
+            //     var list = Array.slice(div.querySelectorAll('a')).map(function(link){
+            //         return {
+            //             title: link.getAttribute('title'),
+            //             url: link.href
+            //         }
+            //     });
+
+            //     if (type && this[type]) {  // download_IDM 等
+            //     this[type](list);
+            //     return;
+            // }
 
             var flvcdUrl = 'http://www.flvcd.com/parse.php?kw=' + encodeURIComponent(url);
             if(format){
@@ -322,8 +359,8 @@ if(typeof window.externalVideoPlayer != 'undefined'){
             getHTML(flvcdUrl, function(){
                 if(this.readyState == 4 && this.status == 200){
                     var opened = ns.requestLoaded(this.response, type);
-                    if(opened && toCloseTab){
-                        gBrowser.removeTab(toCloseTab, { animate: true });
+                    if(opened && tabToClose){
+                        gBrowser.removeTab(tabToClose, { animate: true });
                     }
                 }else{
                     throw new Error(this.statusText);
@@ -420,7 +457,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
 
             var process = Instances.process;
             process.init(player);
-            process.runAsync(args, args.length);
+            process["runw" in process ? "runw" : "run"](false, args, args.length);
         },
         checkPlayList: function(list, playerPath){
             var type,
@@ -528,8 +565,8 @@ if(typeof window.externalVideoPlayer != 'undefined'){
                     break;
             }
 
-            return text
-;        },
+            return text;
+        },
         openFlvcd: function(flvcdUrl){
             flvcdUrl = flvcdUrl || ns._requestUrl;
             if(flvcdUrl){
@@ -553,7 +590,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
         },
         download_normal: function(filelist){
             if(filelist.length > 1){
-                var result = confirm("该视频由" + filelist.length + "个片段组成，是否要用内置的同时下载？取消复制链接到剪贴板");
+                var result = confirm("该视频包含" + filelist.length + "个片段，是否要用内置的同时下载？\n取消则复制链接到剪贴板");
                 if (!result) {
                     var str = this.getPlayList(filelist, "copy");
                     Util.clipboardWrite(str);
@@ -573,21 +610,187 @@ if(typeof window.externalVideoPlayer != 'undefined'){
                         document, useDownloadDir, null);
             });
         },
-        download_IDM: function(filelist, activite){
-            var fileExt = this.getVideoExt(filelist[0].url);
+        download_flashgot: function(filelist) {
+            if (!window.gFlashGot) return;
+
+            var links = [],
+                opType = gFlashGotService.OP_ONE,
+                dmName = null;
 
             filelist.forEach(function(file, i){
-                var title_gbk = ns.convert_to_gbk(Util.safeTitle(file.title));
-                Util.exec(IDM_PATH, ["/a", "/d", file.url, "/f", title_gbk + fileExt], true);
+                links.push({
+                    href: file.url,
+                    description: file.title,
+                })
+            });
+            gFlashGot.download(links, opType, dmName)
+        },
+        download_DTA: function(filelist) {
+            if (!window.DTA) return;
+
+            var anchors = [], images = [];
+
+            var ios = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
+            var wrapURL = function(url, cs) {return new DTA.URL(ios.newURI(url, cs, null));}
+
+            filelist.forEach(function(file, i){
+                anchors.push({
+                    url: wrapURL(file.url, "UTF-8"),
+                    description: "",
+                    ultDescription: "",
+                    referrer: "",
+                    fileName: file.title
+                })
             });
 
-            // 再次运行，激活到前台
-            if(typeof(activite) == "undefined" || activite){
-                Util.exec(IDM_PATH);
-            }
+            DTA.saveLinkArray(window, anchors, images);
+        },
+        download_IDM: function(downInfo, activite){
+            var self = this;
+            var fileExt = this.getVideoExt(downInfo[0].url);
+
+            // // cmd 会去掉 url 中的 %2 从而造成 url 不正确，不知道怎么回事
+            // var data = "";
+            // downInfo.forEach(function(info, i){
+            //     info.name = info.title + fileExt;
+            // });
+            // this.runScript(downInfo, IDM_PATH, ['/a /d [URL] /f [NAME]', 'gbk']);
+
+            // 如果 IDM 没启动则会造成 ff 死住，故采用下面的不完美的方式
+            var run  = function(i) {
+                var info = downInfo[i];
+                if (!info) {
+                    // 再次运行，激活到前台
+                    if(typeof(activite) == "undefined" || activite){
+                        self.runNative(IDM_PATH, []);
+                    }
+                    return;
+                }
+
+                var fileName = Util.safeTitle(info.title) + fileExt;
+                self.runNative(IDM_PATH, ["/a", "/d", info.url, "/f", fileName]);
+
+                setTimeout(function(){
+                    i += 1;
+                    run(i);
+                }, 200);
+            };
+
+            run(0);
+
+            // 如果 IDM 没启动则会造成 ff 死住
+            // downInfo.forEach(function(info, i){
+            //     var fileName = Util.safeTitle(info.title) + fileExt;
+            //     self.runNative(IDM_PATH, ["/a", "/d", info.url, "/f", fileName], true);
+            // });
         },
         download_aria2: function(filelist){
 
+        },
+
+        // 以下几个函数来自 xthunder 扩展的 xThunderService.js 文件，已做修改。
+        detectOS : function() {
+            // "WINNT" on Windows Vista, XP, 2000, and NT systems; "Linux" on GNU/Linux; and "Darwin" on Mac OS X. 
+            // Returns UpperCase string
+            if (!this.osString) {
+                this.osString = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime).OS.toUpperCase();
+            }
+
+            return this.osString;
+        },
+        replaceHolder : function(downInfo, exePath, arg, downDir, referrer, cookies, escape) {
+            var ref = referrer || downInfo[0].url;
+            var cook = cookies && cookies[0] || 0;
+
+            var self = this;
+            var args = downInfo.map(function(info) {
+                return arg.replace(/\[URL\]/ig, escape ? self.escapePath(info.url) : info.url).
+                    replace(/\[NAME\]/ig, escape ? self.escapePath(info.name) : info.name).
+                    replace(/\[REFERER\]/ig, escape ? self.escapePath(ref) : ref).
+                    replace(/\[COOKIE\]/ig, escape ? self.escapePath(cook) : cook).
+                    replace(/\[COMMENT\]/ig, escape ? self.escapePath(info.desc) : info.desc);
+            });
+
+            return args;
+        },
+        escapePath : function (path) {
+            return path ? ( this.detectOS() == "WINNT" ? "\"" + path + "\"" : path.replace(/([\\\*\?\[\]\$&<>\|\(\)\{\};"'`])/g,"\\$1").replace(/\s/g,"\\ ") )
+                        : path;
+        },
+        runScript : function(downInfo, exePath, args, downDir, referrer, cookies) {
+            var downDir = this.escapePath(downDir);
+            var programArgs = this.replaceHolder(downInfo, exePath, args[0], downDir, referrer, cookies, true);
+
+            if (this.detectOS() == "WINNT") {
+                var batEncoding = args[1] || "UTF-8";
+                var batText = "@echo off\r\n" +
+                    "title ExternalVideo\r\n" +
+                    (downDir ? "if not exist " + downDir + " md " + downDir + "\r\n" + "cd /d " + downDir + "\r\n": "");
+
+                var escapedExePath = this.escapePath(exePath);
+                programArgs.forEach(function(programArg) {
+                    batText += escapedExePath + " " + programArg + "\r\n";
+                });
+
+                this.runNative(this.createTempFile(batText, ".bat", batEncoding), []);
+            } else {
+                var shellEncoding = "UTF-8";
+                var shellText = '#!/bin/sh\n' +
+                    'if [ "$1" = "" ]; then\n' +
+                    '  if [ "$COLORTERM" = "gnome-terminal" ] && which gnome-terminal >/dev/null 2>&1; then\n' +
+                    '    gnome-terminal -t xThunder -x /bin/sh "$0" term && exit\n' +
+                    '  fi\n' +
+                    '  if which xterm >/dev/null 2>&1; then\n' +
+                    '    xterm -T xThunder -e /bin/sh "$0" term && exit\n' +
+                    '  fi\n' +
+                    'fi\n' +
+                    'if [ ! -d ' + downDir + ' ]; then\n' +
+                    '  mkdir -p ' + downDir + '\n' +
+                    'fi\n' +
+                    'cd ' + downDir + '\n';
+
+                var escapedExePath = this.escapePath(exePath);
+                programArgs.forEach(function(programArg) {
+                    batText += escapedExePath + " " + programArgs + "\n";
+                });
+
+                this.runNative(this.createTempFile(shellText, ".sh", shellEncoding), []);
+            }
+            return 0;
+        },
+        runNative: function(exePath, args, blocking) {
+            if (typeof blocking == 'undefined') blocking = false;
+            var exeFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
+            exeFile.initWithPath(exePath);
+            if (exeFile.exists()) {
+                var proc = Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
+                proc.init(exeFile);
+                //var cs = Cc["@mozilla.org/consoleservice;1"].getService(Ci.nsIConsoleService);
+                //cs.logStringMessage("Running " + exePath + " " + args.join(" "));
+                proc["runw" in proc ? "runw" : "run"](blocking, args, args.length);
+                return 0;
+            } else {
+                return this.EXE_NOT_FOUND;
+            }
+        },
+        createTempFile : function(data, ext, charset) {
+            var file = Cc["@mozilla.org/file/directory_service;1"].getService(Ci.nsIProperties).get("TmpD", Ci.nsIFile);
+            file.append("ExternalVideoPlayer");
+            if (!file.exists()) {
+                file.create(Ci.nsIFile.DIRECTORY_TYPE, 0700);
+            }
+            file.append("ExternalVideoPlayer" + (ext || ".xtd"));
+            // file.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, 0700);
+            file.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
+
+            var foStream = Cc["@mozilla.org/network/file-output-stream;1"].createInstance(Ci.nsIFileOutputStream);
+            foStream.init(file, 0x02 | 0x08 | 0x20, 0700, 0);
+            var converter = Cc["@mozilla.org/intl/converter-output-stream;1"].createInstance(Ci.nsIConverterOutputStream);
+            converter.init(foStream, charset || "UTF-8", 0, "?".charCodeAt(0));
+            converter.writeString(data);
+            converter.close();
+
+            return file.path;
         },
         getVideoExt: function(url){
             var ext;
@@ -608,11 +811,6 @@ if(typeof window.externalVideoPlayer != 'undefined'){
             }
 
             return ext;
-        },
-        convert_to_gbk: function(data){
-            var suConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
-            suConverter.charset = 'gbk';
-            return suConverter.ConvertFromUnicode(data);
         },
     };
 
@@ -653,6 +851,7 @@ if(typeof window.externalVideoPlayer != 'undefined'){
         }
         return s
     }
+
 
 })();
 

@@ -34,7 +34,7 @@ userChromeJS for Firefox
  - [ExternalVideoPlayer](ExternalVideoPlayer)，调用外部播放器播放网络视频（原创）。[yunPlayer.uc.js](ExternalVideoPlayer/yunPlayer.uc.js)，右键菜单云播放视频。
  - [moveButton](moveButton)，移动或克隆按钮/菜单到任意位置（原创）。
  - [MyNovelReader](MyNovelReader)，小说阅读uc版（原创），已弃用，请用 [小说阅读GM版](https://userscripts.org/scripts/show/165951)（原创）和[autoLanuchReader](autoLanuchReader)。
- - [rebuild_userChrome](rebuild_userChrome)，脚本管理器（菜单修改版），**已弃用，请改用 dannylee 的 [UC脚本管理器](http://g.mozest.com/thread-41292-1-1)**。
+ - [rebuild_userChrome](rebuild_userChrome)，脚本管理器，基于 [UserChromeJS脚本管理器Dannylee强化版](http://g.mozest.com/thread-41292-1-1)，修改为可移动版。
  - [SaveUserChromeJS](SaveUserChromeJS)，像 Greasemonkey 一样保存 uc脚本（原创）。
  - [SidebarModfix](SidebarModfix)，侧边栏增强（修改版）。
  - [simpleAppButton](simpleAppButton)，简易启动应用程序的可移动按钮，左中右3键分别启动3个程序。
@@ -54,7 +54,9 @@ userChromeJS for Firefox
  - [chromejs.uc.js](chromejs.uc.js)，在地址栏运行uc代码，例：打开书签 `chromejs:PlacesCommandHook.showPlacesOrganizer('AllBookmarks');`
  - [contextProxySwitch.uc.xul](contextProxySwitch.uc.xul)，修正本地文件下 getSelection 是一行的情况。
  - [copybookmark.uc.js](copybookmark.uc.js)，书签右键复制标题链接（修改版）。
- - [downloadPlus.uc.js](downloadPlus.uc.js)，多个下载脚本整合版。
+ - [downloadPlus.uc.js](downloadPlus.uc.js)，多个下载脚本整合版，**已弃用，请使用原来的独立版本**。
+    - [DownloadEnhance.uc.js](DownloadEnhance.uc.js)，加入延迟应对新的 userChrome.js（注：userChrome.js 最新版已不再取消延迟加载）。
+    - [showCompleteURL.uc.js](showCompleteURL.uc.js)，加入延迟应对新的 userChrome.js（注：userChrome.js 最新版已不再取消延迟加载）。
  - [ExportHTMLFolderMod.uc.xul](ExportHTMLFolderMod.uc.xul)，书签右键 `导出到HTML`（修改版）。
  - [findScriptForGreaemonkeyOrScriptish.uc.js](findScriptForGreaemonkeyOrScriptish.uc.js)，为 Greasemonkey 或 Scriptish 扩展增加 "为本站搜索脚本" 功能。
  - [IME-Colors.uc.js](IME-Colors.uc.js)，输入框聚焦时变色。

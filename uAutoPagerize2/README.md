@@ -6,7 +6,7 @@ uAutoPagerize 中文规则简化改进版，原作者链接：[Griever/userChrom
  - 基于日文原版重新改写。
  - 兼容 Super_preloader 规则。
  - **中文规则数据库**为：[Super_preloaderPlus_one for Greasemonkey](http://userscripts.org/scripts/show/178900)，这是我用于其它浏览器的翻页脚本 + 数据库。
- - **按钮默认位置**为地址栏（可改为状态栏），不可移动，也不会有按钮找不到的问题。
+ - **按钮默认位置**为地址栏，修改代码 `isUrlbar: 0` 则为可移动按钮。
  - 新增 `添加下一页到历史记录`。
  - 新增 `鼠标双击或按键暂停翻页`，在配置文件中。
  - 文件 `_uAutoPagerize.js` 是自己的配置文件。但里面的 EXCLUDE（黑名单）已经不可用，改在右键菜单里设置，存储在 about:config 中。
@@ -22,6 +22,10 @@ uAutoPagerize 中文规则简化改进版，原作者链接：[Griever/userChrom
 ### 分隔条
 
 ![分隔条](分隔条.png)
+
+### 首选项
+
+![首选项](首选项.png)
 	
 使用技巧和说明
 --------------

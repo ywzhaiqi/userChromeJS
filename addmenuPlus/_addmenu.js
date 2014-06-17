@@ -62,16 +62,14 @@ tab([
         label: "复制所有标签标题+地址",
         class: "copy",
         oncommand: function(){
-            let text = "";
-            let tabs = gBrowser.mTabContainer.childNodes;
-            for (let i = 0, l=tabs.length; i < l; i++) {
-                let win = tabs[i].linkedBrowser.contentWindow;
-                text += win.document.title + "\n" +
-                    win.location.href + "\n";
+            var text = "";
+            var tabs = gBrowser.mTabContainer.childNodes;
+            for (var i = 0, l = tabs.length, doc; i < l; i++) {
+                doc = tabs[i].linkedBrowser.contentDocument;
+                text += doc.title + "\n" + doc.location.href + "\n";
             }
 
-            Components.classes["@mozilla.org/widget/clipboardhelper;1"]
-                .getService(Components.interfaces.nsIClipboardHelper).copyString(text);
+            Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(text);
         }
     },
     {},

@@ -549,26 +549,31 @@ window.addMenu = {
             // clone menuitem and set attribute
             if(obj.id && (menuitem = $(obj.id))){
                 let dupMenuitem;
-                if(obj.clone == false){
-                    dupMenuitem = menuitem;
-                }else{
+                let isDupMenu = (obj.clone != false);
+                if (isDupMenu) {
                     dupMenuitem = menuitem.cloneNode(true);
                     dupMenuitem.classList.add("addMenu");
 
                     menuitem.classList.add("addMenuR");
+                }else{
+                    dupMenuitem = menuitem;
+                    dupMenuitem.classList.add("addMenu");
+                    dupMenuitem.classList.add("addMenuNot");
                 }
 
                 for (let [key, val] in Iterator(obj)) {
-                    if (typeof val == "function")
+                    if (typeof val == "function") {
                         obj[key] = val = "(" + val.toSource() + ").call(this, event);";
+                    }
                     dupMenuitem.setAttribute(key, val);
                 }
 
                 // 没有插入位置的默认放在原来那个菜单的后面
-                if(!obj.insertAfter && !obj.insertBefore && !obj.position){
+                if(isDupMenu && !obj.insertAfter && !obj.insertBefore && !obj.position){
                     obj.insertAfter = obj.id;
                 }
-                insertMenuItem(obj, dupMenuitem, true);
+                let noMove = !isDupMenu;
+                insertMenuItem(obj, dupMenuitem, noMove);
 
                 continue;
             }
@@ -593,13 +598,19 @@ window.addMenu = {
                     insertPoint.parentNode.appendChild(menuitem);
                 return;
             }
+            if (!noMove) {
             insertPoint.parentNode.insertBefore(menuitem, insertPoint);
+            }
         }
     },
 
     removeMenuitem: function() {
-        $$('menu.addMenu').forEach(function(e) e.parentNode.removeChild(e) );
-        $$('.addMenu').forEach(function(e) e.parentNode.removeChild(e) );
+        var remove = function(e) {
+            if (e.classList.contains('addMenuNot')) return;
+            e.parentNode.removeChild(e);
+        };
+        $$('menu.addMenu').forEach(remove);
+        $$('.addMenu').forEach(remove);
         $$('.addMenuR').forEach(function(e) { e.classList.remove('addMenuR');} );
     },
 

@@ -9,4 +9,4 @@
 脚本列表
 
 - [Redirector.uc.js 外置规则版](Redirector.uc.js)，修改为可移动按钮。
-- [nextpage.uc.js](nextpage.uc.js)，目前仅仅从 uc.xul 改为 .uc.js 文件
+- [nextpage.uc.js](nextpage.uc.js)，目前仅仅从 uc.xul 改为 .uc.js 文件，**已放弃使用，效果不如 nextpage.user.js **。

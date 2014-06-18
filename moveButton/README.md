@@ -10,7 +10,7 @@ moveButton.uc.js
 填写的 buttons 说明
 -------------------
 
-    id: 要移动的按钮/菜单的 Id
+    id: 要移动的按钮或菜单的 Id， 也可以是 css 选择器。
 
 示例1： 移动 "翻译按钮" 到 "scriptish按钮" 的前面
 
@@ -38,19 +38,29 @@ moveButton.uc.js
 
 示例7：修改 Greasemonkey 按钮为右键弹出菜单的类型
 
-	{
-        id: "greasemonkey-tbb",
+     {id: "greasemonkey-tbb",
         attr: {
             type: "",
-            context: "greasemonkey-popup"
-        }
-    }, {
-        id: "#greasemonkey-tbb > menupopup",
-        attr: {
-            id: "greasemonkey-popup"
+            context: "_child"
         }
     },
 
+示例8：改 User Agent Overrider 按钮为右键弹出菜单
+
+    {id: "useragentoverrider-button",
+        attr: {
+            type: "",
+            context: "_child"
+        }
+    },
+
+示例9：增加 Stylish 按钮右键点击弹出菜单的功能
+
+    {id: "stylish-toolbar-button",
+        attr: {
+            context: "stylish-popup"
+        }
+    },
 
 参考的工具栏或按钮的Id
 -----------------------

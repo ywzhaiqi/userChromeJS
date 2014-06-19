@@ -917,8 +917,6 @@ var ns = window.uAutoPagerize = {
                 if (info.fragmentFilter)
                     win.fragmentFilters.push(info.fragmentFilter.bind(win));
 
-                if (info.startFilter)
-                    info.startFilter.call(win, win.document);
                 if (info.stylish) {
                     let style = doc.createElement("style");
                     style.setAttribute("id", "uAutoPagerize-style");
@@ -1121,6 +1119,8 @@ var ns = window.uAutoPagerize = {
                     }).url_regexp;
                 if ( !exp.test(locationHref) ) continue;
 
+                if (info.startFilter)
+                    info.startFilter.call(win, win, doc);
                 var nextLink = getElementMix(info.nextLink, doc);
                 if (!nextLink) {
                     // FIXME microformats case detection.

@@ -26,7 +26,7 @@ if(typeof window.saveUserChromeJS != "undefined"){
 	delete window.saveUserChromeJS;
 }
 
-const RE_USERCHROME_JS = /\.uc(?:-\d+)?\.(?:js|xul)$/;
+const RE_USERCHROME_JS = /\.uc(?:-\d+)?\.(?:js|xul)$|userChrome\.js$/i;
 const RE_CONTENTTYPE = /text\/html/i;
 
 var ns = window.saveUserChromeJS = {

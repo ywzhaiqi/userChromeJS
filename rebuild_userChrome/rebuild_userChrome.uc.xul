@@ -4,7 +4,7 @@
 // ==UserScript==
 // @name           rebuild_userChrome.uc.xul
 // @namespace      https://g.mozest.com/thread-41292-1-4
-// @description    UserChromeJS脚本管理器Dannylee强化版，可移动版。
+// @description    UserChromeJS脚本管理器Dannylee强化版，已被改为可移动版。
 // @include        main
 // @compatibility  Firefox 3.5b4pre 3.6a1pre 4.0b7pre
 // @author 				 Alice0775
@@ -1026,7 +1026,7 @@
       image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACaUlEQVQ4jX2Sz0vTYRzHn21fNn9szvbV/fzu+4UV0db8QSkKbUw2p9t3UJRGEHUY2iH/gtCow4QiOnTyEAgdPMT0YmEnEaGLYIXBogyzsK2DFw/icb46jNBvEx94Xx6e9+t5Ps/7LYQQHJddMvOiu531lMKHlMJqIsB6UjlRzzvbEMfNFpNgtsdNJaexllS4odh5GHbxW9dO1GyP2wi4rTrY0TWedMj0Rs5zc3SU6ajM94zKt2H1dIBss7CSCJALOLg3Ps7u7i6FQoGXl92UhoJMRVyUTwNcV+x0+1zMzc1RrVYByOfzLMV8bA6rRJw2Nv97hQFglSQmJiZYXFxkf38fgEQ8xkY6yMZgkGbJzJsrvpMBZrPZkEQoFGJ5eZlLZ1V2dI13cT8mIXjV66kHWCwWxsfG6iCyy0VWcVLJaTyKuBBC8LrfWw8IBoPs7e0xMjKCyWQyQApRmbKu0dVqwy6Z+TQYrAdEo1EODw85ODhgZmaGdDpNPB6nzelgLalQ7PdiEoJrfrshhbKu8bRDRlitVhYWFvi3qtUqxWKRUdXJL10j3GKl3WZhLakYbl8dCHDGakFkfc30eZ1MTU5SKpWYn5+nS/GwnlK4o7Xga5RYivkN5q9DKhdarLVRU54mtrMa01GZtM/OXc3B+4EAjy/K3D/Xyue0ce4dXeNqwH70V54Gia1MrSB/chqVnMbPrMZ2VqOcMzavrB8lIoTAZjEhTELwrLONSs54cDur8mVINewV+701kxD0yY0UonKtSE2Smcmwi5VEgLcxPw/CLvIhJz8yR4CPg0G8DRJCCG6pDrYyKrM9bv4C0SnpRYi16nIAAAAASUVORK5CYII=",
     });
     
-    ToolbarManager.addWidget(window, button, false);
+    ToolbarManager.addWidget(window, button, true);
 
     var xml = '\
 			<menupopup id="userChromejs_options"  onpopupshowing="userChromejs.onpopup();">\

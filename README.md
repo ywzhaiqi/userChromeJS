@@ -18,9 +18,12 @@ userChromeJS for Firefox
  - [Mozest.com uc脚本下载区](https://j.mozest.com/zh-CN/ucscript/)
  - [UserChromeJS脚本 - 紫云飞](http://www.cnblogs.com/ziyunfei/archive/2011/11/25/2263756.html)，原创作者。
  - [zbinlin — Bitbucket](https://bitbucket.org/zbinlin)
+ - [黒仪大螃蟹](http://pan.baidu.com/share/home?uk=2467242534#category/type=0)
  - [lastdream2013/userChrome · GitHub](https://github.com/lastdream2013/userChrome)
  - [feiruo/userChromeJS · GitHub](https://github.com/feiruo/userChromeJS)
- - [黒仪大螃蟹](http://pan.baidu.com/share/home?uk=2467242534#category/type=0)
+ - [defpt/userChromeJs](https://github.com/defpt/userChromeJs)
+ - [Drager-oos/userChrome](https://github.com/Drager-oos/userChrome)
+ - 更多搜索：[Search · userChrome](https://github.com/search?q=userChrome&nwo=defpt%2FuserChromeJs&search_target=global&ref=cmdform)
 
 说明
 ----
@@ -29,6 +32,7 @@ userChromeJS for Firefox
 
  - [addmenuPlus](addmenuPlus)，增加修改 Firefox 菜单（修改版）。
  - [AddonsPage](AddonsPage)，附件组件页面（about:addons）右键新增查看所在目录，详细信息页面新增安装地址或路径，新增 uc脚本管理页面。
+ - [AutoClickModY](AutoClickModY)，鼠标悬停自动点击链接、按钮、图片。
  - [autoLaunchReader](autoLaunchReader)，自动启用阅读器（原创）。[专注阅读扩展简测](http://www.firefox.net.cn/read-49260)
  - [ExternalEditor](ExternalEditor)，输入框右键添加 `用外部编辑器打开` 功能（修改版）。
  - [ExternalVideoPlayer](ExternalVideoPlayer)，调用外部播放器播放网络视频（原创）。[yunPlayer.uc.js](ExternalVideoPlayer/yunPlayer.uc.js)，右键菜单云播放视频。
@@ -66,6 +70,7 @@ userChromeJS for Firefox
  - [OpenLinkinNewTabwithRightClick.uc.js](OpenLinkinNewTabwithRightClick.uc.js)，右键在新标签页打开链接，修改自`openlinkinnewtabwithleftdoubleclick.uc.js`。
  - [openLinkTabThirdPart.uc.js](openLinkTabThirdPart.uc.js)，域名第三方新标签页打开，否则当前标签页打开。
  - [placesToolbarMiddleClick.uc.js](placesToolbarMiddleClick.uc.js)，禁用书签栏文件夹的鼠标中键打开所有标签页。
+ - [setRelativeEditPath.uc.js](setRelativeEditPath.uc.js)，设置相对路径的编辑器到 `view_source.editor.path`。
  - [SidebarGestures.uc.js](SidebarGestures.uc.js)，给侧边栏网页加上鼠标手势，左：后退，右：前进，上下：刷新。
  - [SimpleDragModY.uc.js](SimpleDragModY.uc.js)，简单拖曳的修改版，向上拖曳前台打开链接或搜索文字，其它方向后台。
  	- 忽略了 javascript: 开头的链接，增加了文字链接、file:// 和 about:config?filter 开头链接的识别。

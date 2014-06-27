@@ -34,7 +34,12 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
 
 ### 可参考的配置
 
+ - [\_addmenu.js](https://github.com/ywzhaiqi/userChromeJS/blob/master/addmenuPlus/_addmenu.js)
+ - [\_addmenu示例合集.js](https://github.com/ywzhaiqi/userChromeJS/blob/master/addmenuPlus/_addmenu%E7%A4%BA%E4%BE%8B%E5%90%88%E9%9B%86.js)
  - [defpt 的 addMenuPlus 配置](https://github.com/defpt/userChromeJs/tree/master/addMenuPlus)
+ - [\_addmenu.js配置 - 自用功能](http://g.mozest.com/viewthread.php?tid=44436&highlight=)
+ - [addMenuPlus 的配置文件，大家都来分享下吧~~~](http://bbs.kafan.cn/thread-1677811-1-1.html)
+ - [分享addmenu配置，自定义 火狐 橙菜单和右键菜单！](http://bbs.kafan.cn/thread-1682712-1-1.html)
 
 ### 使用技巧
 
@@ -652,6 +657,47 @@ pagesub([
         }
     })
 
+示例：快速保存选定文本为 txt 并打开。
+
+	page({
+	    label: '快速保存选定文本',
+	    condition: 'select',
+	    oncommand: function() {
+	        if (!window.NetUtil) Cu.import("resource://gre/modules/NetUtil.jsm");
+	        if (!window.FileUtils) Cu.import("resource://gre/modules/FileUtils.jsm");
+
+	        var data = addMenu.convertText('%s');
+
+	        var fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+	        fp.init(window, "另存为", Ci.nsIFilePicker.modeSave);
+	        fp.appendFilter("文本文件", "*.txt");
+	        fp.defaultString = content.document.title + '.txt';
+
+	        var res = fp.show();
+	        if (res != Ci.nsIFilePicker.returnCancel) {
+	            var aFile = fp.file;
+
+	            var ostream = FileUtils.openSafeFileOutputStream(aFile);
+
+	            var converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
+	            converter.charset = "gbk";
+	            var istream = converter.convertToInputStream(data);
+
+	            NetUtil.asyncCopy(istream, ostream, function(status) {
+	                if (!Components.isSuccessCode(status)) {
+	                    // Handle error!
+	                    return;
+	                }
+
+	                aFile.launch();
+
+	                // var path = addMenu.handleRelativePath('\\chrome\\txtFormat.exe');
+	                // addMenu.exec(path, [aFile.path]);
+	            });
+	        }
+	    }
+	})
+
 示例：子菜单中的 测试视频链接 只在 youku 页面显示，其它页面隐藏。
 
     var testMenu = PageMenu({
@@ -690,7 +736,7 @@ pagesub([
         clone: false
     });
 
-示例：修改错误控制台的按键（Ctrl+J）为以前的版本的控制台
+示例：修改错误控制台的按键（Ctrl + Shift + J）为以前的版本的控制台
 
     page({
         id: "key_browserConsole",

@@ -4,9 +4,10 @@
 // @author       ywzhaiqi
 // @include      main
 // @charset      utf-8
-// @version      1.1
+// @version      1.2
 // @downloadURL  https://raw.github.com/ywzhaiqi/userChromeJS/master/AutoClickModY/AutoClickModY.uc.js
 // @homepageURL  https://github.com/ywzhaiqi/userChromeJS/tree/master/AutoClickModY
+// @note         第一次需要从定制面板中拖出
 // @note         当按着 Ctrl 键时，后台打开
 //==/UserScript==
 
@@ -35,19 +36,25 @@
         },
         get BUTTON_TYPE() BUTTON_TYPE,
         set BUTTON_TYPE(num) {
+            if (!this.isFirstRun && BUTTON_TYPE === num) return;
+
             BUTTON_TYPE = num;
             this.prefs.setIntPref('BUTTON_TYPE', BUTTON_TYPE);
             this.rebuildButton();
-            this.updateState(ENABLE, !this.isFirstRun);
+            this.updateState(ENABLE);
         },
         get enable() ENABLE,
         set enable(bool) {
-            ENABLE = !!bool;
-            this.prefs.setBoolPref('enable', ENABLE);
-            this.updateState(ENABLE, !this.isFirstRun);
+            bool = !!bool;
+            if (!this.isFirstRun && ENABLE === bool) return;
+
+            this.prefs.setBoolPref('enable', ENABLE = bool);
+            this.updateState(bool);
         },
         get hovering_time() hovering_time,
         set hovering_time(num) {
+            if (hovering_time == num) return;
+
             hovering_time = num;
             this.prefs.setIntPref('hovering_time', hovering_time);
         },
@@ -57,10 +64,15 @@
                 clicked_parent_elem: clicked_parent_elem
             }
         },
+        set clicked_elem(str) {
+            this.clicked_elems = str.split(',').map(function(x) x.trim() )
+        },
+        set clicked_parent_elem(str) {
+            this.clicked_parent_elems = str.split(',').map(function(x) x.trim() )
+        },
 
         init: function() {
             this.isFirstRun = true;
-
             this.loadSetting();
 
             gBrowser.mPanelContainer.addEventListener('mouseover', this, false);
@@ -80,29 +92,39 @@
             gBrowser.mPanelContainer.removeEventListener('keyup', this, false);
             this.prefs.removeObserver('', this, false);
         },
-        loadSetting: function() {  // 载入设置并执行相应的任务
-            this.BUTTON_TYPE = this.prefs.prefHasUserValue('BUTTON_TYPE') ?
-                    this.prefs.getIntPref('BUTTON_TYPE') :
-                    this.BUTTON_TYPE;
-
-            this.enable = this.prefs.prefHasUserValue('enable') ?
-                    this.prefs.getBoolPref('enable') :
-                    this.enable;
-
-            this.hovering_time = this.prefs.prefHasUserValue('hovering_time') ?
-                    this.prefs.getIntPref('hovering_time') :
-                    this.hovering_time;
-
-            if (this.prefs.prefHasUserValue('clicked_elem')) {
-                this.clicked_elem = this.prefs.getCharPref('clicked_elem');
-            } else {
-                this.prefs.setCharPref('clicked_elem', this.clicked_elem = clicked_elem);
+        loadSetting: function(type) {  // 载入设置并执行相应的任务
+            if (!type || type === 'BUTTON_TYPE') {
+                this.BUTTON_TYPE = this.prefs.prefHasUserValue('BUTTON_TYPE') ?
+                        this.prefs.getIntPref('BUTTON_TYPE') :
+                        this.BUTTON_TYPE;
             }
 
-            if (this.prefs.prefHasUserValue('clicked_parent_elem')) {
-                this.clicked_parent_elem = this.prefs.getCharPref('clicked_parent_elem');
-            } else {
-                this.prefs.setCharPref('clicked_parent_elem', this.clicked_parent_elem = clicked_parent_elem);
+            if (!type || type === 'enable') {
+                this.enable = this.prefs.prefHasUserValue('enable') ?
+                        this.prefs.getBoolPref('enable') :
+                        this.enable;
+            }
+
+            if (!type || type === 'hovering_time') {
+                this.hovering_time = this.prefs.prefHasUserValue('hovering_time') ?
+                        this.prefs.getIntPref('hovering_time') :
+                        this.hovering_time;
+            }
+
+            if (!type || type === 'clicked_elem') {
+                if (this.prefs.prefHasUserValue('clicked_elem')) {
+                    this.clicked_elem = this.prefs.getCharPref('clicked_elem');
+                } else {
+                    this.prefs.setCharPref('clicked_elem', this.clicked_elem = clicked_elem);
+                }
+            }
+
+            if (!type || type === 'clicked_parent_elem') {
+                if (this.prefs.prefHasUserValue('clicked_parent_elem')) {
+                    this.clicked_parent_elem = this.prefs.getCharPref('clicked_parent_elem');
+                } else {
+                    this.prefs.setCharPref('clicked_parent_elem', this.clicked_parent_elem = clicked_parent_elem);
+                }
             }
         },
         removeButton: function() {
@@ -135,8 +157,7 @@
                     onclick: 'AutoClick.iconClick(event);',
                 });
 
-                // 插入
-                let insPos = document.getElementById('devToolsSeparator');
+                let insPos = $('devToolsSeparator');
                 insPos.parentNode.insertBefore(menuitem, insPos);
                 this.menuitem = menuitem;
             } else {
@@ -145,12 +166,11 @@
                     class: 'toolbarbutton-1 chromeclass-toolbar-additional',
                     tooltiptext: "自动点击开/关",
                     onclick: "AutoClick.iconClick(event);",
-                    style: "width: 24px;",
                     // context: "AutoClick-popup",
                 });
 
                 if (BUTTON_TYPE === 1) {
-                    ToolbarManager.addWidget(window, button, false);
+                    ToolbarManager.addWidget(window, button, true);
                 } else {
                     $('urlbar-icons').appendChild(button);
                 }
@@ -159,18 +179,19 @@
 
                 let css = '\
                     #AutoClick-icon {\
-                            -moz-appearance: none !important;\
-                            border-style: none !important;\
-                            border-radius: 0 !important;\
-                            padding: 0 0 !important;\
-                            margin: 0 3px !important;\
-                            background: transparent !important;\
-                            box-shadow: none !important;\
-                            -moz-box-align: center !important;\
-                            -moz-box-pack: center !important;\
-                            min-width: 18px !important;\
-                            min-height: 18px !important;\
-                        }\
+                        -moz-appearance: none !important;\
+                        border-style: none !important;\
+                        border-radius: 0 !important;\
+                        padding: 0 0 !important;\
+                        margin: 0 3px !important;\
+                        background: transparent !important;\
+                        box-shadow: none !important;\
+                        -moz-box-align: center !important;\
+                        -moz-box-pack: center !important;\
+                        min-width: 18px !important;\
+                        min-height: 18px !important;\
+                        width: 24px;\
+                    }\
                     #AutoClick-icon > .toolbarbutton-icon {\
                         max-width: 18px !important;\
                         padding: 0 !important;\
@@ -187,8 +208,9 @@
                 this.style = addStyle(css);
             }
         },
-        updateState: function(enable, showStatus) {
-            let label = enable ? 'AutoClick 已启用' : 'AutoClick 已停用';
+        updateState: function(enable, isTmpDisable) {
+            let preLabel = isTmpDisable ? '临时' : '',
+                label = 'AutoClick 已' + preLabel + (enable ? '启用' : '停用');
 
             if (this.button) {
                 this.button.style.listStyleImage = 'url(' + (enable ? ON_IMG : OFF_IMG) + ')';
@@ -198,28 +220,22 @@
                 this.menuitem.setAttribute('label', label);
             }
 
-            showStatus = typeof(showStatus) === 'undefined' ? true : showStatus;
-
-            if (showStatus) {
-                XULBrowserWindow.statusTextField.label = label;
-
-                if (window.dactyl && dactyl.echomsg) {
-                    dactyl.echomsg(label);
-                }
-            }
+            XULBrowserWindow.statusTextField.label = label;
         },
         handleEvent: function(event) {
             if (!this.enable) return;
 
             switch(event.type) {
                 case 'mouseover':
-                    this.mouseover(event);
+                    if (!this.tmpDisable)
+                        this.mouseover(event);
                     break;
                 case 'mouseout':
-                    this.mouseout(event);
+                    if (!this.tmpDisable)
+                        this.mouseout(event);
                     break;
                 case 'keydown':
-                    if (event.keyCode === 17) {  // Ctrl
+                    if (event.keyCode === 17) {  // Ctrl_L
                         this.ctrlKey = true;
                     }
                     break;
@@ -227,6 +243,12 @@
                     if (event.keyCode === 17) {
                         this.ctrlKey = false;
                     }
+                    break;
+                // case 'keypress':
+                //     if (event.keyCode === 18) {  // Alt_L
+                //         this.tmpDisable = !this.tmpDisable;
+                //         this.updateState(!this.tmpDisable, this.tmpDisable);
+                //     }
                     break;
             }
         },
@@ -238,7 +260,7 @@
                     case 'hovering_time':
                     case 'clicked_elem':
                     case 'clicked_parent_elem':
-                        this.loadSetting();
+                        this.loadSetting(aData);
                         break;
                 }
             }
@@ -257,12 +279,25 @@
                 this.timeoutID = null;
             }
         },
-        findLink: function(element) {
-            var name = element.localName.toLowerCase();
-            if (this.clicked_elem.indexOf(name) != -1) {
-                return element;
-            } else if (this.clicked_parent_elem.indexOf(name) != -1) {
-                var parent = element.parentNode;
+        findLink: function(node) {
+            var selector = node.nodeName.toLowerCase();
+            // if (node.id) {
+            //     selector += '#' + node.id;
+            // }
+
+            // var classNames = node.getAttribute('class');
+            // if (classNames) {
+            //     selector += '.' + classNames.trim().replace(/\s+/ig, '.');
+            // }
+
+            var match = function(list) {
+                return list.some(function(x) selector === x );
+            };
+
+            if (match(this.clicked_elems)) {
+                return node;
+            } else if (match(this.clicked_parent_elems)) {
+                var parent = node.parentNode;
                 return parent && this.findLink(parent);
             }
 
@@ -280,10 +315,10 @@
                 this.enable = !this.enable;
             } else {
                 this.openPref();
-            }
 
-            event.preventDefault();
-            event.stopPropagation();
+                event.preventDefault();
+                event.stopPropagation();
+            }
         },
         openPref: function() {
             let xul = '<?xml version="1.0"?>\
@@ -424,6 +459,7 @@
         };
         return exports;
     })();
+
 
     function $(id, doc) (doc || document).getElementById(id);
 

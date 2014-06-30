@@ -60,7 +60,7 @@
   /*
     EXPERIMENT：取消延迟加载（实验性的）？true 为不延迟，false 为延迟。为 true 则一些脚本可能会运行不正常。
       true 和 false 区别2点：
-        1、对非主界面的脚本本来有个 500ms 的延迟，true 后就没了。
+        1、本来有个 500ms 的延迟加载，true 后就没了。
         2、本来是一个个加载 xul 文件，而 true 则把所有的 xul 加起来一次性加载。 前不久卡饭还有个 userChromejs 扩展的优化版，就是优化 xul 文件的加载。 
     EXCLUDE_CHROMEHIDDEN：  排除隐藏的 window(popup等)
     USE_0_63_FOLDER：如果为 true，好像只支持这几种文件夹名字 uc、xul、ucjs

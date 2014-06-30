@@ -6,6 +6,7 @@
 // @author         slimx
 // @version 1.0.6.23
 // @updateURL     https://j.mozest.com/ucscript/script/5.meta.js
+// @note          2014-6-30 修改跨域链接的判断，以便支持优酷视频的评论翻页 By ywzhaiqi
 // ==/UserScript==
 
 var nextPage = new function() {
@@ -881,7 +882,8 @@ var nextPage = new function() {
 
         if (e.nodeName == "A") {
             //如果不是当前域,跳过
-            if (/^https?:/i.test(e.href) && e.hostname != win.location.hostname)
+            // if (/^https?:/i.test(e.href) && e.hostname != win.location.hostname)
+            if (/^https?:/i.test(e.href) && e.hostname.indexOf(win.document.domain) === -1)
                 return false;
             //有这个必要吗
             if (e.href && !/^\s*$|^https?:|^javascript:|^file:/i.test(e.href))

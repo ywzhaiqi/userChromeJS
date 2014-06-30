@@ -5,7 +5,7 @@
 // @include        main
 // @charset        utf-8
 // @author         ywzhaiqi
-// @version        2013/10/10
+// @version        2014.06.30
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/blob/master/findScriptForGreaemonkeyOrScriptish.uc.js
 // ==/UserScript==
 
@@ -36,9 +36,18 @@ var FindScriptForScriptish = {
 		}
 
 		// Greasemonkey
-		var GM_popup = document.querySelector("#greasemonkey-tbb menupopup");
-		if(GM_popup){
-			GM_popup.insertBefore(menuitem, GM_popup.children[3]);
+		// 把按钮移到最新版的 pentadactyl 附加组件栏后，一开始找不到 Greasemonkey 菜单
+		if ("@greasemonkey.mozdev.org/greasemonkey-service;1" in Cc) {
+			var addToGreasemonkey = function() {
+				var GM_popup = document.querySelector("#greasemonkey-tbb menupopup");
+				if (GM_popup) {
+					GM_popup.insertBefore(menuitem, GM_popup.children[3]);
+				} else {
+					setTimeout(addToGreasemonkey, 500);
+				}
+			};
+
+			addToGreasemonkey();
 		}
 	},
     uninit: function(){
@@ -83,9 +92,9 @@ var FindScriptForScriptish = {
 		 	stringa=href.substring(++f[0],f[2]);
 		}
 
-        var url = "http://www.google.com/search?btnG=Google+Search&q=site:userscripts.org+inurl:scripts+inurl:show+"+ stringa;
-		openLinkIn(url, "tab", { inBackground: false});
-		// openLinkIn("http://userscripts.org/scripts/search?q="+ stringa + "&submit=Search",  "tab", {});
+		openLinkIn("http://www.google.com/search?q=site:userscripts.org+inurl:scripts+inurl:show+"+ stringa, 
+			"tab", { inBackground: false});
+		openLinkIn("https://greasyfork.org/scripts/search?q="+ stringa,  "tab", {});
 	}
 };
 

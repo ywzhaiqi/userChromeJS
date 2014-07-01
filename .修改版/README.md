@@ -9,6 +9,8 @@
 脚本列表
 
  - [ExternalFuncButtonM](ExternalFuncButtonM)，修改为外置规则可重载版本。
+ - [autoContextmenu.uc.xul](autoContextmenu.uc.xul)，选中文字后自动弹出右键菜单。
+    - 排除 input 和 textarea。
  - [nextpageModY.uc.js](nextpageModY.uc.js)，原脚本 [NextPage.uc.xul](http://j.mozest.com/zh-CN/ucscript/script/5/)
     - 从 uc.xul 改为 .uc.js 文件。
     - 修改了跨域链接的判断，以便支持优酷视频的评论翻页。[测试页面](http://v.youku.com/v_show/id_XMjE4MDU1MDE2.html)。
@@ -25,3 +27,8 @@
     - modified by ywzhaiqi: 修正 @include 正则表达式的支持 2014.06.23
     - modified by ywzhaiqi: 如果没有 downloadURL 则会插入安装地址作为 downloadURL
     - modified by Coolkids: 脚本菜单中键根据 downloadURL > updateURL > homepageURL 打开链接，http://bbs.kafan.cn/thread-1750122-1-1.html
+ - [youkuantiadsModY.uc.js](youkuantiadsModY.uc.js)，[youkuantiads 视频去广告去黑屏](http://bbs.kafan.cn/thread-1509944-1-1.html) 修改版。
+    - 新增：本地播放器检测功能。如果有本地播放器则使用本地的路径，否则使用默认的网络播放器。
+    - 新增：提前判断是否为 flash，加快速度。
+    - 本地播放器默认路径为 chrome 目录下的 swf 文件夹。
+    - 本地的 17173 播放器默认未启用。

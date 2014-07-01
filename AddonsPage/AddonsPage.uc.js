@@ -4,7 +4,7 @@
 // @author       ywzhaiqi
 // @include      main
 // @charset      utf-8
-// @version      2014.06.30
+// @version      2014.07.01
 // @downloadURL  https://raw.github.com/ywzhaiqi/userChromeJS/master/AddonsPage/AddonsPage.uc.js
 // @homepageURL  https://github.com/ywzhaiqi/userChromeJS/tree/master/AddonsPage
 // @reviewURL    http://bbs.kafan.cn/thread-1617407-1-1.html
@@ -23,7 +23,7 @@
 location == "chrome://browser/content/browser.xul" && (function(){
 
     var iconURL = "";  // uc 脚本列表的图标
-    
+
     var Config = {
         debug: 0,  // 1 则uc管理界面右键菜单会有 "重载 uc 脚本" 的菜单
         detailView: 1,  // 详细信息页面是否添加安装链接
@@ -42,18 +42,79 @@ location == "chrome://browser/content/browser.xul" && (function(){
     Cu.import("resource://gre/modules/AddonManager.jsm");
 
     const isCN = Services.prefs.getCharPref("general.useragent.locale").indexOf("zh") != -1;
-    const USO_URL_RE = /(^https?:\/\/userscripts.org\/scripts\/source\/\d+)\.(?:user|meta)\.js$/i;
-    const GFO_URL_RE_1 = /(^https?:\/\/greasyfork.org\/scripts\/code\/\w+)\.(?:user|meta)\.js$/i;
-    const GFO_URL_RE_2 = /(^https?:\/\/greasyfork.org\/scripts\/[^\/]+\/)code[\.\/].*(?:user|meta)\.js$/i;
+
     const ADDONS_SEARCH_URL = 'https://addons.mozilla.org/firefox/search/?q=';
 
-    // (http://binux.github.io/ThunderLixianExporter/)master/ThunderLixianExporter.user.js
+    var ApplyPatchForScript = (function(){
+        const USO_URL_RE = /(^https?:\/\/userscripts.org.*\/scripts\/source\/\d+)\.\w+\.js$/i;
+
+        const GFO_URL_RE_1 = /(^https?:\/\/greasyfork.org\/scripts\/code\/\w+)\.\w+\.js$/i;
+        const GFO_URL_RE_2 = /(^https?:\/\/greasyfork.org\/scripts\/[^\/]+\/)code[\.\/].*\w+\.js$/i;
+
+        // (http://binux.github.io/ThunderLixianExporter/)master/ThunderLixianExporter.user.js
+        const GITHUB_URL_RE_1 = /(^https?:\/\/\w+.github.io\/\w+\/)master\/.*.*\w+\.js$/i;
+        // 从   https://raw.githubusercontent.com/ywzhaiqi/userscript/master/noNoticetitleflashOnBBS.user.js
+        // 转为 https://github.com/ywzhaiqi/userscript/blob/master/noNoticetitleflashOnBBS.user.js
+        const GITHUB_URL_RE_2 = /(^https?:\/\/raw.githubusercontent.com\/.*?\/master\/.*\.user\.js$)/i;
+
+        function getScriptHomeURL(downURL) {
+            var url;
+            if (downURL && downURL.startsWith('http')) {
+                if (USO_URL_RE.test(downURL)) {
+                    url = RegExp.$1.replace(/source/, "show");
+                } else if (GFO_URL_RE_1.test(downURL)) {
+                    url = RegExp.$1;
+                } else if (GFO_URL_RE_2.test(downURL)) {
+                    url = RegExp.$1;
+                } else if (GITHUB_URL_RE_1.test(downURL)) {
+                    url = RegExp.$1;
+                } else if (GITHUB_URL_RE_2.test(downURL)) {
+                    url = RegExp.$1.replace('raw.githubusercontent.com', 'github.com')
+                            .replace('/master/', '/blob/master/');
+                }
+            }
+            return url ? decodeURIComponent(url) : null;
+        }
+
+        function addHomePage(){
+            // 添加 Scriptish 脚本的主页
+            if (window.Scriptish_config) {
+                Scriptish_config.scripts.forEach(function(script){
+                    if(script.homepageURL) return;
+
+                    var url = script.updateURL || script.downloadURL;
+                    script.homepageURL = getScriptHomeURL(url);
+                });
+            }
+
+            // 添加 Greasemonkey 脚本的主页
+            AddonManager.getAddonsByTypes(['greasemonkey-user-script'], function (aAddons) {
+                aAddons.forEach(function (aAddon) {
+                    if (aAddon.homepageURL) return;
+
+                    var url = aAddon._script._downloadURL || aAddon._script._updateURL;
+                    var homepageURL = getScriptHomeURL(url);
+                    if (homepageURL) {
+                        aAddon.homepageURL = homepageURL;
+                    } else {
+                        // console.log(aAddon.name, url);
+                    }
+                });
+            });
+        }
+
+        return {
+            init: addHomePage
+        }
+    })();
+
+    setTimeout(function(){
+        ApplyPatchForScript.init();
+    }, 2000);
 
     window.AM_Helper = {
         init: function(){
             document.addEventListener("DOMContentLoaded", this, false);
-
-            this.addHomePage();
         },
         uninit: function(){
             document.removeEventListener("DOMContentLoaded", this, false);
@@ -90,17 +151,6 @@ location == "chrome://browser/content/browser.xul" && (function(){
                                   this.setItemsAttributes,
                                   event);
                     break;
-            }
-        },
-        addHomePage: function(){
-            if (window.Scriptish_config) {
-                Scriptish_config.scripts.forEach(function(script){
-                    if(!script.homepageURL && script.updateURL){
-                        if(USO_URL_RE.test(script.updateURL)){
-                            script.homepageURL = script.updateURL.replace(/source/, "show").replace(/\.\w+\.js$/, "");
-                        }
-                    }
-                });
             }
         },
         addPopupMenu: function(doc){
@@ -219,14 +269,14 @@ location == "chrome://browser/content/browser.xul" && (function(){
 
             // install url
             menuitem = doc.getElementById("AM-open-url");
-            var installURL = this.getInstallURL(aAddon) || null;
+            var installURL = aAddon.homepageURL || this.getInstallURL(aAddon) || null;
             menuitem.tooltipText = installURL;
             menuitem.hidden = !installURL;
             menuitem.className = installURL ? className : '';
 
-            menuitem = doc.getElementById("AM-inspect-addon")
+            menuitem = doc.getElementById("AM-inspect-addon");
             menuitem.disabled = !("inspectObject" in window);
-            menuitem.className = className;
+            menuitem.className = menuitem.disabled ? '' : className;
 
             menuitem = doc.getElementById("AM-copy-name");
             menuitem.tooltipText = aAddon.name;
@@ -367,21 +417,6 @@ location == "chrome://browser/content/browser.xul" && (function(){
             this.copyToClipboard(aAddon.name);
         },
 
-        getScriptHomeURL: function(downOrUpdateURL) {
-            var url = '';
-            if (downOrUpdateURL) {
-                if (USO_URL_RE.test(downOrUpdateURL)) {
-                    url = RegExp.$1.replace(/source/, "show");
-                } else if (GFO_URL_RE_1.test(downOrUpdateURL)) {
-                    url = RegExp.$1;
-                } else if (GFO_URL_RE_2.test(downOrUpdateURL)) {
-                    url = RegExp.$1;
-                } else {
-                    url = downOrUpdateURL;
-                }
-            }
-            return decodeURIComponent(url);
-        },
         getInstallURL: function(aAddon){
             aAddon = aAddon || this.win.gViewController.viewObjects.detail._addon;
             if(!aAddon) return null;
@@ -393,14 +428,9 @@ location == "chrome://browser/content/browser.xul" && (function(){
                     url = (aAddon.contributionURL || aAddon.reviewURL) || null;
                     return url && url.replace(/\/developers|\/reviews/g, "") || (ADDONS_SEARCH_URL + aAddon.name);
                 case "greasemonkey-user-script":
-                    url = aAddon.homepageURL;
-                    if (!url) {
-                        var downURL = aAddon._script._downloadURL || aAddon._script._updateURL;
-                        url = this.getScriptHomeURL(downURL);
-                    }
-                    return url;
+                    return aAddon._script._downloadURL || aAddon._script._updateURL;
                 case "userscript":
-                    url = aAddon._updateURL ? aAddon._updateURL.replace(/(^.+)source\/(\d+).*$/,"$1show/$2") : null;
+                    url = aAddon._downloadURL || aAddon._updateURL;
                     return url;
                 case "userchromejs":
                     return aAddon.homepageURL || aAddon.reviewURL || aAddon.downloadURL || aAddon.updateURL;
@@ -421,7 +451,8 @@ location == "chrome://browser/content/browser.xul" && (function(){
             if(!doc.getElementById("detail-InstallURL-row")){
                 var value = "",label = "";
                 if(this.win.gViewController.currentViewId.indexOf("detail")!= -1){
-                    switch (this.win.gViewController.viewObjects.detail._addon.type){
+                    var aAddon = this.win.gViewController.viewObjects.detail._addon;
+                    switch (aAddon.type){
                         case "extension":
                         case "theme":
                         case "greasemonkey-user-script":
@@ -486,7 +517,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
 
         init: function(){
 	        if ('userchromejs' in AddonManager.addonTypes) return;
-	        
+
             this.initScripts();
             this.registerProvider();
             this.addStyle();

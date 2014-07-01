@@ -16,13 +16,14 @@ userChromeJS for Firefox
  - [卡饭论坛uc脚本索引](http://bbs.kafan.cn/forum.php?mod=viewthread&tid=1340501&page=1#pid25548028)
  - [Mozest.com uc脚本论坛区](https://g.mozest.com/forum-75-1)
  - [Mozest.com uc脚本下载区](https://j.mozest.com/zh-CN/ucscript/)
- - [UserChromeJS脚本 - 紫云飞](http://www.cnblogs.com/ziyunfei/archive/2011/11/25/2263756.html)，原创作者。
+ - [UserChromeJS脚本 - 紫云飞](http://www.cnblogs.com/ziyunfei/archive/2011/11/25/2263756.html)
  - [zbinlin — Bitbucket](https://bitbucket.org/zbinlin)
  - [黒仪大螃蟹](http://pan.baidu.com/share/home?uk=2467242534#category/type=0)
  - [lastdream2013/userChrome · GitHub](https://github.com/lastdream2013/userChrome)
  - [feiruo/userChromeJS · GitHub](https://github.com/feiruo/userChromeJS)
  - [defpt/userChromeJs](https://github.com/defpt/userChromeJs)
  - [Drager-oos/userChrome](https://github.com/Drager-oos/userChrome)
+ - [Harv/userChromeJS](https://github.com/Harv/userChromeJS)，主要包含 youkuantiads.uc.js、redirector.uc.js。
  - 更多搜索：[Search · userChrome](https://github.com/search?q=userChrome&nwo=defpt%2FuserChromeJs&search_target=global&ref=cmdform)
 
 说明
@@ -30,6 +31,8 @@ userChromeJS for Firefox
 
 ### 文件夹
 
+ - [.test](.test)，一些测试的脚本。
+ - [.修改版](.修改版)
  - [addmenuPlus](addmenuPlus)，增加修改 Firefox 菜单（修改版）。
  - [AddonsPage](AddonsPage)，附件组件页面（about:addons）右键新增查看所在目录，详细信息页面新增安装地址或路径，新增 uc脚本管理页面。
  - [AutoClickModY](AutoClickModY)，鼠标悬停自动点击链接、按钮、图片。
@@ -61,6 +64,7 @@ userChromeJS for Firefox
  - [downloadPlus.uc.js](downloadPlus.uc.js)，多个下载脚本整合版，**已弃用，请使用原来的独立版本**。
     - [DownloadEnhance.uc.js](DownloadEnhance.uc.js)，加入延迟应对新的 userChrome.js（注：userChrome.js 最新版已不再取消延迟加载）。
     - [showCompleteURL.uc.js](showCompleteURL.uc.js)，加入延迟应对新的 userChrome.js（注：userChrome.js 最新版已不再取消延迟加载）。
+    - **技巧**：在下载窗口 "我的足迹" 界面，直接 `ctrl+v` 即可新建下载。
  - [ExportHTMLFolderMod.uc.xul](ExportHTMLFolderMod.uc.xul)，书签右键 `导出到HTML`（修改版）。
  - [findScriptForGreaemonkeyOrScriptish.uc.js](findScriptForGreaemonkeyOrScriptish.uc.js)，为 Greasemonkey 或 Scriptish 扩展增加 "为本站搜索脚本" 功能。
  - [IME-Colors.uc.js](IME-Colors.uc.js)，输入框聚焦时变色。

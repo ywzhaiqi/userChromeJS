@@ -39,6 +39,7 @@ userChromeJS for Firefox
  - [autoLaunchReader](autoLaunchReader)，自动启用阅读器（原创）。[专注阅读扩展简测](http://www.firefox.net.cn/read-49260)
  - [ExternalEditor](ExternalEditor)，输入框右键添加 `用外部编辑器打开` 功能（修改版）。
  - [ExternalVideoPlayer](ExternalVideoPlayer)，调用外部播放器播放网络视频（原创）。[yunPlayer.uc.js](ExternalVideoPlayer/yunPlayer.uc.js)，右键菜单云播放视频。
+ - [InspectElementModY](InspectElementModY)，元素查看调用工具，修改增强版。
  - [moveButton](moveButton)，移动或克隆按钮/菜单到任意位置（原创）。
  - [MyNovelReader](MyNovelReader)，小说阅读uc版（原创），已弃用，请用 [小说阅读GM版](https://userscripts.org/scripts/show/165951)（原创）和[autoLanuchReader](autoLanuchReader)。
  - [rebuild_userChrome](rebuild_userChrome)，脚本管理器，基于 [UserChromeJS脚本管理器Dannylee强化版](http://g.mozest.com/thread-41292-1-1)，修改为可移动版。

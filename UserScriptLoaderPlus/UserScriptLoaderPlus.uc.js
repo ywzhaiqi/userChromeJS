@@ -6,10 +6,9 @@
 // @compatibility  Firefox 5.0
 // @license        MIT License
 // @version        0.1.8.2
-// @note           modified by ywzhaiqi: 如果没有 downloadURL 则插入安装地址作为 downloadURL
+// @note           modified by ywzhaiqi: 增强版
 // @note           modified by boy3510817: 整合 dannylee 和 lastDream2013 版本，http://bbs.kafan.cn/thread-1688975-1-1.html
-// @note           modified by ywzhaiqi: 修正@include 正则表达式的支持 2014.06.23
-// @note           modified by dannyleeby: 版本号显示 中键下载 2013.12.31
+// @note           2014/2/26 Mod by  dannylee修改可切换图标和菜单模式
 // @note           modified by lastdream2013: add switch: reload page on disable/enable script 2013.05.12
 // @note           modified by lastdream2013: add GM_notification API 2013.05.05
 // @note           modified by lastdream2013: fix compatibility for firefox23a1 2013.04.23
@@ -70,6 +69,10 @@ if (window.USL) {
 
 var USL = {};
 
+//dannylee
+USL.UIPREF = "showtoolbutton";
+USL.ShowToolButton = true;
+
 // Class
 USL.PrefManager = function (str) {
     var root = 'UserScriptLoader.';
@@ -108,6 +111,13 @@ USL.PrefManager.prototype = {
         } catch(e) { }
     },
     listValues: function() this.pref.getChildList("", {}),
+	//dannylee
+	hasValue: function(name){
+	  if (this.pref.prefHasUserValue(name))
+	    return true;
+	  else
+	  	return false;
+	}
 };
 
 USL.ScriptEntry = function (aFile) {
@@ -703,6 +713,8 @@ USL.init = function(){
                                   id="UserScriptLoader-saveMenu"\
                                   accesskey="S"\
                                   oncommand="USL.saveScript();"/>\
+						<menuitem id="showScripttoolsbutton" label="油猴脚本版显示为按钮"\
+							                    oncommand="USL.toggleUI(1);" />\
                     </menupopup>\
                  </toolbarbutton>\
             </toolbarpalette>\
@@ -710,6 +722,20 @@ USL.init = function(){
     overlay = "data:application/vnd.mozilla.xul+xml;charset=utf-8," + encodeURI(overlay);
     window.userChrome_js.loadOverlay(overlay, USL);
     USL.style = addStyle(css);
+	  //dannylee
+    var menuitem = document.createElement("menu");
+		menuitem.setAttribute("id", "UserScriptLoader_Tools_Menu");
+		menuitem.setAttribute("label", "油猴脚本管理器脚本版");
+		menuitem.setAttribute("class", "menu-iconic");
+    menuitem.setAttribute("image", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAIzSURBVDhPhVNNSFRRFD5LdxqtSxkj4gUZg4TmT0/HqGhhZTsXU5laiGhUDP5OpRlBNeZPY5HdMjKTcnBRRptp51KthaBOd4yidi1n+XXOeY06GMyFw7n3nO/73nn3nEuUZXVXUVGvS231BygW8JHNhtd8VxXlMynCZlsOEY7tIbgFauGsAkIMuwQx/mqaiNp9hGulFD9RSLbGR7n/FWLyghAjdTvQXEwIHiQ0+AlXD3tW56jgkQxyTwXV9lRSTOx1+36kFvuAlQdYeFGvVYiXs8Qln8YKT4U6Azl/xlv9Clby6iCQeAR8ewI7d109ElGOD3G+X3GCF54KDF/yY3bgJExTIYMiCjZT52EmGoH1VzBvmnh/gYUec/6h4gQvPE+gtQyToTLM9VUCayOAfQq3zUVeeR7wY2Zzb41WJri34QCEpwIXK3ZaEZiPnvJKTz4H7SXQLgJ+fdzcr09oFfPR0yogPBU47qNgZ3UOUku3NwTM6GWY0Xbg9yeY6BWYkRb+nZcqkFoagOCFpwKhGsqVtmHlPga7zuDL+5vA90ku/x3wc5Zths9T+PrhFoa6z2pH5CI3WikC6Q4k471oOFqEoLMb/SUOxkod3GXf6OSjmePJzze0UxkCosQDFI91FLP6PW0XEmN6mbDP2Ma9DsgFc5WCE3zGMP17MFZatDx9zmvn2rBHEs+zsTzNreW8vA/Bbxtl+RUe3zuhclpNv4WtXuKaZ1y2B1XAgBI2d4vJWeLb1l8Iw62jtqs6OwAAAABJRU5ErkJggg==");
+		var ins = document.getElementById("menu_ToolsPopup");
+		ins.insertBefore(menuitem, document.getElementById("menu_preferences"));
+
+    //dannylee
+    if (!this.pref.hasValue(this.UIPREF)) {
+       this.pref.setValue(this.UIPREF, true);
+    }
+    this.ShowToolButton = this.pref.getValue(this.UIPREF);
 };
 
 USL.loadconfig = function () {
@@ -777,6 +803,9 @@ USL.observe = function (subject, topic, data) {
         if (!USL.isready) {
           USL.isready = true;
           USL.loadconfig();
+		 //dannylee
+		  document.getElementById("showScripttoolsbutton").setAttribute("label", (this.ShowToolButton ? "油猴脚本版显示为菜单" : "油猴脚本版显示为按钮"));
+		  USL.toggleUI(0);
           Application.console.log("UserScriptLoader界面加载完毕！");
         }
     }
@@ -786,6 +815,25 @@ USL.observe = function (subject, topic, data) {
         evt.initEvent(USL.eventName, true, false);
         doc.dispatchEvent(evt);
     }
+};
+
+//dannylee
+USL.toggleUI = function(tag){
+      if (tag > 0) {
+        USL.pref.setValue(USL.UIPREF, !USL.pref.getValue(USL.UIPREF));
+        USL.ShowToolButton = USL.pref.getValue(USL.UIPREF);
+      }
+      window.setTimeout(function() {
+        document.getElementById("UserScriptLoader_Tools_Menu").hidden = USL.ShowToolButton;
+        document.getElementById("UserScriptLoader-icon").hidden = !USL.ShowToolButton;
+        if (!USL.ShowToolButton) {
+          document.getElementById("UserScriptLoader_Tools_Menu").appendChild(document.getElementById("UserScriptLoader-popup"));
+          document.getElementById("showScripttoolsbutton").setAttribute("label", "油猴脚本版显示为按钮");
+        } else{
+          document.getElementById("UserScriptLoader-icon").appendChild(document.getElementById("UserScriptLoader-popup"));
+          document.getElementById("showScripttoolsbutton").setAttribute("label", "油猴脚本版显示为菜单");
+        }
+      }, 10);
 };
 
 USL.createMenuitem = function () {
@@ -1346,7 +1394,7 @@ USL.checkScript = function(script) {
         } else {
             if (newVersion > script.version) {
                 let downURL = Utils.r1(/\/\/\s*?@downloadURL\s*([^\r\n]+)/i, bytes) || script.downloadURL;
-      
+
                 let name = /\/\/\s*@name\s+(.*)/i.exec(bytes);
                 let filename = (name && name[1] ? name[1] : downURL.split("/").pop()).replace(/\.user\.js$|$/i, ".user.js").replace(/\s/g, '_').toLowerCase();
 

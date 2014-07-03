@@ -53,6 +53,7 @@ userChromeJS for Firefox
  - [uAutoPagerize](uAutoPagerize)，中文规则增强版（大幅修改版），我已改用下面的 uAutoPagerize2。
  - [uAutoPagerize2](uAutoPagerize2)，中文规则增强版，数据库为 Super_preloaderPlus_one 脚本。
  - [uc\_google\_translator](uc_google_translator)，google 翻译脚本（修改版），**已弃用，请改用原 [dannylee 的版本](http://j.mozest.com/zh-CN/ucscript/script/115/)**。
+ - [UserScriptLoaderPlus](UserScriptLoaderPlus)，UserScriptLoader.uc.js 增强版。
  - [uSuper_preloader](uSuper_preloader)，基于 Super_preloader GM脚本修改而来。
  - [viewSourceModoki](viewSourceModoki)，右键菜单增加 `View Source With: All、Document、css、js`。
  - [WordHighlightToolbarFix](WordHighlightToolbarFix)，搜索高亮（修改版）。

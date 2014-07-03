@@ -5,7 +5,7 @@
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
-// @version        2014.06.03
+// @version        2014.07.03
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/moveButton
 // @reviewURL      http://bbs.kafan.cn/thread-1572303-1-1.html
 // @note           2014/06/03 增加对按钮或菜单属性的设置，修正 bar 必须设置 pos 才会生效的问题。
@@ -50,31 +50,45 @@ location == "chrome://browser/content/browser.xul" && (function(){
     var buttons = [
         // { id: "autoReaderButton", bar: "PersonalToolbar", pos: 1 },
         // { id: "showFlagS-icon", insertBefore: "bookmarks-menu-button" },
-        { id: "uAutoPagerize-icon", bar: "PersonalToolbar" },
-        { id: "SimpleMusicPlayer", bar: "PersonalToolbar" },
-        { id: "redirector-icon", bar: "PersonalToolbar" },
-        { id: "statusbar-translator", bar: "PersonalToolbar" },
-        { id: "userChromebtnMenu", bar: "PersonalToolbar" },
-        { id: "PanelUI-menu-button", insertAfter: "userChromebtnMenu" },
+        // { id: "nosquint-status", bar: "dactyl-status-bar" },
+        // { id: "uAutoPagerize-icon", bar: "dactyl-status-bar" },
+        // { id: "SimpleMusicPlayer", insertAfter: "tabcinema-button" },
+        // { id: "redirector-icon", bar: "dactyl-addon-bar" },
+        // { id: "statusbar-translator", bar: "PersonalToolbar" },
+        // { id: "userChromebtnMenu", bar: "dactyl-addon-bar" },
+        // { id: "PanelUI-menu-button", bar: "PersonalToolbar" },
 
-        // 改 Greasemonkey 按钮为右键弹出菜单
-        {
-            id: "greasemonkey-tbb",
-            attr: {
-                type: "",
-                context: "greasemonkey-popup"
-            }
-        }, {
-            id: "#greasemonkey-tbb > menupopup",
-            attr: {
-                id: "greasemonkey-popup"
-            }
-        },
+        // // 改 Greasemonkey 按钮为右键弹出菜单
+        // {id: "greasemonkey-tbb",
+        //     attr: {
+        //         type: "",
+        //         context: "_child"
+        //     }
+        // },
+
+        // // 改 User Agent Overrider 按钮为右键弹出菜单
+        // {id: "useragentoverrider-button",
+        //     attr: {
+        //         type: "",
+        //         context: "_child"
+        //     }
+        // },
+
+        // // 增加 Stylish 右键弹出菜单功能
+        // {id: "stylish-toolbar-button",
+        //     attr: {
+        //         context: "stylish-popup"
+        //     }
+        // },
     ];
 
     if (window.MyMoveButton) {
-        window.MyMoveButton.unint();
-        delete window.MyMoveButton;
+        try {
+            window.MyMoveButton.unint();
+            delete window.MyMoveButton;
+        } catch(e) {
+            window.MyMoveButton = null;
+        }
     }
 
     window.MyMoveButton = {
@@ -84,10 +98,18 @@ location == "chrome://browser/content/browser.xul" && (function(){
         count: 0,
         timer: null,
 
-        init: function(){
-            this.reset();
-
+        init: function() {
             this.delayRun(0);
+
+            let menuitem = $C('menuitem', {
+                id: "uc-movebutton",
+                label: "Movebutton 重新运行",
+                tooltiptext: "重新按照脚本内的设置移动按钮的位置",
+                oncommand: "MyMoveButton.delayRun();"
+            });
+
+            let ins = $('devToolsSeparator');
+            ins.parentNode.insertBefore(menuitem, ins);
 
             // window.addEventListener('aftercustomization', this, false);
         },
@@ -95,86 +117,85 @@ location == "chrome://browser/content/browser.xul" && (function(){
             // window.removeEventListener('aftercustomization', this, false);
         },
         handleEvent: function(event) {
-            switch(event.type) {
+            switch (event.type) {
                 case 'aftercustomization':
                     // debug('aftercustomization');
-                    this.reset();
                     this.delayRun();
                     break;
             }
         },
-        reset: function() {
-            this.buttons = buttons.slice(0);  // 克隆一份
-            this.count = 0;
-            this.timer = null;
-        },
-        delayRun: function(time){
+        delayRun: function(time) {
+            this.reset();
+
             var self = this;
-            setTimeout(function(){
+            setTimeout(function() {
                 self.run();
             }, time || 100);
         },
-        run: function(){
+        reset: function() {
+            this.buttons = buttons.slice(0); // 克隆一份
+            this.count = 0;
+            this.timer = null;
+        },
+        run: function() {
             if (this.buttons.length == 0) return;
 
-            // debug('run');
             this.timer = setInterval(function(self) {
-                if (++self.count > self.maxcount || self.move()) 
+                if (++self.count > self.maxcount || self.move())
                     clearInterval(self.timer);
             }, this.interval, this);
         },
-        move: function(){
-            var i = 0;
-            while (i < this.buttons.length){
-                var info = this.buttons[i];
-                var button = $(info.id) || document.querySelector(info.id);
-                // debug('check button id: ' + info.id);
-                if (button) {
-                    if(info.clone === true){
-                        button = button.cloneNode(true);
-                    }
-
-                    let ins;
-
-                    if (info.insertBefore && (ins = $(info.insertBefore))) {
-                        ins.parentNode.insertBefore(button, ins);
-
-                        this.buttons.splice(i, 1);
-                        continue;
-                    }
-
-                    if (info.insertAfter && (ins = $(info.insertAfter))) {
-                        ins.parentNode.insertBefore(button, ins.nextSibling);
-
-                        this.buttons.splice(i, 1);
-                        continue;
-                    }
-
-                    if (info.bar) {
-                        let bar = $(info.bar) || button.parentNode;
-                        ins = bar.children[parseInt(info.pos, 10) - 1];
-                        if(ins){
-                            bar.insertBefore(button, ins);
-                        }else{
-                            bar.appendChild(button);
-                        }
-
-                        this.buttons.splice(i, 1);
-                        continue;
-                    }
-
-                    if (info.attr) {
-                        for (let [key, val] in Iterator(info.attr)) {
-                            if (typeof val == "function")
-                                info.attr[key] = val = "(" + val.toSource() + ").call(this, event);";
-                            button.setAttribute(key, val);
-                        }
-                    }
+        move: function() {
+            var i = 0,
+                info, success;
+            while (i < this.buttons.length) {
+                info = this.buttons[i];
+                success = this.moveOneButton(info);
+                if (success) {
+                    this.buttons.splice(i, 1);
                 }
                 i++;
             }
             return this.buttons.length === 0 ? true : false;
-        }
+        },
+        moveOneButton: function(info) {
+            var button = $(info.id) || document.querySelector(info.id);
+            // debug('check button id: ' + info.id);
+            if (!button) return false;
+
+            if (info.clone === true) {
+                button = button.cloneNode(true);
+            }
+
+            // 先设置属性
+            if (info.attr) {
+                for (let [key, val] in Iterator(info.attr)) {
+                    if (typeof val == "function")
+                        info.attr[key] = val = "(" + val.toSource() + ").call(this, event);";
+                    button.setAttribute(key, val);
+                }
+            }
+
+            // 移动
+            let ins;
+            if (info.insertBefore && (ins = $(info.insertBefore))) {
+                ins.parentNode.insertBefore(button, ins);
+            } else if (info.insertAfter && (ins = $(info.insertAfter))) {
+                ins.parentNode.insertBefore(button, ins.nextSibling);
+            } else if (info.bar) {
+                let bar = $(info.bar) || button.parentNode;
+                ins = bar.children[parseInt(info.pos, 10) - 1];
+                if (ins) {
+                    bar.insertBefore(button, ins);
+                } else {
+                    bar.appendChild(button);
+                }
+            } else {
+                return false;
+            }
+
+            return true;
+        },
     };
 
     MyMoveButton.init();
@@ -183,5 +204,9 @@ location == "chrome://browser/content/browser.xul" && (function(){
     function debug() { Application.console.log('[MyMoveButton DEBUG] ' + Array.slice(arguments)); }
     function $(id) { return document.getElementById(id); }
     function $A(args) { return Array.prototype.slice(args); }
-
+    function $C(name, attr) {
+        var el = document.createElement(name);
+        if (attr) Object.keys(attr).forEach(function(n) el.setAttribute(n, attr[n]));
+        return el;
+    }
 })();

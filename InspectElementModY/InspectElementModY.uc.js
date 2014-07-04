@@ -5,7 +5,7 @@
 // @include         main
 // @author          ywzhaiqi && zbinlin（原作者）
 // @homepage        http://mozcp.com
-// @version         0.1
+// @version         0.2
 // @charset         UTF-8
 // @note            改自扩展 0.0.6，增加设置，可选择网页、主窗口的查看器。
 // ==/UserScript==
@@ -24,7 +24,6 @@ if (window.InspectElement) {
     delete window.InspectElement;
 }
 
-if (!window.PopupNotifications) Cu.import("resource://gre/modules/PopupNotifications.jsm");
 if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
 if (!window.AddonManager) Cu.import("resource://gre/modules/AddonManager.jsm");
 
@@ -207,7 +206,7 @@ window.InspectElement = {
         menuitem.setAttribute('label', 'Inspect Element 设置');
         menuitem.setAttribute('oncommand', 'InspectElement.openPref();')
 
-        let ins = document.getElementById('devToolsSeparator');
+        let ins = document.getElementById('devToolsEndSeparator');
         ins.parentNode.insertBefore(menuitem, ins);
     },
     loadSetting: function() {

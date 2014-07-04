@@ -6,9 +6,9 @@
 // @compatibility  Firefox 5.0
 // @license        MIT License
 // @version        0.1.8.2
-// @note           modified by ywzhaiqi: 增强版
+// @note           modified by ywzhaiqi: 增强版 2014.07.04
 // @note           modified by boy3510817: 整合 dannylee 和 lastDream2013 版本，http://bbs.kafan.cn/thread-1688975-1-1.html
-// @note           2014/2/26 Mod by  dannylee修改可切换图标和菜单模式
+// @note           modified by dannylee修改可切换图标和菜单模式 2014.02.26
 // @note           modified by lastdream2013: add switch: reload page on disable/enable script 2013.05.12
 // @note           modified by lastdream2013: add GM_notification API 2013.05.05
 // @note           modified by lastdream2013: fix compatibility for firefox23a1 2013.04.23
@@ -320,7 +320,7 @@ USL.API = function(script, sandbox, win, doc) {
     };
 
     this.GM_notification = function (aMsg, aTitle, aIconURL, aCallback) {
-    if  (!USL.ALLOW_NOTIFY)  return;
+        if (!USL.ALLOW_NOTIFY)  return;
         if (aCallback)
             var callback = {
                 observe : function (subject, topic, data) {
@@ -346,8 +346,12 @@ USL.API = function(script, sandbox, win, doc) {
         req.open(obj.method || 'GET',obj.url,true);
         if(typeof(obj.headers) == 'object') for(var i in obj.headers) req.setRequestHeader(i,obj.headers[i]);
         ['onload','onerror','onreadystatechange'].forEach(function(k) {
-            if(obj[k] && (typeof(obj[k]) == 'function' || obj[k] instanceof Function)) req[k] = function() {
-                obj[k]({
+            req[k] = function() {
+                let ddd = obj.wrappedJSObject ? new XPCNativeWrapper(obj.wrappedJSObject[k])
+                                                    : obj[k];
+                if (!ddd) return;
+
+                ddd({
                     __exposedProps__: {
                         status: "r",
                         statusText: "r",
@@ -514,6 +518,17 @@ USL.__defineGetter__("REQUIRES_FOLDER", function(){
     }
     delete this.REQUIRES_FOLDER;
     return this.REQUIRES_FOLDER = aFolder;
+});
+
+USL.__defineGetter__("TEMP_FOLDER", function(){
+    let aFolder = this.SCRIPTS_FOLDER.clone();
+    aFolder.QueryInterface(Ci.nsILocalFile);
+    aFolder.appendRelativePath('temp');
+    if ( !aFolder.exists() || !aFolder.isDirectory() ) {
+        aFolder.create(Ci.nsIFile.DIRECTORY_TYPE, 0664);
+    }
+    delete this.TEMP_FOLDER;
+    return this.TEMP_FOLDER = aFolder;
 });
 
 USL.__defineGetter__("NEW_VERSION_FOLDER", function(){
@@ -714,7 +729,7 @@ USL.init = function(){
                                   accesskey="S"\
                                   oncommand="USL.saveScript();"/>\
 						<menuitem id="showScripttoolsbutton" label="油猴脚本版显示为按钮"\
-							                    oncommand="USL.toggleUI(1);" />\
+							      oncommand="USL.toggleUI(1);" />\
                     </menupopup>\
                  </toolbarbutton>\
             </toolbarpalette>\
@@ -1260,7 +1275,10 @@ USL.loadBinary = function(aFile){
     istream.init(aFile, -1, -1, false);
     var bstream = Cc["@mozilla.org/binaryinputstream;1"].createInstance(Ci.nsIBinaryInputStream);
     bstream.setInputStream(istream);
-    return bstream.readBytes(bstream.available());
+
+    let bytes = bstream.readBytes(bstream.available());
+    bstream.close();
+    return bytes;
 };
 
 USL.saveText = function(aFile, data) {
@@ -1318,14 +1336,12 @@ USL.getContents = function(aURL, aCallback, isTmpFile){
     if (uri.scheme != 'http' && uri.scheme != 'https')
         return USL.error('getContents is "http" or "https" only');
 
-    let aFile;
-    if (!isTmpFile) {
-        aFile = USL.REQUIRES_FOLDER.clone();
-        aFile.QueryInterface(Ci.nsILocalFile);
-    } else {
-        aFile = Services.dirsvc.get("TmpD", Ci.nsIFile);
-    }
+    // 如果地址经过了2次转义，下面的 aFile 就会不存在？
+    aURL = decodeURIComponent(aURL);
 
+    let aFile = isTmpFile ? USL.TEMP_FOLDER : USL.REQUIRES_FOLDER;
+    aFile = aFile.clone();
+    aFile.QueryInterface(Ci.nsILocalFile);
     aFile.appendRelativePath(encodeURIComponent(aURL));
 
     var wbp = Cc["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"].createInstance(Ci.nsIWebBrowserPersist);
@@ -1335,14 +1351,12 @@ USL.getContents = function(aURL, aCallback, isTmpFile){
             onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) {
                 if (aStateFlags & Ci.nsIWebProgressListener.STATE_STOP){
                     let channel = aRequest.QueryInterface(Ci.nsIHttpChannel);
-                    let bytes = USL.loadBinary(aFile);
-                    aCallback(bytes, channel.contentType);
-
-                    // 错误：NS_ERROR_FILE_IS_LOCKED
-                    // if (isTmpFile) {
-                    //     aFile.remove(false);
-                    // }
-                    return;
+                    if (aFile.exists()) {
+                        let bytes = USL.loadBinary(aFile);
+                        aCallback(bytes, channel.contentType, aFile);
+                    } else {
+                        console.error('下载文件不存在', aFile.path)
+                    }
                 }
             },
             onLocationChange: function(aProgress, aRequest, aURI){},
@@ -1372,55 +1386,103 @@ USL.getLocalFileContents = function(aURL, callback) {
 
 USL.checkScripts = function() {
     USL.rebuild();
+
+    let ScriptLen = USL.readScripts.length,
+        count = 0;
+    let handleSucc = function() {
+        count += 1;
+        // console.log('count ', count)
+        if (count >= ScriptLen) {
+            USL.rebuild();
+            USL.alert('所有脚本检查完毕，点击打开目录', null, null, function(){
+                USL.SCRIPTS_FOLDER.reveal();
+            });
+            // USL.TEMP_FOLDER.remove(true);
+        }
+    };
+
     USL.readScripts.forEach(function(script){
-        USL.checkScript(script);
+        USL.checkScript(script, handleSucc);
     });
 };
 
-USL.checkScript = function(script) {
+USL.checkScript = function(script, handleSucc) {
     let checkURL = script.updateURL || script.downloadURL;
     if (!checkURL) {
-        console.log('[USL] ' + script.name + ' 不存在更新或下载地址');
+        console.log(script.name + ' 不存在更新或下载地址');
+        handleSucc();
         return;
     }
 
     // 其它一些网站可能没有 .meta.js
-    // checkURL = checkURL.replace(/\.user\.js$/, '.meta.js');
+    if (checkURL.match(/\/\/(?:userscripts|greasyfork)\.org/)) {
+        checkURL = checkURL.replace(/\.user\.js$/, '.meta.js');
+    }
 
-    USL.getContents(checkURL, function(bytes, contentType){
+    USL.getContents(checkURL, function(bytes, contentType, aFile){
         let newVersion = Utils.r1(/\/\/\s*?@version\s*([^\r\n]+)/i, bytes);
         if (!newVersion) {
-            console.error('检查脚本更新没找到 @version', bytes);
+            console.error('更新脚本没找到 @version', bytes);
+            handleSucc();
+        } else if (Services.vc.compare(script.version, newVersion) >= 0) {
+            console.log(script.name + ' 脚本无需更新');
+            handleSucc();
         } else {
-            if (newVersion > script.version) {
-                let downURL = Utils.r1(/\/\/\s*?@downloadURL\s*([^\r\n]+)/i, bytes) || script.downloadURL;
+            let downURL = Utils.r1(/\/\/\s*?@downloadURL\s*([^\r\n]+)/i, bytes) || script.downloadURL;
 
-                let name = /\/\/\s*@name\s+(.*)/i.exec(bytes);
-                let filename = (name && name[1] ? name[1] : downURL.split("/").pop()).replace(/\.user\.js$|$/i, ".user.js").replace(/\s/g, '_').toLowerCase();
+            let name = /\/\/\s*@name\s+(.*)/i.exec(bytes);
+            let filename = (name && name[1] ? name[1] : downURL.split("/").pop()).replace(/\.user\.js$|$/i, ".user.js").replace(/\s/g, '_').toLowerCase();
 
-                let folder = (script.installTime != script.lastModifiedTime) ?
-                        USL.NEW_VERSION_FOLDER :
-                        USL.SCRIPTS_FOLDER;
+            let folder = (script.installTime != script.lastModifiedTime) ?
+                    USL.NEW_VERSION_FOLDER :
+                    USL.SCRIPTS_FOLDER;
+            let scriptFile = folder.clone();
+            scriptFile.append(filename);
 
-                USL.downloader(downURL, folder.path, filename, function(){
-                    script.installURL = downURL;
-                    script.installTime = Date.now();
-                    USL.database.info[filename] = {
-                        installURL: downURL,
-                        installTime: script.installTime
-                    };
+            var callback = function(){
+                USL.database.info[filename] = {
+                    installURL: downURL,
+                    installTime: script.installTime
+                };
+
+                handleSucc();
+            };
+
+            if (downURL == checkURL) {
+                aFile.renameTo(folder.path, filename);
+                callback();
+            } else {
+                USL.downloader(downURL, scriptFile.path, function(){
+                    callback();
                 });
             }
         }
     }, true);
 };
 
-USL.downloader = function(url, path, filename, callback) {
+USL.downloader = function(url, path, callback) {
     Task.spawn(function * () {
-        yield Downloads.fetch(url, OS.Path.join(path, filename));
+        yield Downloads.fetch(url, path);
         console.log(filename + " has been downloaded!", path);
         callback();
     }).then(null, Cu.reportError);
+};
+
+USL.alert = function (aMsg, aTitle, aIconURL, aCallback) {
+    if (aCallback)
+        var callback = {
+            observe : function (subject, topic, data) {
+                if ("alertclickcallback" != topic)
+                    return;
+                aCallback.call(null);
+            }
+        }
+    else
+        callback = null;
+    var alertsService = Components.classes["@mozilla.org/alerts-service;1"]
+        .getService(Components.interfaces.nsIAlertsService);
+    alertsService.showAlertNotification(
+        aIconURL || "chrome://global/skin/icons/information-32.png", aTitle || "UserScriptLoader-notification", aMsg + "", !!callback, "", callback);
 };
 
 USL.wildcardToRegExpStr = function(urlstr) {

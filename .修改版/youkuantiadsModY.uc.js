@@ -5,9 +5,9 @@
 // @include         chrome://browser/content/browser.xul
 // @author          harv.c
 // @homepage        http://haoutil.tk
-// @version         1.5.4
-// @updateUrl       https://j.mozest.com/zh-CN/ucscript/script/92.meta.js
-// @downloadUrl     https://j.mozest.com/zh-CN/ucscript/script/92.uc.js
+// @version         1.6.0.26
+// @updateURL       https://j.mozest.com/ucscript/script/92.meta.js
+// @downloadURL     https://j.mozest.com/zh-CN/ucscript/script/92.uc.js
 // @note            2014-7-1 新增：提前判断是否为 flash，加快速度。
 // @note            2014-7-1 新增：本地播放器检测功能。
 // ==/UserScript==
@@ -21,9 +21,7 @@
             .get("ProfD", Components.interfaces.nsILocalFile).path + '/chrome/swf/';
 
     // YoukuAntiADs, request observer
-    function YoukuAntiADs() {
-        this.nsIHttpChannel = Components.interfaces.nsIHttpChannel;
-    }
+    function YoukuAntiADs() {};
     YoukuAntiADs.prototype = {
         SITES: {
             'youku_loader': {
@@ -176,19 +174,12 @@
         observe: function(aSubject, aTopic, aData) {
             if(aTopic != 'http-on-examine-response') return;
 
-            if (!(aSubject instanceof this.nsIHttpChannel)) {
-                return;
-            }
+            var http = aSubject.QueryInterface(Ci.nsIHttpChannel);
 
-            var aVisitor = new myNsIHttpHeaderVisitor();
-            aSubject.visitResponseHeaders(aVisitor);
-            if (!aVisitor.isFlash()) {
-                return;
-            }
+            var aVisitor = new HttpHeaderVisitor();
+            http.visitResponseHeaders(aVisitor);
+            if (!aVisitor.isFlash()) return;
 
-            // console.log('[youku] ', aSubject, aTopic, aData)
-
-            var http = aSubject.QueryInterface(this.nsIHttpChannel);
             for(var i in this.SITES) {
                 var site = this.SITES[i];
                 if(site['re'].test(http.URI.spec)) {
@@ -247,18 +238,20 @@
         }
     };
 
-    function myNsIHttpHeaderVisitor() {
+    function HttpHeaderVisitor() {
         this._isFlash = false;
     }
-    myNsIHttpHeaderVisitor.prototype.visitHeader = function(aHeader, aValue) {
-        if (aHeader.indexOf("Content-Type") !== -1) {
-            if (aValue.indexOf("application/x-shockwave-flash") !== -1) {
-                this._isFlash = true;
+    HttpHeaderVisitor.prototype = {
+        visitHeader: function(aHeader, aValue) {
+            if (aHeader.indexOf("Content-Type") !== -1) {
+                if (aValue.indexOf("application/x-shockwave-flash") !== -1) {
+                    this._isFlash = true;
+                }
             }
+        },
+        isFlash: function() {
+            return this._isFlash;
         }
-    };
-    myNsIHttpHeaderVisitor.prototype.isFlash = function() {
-        return this._isFlash;
     };
 
     /**
@@ -299,6 +292,7 @@
         }
 
         // console.log('替换本地播放器成功', sites);
+        return sites;
     }
 
     // register observer

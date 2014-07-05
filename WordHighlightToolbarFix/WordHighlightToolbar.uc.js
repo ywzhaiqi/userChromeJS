@@ -24,7 +24,7 @@
 (function(CSS){
 "use strict";
 
-var USE_FIX_AUTOPAGER = false;  // 增加通用检测下一页后重新高亮，用 uAutoPagerize 不需要
+var USE_FIX_AUTOPAGER = true;  // 增加通用检测下一页后重新高亮，用 uAutoPagerize 不需要
 var disableBooklink = true;  // 来自 booklink.me 的百度搜索不要高亮。
 
 if (window.gWHT) {
@@ -63,7 +63,7 @@ window.gWHT = {
         //百度
         {
             url: '^https?://\\w+\\.baidu\\.com/(?:s|baidu)\\?',
-            input: 'input[name="wd"]'
+            input: 'input#kw'
         },
         {
             url: '^https?://\\w+\\.bing\\.com/search',

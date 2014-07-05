@@ -5,8 +5,9 @@
 // @include         main
 // @author          ywzhaiqi && zbinlin（原作者）
 // @homepage        http://mozcp.com
-// @version         0.4
+// @version         0.5
 // @charset         UTF-8
+// @compatibility   Firefox 20
 // @note            改自扩展 0.0.6，增加设置，可选择网页、主窗口的查看器。
 // ==/UserScript==
 
@@ -82,7 +83,7 @@ window.InspectElement = {
 
         let forceUseFirebug = (iType == TYPE_FIREBUG);
         try {
-            mInspector.start(elem, forceUseFirebug, this.checkExists);
+            mInspector.start(e.target, forceUseFirebug, this.checkExists);
         } catch (ex) {
             this.error();
         }
@@ -286,10 +287,8 @@ window.InspectElement = {
 var mInspector = (function(){
     let mainWin = window;
 
-    let Firebug = mainWin.Firebug;
     let gDevTools = mainWin.gDevTools;
     let gBrowser = mainWin.gBrowser;
-    let gDevToolsBrowser = mainWin.gDevToolsBrowser;
 
     let devtools = (function(){
         /*
@@ -312,7 +311,7 @@ var mInspector = (function(){
     })();
 
     let inspectWithDevtools = function (elem){
-        let tt = devtools.TargetFactory.forTab(mainWin.gBrowser.selectedTab);
+        let tt = devtools.TargetFactory.forTab(gBrowser.selectedTab);
         return gDevTools.showToolbox(tt, "inspector").then((function (elem) {
             return function(toolbox) {
                 let inspector = toolbox.getCurrentPanel();
@@ -322,27 +321,19 @@ var mInspector = (function(){
     };
 
     let inspectWithFirebug = function (elem){
+        let Firebug = mainWin.Firebug;
         Firebug.browserOverlay.startFirebug(function(Firebug){
             Firebug.Inspector.inspectFromContextMenu(elem);
         });
     };
 
     let start = function(elem, useFirebug, checkExists){
-        if (!elem) {
-            if (useFirebug && Firebug) {
-                mainWin.document.getElementById("cmd_firebug_toggleInspecting").doCommand();
-            } else {
-                gDevToolsBrowser.selectToolCommand(gBrowser, "inspector");
-            }
-            return;
-        }
+        let Firebug = mainWin.Firebug;
 
         if (checkExists) {
             // 已经打开则直接启动
             if (Firebug && Firebug.isInitialized && Firebug.currentContext) {
-                Firebug.browserOverlay.startFirebug(function(Firebug) {
-                    Firebug.Inspector.inspectFromContextMenu(elem);
-                });
+                inspectWithFirebug(elem);
                 return;
             } else { // 检测自带开发工具是否已经启动
                 let target = devtools.TargetFactory.forTab(gBrowser.selectedTab);

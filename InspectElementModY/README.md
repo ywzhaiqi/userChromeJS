@@ -8,6 +8,7 @@ InspectElementModY.uc.js
  - 打开设置的菜单在 `开发者` 菜单中。ID 为 `InspectElement-menuitem`，可添加至 rebuild_userChrome。
  - 新增功能：使用已经存在的查看器。如果 Firebug 或自带查看器已经在使用，则会重用，并不会打开新的查看器。
  - 如果使用了 StrokesPlus 会失效。需要把 firefox 加入到排除列表。
+ - 需要 Firefox 20+
 
 ![setting.png](setting.png)
 

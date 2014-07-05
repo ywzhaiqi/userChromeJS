@@ -5,10 +5,12 @@
 // @include         main
 // @author          ywzhaiqi && zbinlin（原作者）
 // @homepage        http://mozcp.com
-// @version         0.2
+// @version         0.3
 // @charset         UTF-8
 // @note            改自扩展 0.0.6，增加设置，可选择网页、主窗口的查看器。
 // ==/UserScript==
+
+(function(){
 
 "use strict";
 
@@ -27,8 +29,12 @@ if (window.InspectElement) {
 if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
 if (!window.AddonManager) Cu.import("resource://gre/modules/AddonManager.jsm");
 
+const TYPE_FIREBUG = 0;
+const TYPE_DEV_TOOLS = 1;
+const TYPE_DOM_INSPECTOR = 2;
+
 window.InspectElement = {
-    hasInspector: false,
+    hasDOMInspector: false,
     ww: Services.ww,       // nsIWindowWatcher
     wm: Services.wm,       // nsIWindowMediator
     contentType: 0,
@@ -49,70 +55,33 @@ window.InspectElement = {
         e.stopPropagation();
         e.preventDefault();
         if (e.type != "click") return;
+
         let elem = e.originalTarget,
             win = e.currentTarget,
-            elemWin = elem.ownerDocument.defaultView;
+            elemWin = elem.ownerDocument.defaultView,
+            iType;
 
-        let iType;
-        if (elemWin == content) {  // 网页
-            iType = this.contentType;
-        } else if (elemWin == window) {
-            iType = this.mainWinType;
-        } else {
-            iType = 2;
+        switch(true) {
+            case elemWin == content: // 网页
+                iType = this.contentType;
+                break;
+            case elemWin == window: // 主窗口
+                iType = this.mainWinType;
+                break;
+            default:
+                iType = TYPE_DOM_INSPECTOR;
+                break;
         }
 
-        if (iType === 2 && this.hasInspector) {
+        if (iType == TYPE_DOM_INSPECTOR && this.hasDOMInspector) {
             win.openDialog("chrome://inspector/content/", "_blank",
                            "chrome, all, dialog=no", elem);
             return;
         }
 
+        let forceUseFirebug = (iType == TYPE_FIREBUG);
         try {
-            if (iType === 0 && win.Firebug) {
-                let Firebug = win.Firebug;
-                (function (elem, Firebug) {
-                    Firebug.browserOverlay.startFirebug(function (Firebug) {
-                        Firebug.Inspector.inspectFromContextMenu(elem);
-                    });
-                })(e.target, Firebug);
-            } else {
-                (function (elem) {
-                    /*
-                     * 有这么变的吗，四个版本，变了三次地址！！！
-                     */
-                    let devtools = {};
-                    let version = Services.appinfo.version.split(".")[0];
-                    let DEVTOOLS_URI;
-                    if (version >= 24) {
-                        DEVTOOLS_URI = "resource://gre/modules/devtools/Loader.jsm";
-                        ({devtools} = Cu.import(DEVTOOLS_URI, {}));
-                    } else if (version < 24 && version >= 23) {
-                        DEVTOOLS_URI = "resource:///modules/devtools/gDevTools.jsm";
-                        ({devtools} = Cu.import(DEVTOOLS_URI, {}));
-                    } else if (version < 23 && version >= 20) {
-                        DEVTOOLS_URI = "resource:///modules/devtools/Target.jsm";
-                        devtools = Cu.import(DEVTOOLS_URI, {});
-                    } else {
-                        return (function (elem, InspectorUI) {
-                            if (InspectorUI.isTreePanelOpen) {
-                                InspectorUI.inspectNode(elem);
-                                InspectorUI.stopInspecting();
-                            } else {
-                                InspectorUI.openInspectorUI(elem);
-                            }
-                        })(e.target, win.InspectorUI);
-                    }
-                    let gBrowser = win.gBrowser, gDevTools = win.gDevTools;
-                    let tt = devtools.TargetFactory.forTab(gBrowser.selectedTab);
-                    return gDevTools.showToolbox(tt, "inspector").then((function (elem) {
-                        return function(toolbox) {
-                            let inspector = toolbox.getCurrentPanel();
-                            inspector.selection.setNode(elem, "Extension-Element-Inspector");
-                        }
-                    })(e.target));
-                })(elem);
-            }
+            mInspector.start(elem, forceUseFirebug);
         } catch (ex) {
             this.error();
         }
@@ -169,7 +138,7 @@ window.InspectElement = {
             AddonManager.getAllAddons(function (addons) {
                 for (let i in addons) {
                     if (addons[i].id == "inspector@mozilla.org" && addons[i].isActive) {
-                        that.hasInspector = true;
+                        that.hasDOMInspector = true;
                         break;
                     }
                 }
@@ -289,4 +258,95 @@ window.InspectElement = {
 }
 
 
+
+/**
+ * 调用自带的开发工具或 Firebug
+ */
+var mInspector = (function(){
+    let mainWin = window;
+
+    let Firebug = mainWin.Firebug;
+    let gDevTools = mainWin.gDevTools;
+    let gBrowser = mainWin.gBrowser;
+    let gDevToolsBrowser = mainWin.gDevToolsBrowser;
+
+    let devtools = (function(){
+        /*
+         * 有这么变的吗，四个版本，变了三次地址！！！
+         */
+        let devtools = {};
+        let version = Services.appinfo.version.split(".")[0];
+        let DEVTOOLS_URI;
+        if (version >= 24) {
+            DEVTOOLS_URI = "resource://gre/modules/devtools/Loader.jsm";
+            ({devtools} = Cu.import(DEVTOOLS_URI, {}));
+        } else if (version < 24 && version >= 23) {
+            DEVTOOLS_URI = "resource:///modules/devtools/gDevTools.jsm";
+            ({devtools} = Cu.import(DEVTOOLS_URI, {}));
+        } else if (version < 23 && version >= 20) {
+            DEVTOOLS_URI = "resource:///modules/devtools/Target.jsm";
+            devtools = Cu.import(DEVTOOLS_URI, {});
+        }
+        return devtools;
+    })();
+
+    let inspectWithDevtools = function (elem){
+        let tt = devtools.TargetFactory.forTab(mainWin.gBrowser.selectedTab);
+        return gDevTools.showToolbox(tt, "inspector").then((function (elem) {
+            return function(toolbox) {
+                let inspector = toolbox.getCurrentPanel();
+                inspector.selection.setNode(elem, "UC-Element-Inspector");
+            }
+        })(elem));
+    };
+
+    let inspectWithFirebug = function (elem){
+        Firebug.browserOverlay.startFirebug(function(Firebug){
+            Firebug.Inspector.inspectFromContextMenu(elem);
+        });
+    };
+
+    let start = function(elem, useFirebug){
+        if (!elem) {
+            if (useFirebug && Firebug) {
+                mainWin.document.getElementById("cmd_firebug_toggleInspecting").doCommand();
+            } else {
+                gDevToolsBrowser.selectToolCommand(gBrowser, "inspector");
+            }
+            return;
+        }
+
+        // 已经打开则直接启动
+        if (Firebug && Firebug.isInitialized && Firebug.currentContext) {
+            Firebug.browserOverlay.startFirebug(function(Firebug) {
+                Firebug.Inspector.inspectFromContextMenu(elem);
+            });
+            return;
+        } else { // 检测自带开发工具是否已经启动
+            let target = devtools.TargetFactory.forTab(gBrowser.selectedTab);
+            let toolbox = gDevTools.getToolbox(target);
+            if (toolbox) {
+                inspectWithDevtools(elem);
+                return;
+            }
+        }
+
+        // 没有打开则启动
+        if (useFirebug && Firebug) {
+            inspectWithFirebug(elem);
+        } else {
+            inspectWithDevtools(elem);
+        }
+    };
+
+    return {
+        start: start,
+        inspectWithDevtools: inspectWithDevtools,
+        inspectWithFirebug: inspectWithFirebug
+    };
+})();
+
+
 InspectElement.startup();
+
+})()

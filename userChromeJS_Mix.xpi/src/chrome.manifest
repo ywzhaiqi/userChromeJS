@@ -1,0 +1,9 @@
+content   userchromejs        content/
+locale    userchromejs en-US  locale/en-US/
+
+#Gecko 2.0 component registration.
+component {8DEB3B5E-7585-4029-B6D0-4733CE8DED50} components/userChrome_js.js
+contract  @userChromeJS;1 {8DEB3B5E-7585-4029-B6D0-4733CE8DED50}
+category  profile-after-change @userChromeJS;1 @userChromeJS;1
+
+overlay    chrome://browser/content/browser.xul chrome://userchromejs/content/rebuild_userChrome.uc.xul

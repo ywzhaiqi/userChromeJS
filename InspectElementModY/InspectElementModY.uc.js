@@ -5,7 +5,7 @@
 // @include         main
 // @author          ywzhaiqi && zbinlin（原作者）
 // @homepage        http://mozcp.com
-// @version         0.3
+// @version         0.4
 // @charset         UTF-8
 // @note            改自扩展 0.0.6，增加设置，可选择网页、主窗口的查看器。
 // ==/UserScript==
@@ -39,6 +39,7 @@ window.InspectElement = {
     wm: Services.wm,       // nsIWindowMediator
     contentType: 0,
     mainWinType: 0,
+    checkExists: true,  // 如果 Firebug 或自带查看器已经在使用，则不会打开新的查看器。
 
     get isWinNT() {
         var os = Services.appinfo.OS;
@@ -81,7 +82,7 @@ window.InspectElement = {
 
         let forceUseFirebug = (iType == TYPE_FIREBUG);
         try {
-            mInspector.start(elem, forceUseFirebug);
+            mInspector.start(elem, forceUseFirebug, this.checkExists);
         } catch (ex) {
             this.error();
         }
@@ -182,9 +183,11 @@ window.InspectElement = {
         try {
             this.contentType = this.prefs.getIntPref('contentType');
             this.mainWinType = this.prefs.getIntPref('mainWinType');
+            this.checkExists = this.prefs.getBoolPref('checkExists');
         } catch(ex) {
             this.prefs.setIntPref('contentType', this.contentType);
             this.prefs.setIntPref('mainWinType', this.mainWinType);
+            this.prefs.setBoolPref('checkExists', this.checkExists);
         }
     },
     openPref: function() {
@@ -199,27 +202,42 @@ window.InspectElement = {
                 <preferences>\
                     <preference id="contentType" type="int" name="userChromeJS.InspectElement.contentType"/>\
                     <preference id="mainWinType" type="int" name="userChromeJS.InspectElement.mainWinType"/>\
+                    <preference id="checkExists" type="bool" name="userChromeJS.InspectElement.checkExists"/>\
                 </preferences>\
-                <hbox>\
-                    <label value="查看网页的工具：　" />\
-                    <menulist preference="contentType">\
-                      <menupopup>\
-                        <menuitem label="Firebug" value="0"/>\
-                        <menuitem label="自带查看器" value="1"/>\
-                        <menuitem label="DOM Inspector" value="2"/>\
-                      </menupopup>\
-                    </menulist>\
-                </hbox>\
-                <hbox>\
-                    <label value="查看主窗口的工具：" />\
-                    <menulist preference="mainWinType">\
-                      <menupopup>\
-                        <menuitem label="Firebug" value="0"/>\
-                        <menuitem label="自带查看器" value="1"/>\
-                        <menuitem label="DOM Inspector" value="2"/>\
-                      </menupopup>\
-                    </menulist>\
-                </hbox>\
+                <groupbox>\
+                   <caption label="查看器设置" />\
+                   <vbox>\
+                      <checkbox label="使用已经存在的查看器" preference="checkExists" />\
+                   </vbox>\
+                    <grid>\
+                        <columns>\
+                            <column />\
+                            <column />\
+                        </columns>\
+                        <rows>\
+                            <row align="center">\
+                                <label value="查看网页的工具：" />\
+                                <menulist preference="contentType">\
+                                  <menupopup>\
+                                    <menuitem label="Firebug" value="0"/>\
+                                    <menuitem label="自带查看器" value="1"/>\
+                                    <menuitem label="DOM Inspector" value="2"/>\
+                                  </menupopup>\
+                                </menulist>\
+                            </row>\
+                            <row align="center">\
+                                <label value="查看主窗口的工具：" />\
+                                <menulist preference="mainWinType">\
+                                  <menupopup>\
+                                    <menuitem label="Firebug" value="0"/>\
+                                    <menuitem label="自带查看器" value="1"/>\
+                                    <menuitem label="DOM Inspector" value="2"/>\
+                                  </menupopup>\
+                                </menulist>\
+                            </row>\
+                        </rows>\
+                    </grid>\
+                </groupbox>\
             </prefpane>\
             </prefwindow>\
             ';
@@ -234,6 +252,9 @@ window.InspectElement = {
                 case 'contentType':
                 case 'mainWinType':
                     this[aData] = this.prefs.getIntPref(aData);
+                    break;
+                case 'checkExists':
+                    this.checkExists = this.prefs.getBoolPref('checkExists');
                     break;
             }
         } else if (aTopic == "alertclickcallback" && aData == "link") {
@@ -306,7 +327,7 @@ var mInspector = (function(){
         });
     };
 
-    let start = function(elem, useFirebug){
+    let start = function(elem, useFirebug, checkExists){
         if (!elem) {
             if (useFirebug && Firebug) {
                 mainWin.document.getElementById("cmd_firebug_toggleInspecting").doCommand();
@@ -316,18 +337,20 @@ var mInspector = (function(){
             return;
         }
 
-        // 已经打开则直接启动
-        if (Firebug && Firebug.isInitialized && Firebug.currentContext) {
-            Firebug.browserOverlay.startFirebug(function(Firebug) {
-                Firebug.Inspector.inspectFromContextMenu(elem);
-            });
-            return;
-        } else { // 检测自带开发工具是否已经启动
-            let target = devtools.TargetFactory.forTab(gBrowser.selectedTab);
-            let toolbox = gDevTools.getToolbox(target);
-            if (toolbox) {
-                inspectWithDevtools(elem);
+        if (checkExists) {
+            // 已经打开则直接启动
+            if (Firebug && Firebug.isInitialized && Firebug.currentContext) {
+                Firebug.browserOverlay.startFirebug(function(Firebug) {
+                    Firebug.Inspector.inspectFromContextMenu(elem);
+                });
                 return;
+            } else { // 检测自带开发工具是否已经启动
+                let target = devtools.TargetFactory.forTab(gBrowser.selectedTab);
+                let toolbox = gDevTools.getToolbox(target);
+                if (toolbox) {
+                    inspectWithDevtools(elem);
+                    return;
+                }
             }
         }
 

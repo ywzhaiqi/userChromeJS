@@ -13,23 +13,20 @@
     <em:creator>alta88</em:creator>
     <em:contributor>zeniko (original author of userChrome.js)</em:contributor>
     <em:contributor>Alice0775</em:contributor>
-    <em:homepageURL>http://userchromejs.mozdev.org/</em:homepageURL>
+    <em:homepageURL>https://github.com/ywzhaiqi/userChromeJS/tree/master/userChromeJS_Mix.xpi</em:homepageURL>
     <em:iconURL></em:iconURL>
     <em:updateURL>
-        https://www.mozdev.org/p/updates/userchromejs/userchromejs@mozdev.org/update.rdf
+      https://github.com/ywzhaiqi/userChromeJS/tree/master/userChromeJS_Mix.xpi/update.rdf
     </em:updateURL>
-    <em:updateInfoURL>
-        http://userchromejs.mozdev.org/updateInfo.xhtml
-    </em:updateInfoURL>
-    <em:releaseNotesURI>
-        http://userchromejs.mozdev.org/updateInfo.xhtml
-    </em:releaseNotesURI>
+    <em:installURL>
+      https://github.com/ywzhaiqi/userChromeJS/tree/master/userChromeJS_Mix.xpi/userChromeJS_Mix.xpi
+    </em:installURL>
 
     <em:targetApplication><!-- Firefox -->
       <Description>
         <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
         <em:minVersion>4.0b2</em:minVersion>
-        <em:maxVersion>20.*</em:maxVersion>
+        <em:maxVersion>33.*</em:maxVersion>
       </Description>
     </em:targetApplication>
 

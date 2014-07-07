@@ -772,7 +772,6 @@
       }
     }
   }
-  userChromejs.init();
 
   //メニューが長くなりすぎるので, あまり使わないメニューを"userChrome.jsの各スクリプトの設定"の下に移動させる
   var userChromejsScriptOptionsMenu = {
@@ -780,7 +779,9 @@
     UIMENU: "userChromeJS.rebuildUI.menues",
     //あまり使わないメニューのリスト
     menues: [
-
+      "wordhighlight-toolbar-menuitem",  // WordHighlightToolbar.uc.js
+      // "JSCSS-menuitem", // js、css、ahk 代码着色
+      "addMenu-rebuild", // addMenu 的重新载入配置
     ],
 
     interval: 500, //0.5秒間隔
@@ -811,8 +812,14 @@
       var menubefore = document.getElementById('jscmdseparator');
       if (!menupopup)
         return false;
+
       var i = 0;
       while (i < this.menues.length) {
+        if (!this.menues[i]) {
+          this.menues.splice(i, 1);
+          return;
+        }
+
       	if (this.menues[i].indexOf("@clone_") == -1)
           var menu = document.getElementById(this.menues[i]);
         else {
@@ -909,7 +916,31 @@
     }
   }
 
-  window.addEventListener('load', function(){
+  window.addEventListener('load', function ucload(e){
+    // remove obsolete event listener
+    window.removeEventListener("load", ucload, false);
+
+    Application.getExtensions(function (extensions) {
+        let extension = extensions.get('userChromeJS@mozdev.org');
+
+        if (extension.firstRun) {
+          var buttonId = "userChromebtnMenu";
+          var navBarId = "nav-bar";
+
+          var navBar = top.document.getElementById(navBarId);
+          var currentSet = navBar.currentSet;
+
+          // Append only if the button is not already there.
+          var curSet = currentSet.split(",");
+          if (curSet.indexOf(buttonId) == -1) {
+              navBar.insertItem(buttonId);
+              navBar.setAttribute("currentset", navBar.currentSet);
+              navBar.ownerDocument.persist(navBarId, "currentset");
+          }
+        }
+    });
+
+    userChromejs.init();
     userChromejsScriptOptionsMenu.run();
   }, false);
   

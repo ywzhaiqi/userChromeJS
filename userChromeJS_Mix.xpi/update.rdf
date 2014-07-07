@@ -5,14 +5,14 @@
 			<RDF:Seq>
 				<RDF:li>
 					<RDF:Description>
-						<em:version>1.1</em:version>
+						<em:version>1.2</em:version>
 						<em:targetApplication>
 							<RDF:Description>
 								<em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
 								<em:minVersion>4.0b2</em:minVersion>
 								<em:maxVersion>33.*</em:maxVersion>
-								<em:updateLink>https://github.com/ywzhaiqi/userChromeJS/tree/master/userChromeJS_Mix.xpi/userChromeJS_Mix.xpi</em:updateLink>
-								<em:updateInfoURL>https://github.com/ywzhaiqi/userChromeJS/tree/master/userChromeJS_Mix.xpi/updateInfo.xhtml</em:updateInfoURL>
+								<em:updateLink>https://github.com/ywzhaiqi/userChromeJS/raw/master/userChromeJS_Mix.xpi/userChromeJS_Mix.xpi</em:updateLink>
+								<em:updateInfoURL>https://github.com/ywzhaiqi/userChromeJS/raw/master/userChromeJS_Mix.xpi/updateInfo.xhtml</em:updateInfoURL>
 								<!--<em:updateHash>sha1:98135f3d70d3682b849ba7e471e32a49a12170c5</em:updateHash>-->
 							</RDF:Description>
 						</em:targetApplication>

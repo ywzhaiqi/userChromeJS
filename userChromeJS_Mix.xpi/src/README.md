@@ -1,4 +1,4 @@
-userChromeJS Mix
+userChromeJS Mix 扩展
 =================
 
 userChromeJS 扩展、userChrome.js、UC脚本管理器整合版，用于彻底解决可移动按钮消失的问题。

@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+<?xml-stylesheet type="text/css" href="chrome://global/skin/" ?>
+<?xml-stylesheet type="text/css" href="chrome://userchromejs/skin/rebuild_userChrome.css" ?>
+
+<overlay id="userChromejs-browser-overlay"
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 <!--
 // ==UserScript==
 // @name           rebuild_userChrome.uc.xul
@@ -83,65 +88,6 @@
     },
     
     init: function(){
-      var css = '\
-          #userChromebtnMenu {\
-             -moz-appearance: none !important;\
-            border-style: none !important;\
-            border-radius: 0 !important;\
-            padding: 0 3px !important;\
-            margin: 0 !important;\
-            background: transparent !important;\
-            box-shadow: none !important;\
-            -moz-box-align: center !important;\
-            -moz-box-pack: center !important;\
-            min-width: 18px !important;\
-            min-height: 18px !important;\
-          }\
-          #userChromejs_options > hbox > #toolbtn_rebuild {\
-            list-style-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAC90lEQVQ4jY2QfSzUcRzHP1vahK2nPxo9bP6oXE8ilS3VLBslaVN/mK5uzooQbo5Kd5VIeg6lwookFWZ6vpyTYZFxlXN+LpzifvfgS60HzpV3f/RHLbV5b++9//js89rebxKEcK2hJyzD22VGFphsYAGJA8xP8oH5xr1nPjF65h3Zw9ZEdDOPcI6t2NPJloZ1MIFQMzzTq6abHPI9KDTd/OWmDjjdBKQ1AvI6ILkGiFcAUY+A8CogrAzYUQoE3wb8iwD/O8BCYRdoyrVA2iLtZznVZpx/MIDTVTwyKnmklfM4XsZDfo9HSimPgyU8pMU8JEU8JEUGRN2ywDVEDbK7GkCbYvXsNWfCkMkMk8ECk8EC8x9p4X97kB/EyNAQ3nQzCEJaQHT5F6BvcAyT0zh+jH9D/2dg+c42EF0KoI3RPazbbJ3ML0bHrLj2PAvXVS+wOLgdRLn+tG6fjulM/weYPprxuO0pChuKcUWRh3NPTiGrIQeumy+A7C76k3cEx7pM/66gNXDIUKRB+koMuXYvjrZH41y/BNnWSByplMLR21NEa8M7GWecCBgZHcFZ5VkIG7dBqhbjkDIeyYoEpDYlIUkjws7URExbELaDvEQdTGucWKHXpIe4VIztZUE4WXEG+v4BtGq1kBWkIqkwF47LykF0aCO5C9tZBz8RYPxkRH7tDRRUF6Hi5QPUaevxffw7VG0qlNTWY11YAVwD/IrJXfiWvWO2/47Ya+7DZcVVxOYnoe51MzQ6Pa5U3URejwyy+8estCS03Xq3bQyNPTaoumxQcjZUd9pQw/1ARYsOJ54dx8G3YqS3yJGiSIFMIYdccwC5w0ewVSJqJifB0/LZPg1vpq9WqZ1WKdUOHkq1g3u1eqpbbavTyvMacbF4XKj1w/7mXYirj0BMowhxNVHYLNnN2QkEG4johj1R3jyibJffznQhujiH7BNdnUOWZMSVxkKcGfPVLdDz+tKtPpnzfdcfpkWL3GiSspsRNDdhVpDnQxKQ89/Hn5oXuGXJeoTZAAAAAElFTkSuQmCC);\
-          }\
-          #userChromejs_options > hbox > #toolbtn_chromedir {\
-            list-style-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABe0lEQVQ4jc3N2ytDARwH8J83/wRKefU3zFBCSnlQSnkQpSiFFLk8OMQmxLBZLos2I7ckM3PmMmEredF23Ma2GrPjkuFsvh7mstTqnDff+jx+v1+ifxEZ43zPYFyIld3FHWYxzlRRA5mdXFi3c4vpvbuo3TvU6z2CnHEKf4djRd9bLYnyDldkYtuPqZ1b0TIYF2StlkTK6eaQ080ht+eLgkPeH/nflGc/8hRRVNB7BuVaAGPWILRsDCsfl4bl0bMaQGHfOaho4AL9pns0GPyo04vTYPCjz3SP4sELUInqEkObPNoXA5IMmoMoHbkClWncUG8/QLnOS6K2PqJc6wZVjl9jyvYMtfVJEp3tGVWTN6Bq3Q2M9hBmDl4kMTpCqJ32gOr1XmHp+BUrJ2+SLB2/onHWK1DLvG95lOU/Nk4FbLnCcbHcL/OpgFGWj7Qt+AxUo7an12qOHM1Gb6R5zgcxmozecLVq31YxvJ9GRJRARElElExEKSIlf3USPgHT/mSv7iPTOwAAAABJRU5ErkJggg==);\
-          }\
-          #userChromejs_options > hbox > #toolbtn_restartApp {\
-            list-style-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAB20lEQVQ4jY2Tv2sUURDHZ/bX7eW0ChJBRFKIRRCRIEHuzVvfrYmkSiFXSSoLERERy5B/wcIuqG9mN5VecUWwCqkOEQsLKysLsQgSxEJEgsVYeJfsHXuY4tvN9zMzzHxBVXFS8Gy1kRaZi8U+iCV7HIq73Xqez9XWThoDsRvg6QDY6Ji8+RMK9dLSztcCoMhnkc27YxPth0I7oVAPhT5WYD9ScfkYALYWYxQa/OvU/h5ztg5bi3G1U2vbXUFPb4fT/EzELRwBYraPRvSE7eW6XVUV4en1JjLtARtFoYGqInRfd0Nk8wXYaCzZ/WnmkZrengc2v4GNNr1bglPiFoaj/5orV1r/A6gqhkI9YKMB0yY0OF9GsV/jIts9iVlVMeJscwhgOKmpqoDpGNDg5YuB0HYg9lUotINCuxFn/bN+9czUFZj6wEYDsRsQle7W+NPQ/uhEdUpLOw/cPgQ2OlPcvAoJZ90qICnc2tQzlist9GYAbDRk2lNVhFDs3YmXPUjkxp3JR2qWbgk9fRj9S+Olu6SqCJHYJ+DN5xnOryHT+wrsG7J9g0x9ZPup2iAS1z6aKi076+mLzoVRmKJpYeL2YSC2aBadc1PTOB7n3AXe3guYHiberZ0u8tm62r99Gyd0lo7sIAAAAABJRU5ErkJggg==);\
-          }\
-          #userChromejs_options > hbox > #toolbtn_setEditor {\
-            list-style-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACbUlEQVQ4jY2SX0hTYRjGP2+rK0uJiK5iuKKCbkaBIF10012wrtKLpLpQMSiE7kZBCAO3c77zfd/RtbUz8Ww0t7Whlm3DnP912zlzbc5tmUJQUUR4FwhPVwaFps/18+N53/d5CdlDjDGrECIqBOeyLDft5dlXiqzcCYVGthfmF5CcfAuu8v7DgYpyfFBlsYmJ1zCMAlbLZcxmZsBVJg6EZZld1/z+z3PzsygXKzCMPBLxOISqfJFl+fS/frvdfsxmsz1oaTn3iFBKB7wvfMhmV1Ber2B2dg7+YQ2RSBR+/8hPiUm9Tqfz6C7c2XnvxlRm6ltHezssFks/GRTiV2BYQ3hURyqZhMc7hHQyjbW1Mgp5A+Nj4/AHAl9d1NXW0XG7Nxx+iSGfH1eu2ryEEEKoKqZTqRRisRhCgSCWlxaxWniPbDaLlWwW1XoV9Y919PX1wfH0CazW8zutra3PCCENhBBCOOcXVTG4/SoWx0rORKlYgpHPI7u8grxRwObGFnq6etHc3AjLWSt6unt+OByOI38dhVLaIjFpknOO8GgERiGPQtHARq2G+91dONHUCPvNW0jPTCMSTYBS0bZ3G3ygVXK5vweDOqq1CtShQVy+dAGKoqBSr2Kzuo5QMLhDKW3Zt1JJks5ITN7OzGUwt7QAI5fDh3oNhWIJk28mwbh492f/ff+CuR9GIxGYZgGmaSKXNxCPx8G5+MRczPpfmBBC3G75rqZpMEsmlhaXoOs6KKNjjLGTB7ENQgiaSIxB13Wkk0n4fN4dRVEeH5i6K4/Hk0in09A0DULlW1SIa4eGCSGEUnqKc/5c5arzMCP/BuLHidBRAaQbAAAAAElFTkSuQmCC);\
-          }\
-          #userChromebtnMenu > .toolbarbutton-icon {\
-          	  max-width: 18px !important;\
-              padding: 0 !important;\
-              margin: 0 !important;\
-              border: 0 !important;\
-              background-image: none !important;\
-              background-color: transparent !important;\
-              box-shadow: none !important;\
-              -moz-transition: none !important;\
-          }\
-          #userChromebtnMenu:not([disabled="true"]):hover,\
-          #userChromebtnMenu:not([disabled="true"])[type="menu"]:hover,\
-          #userChromebtnMenu:not([disabled="true"])[open="true"],\
-          #userChromebtnMenu:not([disabled="true"])[type="menu"][open="true"] {\
-              background-image: -moz-linear-gradient(rgba(242, 245, 249, 0.95), rgba(220, 223, 225, 0.67) 49%, rgba(198, 204, 208, 0.65) 51%, rgba(194, 197, 201, 0.3)) !important;\
-          }\
-          #userChromebtnMenu dropmarker{display: none !important;}\
-          #jscmd_edit_add {\
-            list-style-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAASCAYAAABSO15qAAAATklEQVQ4jWNgGNYgkYGBYSYUJ5JjwMz/UAA1ZAgYgOznmVgMQMZYwwSugRDA5SKKDaDYCwwMDAzcSBjdAGQ5osDApwOKkzIDA4l+HhgAAE98qFWpCjBoAAAAAElFTkSuQmCC);\
-          }\
-          #userChromejs_options > hbox > #jscmd_edit_del {\
-            list-style-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABnklEQVQ4jc3STWsTURQG4FeplVR/gnRhxR/gjwgUhJncDxKX2d+4kKF0ulXoTFG7sUQqYrtxoWgQbWBA7SIttN1ECE4Sk5lM614EV2bRtwvJkLZTrDsPHDib85xzP4AzwrbtGa31B611XCgUBrdnZ+tSyrtKqRWl1KbWevdUUz6fvyKEuCWlvGPb9nMp5VAIcVgul7nguqxWqz9qtdqven3jd7FYHAK4mDZrrd+WSqWW4zg93/N+rq+vDYMgYLPZZBxHjKIeo6jLuN9m/1uHlUqFAC6ngDGGQRCw0w7Z7Xxlrxuy3wsZ90N2wy/c3vrM9+/ecO3FMy4vP6YxhgCupoBlWRuNRoOddoufPtb5+tVLrj59Qm/xAd35OTrOPQohDi3L2gEwA+A6gFwKKKXuu67LRw+XuOQvMomjzDxIBqPpkwAuHTuCMYa+79H3Pe4P4sx6BIwhaVwzxjCJo7QpbO2dqsc2uHHsEgFcMMak084Cvu8nI2Dq5Ab4RyAHYOI/B7LqvwIHySAzR8jYK2QD581MAMA0/nzRm+fIHICJIwJm5OEhT0EUAAAAAElFTkSuQmCC);\
-          }\
-          #showToolsMenu {\
-            list-style-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAADdklEQVQ4jXWTbUwUdADG/7zccZ6lQ/pgcDJEEEGBO8/hmLQY9mKOmFvyEi93IIISSSMGxx0Hw0QKJJCOI3CxGM0IhEASjDsQ1lgdRuqcE4N0RznTjPFSDGJwvz64nOX6bc+35+XTI8R/KRXOG6LFwcAEj+7d2b4PI3L8ltQZiuuKaGmp5yER8JT/Sco/0e+JylP1xNfuXTrWEU/+BQ26Pi3vnk8ioyWG10pU9lj9S4VjY2Pyp4cbcxP36PyW83tTKBnMwDhwiCJrGkXWVIzWNIoH0ikezCTxTBRROcG9k5O2dY/Dp5qKwyN0W5aMgxkYLKkYrakYB7XorAnorPEUWOLJ749D159E6dBRIj7cRIhW8fmj5dJI16jc4L78vhQK+zUYrCkUDrxJtS0P6+12hu3dDNu7sNw+R8vVahK+2E1onQyvHOE4YIyIFOv3i7gEU+RyoUVD2dBbXL9v46tbLRiHkum8cYbv7SNcsdsA6L/RTVCVMzvNMkJq5GyMF50iMNnDktV2gNPfGrj3xxT/MDL1NcXDSRgGEzh+6TArLNM+2sy2SkFYgxxVnZwtWdK7Iizbe67hu3Lml2bAAQ6H43HJ+IOrvDeiRdunYmFllnOXWwioEuxqlKGskxGgk/4lIt7xX6keLsJ06QSnLAbG719jaXmJin4d+t5UDraGENOhYGFlnq4fWlHXyon6dCORTV5s1UkdQpn+/ERa66tkdu0jpTOcb36+yIO5GcJN7rzS5kHPZAe/LPzK7Moq9/6cY2LWzs2Htzjc+gbe2U4zwnO/c2XQcRlq81p2mASt45/x4+/TKKsk7GoW7DuroGein99WYRqYnJsn5eM4fIwueGucrojgrPW+vkekUyEmN7bXCppvtnFnEYoHijhxWU/yhRcIa1xLzWg9vT9d48X31XiXCALL3AjUuhcIIYSI0ccU+BgEwSZX3u49Qr2tjXrblzSMnueD4QZebtqGss4FZYUH/icFoSY5Co3T3cT6LHchhBCx5thnFAnSi0FlMnbUSgg46UxguQtBFS4EV7qhrn0WtXkNyjo3Qj+Ss/moZHF7uvvr//qC37EN6xSxLmf98iSOkBoZKvMadtY/ksosR2mSE1Qmw0cjsXunuUT/7yO9tK57vZMl7ZuzpHf8C6SLW/XSVf9cybRPquvopmRng2emeO5J/98W5fyDGAVpggAAAABJRU5ErkJggg==);\
-          }\
-          #userChrome_setting, #userChrome_homebtn{\
-            list-style-image: none !important;\
-            font-size: 12px;\
-            font-weight: normal;\
-          }\
-          '.replace(/[\r\n\t]/g, '');
-      userChromejs.style = addStyle(css);
       window.addEventListener("unload",this , false);
       if ("nsDragAndDrop" in window && this.statusDisplay) {
         this.statusDisplay.addEventListener('dragover',function(event){nsDragAndDrop.dragOver(event,userChromejs.dndObserver);},true);
@@ -157,7 +103,7 @@
   		menuitem.setAttribute("id", "userChromejs_Tools_Menu");
   		menuitem.setAttribute("label", "UC脚本管理器");
   		menuitem.setAttribute("class", "menu-iconic");
-      menuitem.setAttribute("image", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACaUlEQVQ4jX2Sz0vTYRzHn21fNn9szvbV/fzu+4UV0db8QSkKbUw2p9t3UJRGEHUY2iH/gtCow4QiOnTyEAgdPMT0YmEnEaGLYIXBogyzsK2DFw/icb46jNBvEx94Xx6e9+t5Ps/7LYQQHJddMvOiu531lMKHlMJqIsB6UjlRzzvbEMfNFpNgtsdNJaexllS4odh5GHbxW9dO1GyP2wi4rTrY0TWedMj0Rs5zc3SU6ajM94zKt2H1dIBss7CSCJALOLg3Ps7u7i6FQoGXl92UhoJMRVyUTwNcV+x0+1zMzc1RrVYByOfzLMV8bA6rRJw2Nv97hQFglSQmJiZYXFxkf38fgEQ8xkY6yMZgkGbJzJsrvpMBZrPZkEQoFGJ5eZlLZ1V2dI13cT8mIXjV66kHWCwWxsfG6iCyy0VWcVLJaTyKuBBC8LrfWw8IBoPs7e0xMjKCyWQyQApRmbKu0dVqwy6Z+TQYrAdEo1EODw85ODhgZmaGdDpNPB6nzelgLalQ7PdiEoJrfrshhbKu8bRDRlitVhYWFvi3qtUqxWKRUdXJL10j3GKl3WZhLakYbl8dCHDGakFkfc30eZ1MTU5SKpWYn5+nS/GwnlK4o7Xga5RYivkN5q9DKhdarLVRU54mtrMa01GZtM/OXc3B+4EAjy/K3D/Xyue0ce4dXeNqwH70V54Gia1MrSB/chqVnMbPrMZ2VqOcMzavrB8lIoTAZjEhTELwrLONSs54cDur8mVINewV+701kxD0yY0UonKtSE2Smcmwi5VEgLcxPw/CLvIhJz8yR4CPg0G8DRJCCG6pDrYyKrM9bv4C0SnpRYi16nIAAAAASUVORK5CYII=");
+
   		var ins = document.getElementById("menu_ToolsPopup");
   		ins.insertBefore(menuitem, document.getElementById("menu_preferences"));
   		//ins.appendChild(menuitem);
@@ -798,11 +744,13 @@
       this.menues = gPrefService.getCharPref(this.UIMENU).trim().split(",");
       //end
       
+      userChromejs.toggleUI(0);
+
       //DOMの構築が完了するのを待ってからメニューを移動させる(5秒間隔で最大50回までトライ)
       this.timer = setInterval(function(self){
         if (++self.count > self.maxcount || self.moveMenu()) {
           clearInterval(self.timer);
-          userChromejs.toggleUI(0);
+          // userChromejs.toggleUI(0);
         }
       }, this.interval, this);
     },
@@ -815,11 +763,6 @@
 
       var i = 0;
       while (i < this.menues.length) {
-        if (!this.menues[i]) {
-          this.menues.splice(i, 1);
-          return;
-        }
-
       	if (this.menues[i].indexOf("@clone_") == -1)
           var menu = document.getElementById(this.menues[i]);
         else {
@@ -840,6 +783,7 @@
         }
         i++;
       }
+
       return this.menues.length == 0 ? true : false;
     },
     
@@ -943,19 +887,11 @@
     userChromejs.init();
     userChromejsScriptOptionsMenu.run();
   }, false);
-  
-  function addStyle(css) {
-  	var pi = document.createProcessingInstruction(
-  		'xml-stylesheet',
-  		'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'
-  	);
-  	return document.insertBefore(pi, document.documentElement);
-  }
+
   ]]></script>
 <toolbarpalette id="addon-bar">
 	<toolbarbutton id="userChromebtnMenu" label="UC脚本管理器" 
                  class="toolbarbutton-1 chromeclass-toolbar-additional" type="menu" removable="true"
-                 image="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACaUlEQVQ4jX2Sz0vTYRzHn21fNn9szvbV/fzu+4UV0db8QSkKbUw2p9t3UJRGEHUY2iH/gtCow4QiOnTyEAgdPMT0YmEnEaGLYIXBogyzsK2DFw/icb46jNBvEx94Xx6e9+t5Ps/7LYQQHJddMvOiu531lMKHlMJqIsB6UjlRzzvbEMfNFpNgtsdNJaexllS4odh5GHbxW9dO1GyP2wi4rTrY0TWedMj0Rs5zc3SU6ajM94zKt2H1dIBss7CSCJALOLg3Ps7u7i6FQoGXl92UhoJMRVyUTwNcV+x0+1zMzc1RrVYByOfzLMV8bA6rRJw2Nv97hQFglSQmJiZYXFxkf38fgEQ8xkY6yMZgkGbJzJsrvpMBZrPZkEQoFGJ5eZlLZ1V2dI13cT8mIXjV66kHWCwWxsfG6iCyy0VWcVLJaTyKuBBC8LrfWw8IBoPs7e0xMjKCyWQyQApRmbKu0dVqwy6Z+TQYrAdEo1EODw85ODhgZmaGdDpNPB6nzelgLalQ7PdiEoJrfrshhbKu8bRDRlitVhYWFvi3qtUqxWKRUdXJL10j3GKl3WZhLakYbl8dCHDGakFkfc30eZ1MTU5SKpWYn5+nS/GwnlK4o7Xga5RYivkN5q9DKhdarLVRU54mtrMa01GZtM/OXc3B+4EAjy/K3D/Xyue0ce4dXeNqwH70V54Gia1MrSB/chqVnMbPrMZ2VqOcMzavrB8lIoTAZjEhTELwrLONSs54cDur8mVINewV+701kxD0yY0UonKtSE2Smcmwi5VEgLcxPw/CLvIhJz8yR4CPg0G8DRJCCG6pDrYyKrM9bv4C0SnpRYi16nIAAAAASUVORK5CYII="
                  tooltiptext="UC脚本管理器(右键添加脚本命令，中键删除脚本命令)" popup="userChromejs_options" 
                  onclick="userChromejsScriptOptionsMenu.resetMenu(event);" >
     <menupopup id="userChromejs_options"  onpopupshowing="userChromejs.onpopup();">

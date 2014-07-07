@@ -1,0 +1,69 @@
+#userChromebtnMenu {
+    -moz-appearance: none;
+    border-style: none;
+    border-radius: 0;
+    padding: 0 3px;
+    margin: 0;
+    background: transparent;
+    box-shadow: none;
+    -moz-box-align: center;
+    -moz-box-pack: center;
+    min-width: 18px;
+    min-height: 18px;
+}
+
+#userChromebtnMenu,
+#userChromejs_Tools_Menu {
+    list-style-image: url(chrome://userchromejs/skin/icon16.png);
+}
+
+/* 这个样式会影响到给图标加边框等样式 */
+#userChromebtnMenu > .toolbarbutton-icon {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0;
+    background-image: none;
+    background-color: transparent;
+    box-shadow: none;
+    -moz-transition: none;
+}
+
+#userChromebtnMenu dropmarker {
+    display: none !important;
+}
+
+#userChromebtnMenu:not([disabled="true"]):hover,
+#userChromebtnMenu:not([disabled="true"])[type="menu"]:hover,
+#userChromebtnMenu:not([disabled="true"])[open="true"],
+#userChromebtnMenu:not([disabled="true"])[type="menu"][open="true"] {
+    background-image: -moz-linear-gradient(rgba(242, 245, 249, 0.95), rgba(220, 223, 225, 0.67) 49%, rgba(198, 204, 208, 0.65) 51%, rgba(194, 197, 201, 0.3));
+}
+
+
+#userChromejs_options > hbox > #toolbtn_rebuild {
+    list-style-image: url(chrome://userchromejs/skin/toolbtn_rebuild.png);
+}
+#userChromejs_options > hbox > #toolbtn_chromedir {
+    list-style-image: url(chrome://userchromejs/skin/toolbtn_chromedir.png);
+}
+#userChromejs_options > hbox > #toolbtn_restartApp {
+    list-style-image: url(chrome://userchromejs/skin/toolbtn_restartApp.png);
+}
+#userChromejs_options > hbox > #toolbtn_setEditor {
+    list-style-image: url(chrome://userchromejs/skin/toolbtn_setEditor.png);
+}
+
+#jscmd_edit_add {
+    list-style-image: url(chrome://userchromejs/skin/jscmd_edit_add.png);
+}
+#userChromejs_options > hbox > #jscmd_edit_del {
+    list-style-image: url(chrome://userchromejs/skin/userChromejs_options.png);
+}
+#showToolsMenu {
+    list-style-image: url(chrome://userchromejs/skin/showToolsMenu.png);
+}
+#userChrome_setting, #userChrome_homebtn {
+    list-style-image: none;
+    font-size: 12px;
+    font-weight: normal;
+}

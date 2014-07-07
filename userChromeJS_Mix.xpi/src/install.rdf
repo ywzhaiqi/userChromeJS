@@ -6,13 +6,14 @@
   <Description about="urn:mozilla:install-manifest">
     <em:id>userChromeJS@mozdev.org</em:id>
     <em:name>userChromeJS Mix</em:name>
-    <em:version>1.2</em:version>
+    <em:version>1.3</em:version>
     <em:type>2</em:type>
     <em:unpack>true</em:unpack>
     <em:description></em:description>
     <em:creator>alta88</em:creator>
     <em:contributor>zeniko (original author of userChrome.js)</em:contributor>
     <em:contributor>Alice0775</em:contributor>
+    <em:contributor>dannylee</em:contributor>
     <em:homepageURL>https://github.com/ywzhaiqi/userChromeJS/tree/master/userChromeJS_Mix.xpi</em:homepageURL>
     <em:iconURL></em:iconURL>
     <em:updateURL>

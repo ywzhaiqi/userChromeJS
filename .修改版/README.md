@@ -9,6 +9,7 @@
 脚本列表
 
  - [ExternalFuncButtonM](ExternalFuncButtonM)，修改为外置规则可重载版本。
+ - [ExternalFuncButtonM-右键菜单版.uc.js](ExternalFuncButtonM-右键菜单版.uc.js)，右键菜单版。
  - [autoContextmenu.uc.xul](autoContextmenu.uc.xul)，选中文字后自动弹出右键菜单。
     - 排除 input 和 textarea。
  - [nextpageModY.uc.js](nextpageModY.uc.js)，原脚本 [NextPage.uc.xul](http://j.mozest.com/zh-CN/ucscript/script/5/)

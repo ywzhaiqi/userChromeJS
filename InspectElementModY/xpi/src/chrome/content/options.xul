@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<prefwindow
+    xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+    id="InspectElement"
+    title="InspectElement 设置"
+    windowtype="InspectElement:Preferences">
+    <prefpane id="main" flex="1">
+        <preferences>
+            <preference id="contentType" type="int" name="extensions.InspectElement.contentType"/>
+            <preference id="mainWinType" type="int" name="extensions.InspectElement.mainWinType"/>
+            <preference id="checkExists" type="bool" name="extensions.InspectElement.checkExists"/>
+        </preferences>
+        <groupbox>
+           <caption label="查看器设置" />
+           <vbox>
+              <checkbox label="使用已经存在的查看器" preference="checkExists" />
+           </vbox>
+            <grid>
+                <columns>
+                    <column />
+                    <column />
+                </columns>
+                <rows>
+                    <row align="center">
+                        <label value="查看网页的工具：" />
+                        <menulist preference="contentType">
+                          <menupopup>
+                            <menuitem label="Firebug" value="0"/>
+                            <menuitem label="自带查看器" value="1"/>
+                            <menuitem label="DOM Inspector" value="2"/>
+                          </menupopup>
+                        </menulist>
+                    </row>
+                    <row align="center">
+                        <label value="查看主窗口的工具：" />
+                        <menulist preference="mainWinType">
+                          <menupopup>
+                            <menuitem label="Firebug" value="0"/>
+                            <menuitem label="自带查看器" value="1"/>
+                            <menuitem label="DOM Inspector" value="2"/>
+                          </menupopup>
+                        </menulist>
+                    </row>
+                </rows>
+            </grid>
+        </groupbox>
+    </prefpane>
+</prefwindow>

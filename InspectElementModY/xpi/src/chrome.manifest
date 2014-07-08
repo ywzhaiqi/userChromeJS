@@ -1,0 +1,6 @@
+content InspectElement               chrome/content/
+
+skin    InspectElement   classic/1.0 chrome/skin/
+
+locale  InspectElement   en-US       chrome/locale/
+locale  InspectElement   zh-CN       chrome/locale/

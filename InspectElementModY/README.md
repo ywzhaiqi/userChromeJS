@@ -13,3 +13,10 @@ InspectElementModY.uc.js
 ![setting.png](setting.png)
 
 ![menuitem.png](menuitem.png)
+
+xpi
+----
+
+是直接修改 Element Inspector 扩展，好处是启用停用无需重启。
+
+ - 已知问题：ff30 在图中菜单点击无效，而 ff31 有效。ff30 请到工具 -> web开发者 菜单中点击或附加组件选项点击。

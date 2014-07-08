@@ -149,6 +149,21 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
         }
     });
 
+示例：短网址，分别为当前网页和链接上。
+
+    // addMenu 专用
+    page([{
+        label: '短网址',
+        condition: 'nolink',
+        url: 'javascript:function iprl5(l){var d=document,z=d.createElement("scr"+"ipt"),b=d.body;try{if(!b){throw (0)}if(!l){alert("请输入网址！");return}d.title="(Shortening...) "+d.title;z.setAttribute("src","http://www.ruanyifeng.com/webapp/url_shortener_plugin.php?longUrl="+encodeURIComponent(l));b.appendChild(z)}catch(e){alert("请等待网页加载完毕！")}}iprl5("%URL%");void (0);'
+    },
+    {
+        label: '短网址（链接）',
+        condition: 'link',
+        url: 'javascript:function iprl5(l){if(l.startsWith("javascript:")){alert("该网址无效："+l);return;}var d=document,z=d.createElement("scr"+"ipt"),b=d.body;try{if(!b){throw (0)}if(!l){alert("请输入网址！");return}d.title="(Shortening...) "+d.title;z.setAttribute("src","http://www.ruanyifeng.com/webapp/url_shortener_plugin.php?longUrl="+encodeURIComponent(l));b.appendChild(z)}catch(e){alert("请等待网页加载完毕！")}}iprl5("%RLINK%");void (0);'
+    }
+    ])
+
 示例：页面右键添加一个复制链接文本的菜单
 
     page({

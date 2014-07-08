@@ -42,7 +42,7 @@ userChromeJS for Firefox
  - [InspectElementModY](InspectElementModY)，元素查看调用工具，修改增强版。
  - [moveButton](moveButton)，移动或克隆按钮/菜单到任意位置（原创）。
  - [MyNovelReader](MyNovelReader)，小说阅读uc版（原创），已弃用，请用 [小说阅读GM版](https://userscripts.org/scripts/show/165951)（原创）和[autoLanuchReader](autoLanuchReader)。
- - [rebuild_userChrome](rebuild_userChrome)，脚本管理器，基于 [UserChromeJS脚本管理器Dannylee强化版](http://g.mozest.com/thread-41292-1-1)，修改为可移动版。
+ - [rebuild_userChrome](rebuild_userChrome)，脚本管理器，基于 [UserChromeJS脚本管理器Dannylee强化版](http://g.mozest.com/thread-41292-1-1)，修改为可移动版。**已弃用，改用下面的 userChromeJS_Mix 扩展。**
  - [SaveUserChromeJS](SaveUserChromeJS)，像 Greasemonkey 一样保存 uc脚本（原创）。
  - [SidebarModfix](SidebarModfix)，侧边栏增强（修改版）。
  - [simpleAppButton](simpleAppButton)，简易启动应用程序的可移动按钮，左中右3键分别启动3个程序。

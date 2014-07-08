@@ -17,7 +17,7 @@
     list-style-image: url(chrome://userchromejs/skin/icon16.png);
 }
 
-/* 这个样式会影响到给图标加边框等样式 */
+/* 原版的限定宽度会影响到给图标加边框等样式，已删除 */
 #userChromebtnMenu > .toolbarbutton-icon {
     padding: 0 !important;
     margin: 0 !important;

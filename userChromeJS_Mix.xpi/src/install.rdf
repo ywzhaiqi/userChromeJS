@@ -15,7 +15,7 @@
     <em:contributor>Alice0775</em:contributor>
     <em:contributor>dannylee</em:contributor>
     <em:homepageURL>https://github.com/ywzhaiqi/userChromeJS/tree/master/userChromeJS_Mix.xpi</em:homepageURL>
-    <em:iconURL></em:iconURL>
+    <em:iconURL>chrome://userchromejs/skin/icon32.png</em:iconURL>
     <em:updateURL>
       https://raw.githubusercontent.com/ywzhaiqi/userChromeJS/master/userChromeJS_Mix.xpi/update.rdf
     </em:updateURL>

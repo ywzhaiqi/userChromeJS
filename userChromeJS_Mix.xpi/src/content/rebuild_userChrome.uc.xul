@@ -89,13 +89,13 @@
     
     init: function(){
       window.addEventListener("unload",this , false);
-      if ("nsDragAndDrop" in window && this.statusDisplay) {
-        this.statusDisplay.addEventListener('dragover',function(event){nsDragAndDrop.dragOver(event,userChromejs.dndObserver);},true);
-        this.statusDisplay.addEventListener('dragdrop',function(event){nsDragAndDrop.drop(event,userChromejs.dndObserver);},true);
-      } else if(this.addonbar) {
-        this.addonbar.addEventListener('dragover', this ,true);
-        this.addonbar.addEventListener('drop', this ,true);
-      }
+      // if ("nsDragAndDrop" in window && this.statusDisplay) {
+      //   this.statusDisplay.addEventListener('dragover',function(event){nsDragAndDrop.dragOver(event,userChromejs.dndObserver);},true);
+      //   this.statusDisplay.addEventListener('dragdrop',function(event){nsDragAndDrop.drop(event,userChromejs.dndObserver);},true);
+      // } else if(this.addonbar) {
+      //   this.addonbar.addEventListener('dragover', this ,true);
+      //   this.addonbar.addEventListener('drop', this ,true);
+      // }
       this.addPrefListener(userChromejs.readLaterPrefListener); // 登録処理
       
       //dannylee
@@ -120,13 +120,13 @@
     },
     
     uninit: function(){
-      if ("nsDragAndDrop" in window && this.statusDisplay) {
-        this.statusDisplay.removeEventListener('dragover',function(event){nsDragAndDrop.dragOver(event,userChromejs.dndObserver);},true);
-        this.statusDisplay.removeEventListener('dragdrop',function(event){nsDragAndDrop.drop(event,userChromejs.dndObserver);},true);
-      } else if(this.addonbar) {
-        this.addonbar.removeEventListener('dragover', this ,true);
-        this.addonbar.removeEventListener('drop', this ,true);
-      }
+      // if ("nsDragAndDrop" in window && this.statusDisplay) {
+      //   this.statusDisplay.removeEventListener('dragover',function(event){nsDragAndDrop.dragOver(event,userChromejs.dndObserver);},true);
+      //   this.statusDisplay.removeEventListener('dragdrop',function(event){nsDragAndDrop.drop(event,userChromejs.dndObserver);},true);
+      // } else if(this.addonbar) {
+      //   this.addonbar.removeEventListener('dragover', this ,true);
+      //   this.addonbar.removeEventListener('drop', this ,true);
+      // }
       this.removePrefListener(userChromejs.readLaterPrefListener); // 登録解除
     },
 
@@ -315,7 +315,6 @@
         menupopup.removeChild(menupopup.lastChild);
       }
 
-
       menuitem = document.createElement('menuitem');
       menuitem.setAttribute('label','启用Chrome下所有目录');
       menuitem.setAttribute('oncommand','userChromejs.chgDirStat("*");');
@@ -325,6 +324,17 @@
       menuitem.setAttribute('disabled',true);
       menuitem.dirName = '*';
       menupopup.appendChild(menuitem);
+
+      let parentMenuPopup = menupopup,
+          topMenuitems = [];
+
+      let getTooltiptext = function(script, url) {
+        let text = script.description || '';
+        if (url) {
+          text += '\n' + url;
+        }
+        return text;
+      };
 
       for(var j = 0, lenj = userChrome_js.arrSubdir.length; j < lenj; j++){
         var dirName = userChrome_js.arrSubdir[j] == "" ? "root" : userChrome_js.arrSubdir[j];
@@ -345,9 +355,9 @@
         }
         if(!flg) continue;
 
-
         menu = document.createElement('menu');
-        menu.setAttribute('label','脚本目录chrome/' + (dirName=="root"?"":dirName) );
+        // menu.setAttribute('label','脚本目录chrome/' + (dirName=="root"?"":dirName) );
+        menu.setAttribute('label','脚本目录 ' + (dirName=="root"?"":dirName) );
         menu.setAttribute('onclick','if(event.button != 0) {event.stopPropagation();event.preventDefault();userChromejs.clickDirMenu(event);}');
         if(userChrome_js.dirDisable[dirName])
           menu.setAttribute('style', 'font-style:italic;');
@@ -357,13 +367,19 @@
         menupopup.setAttribute('onpopupshowing','event.stopPropagation();');
 
         menuitem = document.createElement('menuitem');
-        menuitem.setAttribute('label','是否启用chrome/' + (dirName=="root"?"":dirName) + '目录下全部脚本');
+        // menuitem.setAttribute('label','是否启用chrome/' + (dirName=="root"?"":dirName) + '目录下全部脚本');
+        menuitem.setAttribute('label','是否启用 ' + (dirName=="root"?"":dirName) + ' 目录下全部脚本');
         menuitem.setAttribute('oncommand', 'userChromejs.chgDirStat(this.dirName);');
         menuitem.setAttribute('onclick','if(event.button != 0) {event.stopPropagation();event.preventDefault();userChromejs.clickDirMenuitem(event);}');
         menuitem.setAttribute('type', 'checkbox');
         menuitem.setAttribute('checked', !userChrome_js.dirDisable[dirName]);
         menuitem.dirName = dirName;
         menupopup.appendChild(menuitem);
+
+        if (dirName === 'root') {
+          menu.setAttribute('hidden', true);
+          menuitem.setAttribute('hidden', true);
+        }
 
         var menuseparator = document.createElement('menuseparator');
         menupopup.appendChild(menuseparator);
@@ -380,10 +396,20 @@
             menuitem.setAttribute('type','checkbox');
             menuitem.setAttribute('autocheck','false');
             menuitem.setAttribute('checked',!userChrome_js.scriptDisable[script.filename] );
-            if(script.description)
-              menuitem.setAttribute('tooltiptext',script.description);
+
+            let url = this.getScriptHomeURL(script);
+            if (url)
+              menuitem.setAttribute('homeURL', url);
+            let description = getTooltiptext(script, url);
+            if(description)
+              menuitem.setAttribute('tooltiptext', description);
+
             menuitem.script = script;
-            menupopup.appendChild(menuitem);
+            if (dirName === 'root') {
+              topMenuitems.push(menuitem);
+            } else {
+              menupopup.appendChild(menuitem);
+            }
         }
         for(var i = 0, len = userChrome_js.overlays.length; i < len; i++){
           var script = userChrome_js.overlays[i];
@@ -400,15 +426,32 @@
             menuitem.setAttribute('type','checkbox');
             menuitem.setAttribute('autocheck','false');
             menuitem.setAttribute('checked',!userChrome_js.scriptDisable[script.filename] );
-            if(script.description)
-              menuitem.setAttribute('tooltiptext',script.description);
+
+            let url = this.getScriptHomeURL(script);
+            if (url)
+              menuitem.setAttribute('homeURL', url);
+            let description = getTooltiptext(script, url);
+            if(description)
+              menuitem.setAttribute('tooltiptext', description);
+
             menuitem.script = script;
-            menupopup.appendChild(menuitem);
+            if (dirName === 'root') {
+              topMenuitems.push(menuitem);
+            } else {
+              menupopup.appendChild(menuitem);
+            }
         }
         menu.appendChild(menupopup);
-        menupopup = document.getElementById("userChromejs_script_options"); //userChromejs_options
-        menupopup.appendChild(menu);
+        // menupopup = document.getElementById("userChromejs_script_options"); //userChromejs_options
+        // menupopup.appendChild(menu);
+        parentMenuPopup.appendChild(menu);
       }
+
+      // 添加收集的 topMenuitems
+      topMenuitems.forEach(function(menuitem){
+        parentMenuPopup.appendChild(menuitem);
+      });
+
       document.getElementById("showToolsMenu").setAttribute("label", (userChromejs.ShowToolButton ? "切换到工具菜单" : "切换到按钮"));
     },
 
@@ -437,11 +480,24 @@
 
     clickScriptMenu: function(event){
       if(event.button==1){
-        userChromejs.chgScriptStat(event.target.script.filename);
-        event.target.setAttribute('checked',!userChrome_js.scriptDisable[event.target.script.filename] );
+        let script = event.target.script;
+        if (event.ctrlKey) {
+          userChromejs.chgScriptStat(script.filename);
+          event.target.setAttribute('checked',!userChrome_js.scriptDisable[script.filename] );
+        } else {
+          let url = event.target.getAttribute('homeURL');
+          if (url) {
+            gBrowser.addTab(url);
+          }
+        }
+
       }else if(event.button==2){
         userChromejs.launchEditor(event.target.script);
       }
+    },
+
+    getScriptHomeURL: function(script) {
+      return script.homepageURL || script.downloadURL || script.updateURL || script.reviewURL;
     },
 
     launchEditor: function(aScript){

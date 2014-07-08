@@ -262,7 +262,7 @@ this.debug('Parsing getScripts: '+((new Date()).getTime()-Start) +'msec');
 
       //メタデータ収集
       function getScriptData(aContent,aFile){
-        var charset, description, author, version, homepageURL, reviewURL, downloadURL, fullDescription;
+        var charset, description, author, version, homepageURL, reviewURL, downloadURL, updateURL, fullDescription;
         var header = (aContent.match(/^\/\/ ==UserScript==[ \t]*\n(?:.*\n)*?\/\/ ==\/UserScript==[ \t]*\n/m) || [""])[0];
         var match, rex = { include: [], exclude: []};
         while ((match = findNextRe.exec(header)))
@@ -316,6 +316,12 @@ this.debug('Parsing getScripts: '+((new Date()).getTime()-Start) +'msec');
         downloadURL = "";
         if(match)
           downloadURL = match.length > 0 ? match[1].replace(/^\s+/,"") : "";
+
+        // updateURL
+        match = header.match(/\/\/ @updateURL\b(.+)\s*/i);
+        updateURL = "";
+        if(match)
+          updateURL = match.length > 0 ? match[1].replace(/^\s+/,"") : "";
 
         // optionsURL
         match = header.match(/\/\/ @optionsURL\b(.+)\s*/i);

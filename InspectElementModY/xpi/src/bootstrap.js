@@ -374,10 +374,10 @@ var InspectElement = {
 
     observe: function (subject, topic, data) {
         if (topic == 'nsPref:changed') {
-            switch(aData) {
+            switch(data) {
                 case 'contentType':
                 case 'mainWinType':
-                    this[aData] = this.prefs.getIntPref(aData);
+                    this[data] = this.prefs.getIntPref(data);
                     break;
                 case 'checkExists':
                     this.checkExists = this.prefs.getBoolPref('checkExists');

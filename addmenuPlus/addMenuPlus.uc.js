@@ -261,6 +261,7 @@ window.addMenu = {
             let postData = loc[1].value;
             if (newurl == kw && text)
                 return this.log(U("未找到关键字: ") + keyword);
+
             this.openCommand(event, newurl, where, postData);
         }
         else if (url)
@@ -290,6 +291,7 @@ window.addMenu = {
         var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
         var UI = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
         UI.charset = window.navigator.platform.toLowerCase().indexOf("win") >= 0? "GBK": "UTF-8";
+
         try {
             var a;
             if (typeof arg == 'string' || arg instanceof String) {
@@ -299,12 +301,13 @@ window.addMenu = {
             } else {
                 a = [arg];
             }
+
             // 转换每个参数的编码
             a.forEach(function(str, i){
                 a[i] = UI.ConvertFromUnicode(str);
             });
-            file.initWithPath(path);
 
+            file.initWithPath(path);
             if (!file.exists()) {
                 Cu.reportError('File Not Found: ' + path);
                 return;
@@ -385,10 +388,14 @@ window.addMenu = {
         }
 
         try {
+            var lineFinder = new Error();
             Cu.evalInSandbox("function css(code){ this._css.push(code+'') };\n" + data, sandbox, "1.8");
             Cu.evalInSandbox(includeSrc, sandbox, "1.8");
         } catch (e) {
-            this.alert("Error: " + e + "\n请重新检查配置文件.");
+            let line = e.lineNumber - lineFinder.lineNumber -1;
+            this.alert(e + "\n请重新检查配置文件第 " + line + " 行", null, function(){
+                addMenu.edit(addMenu.FILE, line);
+            });
             return this.log(e);
         }
         if (this.style2 && this.style2.parentNode)
@@ -515,6 +522,7 @@ window.addMenu = {
                 obj[key] = val = "(" + val.toSource() + ").call(this, event);";
             menuitem.setAttribute(key, val);
         }
+
         var cls = menuitem.classList;
         cls.add("addMenu");
         cls.add("menuitem-iconic");
@@ -552,21 +560,31 @@ window.addMenu = {
                 let isDupMenu = (obj.clone != false);
                 if (isDupMenu) {
                     dupMenuitem = menuitem.cloneNode(true);
-                    dupMenuitem.classList.add("addMenu");
 
-                    menuitem.classList.add("addMenuR");
+                    // 隐藏原菜单
+                    menuitem.classList.add("addMenuHide");
                 }else{
                     dupMenuitem = menuitem;
-                    dupMenuitem.classList.add("addMenu");
-                    dupMenuitem.classList.add("addMenuNot");
                 }
 
                 for (let [key, val] in Iterator(obj)) {
-                    if (typeof val == "function") {
+                    if (typeof val == "function")
                         obj[key] = val = "(" + val.toSource() + ").call(this, event);";
-                    }
+
                     dupMenuitem.setAttribute(key, val);
                 }
+
+                // 如果没有则添加 menuitem-iconic 或 menu-iconic，给菜单添加图标用。
+                let type = dupMenuitem.nodeName,
+                    cls = dupMenuitem.classList;
+                if (type == 'menuitem' || type == 'menu')
+                    if (!cls.contains(type + '-iconic'))
+                        cls.add(type + '-iconic');
+
+                if (!cls.contains('addMenu'))
+                    cls.add('addMenu');
+                if (!isDupMenu && !cls.contains('addMenuNot'))
+                    cls.add('addMenuNot');
 
                 // 没有插入位置的默认放在原来那个菜单的后面
                 if(isDupMenu && !obj.insertAfter && !obj.insertBefore && !obj.position){
@@ -580,6 +598,7 @@ window.addMenu = {
 
             menuitem = obj._items ? this.newMenu(obj) : this.newMenuitem(obj);
             insertMenuItem(obj, menuitem);
+
         }
 
         function insertMenuItem(obj, menuitem, noMove){
@@ -599,7 +618,7 @@ window.addMenu = {
                 return;
             }
             if (!noMove) {
-            insertPoint.parentNode.insertBefore(menuitem, insertPoint);
+                insertPoint.parentNode.insertBefore(menuitem, insertPoint);
             }
         }
     },
@@ -609,9 +628,11 @@ window.addMenu = {
             if (e.classList.contains('addMenuNot')) return;
             e.parentNode.removeChild(e);
         };
+
         $$('menu.addMenu').forEach(remove);
         $$('.addMenu').forEach(remove);
-        $$('.addMenuR').forEach(function(e) { e.classList.remove('addMenuR');} );
+        // 恢复原隐藏菜单
+        $$('.addMenuHide').forEach(function(e) { e.classList.remove('addMenuHide');} );
     },
 
     setIcon: function(menu, obj) {
@@ -816,24 +837,50 @@ window.addMenu = {
             return elem.value.substring(elem.selectionStart, elem.selectionEnd);
         return "";
     },
-    edit: function(aFile) {
+    edit: function(aFile, aLineNumber) {
         if (!aFile || !aFile.exists() || !aFile.isFile()) return;
-        var editor = Services.prefs.getCharPref("view_source.editor.path");
-        if (!editor) return this.log(U("编辑器的路径未设定。\n 请设置 view_source.editor.path"));
+
+        var editor;
         try {
-            var UI = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
-            UI.charset = window.navigator.platform.toLowerCase().indexOf("win") >= 0? "GBK": "UTF-8";
-            var path = UI.ConvertFromUnicode(aFile.path);
-            this.exec(editor, [path]);
-        } catch (e) {}
+            editor = Services.prefs.getComplexValue("view_source.editor.path", Ci.nsILocalFile);
+        } catch(e) {}
+        if (!editor || !editor.exists()) {
+            alert("编辑器的路径未设置!!!\n请设置 view_source.editor.path");
+            toOpenWindowByType('pref:pref', 'about:config?filter=view_source.editor');
+            return;
+        }
+
+        // 调用自带的
+        var aURL = userChrome.getURLSpecFromFile(aFile);
+
+        var aDocument = null;
+        var aCallBack = null;
+        var aPageDescriptor = null;
+
+        if (/aLineNumber/.test(gViewSourceUtils.openInExternalEditor.toSource()))
+            gViewSourceUtils.openInExternalEditor(aURL, aPageDescriptor, aDocument, aLineNumber, aCallBack);
+        else
+            gViewSourceUtils.openInExternalEditor(aURL, aPageDescriptor, aDocument, aCallBack);
     },
     copy: function(aText) {
         Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(aText);
         XULBrowserWindow.statusTextField.label = "Copy: " + aText;
     },
-    alert: function(aString, aTitle) {
-        Cc['@mozilla.org/alerts-service;1'].getService(Ci.nsIAlertsService)
-            .showAlertNotification("", aTitle||"addMenu" , aString, false, "", null);
+    alert: function (aMsg, aTitle, aCallback) {
+        if (aCallback)
+            var callback = {
+                observe : function (subject, topic, data) {
+                    if ("alertclickcallback" != topic)
+                        return;
+                    aCallback.call(null);
+                }
+            };
+        else
+            callback = null;
+        var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
+        alertsService.showAlertNotification(
+            "chrome://global/skin/icons/information-32.png", aTitle || "addMenu",
+            aMsg + "", !!callback, "", callback);
     },
     $$: function(exp, context, aPartly) {
         context || (context = this.focusedWindow.document);
@@ -983,7 +1030,7 @@ function getShortcutOrURI(aURL, aPostDataRef, aMayInheritPrincipal) {
 
 
 })('\
-.addMenuR\
+.addMenuHide\
   { display: none !important; }\
 \
 #contentAreaContextMenu:not([addMenu~="select"]) .addMenu[condition~="select"],\

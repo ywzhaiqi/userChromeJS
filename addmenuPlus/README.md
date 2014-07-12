@@ -1,4 +1,3 @@
-
 addMenuPlus.uc.js
 =================
 
@@ -32,19 +31,29 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
  - 新增参数 `%IMAGE_BASE64%`：图片的 BASE64
  - 新增参数 `%TITLES%`：简短的标题
 
+### 使用说明及技巧
+
+ - `_addmenu.js` 文件为配置文件，默认放在 `chrome` 目录下
+ - 菜单栏的 "工具" 菜单中有个 "addMenu 的重新载入和编辑" 菜单，左键点击重新载入配置，右键打开文件编辑（需要首先设置 about:config 中 view_source.editor.path 编辑器的路径）
+ - ID 为 `addMenu-rebuild`，可添加到 rebuild_userChrome.uc.xul 统一进行管理
+ - 配置载入出错的提示，点击可定位到某一行。需要首先设置 `view_source.editor.args`，Sublime text 的问题见主页的 fixViewSourceEditArgsForST.uc.js
+ - `view_source.editor.args` 会替换 `%LINE%` 为行。编辑器参数参考 Firebug
+
+ ![编辑器参数.png](编辑器参数.png)
+
 ### 可参考的配置
+
+成品
+
+ - [defpt 的配置](https://github.com/defpt/userChromeJs/tree/master/addMenuPlus)
+ - [bobdylan520 的配置](http://bbs.kafan.cn/thread-1677811-1-1.html)
+ - [creek560 的配置](http://bbs.kafan.cn/thread-1682712-1-1.html)
+
+其它
 
  - [\_addmenu.js](https://github.com/ywzhaiqi/userChromeJS/blob/master/addmenuPlus/_addmenu.js)
  - [\_addmenu示例合集.js](https://github.com/ywzhaiqi/userChromeJS/blob/master/addmenuPlus/_addmenu%E7%A4%BA%E4%BE%8B%E5%90%88%E9%9B%86.js)
- - [defpt 的 addMenuPlus 配置](https://github.com/defpt/userChromeJs/tree/master/addMenuPlus)
- - [\_addmenu.js配置 - 自用功能](http://g.mozest.com/viewthread.php?tid=44436&highlight=)
- - [addMenuPlus 的配置文件，大家都来分享下吧~~~](http://bbs.kafan.cn/thread-1677811-1-1.html)
- - [分享addmenu配置，自定义 火狐 橙菜单和右键菜单！](http://bbs.kafan.cn/thread-1682712-1-1.html)
-
-### 使用技巧
-
- - 菜单栏的 "工具" 菜单中有个 "addMenu 的重新载入和编辑" 菜单，左键点击重新载入配置，右键打开文件编辑（要先设置 about:config 中 view_source.editor.path 的值）
- - ID 为 `addMenu-rebuild`，可添加 rebuild_userChrome.uc.xul 中统一进行管理
+ - [Oos 的摘要](https://github.com/Drager-oos/userChrome/tree/master/Configuration)
 
 ## 配置的说明
 
@@ -52,7 +61,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
 
  - page: 页面右键菜单
  - tab: 标签右键
- - app: 左上角橙色菜单
+ - app: 左上角橙色菜单（firefox 29 以下版本）
  - too: 工具菜单
 
 二级子菜单
@@ -69,39 +78,47 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     url         打开你想要的网址
     where       打开的位置 (current, tab, tabshifted, window)
     condition   菜单出现的条件 (select, link, mailto, image, media, input, noselect, nolink, nomailto, noimage, nomedia, noinput)
-    oncommand/command  自定义命令
+    oncommand   自定义命令
+    command     命令的 id
     onclick     点击的函数
-    image       添加图标 （对应 图标 url 或 base64）
+    image       添加图标 （对应图标 url 或 base64）
     style       添加样式
     ...         Firefox 菜单的其它属性
 
     id          标签的ID（我新增的，修改原菜单用）
     position/insertBefore/insertAfter: 位置的设置（3选1），position: 1,  insertBefore: "id",  insertAfter: "id"
-    clone       false 为不克隆，直接改在原菜单上，再次修改必须重启生效
+    clone       false 为不克隆，直接改在原菜单上，还原必须重启生效或打开新窗口
+
+参考的链接：
+
+ - [oncommand - Mozilla | MDN](https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL/Attribute/oncommand)
+ - [command - Mozilla | MDN](https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL/command)
+ - [Attribute (XUL) - Mozilla | MDN](https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL/Attribute)
+
 
 ### 可利用的变量
 
-    %EOL%            改行(\r\n)
+    %EOL%            换行(\r\n)
     %TITLE%          标题
-    %TITLES%         简化标题（我新增的，来自faviconContextMenu.uc.xul.css）
+    %TITLES%         简化标题（我新增的，来自 faviconContextMenu.uc.xul.css）
     %URL%            地址
     %SEL%            选取范围内的文字
     %RLINK%          链接的地址
     %IMAGE_URL%      图片的 URL
-    %IMAGE_BASE64%   图片的 Base64（我新增的）
+    %IMAGE_BASE64%   图片的 Base64（我新增的，不支持 gif 动态图片）
     %IMAGE_ALT%      图片的 alt 属性
     %IMAGE_TITLE%    图片的 title 属性
     %LINK%           链接的地址
     %LINK_TEXT%      链接的文本
-    %RLINK_TEXT%     链接的文本
+    %RLINK_TEXT%     链接的文本（上面那个的别名）
     %MEDIA_URL%      媒体 URL
     %CLIPBOARD%      剪贴板的内容
     %FAVICON%        Favicon（站点图标） 的 URL
     %FAVICON_BASE64% Favicon 的 Base64（我新增的）
     %EMAIL%          E-mail 链接
-    %HOST%           当前网页(域名)
-    %LINK_HOST%      当前网页(域名)
-    %RLINK_HOST%     当前网页(域名)
+    %HOST%           当前网页的域名
+    %LINK_HOST%      链接的域名
+    %RLINK_HOST%     链接的域名（同上）
 
     %XXX_HTMLIFIED%  转义后的变量 （XXX 为 上面的 TITLE 等）
     %XXX_HTML%       转义后的变量
@@ -182,7 +199,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
         where: "tab",
     })
 
-示例：右键添加 翻译整个页面 菜单（可用于 https），[来源](http://bbs.kafan.cn/thread-1642576-1-1.html)
+示例：右键添加 `翻译整个页面` 菜单（可用于 https），[来源](http://bbs.kafan.cn/thread-1642576-1-1.html)。*注：github.com 由于服务器限制，无法直接插入 js，而 google 翻译需要插入好几个 js，故无效。*
 
     page({
         label: "翻译整个页面",
@@ -456,7 +473,7 @@ pagesub([
         exec: "\\Chrome"  // 打开当前配置下的Chrome文件夹
     });
 
-示例：添加图标，如果是原有的菜单需要加上 `class`，menuitem-iconic 或 menu-iconic，前一个是菜单，后一个是菜单项。
+示例：**添加图标，如果是原有的菜单需要加上 `class`，menuitem-iconic 或 menu-iconic，前一个菜单项（无子菜单），后一个是是菜单（包含子菜单）。**
 
     page({
         label: "图标测试菜单",

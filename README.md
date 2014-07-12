@@ -70,6 +70,9 @@ userChromeJS for Firefox
     - **技巧**：在下载窗口 "我的足迹" 界面，直接 `ctrl+v` 即可新建下载。
  - [ExportHTMLFolderMod.uc.xul](ExportHTMLFolderMod.uc.xul)，书签右键 `导出到HTML`（修改版）。
  - [findScriptForGreaemonkeyOrScriptish.uc.js](findScriptForGreaemonkeyOrScriptish.uc.js)，为 Greasemonkey 或 Scriptish 扩展增加 "为本站搜索脚本" 功能。
+ - [fixViewSourceEditArgsForST.uc.js](fixViewSourceEditArgsForST.uc.js)
+    - 自带的 `view_source.editor.args` 由于顺序问题无法传递"行"参数给 sublime text
+    - 使用本脚本修正后，设置 `view_source.editor.args` 为 `%file:%line` 即可用 sublime text 打开并定位到某一行
  - [IME-Colors.uc.js](IME-Colors.uc.js)，输入框聚焦时变色。
  - [JSCSS_Highlight.uc.js](JSCSS_Highlight.uc.js)，在浏览器中打开的 js、css、ahk 代码着色。
  - [JSOff.uc.xul](JSOff.uc.xul)，js开关，图标在状态栏。

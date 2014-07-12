@@ -5,7 +5,7 @@
 // @include         main
 // @author          ywzhaiqi && zbinlin（原作者）
 // @homepage        http://mozcp.com
-// @version         0.5
+// @version         0.6
 // @charset         UTF-8
 // @compatibility   Firefox 20
 // @note            改自扩展 0.0.6，增加设置，可选择网页、主窗口的查看器。
@@ -38,8 +38,8 @@ window.InspectElement = {
     hasDOMInspector: false,
     ww: Services.ww,       // nsIWindowWatcher
     wm: Services.wm,       // nsIWindowMediator
-    contentType: 0,
-    mainWinType: 0,
+    contentType: TYPE_FIREBUG,
+    mainWinType: TYPE_DOM_INSPECTOR,
     checkExists: true,  // 如果 Firebug 或自带查看器已经在使用，则不会打开新的查看器。
 
     get isWinNT() {

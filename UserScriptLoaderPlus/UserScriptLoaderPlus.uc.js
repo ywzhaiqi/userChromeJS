@@ -1422,7 +1422,7 @@ USL.checkScript = function(script, handleSucc) {
     USL.getContents(checkURL, function(bytes, contentType, aFile){
         let newVersion = Utils.r1(/\/\/\s*?@version\s*([^\r\n]+)/i, bytes);
         if (!newVersion) {
-            console.error('更新脚本没找到 @version', bytes);
+            console.error(script.name + ' 脚本更新没找到 @version', bytes);
             handleSucc();
         } else if (Services.vc.compare(script.version, newVersion) >= 0) {
             console.log(script.name + ' 脚本无需更新');
@@ -1452,15 +1452,13 @@ USL.checkScript = function(script, handleSucc) {
                 aFile.renameTo(folder.path, filename);
                 callback();
             } else {
-                USL.downloader(downURL, scriptFile.path, function(){
-                    callback();
-                });
+                USL.downloader(downURL, scriptFile.path, filename, callback);
             }
         }
     }, true);
 };
 
-USL.downloader = function(url, path, callback) {
+USL.downloader = function(url, path, filename, callback) {
     Task.spawn(function * () {
         yield Downloads.fetch(url, path);
         console.log(filename + " has been downloaded!", path);

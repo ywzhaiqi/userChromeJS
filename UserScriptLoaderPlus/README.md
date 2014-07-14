@@ -14,7 +14,7 @@ Greasemonkey 的 uc 脚本版。原脚本 [UserScriptLoader.uc.js By Griever](ht
  - 修正：nightly（Firefox 33）下 GM_xmlhttpRequest 失效的问题（参考 Greasemonkey 2.0 修正版）。
  - 其它细节上的改进。
 
-PS：由于我本人并没有使用这个脚本，所以可能不会更新。
+PS：由于我本人并没有使用这个脚本，所以可能不会更新。可使用 [feiruo 的版本](https://github.com/feiruo/userChromeJS/blob/master/UserScriptLoaderPlus.uc.js)
 
 备注
 ----

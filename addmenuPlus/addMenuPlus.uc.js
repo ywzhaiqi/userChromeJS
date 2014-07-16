@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name           addMenu.uc.js
+// @name           addMenuPlus.uc.js
 // @description    通过配置文件增加修改菜单，修改版
 // @namespace      http://d.hatena.ne.jp/Griever/
 // @author         Griever
@@ -7,7 +7,8 @@
 // @license        MIT License
 // @compatibility  Firefox 21
 // @charset        UTF-8
-// @version        0.0.8
+// @version        2014.7.17
+// version         0.0.8
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
 // @note           0.0.8 Firefox 25 の getShortcutOrURI 廃止に仮対応
@@ -242,6 +243,8 @@ window.addMenu = {
                     state.push("image");
                 if (gContextMenu.onVideo || gContextMenu.onAudio)
                     state.push("media");
+                if (gContextMenu.inFrame)
+                    state.push('frame');
                 event.currentTarget.setAttribute("addMenu", state.join(" "));
                 break;
         }
@@ -1040,6 +1043,7 @@ function getShortcutOrURI(aURL, aPostDataRef, aMayInheritPrincipal) {
 #contentAreaContextMenu:not([addMenu~="canvas"])  .addMenu[condition~="canvas"],\
 #contentAreaContextMenu:not([addMenu~="media"])  .addMenu[condition~="media"],\
 #contentAreaContextMenu:not([addMenu~="input"])  .addMenu[condition~="input"],\
+#contentAreaContextMenu:not([addMenu~="frame"])  .addMenu[condition~="frame"],\
 #contentAreaContextMenu[addMenu~="select"] .addMenu[condition~="noselect"],\
 #contentAreaContextMenu[addMenu~="link"]   .addMenu[condition~="nolink"],\
 #contentAreaContextMenu[addMenu~="mailto"] .addMenu[condition~="nomailto"],\
@@ -1047,6 +1051,7 @@ function getShortcutOrURI(aURL, aPostDataRef, aMayInheritPrincipal) {
 #contentAreaContextMenu[addMenu~="canvas"]  .addMenu[condition~="nocanvas"],\
 #contentAreaContextMenu[addMenu~="media"]  .addMenu[condition~="nomedia"],\
 #contentAreaContextMenu[addMenu~="input"]  .addMenu[condition~="noinput"],\
+#contentAreaContextMenu[addMenu~="frame"]  .addMenu[condition~="noframe"],\
 #contentAreaContextMenu:not([addMenu=""])  .addMenu[condition~="normal"]\
   { display: none; }\
 \

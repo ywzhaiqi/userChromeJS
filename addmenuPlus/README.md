@@ -36,8 +36,8 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
  - `_addmenu.js` 文件为配置文件，默认放在 `chrome` 目录下
  - 菜单栏的 "工具" 菜单中有个 "addMenu 的重新载入和编辑" 菜单，左键点击重新载入配置，右键打开文件编辑（需要首先设置 about:config 中 view_source.editor.path 编辑器的路径）
  - ID 为 `addMenu-rebuild`，可添加到 rebuild_userChrome.uc.xul 统一进行管理
- - 配置载入出错的提示，点击可定位到某一行。需要首先设置 `view_source.editor.args`，Sublime text 的问题见主页的 fixViewSourceEditArgsForST.uc.js
- - `view_source.editor.args` 会替换 `%LINE%` 为行。编辑器参数参考 Firebug
+ - 配置载入出错的提示，点击可定位到某一行。需要首先设置 `view_source.editor.args`，Sublime text 的问题见主页的 `fixViewSourceEditArgsForST.uc.js`
+ - `view_source.editor.args` 会替换 `%LINE%` 为 `行`。编辑器参数参考 Firebug
 
  ![编辑器参数.png](编辑器参数.png)
 
@@ -54,6 +54,10 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
  - [\_addmenu.js](https://github.com/ywzhaiqi/userChromeJS/blob/master/addmenuPlus/_addmenu.js)
  - [\_addmenu示例合集.js](https://github.com/ywzhaiqi/userChromeJS/blob/master/addmenuPlus/_addmenu%E7%A4%BA%E4%BE%8B%E5%90%88%E9%9B%86.js)
  - [Oos 的摘要](https://github.com/Drager-oos/userChrome/tree/master/Configuration)
+
+其它示例图集
+
+![myd198782](http://fj.ikafan.com/attachment/forum/201407/12/201127vtvvqtavltj4vzvq.png.thumb.jpg)
 
 ## 配置的说明
 
@@ -77,7 +81,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     text        复制你想要的字符串到剪贴板，可与 keyword, exec 一起使用
     url         打开你想要的网址
     where       打开的位置 (current, tab, tabshifted, window)
-    condition   菜单出现的条件 (select, link, mailto, image, media, input, noselect, nolink, nomailto, noimage, nomedia, noinput)
+    condition   菜单出现的条件 (select, link, mailto, image, media, input, frame, noselect, nolink, nomailto, noimage, nomedia, noinput)
     oncommand   自定义命令
     command     命令的 id
     onclick     点击的函数
@@ -453,6 +457,16 @@ pagesub([
 ])
 ```
 
+示例：在新标签页中打开框架。
+
+    page({
+        label: '在新标签页中打开框架',
+        accesskey: 'T',
+        condition: 'frame',
+        insertAfter: 'frame',
+        oncommand: 'gContextMenu.openFrameInTab();'
+    })
+
 示例：菜单出现的条件，排除了链接、图片、输入框、选择等多个条件
 
     page({
@@ -517,27 +531,6 @@ pagesub([
         }
     });
 
-示例：输入框右键增加菜单，在光标处插入自定义字符。
-
-    page({
-        label: "在输入框光标处插入字符（测试）",
-        condition: "input",
-        insertAfter: "context-paste",
-        oncommand: function(event) {
-            var aText = "123";
-
-            var input = gContextMenu.target;
-            var aStart = aEnd = input.selectionStart;
-
-            // 在光标处插入字符
-            input.value = input.value.slice(0, aStart) + aText + input.value.slice(aEnd);
-
-            // 移动光标到插入字符的后面
-            var aOffset = aStart + aText.length;
-            input.setSelectionRange(aOffset, aOffset);
-        }
-    });
-
 示例：标签右键或链接右键增加 `复制地址（BBS、MD）` 菜单，左键复制 BBS 格式，中键原标题，右键 MD 格式，可去除标题一定内容。
 
     function copyBBS_or_MD(event){
@@ -576,10 +569,30 @@ pagesub([
         onclick: copyBBS_or_MD
     });
 
+示例：输入框右键增加菜单，在光标处插入自定义字符。*这种方式在百度贴吧无效，因其输入框较为特殊，可采用下面通用的复制粘贴的方式。*
+
+    page({
+        label: "在输入框光标处插入字符（测试）",
+        condition: "input",
+        insertAfter: "context-paste",
+        oncommand: function(event) {
+            var aText = "123";
+
+            var input = gContextMenu.target;
+            var aStart = aEnd = input.selectionStart;
+
+            // 在光标处插入字符
+            input.value = input.value.slice(0, aStart) + aText + input.value.slice(aEnd);
+
+            // 移动光标到插入字符的后面
+            var aOffset = aStart + aText.length;
+            input.setSelectionRange(aOffset, aOffset);
+        }
+    });
 
 [defpt 写的灌水的菜单 - 卡饭论坛](http://bbs.kafan.cn/thread-1671512-1-1.html)
 
-    //快捷回复
+    // 快捷回复
     var Quickpostsub = PageMenu({
         label:"Quick Reply With...",
         condition:"input",
@@ -811,7 +824,7 @@ pagesub([
 使用了其它皮肤，右键错位的情况
 ----------------------------
 
-把代码最后几行的css删除
+把代码最后几行的css删除，请不要保留空行。
 
     .addMenu > .menu-iconic-left {\
       -moz-appearance: menuimage;\

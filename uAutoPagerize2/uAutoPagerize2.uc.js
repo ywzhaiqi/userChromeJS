@@ -7,7 +7,7 @@
 // @compatibility  Firefox 17
 // @charset        UTF-8
 // @version        0.3.0
-// @update         2014-06-08
+// @update         2014-07-15
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/uAutoPagerize2
 // @reviewURL      http://bbs.kafan.cn/thread-1555846-1-1.html
 // @optionsURL     about:config?filter=uAutoPagerize.
@@ -268,6 +268,7 @@ const ToolbarManager = (function() {
 
 if (typeof window.uAutoPagerize != 'undefined') {
     window.uAutoPagerize.destroy();
+    delete window.uAutoPagerize;
     // 补上 siteinfo_writer 菜单
     if (window.siteinfo_writer && !document.getElementById("sw-popup-menuitem")) {
         var menuitem = $C("menuitem", {
@@ -770,12 +771,6 @@ var ns = window.uAutoPagerize = {
                 newInfo.ipages = prefs.ipages;
             }
 
-            // if (info.autopager.uAutoPagerize2) {
-            //     for (var name in info.autopager.uAutoPagerize2) {
-            //         newInfo[name] = info.autopager.uAutoPagerize2[name];
-            //     }
-            // }
-
             newList.push(newInfo);
         }
         return newList;
@@ -795,11 +790,6 @@ var ns = window.uAutoPagerize = {
         if (locationHref.indexOf('http') !== 0 ||
            !ns.INCLUDE_REGEXP.test(locationHref)){
             return updateIcon("不包含的页面");
-        }
-        for(let [index, reg] in Iterator(ns.EXCLUDE_REGEXP)){
-            if(reg.test(locationHref)){
-                return updateIcon("排除列表, " + ns.EXCLUDE[index]);
-            }
         }
 
         if (!/html|xml/i.test(doc.contentType) ||
@@ -823,6 +813,13 @@ var ns = window.uAutoPagerize = {
             // uAutoPagerize original
             win.fragmentFilters = [];
         }
+
+        for(let [index, reg] in Iterator(ns.EXCLUDE_REGEXP)){
+            if(reg.test(locationHref)){
+                return updateIcon("排除列表, " + ns.EXCLUDE[index]);
+            }
+        }
+
         var ev = doc.createEvent('Event');
         ev.initEvent('GM_AutoPagerizeLoaded', true, false);
         doc.dispatchEvent(ev);
@@ -866,7 +863,7 @@ var ns = window.uAutoPagerize = {
             timer = hashSite.timer;
             hashchange = true;
             debug('当前是页面不刷新的站点');
-        } else if (locationHost == 'github.com') {
+        } else if (locationHost == 'github.com' && Services.appinfo.version < 33) {
             // github 需要在加载页面后重新启用
             // 直接引用 unsafeWindow.jQuery 的方式无法成功，只能采用下面的方式。
             var github_addListener = function(win){
@@ -1397,7 +1394,6 @@ AutoPager.prototype = {
         this.iframeMode = Config.USE_IFRAME && this.info.useiframe || false;
         this.ipagesMode = this.info.ipages ? this.info.ipages[0] : false;
         this.ipagesNumber = this.info.ipages ?  this.info.ipages[1] : 0;
-
         this.lastPageURL = doc.location.href.replace(/#.*$/, ''); // url 去掉hash;
         this.C = this.win.wrappedJSObject.console;
 
@@ -1691,7 +1687,7 @@ AutoPager.prototype = {
         try {
            this.win.documentFilters.forEach(function(i) { i(htmlDoc, this.requestURL, this.info) }, this);
         } catch (ex) {
-            debug('执行 documentFilters 错误', ex);
+            debug('执行 documentFilters 错误 ', ex);
         }
 
         this.beforeLoad(htmlDoc);

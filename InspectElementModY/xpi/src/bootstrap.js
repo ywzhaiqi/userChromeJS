@@ -20,8 +20,7 @@ const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 Cu.import("resource://gre/modules/PopupNotifications.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/AddonManager.jsm");
-
-// Cu.import("resource://gre/modules/devtools/Console.jsm");
+Cu.import("resource://gre/modules/devtools/Console.jsm");
 
 const TYPE_FIREBUG = 0;
 const TYPE_DEV_TOOLS = 1;
@@ -237,7 +236,11 @@ var InspectElement = {
                 iType = this.mainWinType;
                 break;
             default:
-                iType = TYPE_DOM_INSPECTOR;
+                if (elemWin.top != elemWin.self && elemWin.top == this.mainWin.content) {  // 框架
+                    iType = this.contentType;
+                } else {
+                    iType = TYPE_DOM_INSPECTOR;
+                }
                 break;
         }
 

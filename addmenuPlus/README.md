@@ -55,10 +55,6 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
  - [\_addmenu示例合集.js](https://github.com/ywzhaiqi/userChromeJS/blob/master/addmenuPlus/_addmenu%E7%A4%BA%E4%BE%8B%E5%90%88%E9%9B%86.js)
  - [Oos 的摘要](https://github.com/Drager-oos/userChrome/tree/master/Configuration)
 
-其它示例图集
-
-![myd198782](http://fj.ikafan.com/attachment/forum/201407/12/201127vtvvqtavltj4vzvq.png.thumb.jpg)
-
 ## 配置的说明
 
 ### 可添加的范围
@@ -506,30 +502,20 @@ pagesub([
         accesskey: "y"
     });
 
-示例：输入框右键增加 "粘贴并确定" 菜单，先增加一个空格，然后粘贴，再确定
+示例：输入框右键增加 "粘贴并确定" 菜单
 
     page({
         label: "粘贴并确定",
         condition: "input",
         insertAfter: "context-paste",
         oncommand: function(event) {
-            function $(id) document.getElementById(id)
+            goDoCommand("cmd_paste");
 
-            // 给原输入框增加空格
-            var input = gContextMenu.target;
-            input.value = input.value + " ";
-
-            // $('context-selectall').doCommand();  // 全选
-            // $('context-cut').doCommand();  // 剪切
-            // $('context-copy').doCommand();  // 复制
-            $('context-paste').doCommand();  // 粘贴
-
-            // 回车键
-            window.QueryInterface(Ci.nsIInterfaceRequestor)
-                .getInterface(Ci.nsIDOMWindowUtils)
-                .sendKeyEvent("keypress", KeyEvent.DOM_VK_ENTER, 0, 0);
+             window.QueryInterface(Ci.nsIInterfaceRequestor)
+                 .getInterface(Ci.nsIDOMWindowUtils)
+                 .sendKeyEvent("keypress", KeyEvent.DOM_VK_RETURN, 0, 0);
         }
-    });
+    })
 
 示例：标签右键或链接右键增加 `复制地址（BBS、MD）` 菜单，左键复制 BBS 格式，中键原标题，右键 MD 格式，可去除标题一定内容。
 
@@ -671,6 +657,103 @@ pagesub([
         image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAVElEQVQ4ja2SwQ4AMARD+/8/bbdlw8ogcdK9RQsApNmQal2A359dgCK7j07tBmiBByGzWMjABsBMfaaQgdAYxwGtFVomMiGZDRxSYFLulCtFY8z2AmZhBhe3B+XrAAAAAElFTkSuQmCC"
     }, ]);
 
+示例：撤销关闭二级菜单 By feiruo
+
+    var undoMenu = PageMenu({
+        label: '撤销关闭',
+        position: 2,
+        tooltiptext: "右键显示所有历史记录",
+        onclick: "if (event.button == 2) {PlacesCommandHook.showPlacesOrganizer('History');}",
+        onpopupshowing: function(e) {
+            var popup = e.target;
+            popup.setAttribute('id', 'addUndoMneun');
+            var items = popup.querySelectorAll('.bookmark-item');
+            [].forEach.call(items, function(item) {
+                item.parentNode.removeChild(item);
+            });
+            var undoItems = JSON.parse(Cc['@mozilla.org/browser/sessionstore;1'].getService(Ci.nsISessionStore).getClosedTabData(window));
+            if (undoItems.length == 0) {
+                popup.setAttribute('oncommand', 'this.parentNode._placesView._onCommand(event);');
+                if (!this.parentNode._placesView) new HistoryMenu(event);
+            } else {
+                undoItems.map(function(item, id) {
+                    var m = document.createElement('menuitem');
+                    m.setAttribute('label', item.title);
+                    m.setAttribute('image', item.image ? 'moz-anno:favicon:' + item.image : '');
+                    m.setAttribute('class', 'menuitem-iconic bookmark-item closedtab');
+                    m.setAttribute('oncommand', 'undoCloseTab(' + id + ')');
+                    m.setAttribute('type', 'unclose-menuitem');
+                    popup.appendChild(m);
+                });
+            }
+        },
+        image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAASCAYAAABSO15qAAABDklEQVQ4jZ3SPShFcRjH8Q8JN2IgI4pJorxkMJDNYlE27AZWG4vBJoOymewMshtsdzHIQilKUl7SDde9hnNuTqdzLuc+9UzP8/2e/uf3kFyNWMVwyrxqNWEddxjPCuewiQJeMJYFbsU2PlDGM0b/C7dhF58hXA5FR9jDBhbQh/o43IV9FCNwUhdxgx30RwWHKP0BxzuPiYpgCbcZBWWco7cimcV1bKGEJzziPUHwja3oU2ZwFVl4xTwGMYUVHMdkl/EfOokLvzGOxOY5LOI+3CnEBQTHk8eb9ENaw1fYiTWEU+mn3C2I9CFNAD3oTJm1CFI4qSaoVu04w3KtggEcoKMWuA5zmK71682CeBvgB+93YAIjVuYDAAAAAElFTkSuQmCC"
+    });
+    undoMenu([{
+        label: "恢复上一次会话",
+        command: "Browser:RestoreLastSession",
+    }]);
+
+示例：保存所有图片到 zip
+
+    page({
+        label: "保存所有图片到 zip",
+        oncommand: function() {
+            // 保存ディレクトリのパスがない場合は毎回ダイアログで決める
+            //var path = "C:\\Users\\azu\\Downloads"; // エスケープしたディレクトリのパス
+            var path = "";
+            if (!path) {
+                // ファイル保存ダイアログ
+                var nsIFilePicker = Ci.nsIFilePicker;
+                var FP = Cc['@mozilla.org/filepicker;1'].createInstance(nsIFilePicker);
+                FP.init(window, 'Choose save folder.', nsIFilePicker.modeGetFolder);
+
+                // ダイアログ表示
+                if (FP.show() == nsIFilePicker.returnOK) {
+                    path = FP.file.path;
+                } else {
+                    return false;
+                }
+            }
+            // ダウンロードしたページを表示するために URI オブジェクト生成
+            var hostURL = Components.classes['@mozilla.org/network/io-service;1'].getService(Components.interfaces.nsIIOService).newURI(location.href, null, null);
+            // ページに貼り付けられた画像を保存する
+            var links = content.document.images;
+            var pack = [];
+            for (var i = 0, length = links.length; i < length; i++) {
+                // JPEG と PNG を保存する
+                if (links[i].src.match(/\.jpe?g|\.png|img\.blogs\.yahoo(.*)folder[^thumb]/i)) {
+                    pack.push([links[i].src.split("/").pop(), links[i].src]);
+                }
+            }
+            zipDeKure(pack, path);
+
+
+            function zipDeKure(urls, savePath) {
+                const ioService = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
+                const zipWriter = Components.Constructor("@mozilla.org/zipwriter;1", "nsIZipWriter");
+                var uri = content.window.location.href;
+                var fileName = uri.substring(uri.lastIndexOf('://') + 3, uri.length);
+                fileName = fileName.split(".").join("_");
+                fileName = fileName.split("/").join("_");
+                fileName = fileName.split("?").join("_");
+                var path = savePath + "\\" + fileName + ".zip";
+                var file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
+                file.initWithPath(path);
+                var zipW = new zipWriter();
+                var ioFlag = 0x04 | 0x08 | 0x20;
+                zipW.open(file, ioFlag);
+                for (var i = 0, len = urls.length; i < len; i++) {
+                    var [name, url] = urls[i];
+                    var ch = ioService.newChannel(url, "UTF-8", null);
+                    var stream = ch.open();
+                    zipW.addEntryStream(name, Date.now() * 1000, Ci.nsIZipWriter.COMPRESS_DEFAULT, stream, false);
+                }
+                zipW.close();
+            }
+        },
+        image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABBElEQVQ4jdWSsWqEQBBAbcRKC4VlBf8gfUr/w1oQBLuABNlUNkE2LCJqJQe6CZFUqXIfkINwCP6B2ITbI22uCCkmnVwCB9pdHrxqmMcUI0lnAef8uWmazVw55xvGWDEF6rreO44DS6yqajsFsizb2bYNS2SMvU2BMAzfZVkGVVVB13VACAHGGEzTBNM0AWMMCCEwDAM0TQNFUSCKotdfAUmSYIlnFnhZrz/SNP3MsmyWRVEc2rbdHl1wnSRJsqKUTpZl+dT3/b7rul2e54/HM0rpyvO8q5OPFcdxMY7jtxAChBAwDMNXEAQ3Jxf+YlnWpe/7d4SQB0LIveu6txjji9mB/8UPojsDPwcvqoEAAAAASUVORK5CYII="
+    })
 
 示例：左键用傲游打开当前页，右键直接打开傲游，相对路径（上上层 parent）。
 

@@ -77,7 +77,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     text        复制你想要的字符串到剪贴板，可与 keyword, exec 一起使用
     url         打开你想要的网址
     where       打开的位置 (current, tab, tabshifted, window)
-    condition   菜单出现的条件 (select, link, mailto, image, media, input, frame, noselect, nolink, nomailto, noimage, nomedia, noinput)
+    condition   菜单出现的条件 (select, link, mailto, image, media, input, noselect, nolink, nomailto, noimage, nomedia, noinput)
     oncommand   自定义命令
     command     命令的 id
     onclick     点击的函数
@@ -452,16 +452,6 @@ pagesub([
     }
 ])
 ```
-
-示例：在新标签页中打开框架。
-
-    page({
-        label: '在新标签页中打开框架',
-        accesskey: 'T',
-        condition: 'frame',
-        insertAfter: 'frame',
-        oncommand: 'gContextMenu.openFrameInTab();'
-    })
 
 示例：菜单出现的条件，排除了链接、图片、输入框、选择等多个条件
 

@@ -243,8 +243,6 @@ window.addMenu = {
                     state.push("image");
                 if (gContextMenu.onVideo || gContextMenu.onAudio)
                     state.push("media");
-                if (gContextMenu.inFrame)
-                    state.push('frame');
                 event.currentTarget.setAttribute("addMenu", state.join(" "));
                 break;
         }
@@ -1043,7 +1041,6 @@ function getShortcutOrURI(aURL, aPostDataRef, aMayInheritPrincipal) {
 #contentAreaContextMenu:not([addMenu~="canvas"])  .addMenu[condition~="canvas"],\
 #contentAreaContextMenu:not([addMenu~="media"])  .addMenu[condition~="media"],\
 #contentAreaContextMenu:not([addMenu~="input"])  .addMenu[condition~="input"],\
-#contentAreaContextMenu:not([addMenu~="frame"])  .addMenu[condition~="frame"],\
 #contentAreaContextMenu[addMenu~="select"] .addMenu[condition~="noselect"],\
 #contentAreaContextMenu[addMenu~="link"]   .addMenu[condition~="nolink"],\
 #contentAreaContextMenu[addMenu~="mailto"] .addMenu[condition~="nomailto"],\
@@ -1051,7 +1048,6 @@ function getShortcutOrURI(aURL, aPostDataRef, aMayInheritPrincipal) {
 #contentAreaContextMenu[addMenu~="canvas"]  .addMenu[condition~="nocanvas"],\
 #contentAreaContextMenu[addMenu~="media"]  .addMenu[condition~="nomedia"],\
 #contentAreaContextMenu[addMenu~="input"]  .addMenu[condition~="noinput"],\
-#contentAreaContextMenu[addMenu~="frame"]  .addMenu[condition~="noframe"],\
 #contentAreaContextMenu:not([addMenu=""])  .addMenu[condition~="normal"]\
   { display: none; }\
 \

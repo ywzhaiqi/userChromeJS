@@ -5,7 +5,7 @@
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
-// @version        2014.06.04
+// @version        2014.07.20
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/ExternalVideoPlayer
 // @reviewURL      http://bbs.kafan.cn/thread-1587228-1-1.html
 // @note           youku、悦台、网易视频、优米等调用外部播放器播放。土豆、奇艺等不支持外部播放的新页面打开 flvcd 网址。
@@ -49,7 +49,7 @@
         "http://www.iqiyi.com/"
     ];
 
-    var HOST_REGEXP = /www\.soku\.com|youku|yinyuetai|ku6|umiwi|sina|163|56|joy|v\.qq|letv|(tieba|mv|zhangmen)\.baidu|wasu|pps|kankan|funshion|tangdou|acfun\.tv|www\.bilibili\.tv|v\.ifeng\.com|cntv\.cn/i;
+    var HOST_REGEXP = /www\.soku\.com|youku|yinyuetai|ku6|umiwi|sina|v\.163\.com|56|joy|v\.qq|letv|(mv|zhangmen)\.baidu|wasu|pps|kankan|funshion|tangdou|acfun\.tv|www\.bilibili\.tv|v\.ifeng\.com|cntv\.cn/i;
 
 
     let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
@@ -277,7 +277,8 @@
             this._canPlay = true;
             this.execOnceURL = null;
 
-            var hostname = content.location.hostname;
+            var hostname = content.location.hostname,
+                locationHref = content.location.href;
 
             if(gContextMenu.onLink){
                 if(hostname == "www.flvcd.com" || this.LINK_SHOW_REGEXP.test(gContextMenu.linkURL)){
@@ -649,40 +650,39 @@
             var self = this;
             var fileExt = this.getVideoExt(downInfo[0].url);
 
-            // // cmd 会去掉 url 中的 %2 从而造成 url 不正确，不知道怎么回事
+            // // 使用 bat 的方式，会被去掉 url 中的 %2 从而造成 url 不正确，不知道怎么回事
             // var data = "";
             // downInfo.forEach(function(info, i){
             //     info.name = info.title + fileExt;
             // });
             // this.runScript(downInfo, IDM_PATH, ['/a /d [URL] /f [NAME]', 'gbk']);
 
-            // 如果 IDM 没启动则会造成 ff 死住，故采用下面的不完美的方式
-            var run  = function(i) {
+            var exeFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile),
+                process = Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
+
+            exeFile.initWithPath(IDM_PATH);
+            if (!exeFile.exists()) return;
+
+            process.init(exeFile);
+
+            var run = function (i) {
                 var info = downInfo[i];
-                if (!info) {
-                    // 再次运行，激活到前台
+                if (!info) {  // 再次运行，激活到前台
                     if(typeof(activite) == "undefined" || activite){
-                        self.runNative(IDM_PATH, []);
+                        return process.run(false, [], 0);
                     }
-                    return;
                 }
 
                 var fileName = Util.safeTitle(info.title) + fileExt;
-                self.runNative(IDM_PATH, ["/a", "/d", info.url, "/f", fileName]);
-
-                setTimeout(function(){
-                    i += 1;
-                    run(i);
-                }, 200);
+                var args = ["/a", "/d", info.url, "/f", fileName];
+                process.runwAsync(args, args.length, {
+                    observe: function(subject, topic, data) {
+                        run(++i);
+                    }
+                });
             };
 
             run(0);
-
-            // 如果 IDM 没启动则会造成 ff 死住
-            // downInfo.forEach(function(info, i){
-            //     var fileName = Util.safeTitle(info.title) + fileExt;
-            //     self.runNative(IDM_PATH, ["/a", "/d", info.url, "/f", fileName], true);
-            // });
         },
         download_aria2: function(filelist){
 
@@ -690,7 +690,7 @@
 
         // 以下几个函数来自 xthunder 扩展的 xThunderService.js 文件，已做修改。
         detectOS : function() {
-            // "WINNT" on Windows Vista, XP, 2000, and NT systems; "Linux" on GNU/Linux; and "Darwin" on Mac OS X. 
+            // "WINNT" on Windows Vista, XP, 2000, and NT systems; "Linux" on GNU/Linux; and "Darwin" on Mac OS X.
             // Returns UpperCase string
             if (!this.osString) {
                 this.osString = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime).OS.toUpperCase();

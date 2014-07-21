@@ -1,7 +1,9 @@
 userChromeJS for Firefox
 ========================
 
-修改、原创、自用的uc脚本。注： **以下uc脚本可能包含个人使用习惯**
+修改、原创、自用的uc脚本。
+
+注： **以下uc脚本可能包含个人使用习惯，个人只在正式版测试，使用 nightly 版可能问题。**
 
 资源地址
 --------
@@ -58,6 +60,7 @@ userChromeJS for Firefox
  - [uSuper_preloader](uSuper_preloader)，基于 Super_preloader GM脚本修改而来。
  - [viewSourceModoki](viewSourceModoki)，右键菜单增加 `View Source With: All、Document、css、js`。
  - [WordHighlightToolbarFix](WordHighlightToolbarFix)，搜索高亮（修改版）。
+ - [YoukuantiadsModY](YoukuantiadsModY)，视频去广告去黑屏（修改增强版）。
 
 ### 单文件
 
@@ -71,8 +74,10 @@ userChromeJS for Firefox
  - [ExportHTMLFolderMod.uc.xul](ExportHTMLFolderMod.uc.xul)，书签右键 `导出到HTML`（修改版）。
  - [findScriptForGreaemonkeyOrScriptish.uc.js](findScriptForGreaemonkeyOrScriptish.uc.js)，为 Greasemonkey 或 Scriptish 扩展增加 "为本站搜索脚本" 功能。
  - [fixViewSourceEditArgsForST.uc.js](fixViewSourceEditArgsForST.uc.js)
-    - 自带的 `view_source.editor.args` 由于顺序问题无法传递"行"参数给 sublime text
-    - 使用本脚本修正后，设置 `view_source.editor.args` 为 `%file:%line` 即可用 sublime text 打开并定位到某一行
+    - 自带的 `view_source.editor.args` 由于顺序问题无法传递 "行" 参数给 sublime text
+    - 使用本脚本修正后，设置 `view_source.editor.args` 为 `%file:%line` 即可用 sublime text 打开并定位到某一行，如图所示
+    - ![fixViewSourceEditArgsForST.png](fixViewSourceEditArgsForST.png)
+    - 更多说明或其它编辑器请看 [addmenuPlus 的编辑器设置](https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus#%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E5%8F%8A%E6%8A%80%E5%B7%A7)
  - [IME-Colors.uc.js](IME-Colors.uc.js)，输入框聚焦时变色。
  - [JSCSS_Highlight.uc.js](JSCSS_Highlight.uc.js)，在浏览器中打开的 js、css、ahk 代码着色。
  - [JSOff.uc.xul](JSOff.uc.xul)，js开关，图标在状态栏。

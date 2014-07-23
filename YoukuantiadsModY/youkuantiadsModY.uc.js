@@ -6,7 +6,8 @@
 // @author          ywzhaiqi && harv.c（原作者）
 // @homepage        http://haoutil.tk
 // @version         1.6.0.26
-// @update          2014.7.21
+// @update          2014.7.23
+// @homePageURL     https://github.com/ywzhaiqi/userChromeJS/tree/master/YoukuantiadsModY
 // @updateURL       https://j.mozest.com/ucscript/script/92.meta.js
 // @downloadURL     https://j.mozest.com/zh-CN/ucscript/script/92.uc.js
 // @note            2014-7-21 新增下载播放器、自动更新等功能。
@@ -18,8 +19,21 @@
         脚本地址：http://bbs.kafan.cn/thread-1509944-1-1.html
         绿色播放器主页：https://g.mozest.com/thread-43519-1-1
      */
-    
+
+    var enalbe_localPlayer = true; // 是否启用本地播放器
+    var SWF_DIR = 'swf';            // 本地播放器路径，chrome 目录下
+    // var SWF_DIR = 'local\\swf';
+
     var XHR_TIMEOUT = 30 * 1000;
+
+    var updateStates = {
+        noUpdate: '无更新',
+        urlNotExists: '链接错误或不存在',
+        xhrError: '请求出错',
+        xhrTimeout: '请求超时'
+    };
+
+    var debug = false ? window.console && console.log.bind(console) : function() {};
 
     Cu.import("resource://gre/modules/FileUtils.jsm")
     Cu.import("resource://gre/modules/NetUtil.jsm");
@@ -37,12 +51,13 @@
                     QueryInterface(Ci.nsIFileProtocolHandler).
                     getURLSpecFromFile;
 
+
     // YoukuAntiADs, request observer
     function YoukuAntiADs() {};
     YoukuAntiADs.prototype = {
         SITES: {
             'youku_loader': {
-                enable: true,
+                // enable: true,
                 'player': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/loader.swf',
                 're': /http:\/\/static\.youku\.com(\/v[\d\.]+)?\/v\/swf\/loaders?\.swf/i
             },
@@ -101,14 +116,19 @@
                 're': /http:\/\/www\.iqiyi\.com\/player\/cupid\/.*\/pps[\w]+.swf/i
             },
             // http://bbs.kafan.cn/thread-1725172-1-1.html
+            // github 无法正常检查更新，每次都会下载
             '17173':{
-                'player': 'https://github.com/ywzhaiqi/userChromeJS/raw/master/YoukuantiadsModY/swf/17173_Player_file.swf',
+                'player': 'https://raw.githubusercontent.com/ywzhaiqi/userChromeJS/master/YoukuantiadsModY/swf/17173_Player_file.swf',
                 're': /http:\/\/f\.v\.17173cdn\.com\/(\d+)\/flash\/Player_file\.swf/i
             },
             '17173_Live':{
-                'player': 'https://github.com/ywzhaiqi/userChromeJS/raw/master/YoukuantiadsModY/swf/17173_Player_stream.swf',
+                'player': 'https://raw.githubusercontent.com/ywzhaiqi/userChromeJS/master/YoukuantiadsModY/swf/17173_Player_stream.swf',
                 're': /http:\/\/f\.v\.17173cdn\.com\/(\d+)\/flash\/Player_stream\.swf/i
-            }
+            },
+            '17173_out': {
+                'player': 'https://raw.githubusercontent.com/ywzhaiqi/userChromeJS/master/YoukuantiadsModY/swf/17173_Player_file_out.swf',
+                're': /http:\/\/f\.v\.17173cdn\.com\/flash\/Player_file_out\.swf/i
+            },
         },
         os: Cc['@mozilla.org/observer-service;1']
                 .getService(Ci.nsIObserverService),
@@ -279,18 +299,108 @@
         }
     };
 
-    var mYoukuAntiADs = {
+    window.mYoukuAntiADs = {
+        enable: true,
+
+        get prefs() {
+            delete this.prefs;
+            return this.prefs = Services.prefs.getBranch("userChromeJS.YoukuAntiADs.");
+        },
+
         init: function(y) {
+            if (!enalbe_localPlayer) return;
+
             this.y = y;
 
-            // 如果不存在，自动创建
-            this.swfDir = FileUtils.getDir('UChrm', ['swf'], true);
+            this.swfDir = this.getSwfDir();
 
             this.addMenuItem();
 
-            var existPlayerSize = this.setLocalSwf(y.SITES);
-            if (existPlayerSize === 0) {
-                this.updateSiteInfo();
+            this.replaceLocalUrl();
+
+            // this.initPrefs();
+            // this.prefs.addObserver('', this, false);
+
+            // if (!this.prefs.prefHasUserValue('enable')) {
+            //     this.openPrefs();
+            // } else {
+            //     if (this.prefs.getBoolPref('localPlayer.enable')) {
+            //         this.replaceLocalUrl();
+            //     }
+            // }
+        },
+        uninit: function() {
+            ['youkuAntiADsMod'].forEach(function(id){
+                var node = document.getElementById(id);
+                if (node) node.parentNode.removeChild(node);
+            });
+
+            // this.prefs.revemoObserver('', this, false);
+        },
+        initPrefs: function() {  // 未完成
+            var defPrefs = [
+                ['enable', true],
+                ['localPlayer.enable', true],
+                // ['swfDir', '']
+            ];
+
+            defPrefs.forEach(function(item){
+                if (!this.prefs.prefHasUserValue(item[0])) {
+                    switch(typeof(item[1])) {
+                        case 'boolean':
+                            this.prefs.setBoolPref(item[0], item[1]);
+                            break;
+                        case 'string':
+                            break;
+                    }
+                }
+            });
+        },
+        observer: function(subject, topic, data) { // 未完成
+            if (topic == 'nsPref:changed') {
+                switch(data) {
+                    case 'enable':
+                        this.enable = !! this.prefs.getBoolPref('enable');
+                        break;
+                    case 'localPlayer.enable':
+                        // if (enable) {
+                        //     this.replaceLocalUrl();
+                        // } else {
+
+                        // }
+                        break;
+                    case 'swfDir':
+                        this.swfDir = this.getSwfDir();
+                        break;
+                }
+            }
+        },
+        getSwfDir: function (change) {
+            if(!change){
+                var aFolder;
+                try {
+                    aFolder = this.prefs.getComplexValue("swfDir", Ci.nsILocalFile);
+                } catch (e) {}
+
+                if (aFolder && aFolder.exists() && aFolder.isDirectory()) {}
+                else {
+                    aFolder = FileUtils.getDir('UChrm', SWF_DIR.replace(/\//g, '\\').split('\\'), true);
+                }
+
+                return aFolder;
+            }
+
+            var nsIFilePicker = Ci.nsIFilePicker;
+            var fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+            fp.init(window, '请选择播放器存放的文件夹', nsIFilePicker.modeGetFolder);
+            fp.displayDirectory = FileUtils.getDir('ProfD', ['']);
+
+            if (fp.show() != nsIFilePicker.returnOK)
+                return null;
+
+            if (fp.file.exists() && fp.file.isDirectory()) {
+                this.prefs.setComplexValue("swfDir", Ci.nsILocalFile, fp.file);
+                return fp.file;
             }
         },
         addMenuItem: function() {
@@ -304,9 +414,20 @@
             menuitem.addEventListener('command', function(){
                 self.updateSiteInfo()
             }, false);
+            // menuitem.addEventListener('click', function(event){
+            //     if (event.button == 2) {
+            //         self.openPrefs();
+            //     }
+            // }, false);
 
             var ins = document.getElementById("devToolsSeparator");
             ins.parentNode.insertBefore(menuitem, ins);
+        },
+        replaceLocalUrl: function() {
+            var existPlayerSize = this.setLocalSwf(this.y.SITES);
+            if (existPlayerSize === 0) {
+                this.updateSiteInfo();
+            }
         },
 
         /**
@@ -325,20 +446,28 @@
                 }
             }
 
+            var replaceSiteUrl = function(url, name, site) {
+                let filename = getFileNameFromUrl(url);
+                if (filename in swfPaths) {
+                    if (name.startsWith('_')) {
+                        site[name.replace(/^_/, '')] = swfPaths[filename];
+                    } else {  // 先备份
+                        site['_' + name] = site[name];
+                        site[name] = swfPaths[filename];
+                    }
+                }
+            };
+
             // 替换地址，因为 iqiyi 有 3个：player0、player1、player2
             for(let [siteName, site] in Iterator(SITES)) {
                 for (let [name, url] in Iterator(site)) {
                     if (typeof url === 'string' && url.startsWith('http')) {
-                        let filename = getFileNameFromUrl(url);
-                        if (filename in swfPaths) {
-                            // 先备份
-                            site['_' + name] = site[name];
-                            site[name] = swfPaths[filename];
-                            // console.log('成功替换 ' + filename + ' 为 ' + swfPaths[filename]);
-                        }
+                        replaceSiteUrl(url, name, site);
                     }
                 }
             }
+
+            debug('成功替换播放器', SITES);
 
             return Object.keys(swfPaths).length;
         },
@@ -350,17 +479,16 @@
                 for (let [prop, value] in Iterator(info)) {
                     if (typeof value === 'string' && value.startsWith('http')) {
                         this.updateSize += 1;
+
+                        // 备份
+                        if (!prop.startsWith('_')) {
+                            info['_' + prop] = info[prop];
+                        }
                         // 去掉前面的 _
                         this._updateOneInfo(info, prop.replace(/^_/, ''), value);
                     }
                 }
             }
-        },
-
-        _updateStates: {
-            noUpdate: '无更新',
-            xhrError: '请求出错',
-            xhrTimeout: '请求超时'
         },
         _updateOneInfo: function(info, prop, value) {
             var self = this;
@@ -372,17 +500,60 @@
                     info[prop] = getURLSpecFromFile(aFile);
                     self.updateMsgs.push('成功下载并替换 ' + aFile.leafName + ' 为 ' + info[prop])
                 } else {
-                    var msg = self._updateStates[state] || '无输出信息';
+                    var msg = updateStates[state] || state;
                     self.updateMsgs.push(url + ' <b>' + msg + '</b>');
                 }
 
                 if (self.updateMsgs.length == self.updateSize) {
                     self.showUpdateMsg(self.updateMsgs.join('<br>'));
+                    debug(self.y.SITES);
                 }
             });
         },
         showUpdateMsg: function(html) {
             openLinkIn('data:text/html;charset=utf-8,' + encodeURIComponent(html), 'tabshifted', {});
+        },
+        openPrefs: function() {
+            let xul = '<?xml version="1.0"?>\
+                <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>\
+                \
+                <prefwindow\
+                    xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"\
+                    id="YoukuAntiADs"\
+                    windowtype="YoukuAntiADs:Preferences">\
+                    <prefpane id="main" flex="1">\
+                        <preferences>\
+                            <preference id="enable" type="bool" name="userChromeJS.YoukuAntiADs.enable"/>\
+                            <preference id="localPlayereEnable" type="bool" name="userChromeJS.YoukuAntiADs.localPlayer.enable"/>\
+                            <preference id="swfDir" type="string" name="userChromeJS.YoukuAntiADs.swfDir"/>\
+                        </preferences>\
+                        <checkbox label="是否启用" preferences="enable" />\
+                        <checkbox label="是否启用本地播放器" preferences="localPlayereEnable" />\
+                         <groupbox>\
+                            <caption label="本地播放器的路径"/>\
+                                 <hbox>\
+                                   <textbox id="textbox_path" flex="1" preference="swfDir"/>\
+                                   <button id="choosePath" label="浏览" oncommand="YoukuAntiADsConfig.pickPath()" width="90"/>\
+                                 </hbox>\
+                        </groupbox>\
+                    </prefpane>\
+                    <script>\
+                        var YoukuAntiADsConfig = {\
+                            mainWin: Components.classes["@mozilla.org/appshell/window-mediator;1"].getService(Components.interfaces.nsIWindowMediator).getMostRecentWindow("navigator:browser"),\
+                            pickPath: function() {\
+                                var aFolder = this.mainWin.getSwfDir(true);\
+                                if (aFolder) {\
+                                    document.getElementById("textbox_path").value = aFolder.path;\
+                                }\
+                            }\
+                        };\
+                    </script>\
+                </prefwindow>\
+                ';
+
+            window.openDialog(
+                "data:application/vnd.mozilla.xul+xml;charset=UTF-8," + encodeURIComponent(xul), '',
+                'chrome,titlebar,toolbar,centerscreen,dialog=no');
         }
     };
 
@@ -396,6 +567,7 @@
             delete this.player;
             return this.player = file;
         },
+
         init: function(url, swfDir) {
             this.url = url;
             this.uri = NetUtil.newURI(url);
@@ -416,32 +588,34 @@
             var xhr = Instances.xhr;
             xhr.open('HEAD', this.url, true);
             xhr.onload = function() {
+                if (xhr.status != 200) {
+                    callback(null, updateStates.urlNotExists)
+                    return;
+                }
                 var modifiedTime = xhr.getResponseHeader("Last-Modified");
+                // 可能存在 null 的情况
                 modifiedTime = new Date(modifiedTime).getTime();
                 if (modifiedTime > aFile.lastModifiedTime) {
                     self.startDownload(callback)
                 } else {
-                    callback(null, 'noUpdate')
+                    callback(null, updateStates.noUpdate)
                 }
             };
             xhr.onerror = function() {
-                callback(null, 'xhrError')
+                callback(null, updateStates.xhrError)
             };
             xhr.timeout = XHR_TIMEOUT;
             xhr.ontimeout = function(event) {
-                callback(null, 'xhrTimeout')
+                callback(null, updateStates.xhrTimeout)
             };
             xhr.send(null);
         },
         startDownload: function(callback) {
-            var targetFile = this.swfDir.clone();
-            targetFile.append(this.filename);
+            var targetFile = this.player;
 
             var persist = Instances.wbp;
-
             persist.persistFlags = persist.PERSIST_FLAGS_FROM_CACHE
                                  | persist.PERSIST_FLAGS_REPLACE_EXISTING_FILES;
-
             persist.progressListener = {
                 onProgressChange: function(progress, request, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress) {},
                 onStateChange: function(progress, request, flags, status) {

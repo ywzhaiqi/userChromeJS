@@ -37,7 +37,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
  - 菜单栏的 "工具" 菜单中有个 "addMenu 的重新载入和编辑" 菜单，左键点击重新载入配置，右键打开文件编辑（需要首先设置 about:config 中 view_source.editor.path 编辑器的路径）
  - ID 为 `addMenu-rebuild`，可添加到 rebuild_userChrome.uc.xul 统一进行管理
  - 配置载入出错的提示，点击可定位到某一行。需要首先设置 `view_source.editor.args`，Sublime text 的问题见主页的 `fixViewSourceEditArgsForST.uc.js`
- - `view_source.editor.args` 会替换 `%LINE%` 为 `行`。编辑器参数参考 Firebug
+ - `view_source.editor.args` 会替换 `%LINE%` 为 `行`。编辑器参数可参考 Firebug，注意大小写。
 
  ![编辑器参数.png](编辑器参数.png)
 
@@ -815,6 +815,37 @@ pagesub([
 	        }
 	    }
 	})
+
+示例：Firefox 31+ 右键横排菜单。
+
+![openIE_menuitem_fx31+.png](openIE_menuitem_fx31+.png)
+
+    var openMenu = PageMenu({ _type: 'group', id: "addMenu-openInIE", label: '打开此页面...', condition: 'normal', insertBefore: 'context-sep-navigation'});
+    openMenu([
+        { _type: 'spacer', width: 30 },
+        {
+            label: "在 TWC 中打开此页",
+            accesskey: "T",
+            text: "%u",
+            exec: "D:\\Program Files\\TheWorld6\\Application\\TheWorld.exe",
+        },
+        {
+            label: "在 IE 中打开此页",
+            accesskey: "I",
+            text: "%u",
+            exec: "C:\\Program Files\\Internet Explorer\\iexplore.exe",
+        },
+        {
+            label: "在 Chrome 中打开此页",
+            accesskey: "C",
+            exec: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        },
+        {
+            label: "启动 Opera",
+            text : "%u",
+            exec : "D:\\Program Files\\Opera\\opera.exe",
+        },
+    ]);
 
 示例：子菜单中的 测试视频链接 只在 youku 页面显示，其它页面隐藏。
 

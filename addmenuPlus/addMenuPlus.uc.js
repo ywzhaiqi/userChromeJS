@@ -7,7 +7,7 @@
 // @license        MIT License
 // @compatibility  Firefox 21
 // @charset        UTF-8
-// @version        2014.7.17
+// @version        2014.7.26
 // version         0.0.8
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
@@ -415,8 +415,10 @@ window.addMenu = {
         if (isAlert) this.alert(U("配置已经重新载入"));
     },
     newMenu: function(menuObj) {
-        var menu = document.createElement("menu");
-        var popup = menu.appendChild(document.createElement("menupopup"));
+        var isMenuGroup = (menuObj._type == 'group');
+        var type = isMenuGroup ? 'menugroup' : 'menu';
+        var menu = document.createElement(type);
+        var popup = isMenuGroup ? menu : menu.appendChild(document.createElement("menupopup"));
         for (let [key, val] in Iterator(menuObj)) {
             if (key === "_items") continue;
             if (typeof val == "function")
@@ -432,7 +434,7 @@ window.addMenu = {
             this.setCondition(menu, menuObj.condition);
 
         menuObj._items.forEach(function(obj) {
-            popup.appendChild(this.newMenuitem(obj));
+            popup.appendChild(this.newMenuitem(obj, isMenuGroup));
         }, this);
 
         // menu に label が無い場合、最初の menuitem の label 等を持ってくる
@@ -462,10 +464,13 @@ window.addMenu = {
         }
         return menu;
     },
-    newMenuitem: function(obj) {
+    newMenuitem: function(obj, isMenuGroup) {
         var menuitem;
         // label == separator か必要なプロパティが足りない場合は区切りとみなす
-        if (obj.label === "separator" ||
+        var isSpacer = obj._type === 'spacer';
+        if (isSpacer) {
+            menuitem = document.createElement("spacer");
+        } else if (obj.label === "separator" ||
             (!obj.label && !obj.text && !obj.keyword && !obj.url && !obj.oncommand && !obj.command)) {
             menuitem = document.createElement("menuseparator");
         } else if (obj.oncommand || obj.command) {
@@ -496,7 +501,7 @@ window.addMenu = {
             if (obj.where && /\b(tab|tabshifted|window|current)\b/i.test(obj.where))
                 obj.where = RegExp.$1.toLowerCase();
 
-            if (obj.where && !("acceltext" in obj))
+            if (obj.where && !("acceltext" in obj) && !isMenuGroup)
                 obj.acceltext = obj.where;
 
             if (!obj.condition && (obj.url || obj.text)) {
@@ -519,6 +524,7 @@ window.addMenu = {
         // obj を属性にする
         for (let [key, val] in Iterator(obj)) {
             if (key === "command") continue;
+            if (key === "_type") continue;
             if (typeof val == "function")
                 obj[key] = val = "(" + val.toSource() + ").call(this, event);";
             menuitem.setAttribute(key, val);
@@ -526,14 +532,15 @@ window.addMenu = {
 
         var cls = menuitem.classList;
         cls.add("addMenu");
-        cls.add("menuitem-iconic");
+        if (!isSpacer)
+            cls.add("menuitem-iconic");
 
         // 表示 / 非表示の設定
         if (obj.condition)
             this.setCondition(menuitem, obj.condition);
 
         // separator はここで終了
-        if (menuitem.localName == "menuseparator")
+        if (menuitem.localName == "menuseparator" || menuitem.localName == "spacer")
             return menuitem;
 
         if (!obj.onclick)
@@ -547,6 +554,12 @@ window.addMenu = {
 
         // 可能ならばアイコンを付ける
         this.setIcon(menuitem, obj);
+
+        if (isMenuGroup && menuitem.getAttribute("label")) {
+            menuitem.setAttribute('aria-label', menuitem.getAttribute("label"));
+            menuitem.setAttribute('tooltiptext', menuitem.getAttribute("label"));
+            menuitem.removeAttribute('label');
+        }
 
         return menuitem;
     },
@@ -1078,4 +1091,6 @@ menuitem.addMenu[text]:not([url]):not([keyword]):not([exec])\
 .addMenu > .menu-iconic-left {\
   -moz-appearance: menuimage;\
 }\
+menugroup.addMenu > .menuitem-iconic { max-width: 10px; }\
+menugroup.addMenu { margin: 5px 0; }\
 ');

@@ -139,15 +139,25 @@ window.addMenu = {
         return this.prefs = Services.prefs.getBranch("addMenu.")
     },
     get FILE() {
-        let aFile;
+        let aFile, path;
+        let defPath = '\\_addmenu.js';
         try {
             // addMenu.FILE_PATH があればそれを使う
             aFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile)
-            aFile.initWithPath(this.prefs.getCharPref("FILE_PATH"));
+            path = this.prefs.getCharPref("FILE_PATH")
         } catch (e) {
-            aFile = Services.dirsvc.get("UChrm", Ci.nsILocalFile);
-            aFile.appendRelativePath("_addmenu.js");
+            this.prefs.setCharPref("FILE_PATH", defPath);
         }
+
+        if (!path) path = defPath;
+
+        if (path.indexOf('\\') === 0) {
+            aFile = Services.dirsvc.get("UChrm", Ci.nsILocalFile);
+            aFile.appendRelativePath(path.substr(1, path.length));
+        } else {
+            aFile.initWithPath(path);
+        }
+
         delete this.FILE;
         return this.FILE = aFile;
     },
@@ -540,7 +550,7 @@ window.addMenu = {
             this.setCondition(menuitem, obj.condition);
 
         // separator はここで終了
-        if (menuitem.localName == "menuseparator" || menuitem.localName == "spacer")
+        if (menuitem.localName == "menuseparator" || isSpacer)
             return menuitem;
 
         if (!obj.onclick)
@@ -1092,5 +1102,6 @@ menuitem.addMenu[text]:not([url]):not([keyword]):not([exec])\
   -moz-appearance: menuimage;\
 }\
 menugroup.addMenu > .menuitem-iconic { max-width: 10px; }\
-menugroup.addMenu { margin: 5px 0; }\
+menugroup.addMenu { margin: 2px 0 5px 0; }\
+menugroup.addMenu .menu-iconic-icon { margin-left:2px; }\
 ');

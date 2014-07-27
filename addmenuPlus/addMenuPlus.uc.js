@@ -140,23 +140,21 @@ window.addMenu = {
     },
     get FILE() {
         let aFile, path;
-        let defPath = '\\_addmenu.js';
         try {
             // addMenu.FILE_PATH があればそれを使う
-            aFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile)
             path = this.prefs.getCharPref("FILE_PATH")
         } catch (e) {
-            // this.prefs.setCharPref("FILE_PATH", defPath);
+            path = '_addmenu.js';
         }
 
-        if (!path) path = defPath;
+        aFile = Services.dirsvc.get("UChrm", Ci.nsILocalFile);
+        aFile.appendRelativePath(path);
 
-        if (path.indexOf('\\') === 0) {
-            aFile = Services.dirsvc.get("UChrm", Ci.nsILocalFile);
-            aFile.appendRelativePath(path.substr(1, path.length));
-        } else {
-            aFile.initWithPath(path);
-        }
+        // initWidPath 相对路径会错误
+        // if (!aFile.exists()) {
+        //     aFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile)
+        //     aFile.initWithPath(path);
+        // }
 
         delete this.FILE;
         return this.FILE = aFile;
@@ -558,7 +556,8 @@ window.addMenu = {
 
         if (isMenuGroup && menuitem.getAttribute("label")) {
             menuitem.setAttribute('aria-label', menuitem.getAttribute("label"));
-            menuitem.setAttribute('tooltiptext', menuitem.getAttribute("label"));
+            if (!menuitem.hasAttribute('tooltiptext'))
+                menuitem.setAttribute('tooltiptext', menuitem.getAttribute("label"));
             menuitem.removeAttribute('label');
         }
 

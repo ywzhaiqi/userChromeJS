@@ -254,7 +254,7 @@ window.siteinfo_writer = {
         // 设置总规则数量
         if (window.uAutoPagerize) {
             var list = uAutoPagerize.MY_SITEINFO.concat(uAutoPagerize.SITEINFO_CN).concat(uAutoPagerize.SITEINFO);
-            $('sw-curpage-info').setAttribute('tooltiptext', '共有 ' + list.length + 
+            $('sw-curpage-info').setAttribute('tooltiptext', '共有 ' + list.length +
                     ' 个规则。其中中文规则 ' + uAutoPagerize.SITEINFO_CN.length + ' 个，原版JSON规则 ' +
                     uAutoPagerize.SITEINFO.length + ' 个。');
         }
@@ -551,7 +551,8 @@ window.siteinfo_writer = {
 		if (index === 0) {
 			if (content.AutoPagerize && content.AutoPagerize.launchAutoPager)
 				content.AutoPagerize.launchAutoPager([i]);
-			else alert("翻页规则语法正确，但uAutoPagerize无法执行，可能uAutoPagerize被禁用或没有安装脚本");
+            else
+                alert("翻页规则语法正确，但uAutoPagerize无法执行，可能uAutoPagerize被禁用或没有安装脚本");
 		} else {
                 alert("有错误发生，请分别检查 url、nextLink、pageElement 是否正确");
 		}
@@ -570,7 +571,7 @@ window.siteinfo_writer = {
 					let menuitem = document.createElement("menuitem");
 					menuitem.setAttribute("label", x);
 					menuitem.setAttribute("oncommand", "siteinfo_writer['"+ aType +"'].value = this.getAttribute('label');" +
-                        "xpathTools.xpathTest('"+ aType +"');");
+                        "siteinfo_writer.xpathTest('"+ aType +"');");
 					self.popup.appendChild(menuitem);
 				}
 				self.popup.openPopup(self.container, "before_start");
@@ -915,12 +916,12 @@ const XPathKeywordsList = [
 
     // "and", "or","div", "mod",
 
-    "child::", "parent::", 
+    "child::", "parent::",
     "descendant::", "ancestor::",
     "descendant-or-self::", "ancestor-or-self::",
     "preceding-sibling::", "following-sibling::",
-    "preceding::", "following::", 
-    "preceding-or-self::", "following-or-self::", 
+    "preceding::", "following::",
+    "preceding-or-self::", "following-or-self::",
     "self::", "attribute::",
 ];
 
@@ -944,7 +945,7 @@ function XPathAutoCompleter(textBox){
     this.panel = document.getElementById("sw-autocompletePanel");
     this.list = document.getElementById("sw-autocompleteList");
     this.popupMeasurer = document.getElementById('sw-measurer');
-    
+
     this.list.addEventListener("click", this.autocompletePanelPress.bind(this), false);
     this.list.addEventListener("keypress", this.autocompletePanelPress.bind(this), false);
     this.list.addEventListener("popupshown", this.autocompletePanelOpen.bind(this), false);

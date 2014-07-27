@@ -20,11 +20,6 @@
  - [Redirector.uc.js 外置规则版](Redirector.uc.js)，修改为可移动按钮。
     - [原版卡饭链接](http://www.kafan.cn/forum.php?mod=viewthread&tid=1621837)
     - [原版 mozest.com 链接](http://j.mozest.com/zh-CN/ucscript/script/112/)
+ - [smartproxy_可移动按钮.uc.js](smartproxy_可移动按钮.uc.js)，完善可移动按钮，不支持放在 panelUI 里面。
  - [textLink.uc.js](textLink.uc.js)
     - 添加了一行 `&& doc.contentType != 'text/javascript'` 增加 js 文件的支持。
- - [youkuantiadsModY.uc.js](youkuantiadsModY.uc.js)，[youkuantiads 视频去广告去黑屏](http://bbs.kafan.cn/thread-1509944-1-1.html) 修改版。
-    - 新增：本地播放器检测功能。如果有本地播放器则使用本地的路径，否则使用默认的网络播放器。
-    - ~~新增：提前判断是否为 flash，加快速度。~~ *已反馈给作者，作者的7月2日版本已经增加。*
-    - 本地播放器默认路径为 chrome 目录下的 swf 文件夹。
-    - swf 下的是 bat 更新文件，需要额外的 [wget.exe](http://users.ugent.be/~bpuype/wget/)
-    - 本地的 17173 播放器默认未启用。

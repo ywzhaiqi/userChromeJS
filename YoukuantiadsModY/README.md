@@ -10,3 +10,7 @@ youkuantiadsModY.uc.js
 - 新增 2个 17173 播放器，来自 [catcat520](http://bbs.kafan.cn/thread-1725172-1-1.html)。
 - ~~新增：本地播放器检测功能。如果有本地播放器则使用本地的路径，否则使用默认的网络播放器。~~
 - ~~新增：提前判断是否为 flash，加快速度。~~ *已反馈给作者，作者的7月2日版本已经增加。*
+
+id 为 `youkuAntiADsMod`，执行命令为
+
+    oncommand: "document.getElementById('youkuAntiADsMod').doCommand();"

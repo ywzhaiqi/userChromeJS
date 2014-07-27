@@ -34,7 +34,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
 ### 使用说明及技巧
 
  - `_addmenu.js` 文件为配置文件，默认放在 `chrome` 目录下。
- - 打开 `about:config?filter=addMenu.FILE_PATH` 可设置配置文件的路径，`\local\_addMenu.js` 为相对 chrome 下的路径（仅 windows）。
+ - 在 `about:config` 中可通过 `addMenu.FILE_PATH` 设置配置文件的路径（如果没有手动新建一个）。例如`\local\_addMenu.js` 为相对 chrome 下的路径（仅 windows）。
  - 菜单栏的 "工具" 菜单中有个 "addMenu 的重新载入和编辑" 菜单，左键点击重新载入配置，右键打开文件编辑（需要首先设置 about:config 中 view_source.editor.path 编辑器的路径）
  - ID 为 `addMenu-rebuild`，可添加到 rebuild_userChrome.uc.xul 统一进行管理
  - 配置载入出错的提示，点击可定位到某一行。需要首先设置 `view_source.editor.args`，Sublime text 的问题见主页的 `fixViewSourceEditArgsForST.uc.js`

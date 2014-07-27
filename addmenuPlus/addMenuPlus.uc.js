@@ -7,7 +7,7 @@
 // @license        MIT License
 // @compatibility  Firefox 21
 // @charset        UTF-8
-// @version        2014.7.26
+// @version        2014.7.27
 // version         0.0.8
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
@@ -146,7 +146,7 @@ window.addMenu = {
             aFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile)
             path = this.prefs.getCharPref("FILE_PATH")
         } catch (e) {
-            this.prefs.setCharPref("FILE_PATH", defPath);
+            // this.prefs.setCharPref("FILE_PATH", defPath);
         }
 
         if (!path) path = defPath;
@@ -556,6 +556,12 @@ window.addMenu = {
         if (!obj.onclick)
             menuitem.setAttribute("onclick", "checkForMiddleClick(this, event)");
 
+        if (isMenuGroup && menuitem.getAttribute("label")) {
+            menuitem.setAttribute('aria-label', menuitem.getAttribute("label"));
+            menuitem.setAttribute('tooltiptext', menuitem.getAttribute("label"));
+            menuitem.removeAttribute('label');
+        }
+
         // oncommand, command はここで終了
         if (obj.oncommand || obj.command)
             return menuitem;
@@ -564,12 +570,6 @@ window.addMenu = {
 
         // 可能ならばアイコンを付ける
         this.setIcon(menuitem, obj);
-
-        if (isMenuGroup && menuitem.getAttribute("label")) {
-            menuitem.setAttribute('aria-label', menuitem.getAttribute("label"));
-            menuitem.setAttribute('tooltiptext', menuitem.getAttribute("label"));
-            menuitem.removeAttribute('label');
-        }
 
         return menuitem;
     },
@@ -1102,6 +1102,6 @@ menuitem.addMenu[text]:not([url]):not([keyword]):not([exec])\
   -moz-appearance: menuimage;\
 }\
 menugroup.addMenu > .menuitem-iconic { max-width: 10px; }\
-menugroup.addMenu { margin: 2px 0 5px 0; }\
+menugroup.addMenu { margin: 2px 0 2px 0; }\
 menugroup.addMenu .menu-iconic-icon { margin-left:2px; }\
 ');

@@ -7,7 +7,7 @@
 // @license        MIT License
 // @compatibility  Firefox 21
 // @charset        UTF-8
-// @version        2014.7.27
+// @version        2014.7.28
 // version         0.0.8
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
@@ -175,9 +175,11 @@ window.addMenu = {
         let rMEDIA     = "%MEDIA_URL"+ he +"%|%m\\b";
         let rCLIPBOARD = "%CLIPBOARD"+ he +"%|%p\\b";
         let rFAVICON   = "%FAVICON"+ he +"%";
-        let rFAVICON_BASE64 = "%FAVICON_BASE64"+ he +"%";
         let rEMAIL     = "%EMAIL"+ he +"%";
         let rExt       = "%EOL"+ he +"%";
+
+        let rFAVICON_BASE64 = "%FAVICON_BASE64"+ he +"%";
+        let rRLT_OR_UT = "%RLT_OR_UT"+ he +"%";  // 链接文本或网页标题
 
         this.rTITLE     = new RegExp(rTITLE, "i");
         this.rTITLES    = new RegExp(rTITLES, "i");
@@ -186,15 +188,17 @@ window.addMenu = {
         this.rSEL       = new RegExp(rSEL, "i");
         this.rLINK      = new RegExp(rLINK, "i");
         this.rIMAGE     = new RegExp(rIMAGE, "i");
-        this.rIMAGE_BASE64 = new RegExp(rIMAGE_BASE64, "i");
         this.rMEDIA     = new RegExp(rMEDIA, "i");
         this.rCLIPBOARD = new RegExp(rCLIPBOARD, "i");
         this.rFAVICON   = new RegExp(rFAVICON, "i");
-        this.rFAVICON_BASE64 = new RegExp(rFAVICON_BASE64, "i");
         this.rEMAIL     = new RegExp(rEMAIL, "i");
         this.rExt       = new RegExp(rExt, "i");
+        this.rFAVICON_BASE64 = new RegExp(rFAVICON_BASE64, "i");
+        this.rIMAGE_BASE64 = new RegExp(rIMAGE_BASE64, "i");
+        this.rRLT_OR_UT = new RegExp(rRLT_OR_UT, "i");
+
         this.regexp     = new RegExp(
-            [rTITLE, rTITLES, rURL, rHOST, rSEL, rLINK, rIMAGE, rIMAGE_BASE64, rMEDIA, rCLIPBOARD, rFAVICON, rFAVICON_BASE64, rEMAIL, rExt].join("|"), "ig");
+            [rTITLE, rTITLES, rURL, rHOST, rSEL, rLINK, rIMAGE, rIMAGE_BASE64, rMEDIA, rCLIPBOARD, rFAVICON, rFAVICON_BASE64, rEMAIL, rExt, rRLT_OR_UT].join("|"), "ig");
 
         var ins;
         ins = $("context-viewinfo");
@@ -756,6 +760,7 @@ window.addMenu = {
                 case "%RLINK_HOST%"  : return context.link.host || "";
                 case "%RLINK_TEXT%"  : return context.linkText() || "";
                 case "%RLINK_OR_URL%": return context.linkURL || win.location.href;
+                case "%RLT_OR_UT%"   : return context.onLink && context.linkText() || win.document.title;  // 链接文本或网页标题
                 case "%IMAGE_ALT%"   : return context.target.alt || "";
                 case "%IMAGE_TITLE%" : return context.target.title || "";
                 case "%I"            : return context.imageURL || "";

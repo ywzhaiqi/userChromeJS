@@ -7,7 +7,7 @@
 // @license        MIT License
 // @compatibility  Firefox 21
 // @charset        UTF-8
-// @version        2014.7.28
+// @version        2014.7.31
 // version         0.0.8
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
@@ -150,11 +150,10 @@ window.addMenu = {
         aFile = Services.dirsvc.get("UChrm", Ci.nsILocalFile);
         aFile.appendRelativePath(path);
 
-        // initWidPath 相对路径会错误
-        // if (!aFile.exists()) {
-        //     aFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile)
-        //     aFile.initWithPath(path);
-        // }
+        if (!aFile.exists()) {
+            alert('配置文件 _addmenu.js 不存在');
+            return;
+        }
 
         delete this.FILE;
         return this.FILE = aFile;
@@ -872,10 +871,18 @@ window.addMenu = {
         try {
             editor = Services.prefs.getComplexValue("view_source.editor.path", Ci.nsILocalFile);
         } catch(e) {}
+
         if (!editor || !editor.exists()) {
-            alert("编辑器的路径未设置!!!\n请设置 view_source.editor.path");
-            toOpenWindowByType('pref:pref', 'about:config?filter=view_source.editor');
-            return;
+            alert("编辑器的路径未设置!!!\n请先设置");
+            var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
+            fp.init(window, "设置全局脚本编辑器", fp.modeOpen);
+            fp.appendFilter("执行文件", "*.exe");
+            if (fp.show() == fp.returnCancel || !fp.file)
+                return;
+            else {
+                var ss = fp.file.path;
+                gPrefService.setCharPref("view_source.editor.path", ss);
+            }
         }
 
         // 调用自带的

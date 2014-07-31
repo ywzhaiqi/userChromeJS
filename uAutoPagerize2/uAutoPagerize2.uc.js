@@ -7,7 +7,7 @@
 // @compatibility  Firefox 17
 // @charset        UTF-8
 // @version        0.3.0
-// @update         2014-07-15
+// @update         2014-07-31
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/uAutoPagerize2
 // @reviewURL      http://bbs.kafan.cn/thread-1555846-1-1.html
 // @optionsURL     about:config?filter=uAutoPagerize.
@@ -56,9 +56,10 @@ var Config = {
     SEPARATOR_RELATIVELY: true, // 分隔符.在使用上滚一页或下滚一页的时候是否保持相对位置..
 };
 
-var DB_FILENAME_MY = "_uAutoPagerize.js",       // 自定义数据库的位置
-    DB_FILENAME_CN = "uSuper_preloader.db.js",  // 中文数据库的位置
-    DB_FILENAME_EN = "uAutoPagerize.json";      // 默认的 JSON 数据库位置
+// 自定义数据库、中文数据库、默认的 JSON 数据库摆放的文件夹，例如 Local
+// 不要在这里更改，请到右键设置中更改（需重启生效）
+//      或 about:config 中更改 uAutoPagerize.DB_FOLDER 的值（如果没有手动新建一个）
+var DB_FOLDER = "";
 
 // 额外的设置，具体在配置文件中
 var prefs = {
@@ -291,6 +292,7 @@ var ns = window.uAutoPagerize = {
     SITEINFO       : [],
     SITEINFO_CN    : [],
     HashchangeSites: [],  // 页面不刷新的站点，在配置文件中修改
+    monitorUserFile: true,
 
     get prefs() {
         delete this.prefs;
@@ -298,15 +300,24 @@ var ns = window.uAutoPagerize = {
     },
     get file() {
         var aFile = Services.dirsvc.get('UChrm', Ci.nsILocalFile);
-        aFile.appendRelativePath(DB_FILENAME_MY);
+        aFile.appendRelativePath(DB_FOLDER);
+        aFile.appendRelativePath('_uAutoPagerize.js');
         delete this.file;
         return this.file = aFile;
     },
     get file_CN() {
         var aFile = Services.dirsvc.get('UChrm', Ci.nsILocalFile);
-        aFile.appendRelativePath(DB_FILENAME_CN);
+        aFile.appendRelativePath(DB_FOLDER);
+        aFile.appendRelativePath('uSuper_preloader.db.js');
         delete this.file_CN;
         return this.file_CN = aFile;
+    },
+    get file_DB_JSON() {
+        var aFile = Services.dirsvc.get('UChrm', Ci.nsILocalFile);
+        aFile.appendRelativePath(DB_FOLDER);
+        aFile.appendRelativePath('uAutoPagerize.json');
+        delete this.file_DB_JSON;
+        return this.file_DB_JSON = aFile;
     },
     _isModified_lastcheck: 0,
     _modified: 0,
@@ -538,16 +549,25 @@ var ns = window.uAutoPagerize = {
         range.insertNode(range.createContextualFragment(xml.replace(/\n|\t/g, '')));
         range.detach();
 
-        ["DEBUG", "AUTO_START", "FORCE_TARGET_WINDOW", "SCROLL_ONLY", "PRELOADER_NEXTPAGE", "ADD_TO_HISTORY"].forEach(function(name) {
+        ["DEBUG", "AUTO_START", "FORCE_TARGET_WINDOW", "SCROLL_ONLY", "PRELOADER_NEXTPAGE", "ADD_TO_HISTORY",
+            "monitorUserFile"].forEach(function(name) {
             try {
                 ns[name] = ns.prefs.getBoolPref(name);
-            } catch (e) {}
+            } catch (e) {
+                ns.prefs.clearUserPref(name);
+                ns.prefs.setBoolPref(name, ns[name]);
+            }
         }, ns);
         ["BASE_REMAIN_HEIGHT", "MAX_PAGER_NUM", "IMMEDIATELY_PAGER_NUM", "lastCheckTime"].forEach(function(name) {
             try {
                 ns[name] = ns.prefs.getIntPref(name);
             } catch (e) {}
         }, ns);
+
+        // 载入存储的文件夹位置
+        try {
+            DB_FOLDER = ns.prefs.getCharPref('DB_FOLDER');
+        } catch(e) {}
 
         ns.INCLUDE = INCLUDE;
 
@@ -656,6 +676,9 @@ var ns = window.uAutoPagerize = {
                 case 'EXCLUDE':
                     ns.loadExclude();
                     break;
+                case 'monitorUserFile':
+                    this.monitorUserFile = this.prefs.getBoolPref('monitorUserFile');
+                    break;
             }
         }
     },
@@ -684,14 +707,17 @@ var ns = window.uAutoPagerize = {
         sandbox.USE_MY_SITEINFO = false;
         sandbox.USE_MICROFORMAT = true;
 
-        // 替换 unsafeWindow
-        data = data.replace(/unsafeWindow/g, "this.wrappedJSObject");
+        data = ns.convertSiteInfoData(data);
 
         try {
+            var lineFinder = new Error();
             Cu.evalInSandbox(data, sandbox, '1.8');
         } catch (e) {
+            let line = e.lineNumber - lineFinder.lineNumber -1;
+            alerts("uAutoPagerize", e + "\n请重新检查配置文件第 " + line + " 行", function(){
+                ns.edit(ns.file, line);
+            });
             log('load error.', e);
-            alerts('配置文件错误', e);
             return;
         }
         sandbox.MY_SITEINFO = ns.convertSiteInfos(sandbox.MY_SITEINFO);
@@ -720,9 +746,7 @@ var ns = window.uAutoPagerize = {
         sandbox.SITEINFO_TP = [];
         sandbox.SITEINFO_comp = [];
 
-        // 替换 unsafeWindow
-        data = data.replace(/unsafeWindow/g, "this.wrappedJSObject");
-        data = data.replace(/window/g, "this");
+        data = ns.convertSiteInfoData(data);
 
         try {
             Cu.evalInSandbox(data, sandbox, '1.8');
@@ -738,6 +762,12 @@ var ns = window.uAutoPagerize = {
             alerts('uAutoPagerize', '中文数据库已经重新载入');
 
         return true;
+    },
+    convertSiteInfoData: function(data) {
+        // 替换 window、document、unsafeWindow、console
+        return data.replace(/((?:document|start)?Filter:\s*function\s*\(.*\)\s*\{.*)/ig,
+            "$1 var window = this, document = this.document, unsafeWindow = this.wrappedJSObject, " +
+            "console = this.console;");
     },
     convertSiteInfos: function(list) {
         var newList = [];
@@ -781,7 +811,7 @@ var ns = window.uAutoPagerize = {
         if (!doc) return;
 
         // 监测文件是否更新
-        if(ns.isModified){
+        if (ns.monitorUserFile && ns.isModified){
             ns.loadSetting(true);
         }
 
@@ -1065,7 +1095,7 @@ var ns = window.uAutoPagerize = {
                 break;
             case 1:
             case 2:
-                ns.edit(ns.file_CN, true);
+                ns.edit(ns.file_CN, null, true);
                 ns.edit(ns.file);
                 event.preventDefault();
                 break;
@@ -1085,17 +1115,31 @@ var ns = window.uAutoPagerize = {
             <prefwindow\
                 xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"\
                 id="uAutoPagerize"\
+                title="uAutoPagerize2 设置"\
                 windowtype="uAutoPagerize:Preferences">\
             <prefpane id="main" flex="1">\
-            \
                 <preferences>\
-                    <preference id="EXCLUDE" type="string"\
-                                name="uAutoPagerize.EXCLUDE"/>\
+                    <preference id="EXCLUDE" type="string" name="uAutoPagerize.EXCLUDE"/>\
+                    <preference id="DB_FOLDER" type="string" name="uAutoPagerize.DB_FOLDER"/>\
+                    <preference id="monitorUserFile" type="bool" name="uAutoPagerize.monitorUserFile"/>\
                 </preferences>\
             \
-                <label value="uAutoPagerize 排除列表：" />\
-                <textbox flex="1" multiline="true" wrap="off" rows="16" cols="60"\
-                         preference="EXCLUDE" />\
+                <vbox>\
+                <groupbox>\
+                    <caption label="一般设置" />\
+                    <checkbox label="检测配置文件是否被修改" tooltiptext="会在每一个页面载入时检测"\
+                        preference="monitorUserFile" />\
+                    <hbox tooltiptext="相对于 Chrome 目录，诸如 （空白）、Local。\n需要重启生效">\
+                        <label value="数据库文件夹："/>\
+                        <textbox preference="DB_FOLDER" />\
+                    </hbox>\
+                </groupbox>\
+                <groupbox>\
+                    <caption label="排除列表" />\
+                    <textbox flex="1" multiline="true" wrap="off" rows="16" cols="60"\
+                         preference="EXCLUDE" height="300px" />\
+                </groupbox>\
+                </vbox>\
             \
             </prefpane>\
             </prefwindow>\
@@ -1316,7 +1360,7 @@ var ns = window.uAutoPagerize = {
         }
         return SP.autoGetLink(doc);
     },
-    edit: function(aFile, showError) {
+    edit: function(aFile, aLineNumber, showError) {
         if (!aFile || !aFile.exists() || !aFile.isFile()) return;
         var editor;
         try {
@@ -1331,18 +1375,17 @@ var ns = window.uAutoPagerize = {
             return;
         }
 
-        var UI = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
-        UI.charset = window.navigator.platform.toLowerCase().indexOf("win") >= 0? "gbk": "UTF-8";
-        var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
+        // 调用自带的
+        var aURL = userChrome.getURLSpecFromFile(aFile);
 
-        try {
-            var path = UI.ConvertFromUnicode(aFile.path);
-            var args = [path];
-            process.init(editor);
-            process.run(false, args, args.length);
-        } catch (e) {
-            alert("编辑器路径不正确");
-        }
+        var aDocument = null;
+        var aCallBack = null;
+        var aPageDescriptor = null;
+
+        if (/aLineNumber/.test(gViewSourceUtils.openInExternalEditor.toSource()))
+            gViewSourceUtils.openInExternalEditor(aURL, aPageDescriptor, aDocument, aLineNumber, aCallBack);
+        else
+            gViewSourceUtils.openInExternalEditor(aURL, aPageDescriptor, aDocument, aCallBack);
     },
     getElementsByXPath: getElementsByXPath,
     getElementMix: getElementMix,
@@ -2553,7 +2596,12 @@ function getXPathResult(xpath, node, resultType) {
                 ? defaultNS : defaultResolver.lookupNamespaceURI(prefix);
         }
     }
-    return doc.evaluate(xpath, node, resolver, resultType, null);
+
+    try {
+        return doc.evaluate(xpath, node, resolver, resultType, null);
+    } catch(e) {
+        console.error(e, xpath, doc)
+    }
 }
 
 function addDefaultPrefix(xpath, prefix) {
@@ -2634,7 +2682,7 @@ function getCookie(host, needSecureCookie) {
 // end utility functions.
 function getCache() {
     try{
-        var cache = loadFile(DB_FILENAME_EN);
+        var cache = loadText(ns.file_DB_JSON);
         if (!cache) return false;
         cache = JSON.parse(cache);
         ns.SITEINFO = cache;
@@ -2688,7 +2736,7 @@ function getCacheCallback_CN(res, url) {
         }
     }
 
-    saveFile(DB_FILENAME_CN, "    " + matches[1]);
+    saveFile(ns.file_CN, "    " + matches[1]);
     ns.loadSetting_CN();
     alerts("uAutoPagerize", "中文规则已经更新完毕");
 
@@ -2757,7 +2805,7 @@ function getCacheCallback(res, url) {
         } catch (e) {}
     });
     info.sort(function(a, b) b.url.length - a.url.length);
-    saveFile(DB_FILENAME_EN, JSON.stringify(info));
+    saveFile(ns.file_DB_JSON, JSON.stringify(info));
 
     ns.SITEINFO = info;
     log('getCacheCallback:' + url);
@@ -2816,9 +2864,17 @@ function $C(name, attr) {
     return el;
 }
 
-function alerts(title, info){
+function alerts(title, info, aCallback){
+    var callback = aCallback ? {
+        observe : function (subject, topic, data) {
+            if ("alertclickcallback" != topic)
+                return;
+            aCallback.call(null);
+        }
+    } : null;
+
     Cc['@mozilla.org/alerts-service;1'].getService(Ci.nsIAlertsService)
-        .showAlertNotification(null, title, info, false, "", null, "");
+        .showAlertNotification(null, title, info, !!callback, "", callback, "");
 }
 
 function addStyle(css) {

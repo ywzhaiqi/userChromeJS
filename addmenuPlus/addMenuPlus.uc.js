@@ -902,16 +902,13 @@ window.addMenu = {
         XULBrowserWindow.statusTextField.label = "Copy: " + aText;
     },
     alert: function (aMsg, aTitle, aCallback) {
-        if (aCallback)
-            var callback = {
-                observe : function (subject, topic, data) {
-                    if ("alertclickcallback" != topic)
-                        return;
-                    aCallback.call(null);
-                }
-            };
-        else
-            callback = null;
+        var callback = aCallback ? {
+            observe : function (subject, topic, data) {
+                if ("alertclickcallback" != topic)
+                    return;
+                aCallback.call(null);
+            }
+        } : null;
         var alertsService = Cc["@mozilla.org/alerts-service;1"].getService(Ci.nsIAlertsService);
         alertsService.showAlertNotification(
             "chrome://global/skin/icons/information-32.png", aTitle || "addMenu",

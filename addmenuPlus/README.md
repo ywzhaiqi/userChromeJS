@@ -785,7 +785,7 @@ pagesub([
 	        if (!window.NetUtil) Cu.import("resource://gre/modules/NetUtil.jsm");
 	        if (!window.FileUtils) Cu.import("resource://gre/modules/FileUtils.jsm");
 
-	        var data = addMenu.convertText('%s');
+	        var data = addMenu.getRangeAll(content).join(" ");
 
 	        var fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
 	        fp.init(window, "另存为", Ci.nsIFilePicker.modeSave);

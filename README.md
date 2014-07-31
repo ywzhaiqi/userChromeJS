@@ -77,7 +77,7 @@ userChromeJS for Firefox
     - 自带的 `view_source.editor.args` 由于顺序问题无法传递 "行" 参数给 sublime text
     - 使用本脚本修正后，设置 `view_source.editor.args` 为 `%file:%line` 即可用 sublime text 打开并定位到某一行，如图所示
     - ![fixViewSourceEditArgsForST.png](fixViewSourceEditArgsForST.png)
-    - 更多说明或其它编辑器请看 [addmenuPlus 的编辑器设置](https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus#%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E5%8F%8A%E6%8A%80%E5%B7%A7)
+    - 更多说明或其它编辑器请看 [编辑器及参数说明](https://github.com/ywzhaiqi/userChromeJS#%E7%BC%96%E8%BE%91%E5%99%A8%E5%8F%8A%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E)。
  - [IME-Colors.uc.js](IME-Colors.uc.js)，输入框聚焦时变色。
  - [JSCSS_Highlight.uc.js](JSCSS_Highlight.uc.js)，在浏览器中打开的 js、css、ahk 代码着色。
  - [JSOff.uc.xul](JSOff.uc.xul)，js开关，图标在状态栏。
@@ -160,6 +160,17 @@ UA切换，基于 [lastdream2013 的版本](http://bbs.kafan.cn/thread-1534937-1
 
  - 去除右键菜单，自己用 addMenu.uc 添加，菜单只出现在一般情况下，在链接、图片、输入框等情况下不会出现。
 
+编辑器及参数说明
+---------------
+
+ - addMenuPlus 或 uAutoPagerize2 载入配置出错会提示第几行，点击可直接定位到这一行。
+ - 首先需要设置 `view_source.editor.path` 编辑器路径和 `view_source.editor.args` 参数。
+    - `view_source.editor.args` 会替换 `%LINE%` 为 `行`。
+    - `notepad++` 应该添加 `-n%LINE%`
+    - `Sublime text` 使用 `fixViewSourceEditArgsForST.uc.js` 这个脚本修正后填写 `%file:%line`
+    - 其它编辑器参考 Firebug，注意大小写。
+
+ ![编辑器参数.png](编辑器参数.png)
 
 一些 uc 脚本的链接
 ---------------

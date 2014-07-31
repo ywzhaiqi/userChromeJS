@@ -7,7 +7,7 @@
 // @description    Snap Links for userChromeJS
 // @include        main
 // @charset        UTF-8
-// @version        2014/07/27
+// @version        2014/07/31
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/blob/master/SnapLinksMod.uc.xul
 // @note           2014/05/21 增加百度盘的特殊多选框的批量点击
 // @note           2012/08/22 add copy links Reverse by ywzhaiqi
@@ -450,10 +450,10 @@ var snapLinks = {
 			numReverse = links.length;
 		links = links.map(function(e) {
 			if (format) {
-				return format.replace('%t', e.textContent)
-								 .replace('%u', e.href)
-								 .replace('%r', numReverse--)
-								 .replace('%n', num++);
+				return format.replace(/%t/g, e.textContent)
+							 .replace(/%u/g, e.href)
+							 .replace(/%r/g, numReverse--)
+							 .replace(/%n/g, num++);
 			}
 			return e.href;
 		});

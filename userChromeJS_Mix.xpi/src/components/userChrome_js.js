@@ -96,25 +96,32 @@ UserChrome_js.prototype = {
                  get("UChrm", Ci.nsILocalFile);
       file.append("userChrome.js");
 
-      if (!file.exists()) {
-        var componentFile = __LOCATION__;
-        var componentsDir = componentFile.parent;
-        var extensionDir = componentsDir.parent;
-        extensionDir.append("userChrome.js");
-        if (extensionDir.exists())
-          extensionDir.copyTo(file.parent, "userChrome.js");
+      if (file.exists()) {
+        file.renameTo(file.parent, 'userChrome-1.js');
       }
 
-      if (file.exists() && file.isFile() &&
-          !Cc["@mozilla.org/xre/app-info;1"].
+      // if (!file.exists()) {
+      //   var componentFile = __LOCATION__;
+      //   var componentsDir = componentFile.parent;
+      //   var extensionDir = componentsDir.parent;
+      //   extensionDir.append("userChrome.js");
+      //   if (extensionDir.exists())
+      //     extensionDir.copyTo(file.parent, "userChrome.js");
+      // }
+
+      // if (file.exists() && file.isFile() &&
+      //     !Cc["@mozilla.org/xre/app-info;1"].
+      //     getService(Ci.nsIXULRuntime).
+      //     inSafeMode) {
+      //   this.mFileURL = Cc["@mozilla.org/network/io-service;1"].
+      //                   getService(Ci.nsIIOService).
+      //                   getProtocolHandler("file").
+      //                   QueryInterface(Ci.nsIFileProtocolHandler).
+      //                   getURLSpecFromFile(file);
+
+      if (!Cc["@mozilla.org/xre/app-info;1"].
           getService(Ci.nsIXULRuntime).
           inSafeMode) {
-        this.mFileURL = Cc["@mozilla.org/network/io-service;1"].
-                        getService(Ci.nsIIOService).
-                        getProtocolHandler("file").
-                        QueryInterface(Ci.nsIFileProtocolHandler).
-                        getURLSpecFromFile(file);
-
         os.addObserver(this, "domwindowopened", false);
       }
       break;
@@ -137,7 +144,11 @@ UserChrome_js.prototype = {
                              document.defaultView,
                              "UTF-8");
 
-        loader.loadSubScript(this.mFileURL,
+        // loader.loadSubScript(this.mFileURL,
+        //                      document.defaultView,
+        //                      "UTF-8");
+
+        loader.loadSubScript("chrome://userChromeJS/content/userChrome.js",
                              document.defaultView,
                              "UTF-8");
       }

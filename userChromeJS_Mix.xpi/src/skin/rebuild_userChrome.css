@@ -53,6 +53,10 @@
     list-style-image: url(chrome://userchromejs/skin/toolbtn_setEditor.png);
 }
 
+#userChromejs_options > hbox > #toolbtn_openPrefs {
+    list-style-image: url(chrome://userchromejs/skin/toolbtn_openPrefs.png);
+}
+
 #jscmd_edit_add {
     list-style-image: url(chrome://userchromejs/skin/jscmd_edit_add.png);
 }
@@ -66,4 +70,9 @@
     list-style-image: none;
     font-size: 12px;
     font-weight: normal;
+}
+
+
+#userChromejs_script_options menuitem[restartless="true"] {
+    color: blue;
 }

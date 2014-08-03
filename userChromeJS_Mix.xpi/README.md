@@ -3,7 +3,7 @@ userChromeJS Mix 扩展
 
 userChromeJS 扩展、userChrome.js、UC脚本管理器整合版，用于彻底解决可移动按钮消失的问题。
 
- - userChromeJS 扩展为[官方的 1.5 版本](http://userchromejs.mozdev.org/)
+ - userChromeJS 扩展为[官方的 1.5 版本](http://userchromejs.mozdev.org/)。
  - userChrome.js 为 [Alice0775 的修改版](https://github.com/ywzhaiqi/userChromeJS/blob/master/userChrome.js)。和默认的一样，如果 chrome 目录下已经存在则不会替换。
  - UC脚本管理器为 [dannylee 的UC脚本管理器（2014.4.29版）](https://g.mozest.com/thread-41292-1-4) 的修改版。
  - **安装后会自动更新，不再需要下载附件更新。**
@@ -24,7 +24,74 @@ userChromeJS 扩展、userChrome.js、UC脚本管理器整合版，用于彻底�
  - [卡饭链接地址](http://bbs.kafan.cn/thread-1753671-1-1.html)
  - [github 地址](https://github.com/ywzhaiqi/userChromeJS/tree/master/userChromeJS_Mix.xpi)
 
+其它说明
+-------
+
+1、为什么不采用卡饭论坛的 userChromeJS 扩展 2.0 修改版？
+
+    xul 文件是通过 userChrome.js 导入的，而 userChrome.js 里面并没有修改版所说的问题。
+
 更新
 ----
 
-详见 [updateInfo.xhtml](updateInfo.xhtml)
+详见 [updateInfo.md](updateInfo.md)
+
+反馈的问题
+-----------
+
+- 使用了 zAutoPopup.uc.xul 后，滑过重启按钮，还没按下去便关了菜单。
+
+1.5 测试版说明
+-------------
+
+### 几个注意事项
+
+ - 这是一个测试版，由于本人水平有限，可能存在问题，请慎用。
+ - 内置了 userChrome.js 文件（由于修改了里面的内容），所以会强制对 chrome 目录下的 chrome.js 文件改名，可手动删除。
+
+### 新增了以下几个功能
+
+ - 安装脚本
+    - 在浏览中打开 uc 脚本会出现 **安装工具条**。点击安装按钮后，会自动安装（保存该脚本，然后载入）。
+    - 对不存在的脚本会直接安装（无需重启），只是很难判断是否为不存在的脚本，目前是根据id 或文件名判断，如果出现重复添加菜单等情况，请手动重启。
+    - 菜单蓝色为无需重启的脚本。
+    - 对无需重启的脚本，直接安装即可。
+ - 卸载脚本
+    - 在脚本的菜单上 Ctrl + 右键卸载
+    - 对无需重启的会直接生效，但并不是完全彻底的卸载，如果需要完全彻底请手动重启。
+    - **注意：卸载脚本会同时删除该脚本**
+ - 启用禁用脚本
+    - 对无需重启的脚本，启用禁用会直接生效。
+ - 设置界面
+ - 编辑器路径为空则用 **代码片段速记器** 打开。
+
+![installBar](img/installBar.png)
+
+![installedMsg.png](img/installedMsg.png)
+
+![installedMsg2.png](img/installedMsg2.png)
+
+![setting](img/setting.png)
+
+![addMenu_启用禁用效果图.gif](img/addMenu_启用禁用效果图.gif)
+
+#### 问题
+
+ - 直接安装如果存在会重复添加菜单，例如 copybookmark.uc.js 脚本
+ - 由于没有清除缓存，重复安装的并不是新版。
+
+### 无需重启（restartless）脚本的说明
+
+需要脚本支持，在支持的脚本中添加以下2个参数即可。
+
+    // @startup        window.uAutoPagerize.init();
+    // @shutdown       window.uAutoPagerize.destroy();
+
+目前支持的脚本有：
+
+    - addMenuPlus.uc.js
+    - uAutoPagerize2.uc.js
+    - youkuantiadsModY.uc.js
+    - SimpleDragModY.uc.js
+    - SimpleMusicPlayer.uc.js
+    - SITEINFO_Writer.uc.js

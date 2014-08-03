@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<prefwindow
+    xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+    id="userChromejs"
+    title="userChromejs 设置"
+    windowtype="userChromejs:Preferences">
+    <prefpane id="main" flex="1">
+        <preferences>
+            <preference id="closeWindow" type="bool" name="userChrome.closeWindow"/>
+            <preference id="EXPERIMENT" type="bool" name="userChrome.EXPERIMENT"/>
+            <preference id="arrSubdir" type="string" name="userChrome.arrSubdir"/>
+            <preference id="editorPath" type="string" name="view_source.editor.path"/>
+        </preferences>
+        <groupbox>
+           <caption label="一般设置" />
+           <checkbox label="关闭原窗口" tooltiptext="点击新建窗口并重载脚本按钮后是否关闭原窗口？"
+                preference="closeWindow" />
+            <label value="编辑器的路径（留空代表代码片段速记器）：" />
+            <textbox flex="1" preference="editorPath" />
+        </groupbox>
+        <groupbox>
+            <caption label="需要重启生效的" />
+            <checkbox label="取消延迟加载（实验）" tooltiptext="会让部分脚本失效"
+                preference="EXPERIMENT" />
+            <vbox>
+                <label value="导入的目录" />
+                <textbox flex="1" preference="arrSubdir"
+                    multiline="true" cols="60" height="50px" />
+            </vbox>
+        </groupbox>
+    </prefpane>
+</prefwindow>

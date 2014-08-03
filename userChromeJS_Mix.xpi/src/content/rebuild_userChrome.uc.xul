@@ -42,11 +42,13 @@
 // @Note           使用するエディタを編集しておくこと
 // @Note           Required Sub-Script/Overlay Loader v3.0.38mod( https://github.com/alice0775/userChrome.js/blob/master/userChrome.js )
  -->
+
 <script type="application/javascript" xmlns="http://www.w3.org/1999/xhtml"><![CDATA[
+
 	"use strict";
   var userChromejs = {
 // --- config ---
-    editor: "C:\\Program\\UltraEdit\\Uedit32.exe",
+    editor: "C:\\Program\\notepad.exe",
     //dannylee
     UIPREF: "userChromeJS.rebuildUI.showtoolbutton",
     ShowToolButton: true,
@@ -286,7 +288,14 @@
       var flag = this.getPref("userChrome.enable.reuse",'bool',true);
       this.setPref("userChrome.enable.reuse",'bool',false);
       setTimeout(function(){OpenBrowserWindow();},  0);
-      setTimeout(function(self,flag){self.setPref("userChrome.enable.reuse",'bool',flag);},2000,this,flag);
+
+      setTimeout(function(self, flag) {
+          self.setPref("userChrome.enable.reuse", 'bool', flag);
+
+          var isCloseWindow = self.getPref("userChrome.closeWindow", 'bool', false);
+          if (isCloseWindow)
+            window.close();
+      }, 2000, this, flag);
     },
     setting: function(){
       var flag = this.getPref("userChrome.enable.reuse",'bool',true);
@@ -297,6 +306,11 @@
       var flag = this.getPref("userChrome.enable.uerHomebutton",'bool',false);
       this.setPref("userChrome.enable.uerHomebutton",'bool',!flag);
     },//
+    openPrefs: function() {
+      openDialog(
+                'chrome://userChromejs/content/options.xul',
+                'chrome,titlebar,toolbar,centerscreen,dialog=no');
+    },
     onpopup: function(){
       var menu;
       var flag = this.getPref("userChrome.enable.reuse",'bool',true);
@@ -391,11 +405,12 @@
             flg = true;
             menuitem = document.createElement('menuitem');
             menuitem.setAttribute('label',script.filename);
-            menuitem.setAttribute('oncommand','userChromejs.chgScriptStat(this.script.filename);');
+            menuitem.setAttribute('oncommand','userChromejs.chgScriptStat(this.script.filename);userChromejs.toggleScript(event);');
             menuitem.setAttribute('onclick','if(event.button != 0) {event.stopPropagation();event.preventDefault();userChromejs.clickScriptMenu(event);}');
             menuitem.setAttribute('type','checkbox');
             menuitem.setAttribute('autocheck','false');
-            menuitem.setAttribute('checked',!userChrome_js.scriptDisable[script.filename] );
+            menuitem.setAttribute('checked', !userChrome_js.scriptDisable[script.filename]);
+            menuitem.setAttribute('restartless', script.restartless);
 
             let url = this.getScriptHomeURL(script);
             if (url)
@@ -479,9 +494,11 @@
     },
 
     clickScriptMenu: function(event){
+      let script = event.target.script;
+      if (!script) return;
+
       if(event.button==1){
-        let script = event.target.script;
-        if (event.ctrlKey) {
+        if (event.ctrlKey) {  // Ctrl + 中键：连续启用禁用多个脚本
           userChromejs.chgScriptStat(script.filename);
           event.target.setAttribute('checked',!userChrome_js.scriptDisable[script.filename] );
         } else {
@@ -490,9 +507,18 @@
             gBrowser.addTab(url);
           }
         }
-
       }else if(event.button==2){
-        userChromejs.launchEditor(event.target.script);
+        if (event.ctrlKey) {
+          if(confirm('是否要卸载这个脚本？')) {
+            var success = userChromejs.Script.uninstall(script);
+            if (success) {
+              event.target.parentNode.removeChild(event.target);
+              userChromejs.Save.showInstallMessage(script.filename, '已成功卸载', script.restartless);
+            }
+          }
+        } else {
+          userChromejs.launchEditor(script);
+        }
       }
     },
 
@@ -502,8 +528,15 @@
 
     launchEditor: function(aScript){
       //dannylee
-      userChromejs.editor = gPrefService.getCharPref("view_source.editor.path");// 
+      userChromejs.editor = gPrefService.getCharPref("view_source.editor.path");
       var editor = userChromejs.editor;
+
+      // 用 Scratchpad 编辑
+      if (!editor) {
+        userChromejs.openScriptInScratchpad(window, aScript.file);
+        return;
+      }
+
       var UI = Components.classes['@mozilla.org/intl/scriptableunicodeconverter'].createInstance(Components.interfaces.nsIScriptableUnicodeConverter);
 
       var platform = window.navigator.platform.toLowerCase();
@@ -521,6 +554,24 @@
       var process = Components.classes['@mozilla.org/process/util;1'].createInstance(Components.interfaces.nsIProcess);
       process.init(appfile);
       process.run(false, [path], 1, {});
+    },
+    openScriptInScratchpad: function (parentWindow, file) {
+      let spWin = (parentWindow.Scratchpad
+          || Services.wm.getMostRecentWindow("navigator:browser").Scratchpad)
+          .openScratchpad();
+
+      spWin.addEventListener("load", function spWinLoaded() {
+        spWin.removeEventListener("load", spWinLoaded, false);
+
+        let Scratchpad = spWin.Scratchpad;
+        Scratchpad.setFilename(file.path);
+        Scratchpad.addObserver({
+          onReady: function() {
+            Scratchpad.removeObserver(this);
+            Scratchpad.importFromFile.call(Scratchpad, file);
+          }
+        });
+      }, false);
     },
 
     chgDirStat: function(adirName){
@@ -554,6 +605,17 @@
       return disable;
     },
 
+    toggleScript: function (event) {  // 无需重启的启用禁用脚本，仅 .uc.js，需要脚本支持
+      var script = event.target.script,
+          afilename = script.filename;
+      // 切换前的状态
+      var isEnable = userChrome_js.scriptDisable[afilename];
+      if (isEnable) {
+        userChromejs.Script.shutdown(script);
+      } else {
+        userChromejs.Script.startup(script);
+      }
+    },
 
     //prefを読み込み
     getPref: function(aPrefString, aPrefType, aDefault){
@@ -769,7 +831,7 @@
          return;
       else {
         var ss = fp.file.path;
-        userChromejs.editor = ss.replace(/\\/g, "\\\\");
+        // userChromejs.editor = ss.replace(/\\/g, "\\\\");
         gPrefService.setCharPref("view_source.editor.path", userChromejs.editor);
       }
     }
@@ -916,35 +978,10 @@
     }
   }
 
-  window.addEventListener('load', function ucload(e){
-    // remove obsolete event listener
-    window.removeEventListener("load", ucload, false);
-
-    Application.getExtensions(function (extensions) {
-        let extension = extensions.get('userChromeJS@mozdev.org');
-
-        if (extension.firstRun) {
-          var buttonId = "userChromebtnMenu";
-          var navBarId = "nav-bar";
-
-          var navBar = top.document.getElementById(navBarId);
-          var currentSet = navBar.currentSet;
-
-          // Append only if the button is not already there.
-          var curSet = currentSet.split(",");
-          if (curSet.indexOf(buttonId) == -1) {
-              navBar.insertItem(buttonId);
-              navBar.setAttribute("currentset", navBar.currentSet);
-              navBar.ownerDocument.persist(navBarId, "currentset");
-          }
-        }
-    });
-
-    userChromejs.init();
-    userChromejsScriptOptionsMenu.run();
-  }, false);
-
   ]]></script>
+
+<script type="application/javascript" src="chrome://userchromejs/content/SaveScript.js"></script>
+
 <toolbarpalette id="addon-bar">
 	<toolbarbutton id="userChromebtnMenu" label="UC脚本管理器" 
                  class="toolbarbutton-1 chromeclass-toolbar-additional" type="menu" removable="true"
@@ -967,10 +1004,11 @@
       </hbox>
       <hbox>
       	<menuitem id="toolbtn_rebuild" class="menuitem-iconic" label="新建窗口并重载脚本" flex="1" oncommand="userChromejs.rebuild();"/>
-      	<checkbox id="userChrome_setting"  label="默认方式" tooltiptext="每次新建窗口时是否重载脚本?" oncommand="userChromejs.setting();" />
+      	<checkbox id="userChrome_setting"  label="默认方式" tooltiptext="每次新建窗口时是否重载脚本?\n默认方式不重载" oncommand="userChromejs.setting();" />
       </hbox>
       <hbox>
       	<menuitem id="toolbtn_chromedir" class="menuitem-iconic" label="打开chrome文件夹" flex="1" oncommand="userChromejs.Openchromedir();"/>
+        <toolbarbutton id="toolbtn_openPrefs" tooltiptext="打开设置窗口" oncommand="hidePopup(); userChromejs.openPrefs();"/>
       	<toolbarbutton id="toolbtn_setEditor" tooltiptext="设置全局脚本编辑器" oncommand="hidePopup(); userChromejs.setEditor();"/>
       	<toolbarbutton id="toolbtn_restartApp" tooltiptext="重启浏览器" oncommand="hidePopup(); userChromejs.restartApp();"/>
       </hbox>

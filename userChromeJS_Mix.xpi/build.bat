@@ -4,5 +4,5 @@ CD src
 7z a 1.zip *
 MOVE 1.zip ..
 CD ..
-DEL userChromeJS_Mix.xpi
-RENAME 1.zip userChromeJS_Mix.xpi
+DEL userChromeJS_Mix-1.5 测试版.xpi
+RENAME 1.zip userChromeJS_Mix-1.5 测试版.xpi

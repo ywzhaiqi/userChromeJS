@@ -6,27 +6,26 @@
   <Description about="urn:mozilla:install-manifest">
     <em:id>userChromeJS@mozdev.org</em:id>
     <em:name>userChromeJS Mix</em:name>
-    <em:version>1.4</em:version>
+    <em:version>1.5 测试版1</em:version>
     <em:type>2</em:type>
     <em:unpack>true</em:unpack>
     <em:description></em:description>
-    <em:creator>alta88</em:creator>
+    <em:creator>ywzhaiqi</em:creator>
+    <em:contributor>alta88</em:contributor>
     <em:contributor>zeniko (original author of userChrome.js)</em:contributor>
     <em:contributor>Alice0775</em:contributor>
     <em:contributor>dannylee</em:contributor>
+    <em:optionsURL>chrome://userchromejs/content/options.xul</em:optionsURL>
     <em:homepageURL>https://github.com/ywzhaiqi/userChromeJS/tree/master/userChromeJS_Mix.xpi</em:homepageURL>
     <em:iconURL>chrome://userchromejs/skin/icon32.png</em:iconURL>
     <em:updateURL>
       https://raw.githubusercontent.com/ywzhaiqi/userChromeJS/master/userChromeJS_Mix.xpi/update.rdf
     </em:updateURL>
-    <em:installURL>
-      https://github.com/ywzhaiqi/userChromeJS/raw/master/userChromeJS_Mix.xpi/userChromeJS_Mix.xpi
-    </em:installURL>
 
     <em:targetApplication><!-- Firefox -->
       <Description>
         <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
-        <em:minVersion>4.0b2</em:minVersion>
+        <em:minVersion>20</em:minVersion>
         <em:maxVersion>33.*</em:maxVersion>
       </Description>
     </em:targetApplication>

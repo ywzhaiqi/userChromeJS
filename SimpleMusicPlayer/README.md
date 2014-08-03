@@ -5,7 +5,8 @@ SimpleMusicPlayer.uc.js
 
 - 只有一个按钮，默认在地址栏，点击弹出面板，右键弹出站点菜单。
 - 内置多个站点配置，可设置面板大小，是否设置 UA 为手机版，插入该站点的样式。
-- [关于百度随身听的音质 - 卡饭论坛](http://bbs.kafan.cn/thread-1738286-1-1.html)
+- 右键点击站点菜单，会打开该网址。
+- [关于百度随心听的音质 - 卡饭论坛](http://bbs.kafan.cn/thread-1738286-1-1.html)
 
 ### 弹出面板
 
@@ -27,6 +28,7 @@ SimpleMusicPlayer.uc.js
 
 ### iframe 的方式
 
+```js
 	{
 	    name: "百度随心听（手机版）",
 	    url: "http://fm.baidu.com/",
@@ -51,6 +53,7 @@ SimpleMusicPlayer.uc.js
 	        // "reset": "win.player.reset()",
 	    }
 	},
+```
 
 - **name**: 右键菜单显示的名字。
 - **url**: 面板载入的网址。
@@ -58,9 +61,9 @@ SimpleMusicPlayer.uc.js
 - **iframeStyle**: 主要用于设置面板的宽度和高度，`mobile` 为内置的 mobile 大小，也可自行设置，例如 `width: 740px; height: 570px;`
 - **css**: 插入到页面的样式，可隐藏广告或简化网站的界面使得弹出的面板变小。
 - **control**
-	- "play-pause"、"love"、"hate"、"next" 等为该站点的控制菜单
-	- 最简单的是该按钮的 css 选择器，如 "next": "#playerpanel-btnskip"
-	- 写法二（特殊）："play": "win.player.play()"，已 `win` 开头，`win` 为 GM 脚本的 unsafeWindow。后面的 `player.play()` 则是该网页的 js 对象。
+	- "play-pause"、"love"、"hate"、"next" 等为该站点的控制菜单名字，会根据内置设定转为中文名显示在菜单上。
+	- 写法一：最简单，一般情况下的手选，为该按钮的 css 选择器，如 "next" 按钮的选择器是 "#playerpanel-btnskip"
+	- 写法二："play": "win.player.play()" 函数的简化版。已 `win` 开头，`win` 为 GM 脚本的 unsafeWindow，后面的 `player.play()` 则是该网页的 js 对象的调用。
 	- 写法三：函数，如 "play-pause" 的函数
 - **openLinkInsided**：为 true 则强制打开链接在 iframe 内，**可能有bug**。
 
@@ -68,14 +71,16 @@ SimpleMusicPlayer.uc.js
 
 豆瓣FM 等网站因为在 iframe 无法点击播放，故采用窗口方式。
 
+```js
         {
 			name: "豆瓣FM（窗口）",
 			url: "http://douban.fm/",
 			isWindow: true,
 			windowFeatures: 'width=1110px,height=626px,resizable,scrollbars=yes',
         },
+```
 
-- **isWindow**：该参数为 true 则是窗口方式
+- **isWindow**：该参数为 true 则是窗口方式。
 - **windowFeatures**：打开窗口的属性，详见 [window.open - DOM | MDN](https://developer.mozilla.org/zh-CN/docs/DOM/window.open#Position_and_size_features)
 
 TODO

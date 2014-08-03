@@ -40,6 +40,7 @@ userChromeJS for Firefox
  - [AutoClickModY](AutoClickModY)，鼠标悬停自动点击链接、按钮、图片。
  - [autoLaunchReader](autoLaunchReader)，自动启用阅读器（原创）。[专注阅读扩展简测](http://www.firefox.net.cn/read-49260)
  - [ExternalEditor](ExternalEditor)，输入框右键添加 `用外部编辑器打开` 功能（修改版）。
+ - [GreaemonkeyEnhancer](GreaemonkeyEnhancer)，给 Greasemonkey 的菜单增加鼠标中键点击打开主页、为本站搜索脚本等功能。
  - [ExternalVideoPlayer](ExternalVideoPlayer)，调用外部播放器播放网络视频（原创）。[yunPlayer.uc.js](ExternalVideoPlayer/yunPlayer.uc.js)，右键菜单云播放视频。
  - [InspectElementModY](InspectElementModY)，元素查看调用工具，修改增强版。
  - [moveButton](moveButton)，移动或克隆按钮/菜单到任意位置（原创）。
@@ -72,7 +73,6 @@ userChromeJS for Firefox
     - [showCompleteURL.uc.js](showCompleteURL.uc.js)，加入延迟应对新的 userChrome.js（注：userChrome.js 最新版已不再取消延迟加载）。
     - **技巧**：在下载窗口 "我的足迹" 界面，直接 `ctrl+v` 即可新建下载。
  - [ExportHTMLFolderMod.uc.xul](ExportHTMLFolderMod.uc.xul)，书签右键 `导出到HTML`（修改版）。
- - [findScriptForGreaemonkeyOrScriptish.uc.js](findScriptForGreaemonkeyOrScriptish.uc.js)，为 Greasemonkey 或 Scriptish 扩展增加 "为本站搜索脚本" 功能。
  - [fixViewSourceEditArgsForST.uc.js](fixViewSourceEditArgsForST.uc.js)
     - 自带的 `view_source.editor.args` 由于顺序问题无法传递 "行" 参数给 sublime text
     - 使用本脚本修正后，设置 `view_source.editor.args` 为 `%file:%line` 即可用 sublime text 打开并定位到某一行，如图所示

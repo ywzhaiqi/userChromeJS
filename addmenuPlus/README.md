@@ -775,44 +775,42 @@ pagesub([
 
 示例：快速保存选定文本为 txt 并打开。
 
-	page({
-	    label: '快速保存选定文本',
-	    condition: 'select',
-	    oncommand: function() {
-	        if (!window.NetUtil) Cu.import("resource://gre/modules/NetUtil.jsm");
-	        if (!window.FileUtils) Cu.import("resource://gre/modules/FileUtils.jsm");
+    page({
+        label: '快速保存选定文本',
+        condition: 'select',
+        oncommand: function() {
+            if (!window.NetUtil) Cu.import("resource://gre/modules/NetUtil.jsm");
+            if (!window.FileUtils) Cu.import("resource://gre/modules/FileUtils.jsm");
 
-	        var data = addMenu.getRangeAll(content).join(" ");
+            goDoCommand('cmd_copy');
+            var data = readFromClipboard();
 
-	        var fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
-	        fp.init(window, "另存为", Ci.nsIFilePicker.modeSave);
-	        fp.appendFilter("文本文件", "*.txt");
-	        fp.defaultString = content.document.title + '.txt';
-
-	        var res = fp.show();
-	        if (res != Ci.nsIFilePicker.returnCancel) {
-	            var aFile = fp.file;
-
-	            var ostream = FileUtils.openSafeFileOutputStream(aFile);
-
-	            var converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
-	            converter.charset = "gbk";
-	            var istream = converter.convertToInputStream(data);
-
-	            NetUtil.asyncCopy(istream, ostream, function(status) {
-	                if (!Components.isSuccessCode(status)) {
-	                    // Handle error!
-	                    return;
-	                }
-
-	                aFile.launch();
-
-	                // var path = addMenu.handleRelativePath('\\chrome\\txtFormat.exe');
-	                // addMenu.exec(path, [aFile.path]);
-	            });
-	        }
-	    }
-	})
+            var fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+            fp.init(window, "另存为", Ci.nsIFilePicker.modeSave);
+            fp.appendFilter("文本文件", "*.txt");
+            fp.defaultString = content.document.title + '.txt';
+      
+            var res = fp.show();
+            if (res != Ci.nsIFilePicker.returnCancel) {
+                var aFile = fp.file;
+      
+                var ostream = FileUtils.openSafeFileOutputStream(aFile);
+      
+                var converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
+                converter.charset = "gbk";
+                var istream = converter.convertToInputStream(data);
+      
+                NetUtil.asyncCopy(istream, ostream, function(status) {
+                    if (!Components.isSuccessCode(status)) {
+                        // Handle error!
+                        return;
+                    }
+      
+                    aFile.launch();
+                });
+            }
+        }
+    })
 
 示例：Firefox 31+ 右键横排菜单，**在链接上和非链接上不相同**。
 

@@ -4,7 +4,10 @@
 // @include        chrome://browser/content/browser.xul
 // @charset        UTF-8
 // @version        2014.06.06
+// @startup        window.SimpleDragModY.init();
+// @shutdown       window.SimpleDragModY.uninit();
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS
+// @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/SimpleDragModY.uc.js
 // @note           2014-5-27，提升链接的优先级为图片之前，修改百度盘密码链接的识别，略微调整下结构。
 // @note           2014-5-26，修改为向上前台，其它方向拖曳后台。
 // @note           2014-5-23，忽略 javascript: 开头的链接，完善百度盘特殊密码链接，
@@ -147,7 +150,6 @@ window.SimpleDragModY = {
             });
         } else if (searchText){
             // 搜索框搜索选中文字
-            // BrowserSearch.loadSearch(searchText, true);
             let engine = Services.search.defaultEngine;
             let submission = engine.getSubmission(searchText, null);
             if (submission) {

@@ -6,9 +6,12 @@
 // @modified       ywzhaiqi
 // @compatibility  Firefox 17
 // @charset        UTF-8
-// @version        0.3.0
-// @update         2014-07-31
+// @version        2014.8.1
+// version        0.3.0
+// @startup        window.uAutoPagerize.init();
+// @shutdown       window.uAutoPagerize.destroy();
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/uAutoPagerize2
+// @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/uAutoPagerize/uAutoPagerize.uc.js
 // @reviewURL      http://bbs.kafan.cn/thread-1555846-1-1.html
 // @optionsURL     about:config?filter=uAutoPagerize.
 // @note           0.3.0 本家に倣って Cookie の処理を変更した
@@ -42,7 +45,7 @@
 (function(css) {
 
 var Config = {
-    isUrlbar: 1,                // 放置的位置，0 为可移动按钮，1 为地址栏
+    isUrlbar: 0,                // 放置的位置，0 为可移动按钮，1 为地址栏
     ORIGINAL_SITEINFO: false,   // 原版JSON规则是否启用？以国外网站为主
     UPDATE_CN_SITEINFO_DAYS: 7, // 更新中文规则的间隔（天）
     SEND_COOKIE: false,         // 是否额外的获取 cookie？百度有问题时需要清除 cookie
@@ -623,7 +626,6 @@ var ns = window.uAutoPagerize = {
     destroy: function() {
         ns.uninit();
         ns.theEnd();
-        delete window.uAutoPagerize;
     },
     addListener: function() {
         gBrowser.mPanelContainer.addEventListener('DOMContentLoaded', this, true);

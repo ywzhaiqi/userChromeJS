@@ -9,8 +9,11 @@
 // @charset        UTF-8
 // @version        2014.7.31
 // version         0.0.8
+// @startup        window.addMenu.init();
+// @shutdown       window.addMenu.destroy();
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
+// @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
 // @note           0.0.8 Firefox 25 の getShortcutOrURI 廃止に仮対応
 // @note           0.0.7 Firefox 21 の Favicon 周りの変更に対応
 // @note           0.0.6 Firefox 19 に合わせて修正
@@ -151,7 +154,9 @@ window.addMenu = {
         aFile.appendRelativePath(path);
 
         if (!aFile.exists()) {
-            alert('配置文件 _addmenu.js 不存在');
+            alert('配置文件 _addmenu.js 不存在，请在打开的网页中点击 Raw 下载');
+            var url = 'https://github.com/defpt/userChromeJs/blob/master/addMenuPlus/_addmenu.js';
+            openUILinkIn(url, 'tab', false, null);
             return;
         }
 
@@ -214,7 +219,7 @@ window.addMenu = {
             ins.parentNode.insertBefore(
                 $C("menuseparator", { id: "addMenu-app-insertpoint", class: "addMenu-insert-point" }), ins.nextSibling);
         }
-        ins = $("devToolsSeparator");
+        ins = $('jscmdseparator') || $("devToolsSeparator");
         ins.parentNode.insertBefore($C("menuitem", {
             id: "addMenu-rebuild",
             label: "AddMenuPlus",

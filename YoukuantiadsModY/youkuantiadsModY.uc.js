@@ -7,13 +7,18 @@
 // @homepage        http://haoutil.tk
 // @version         1.6.0.26
 // @update          2014.7.23
+// @compatible      17+
+// @startup         window.mYoukuAntiADs.init();
+// @shutdown        window.mYoukuAntiADs.destroy();
 // @homePageURL     https://github.com/ywzhaiqi/userChromeJS/tree/master/YoukuantiadsModY
-// @updateURL       https://j.mozest.com/ucscript/script/92.meta.js
-// @downloadURL     https://j.mozest.com/zh-CN/ucscript/script/92.uc.js
+// @downloadURL     https://github.com/ywzhaiqi/userChromeJS/raw/master/YoukuantiadsModY/youkuantiadsModY.uc.js
+// updateURL       https://j.mozest.com/ucscript/script/92.meta.js
+// downloadURL     https://j.mozest.com/zh-CN/ucscript/script/92.uc.js
 // @note            2014-7-21 新增下载播放器、自动更新等功能。
 // @note            2014-7-1 新增：提前判断是否为 flash，加快速度。
 // @note            2014-7-1 新增：本地播放器检测功能。
 // ==/UserScript==
+
 (function() {
     /*
         脚本地址：http://bbs.kafan.cn/thread-1509944-1-1.html
@@ -21,7 +26,7 @@
      */
 
     var enalbe_localPlayer = true; // 是否启用本地播放器
-    var SWF_DIR = 'swf';            // 本地播放器路径，chrome 目录下
+    var SWF_DIR = 'swf';           // 本地播放器路径，chrome 目录下
     // var SWF_DIR = 'local\\swf';
 
     var XHR_TIMEOUT = 30 * 1000;
@@ -307,10 +312,14 @@
             return this.prefs = Services.prefs.getBranch("userChromeJS.YoukuAntiADs.");
         },
 
-        init: function(y) {
-            if (!enalbe_localPlayer) return;
+        init: function() {
+            // register observer
+            this.y = new YoukuAntiADs();
+            this.y.register();
 
-            this.y = y;
+            window.addEventListener('unload', this, false);
+
+            if (!enalbe_localPlayer) return;
 
             this.swfDir = this.getSwfDir();
 
@@ -330,12 +339,28 @@
             // }
         },
         uninit: function() {
+            this.y.unregister();
+
+            window.removeEventListener('unload', this, false);
+
+            // this.prefs.revemoObserver('', this, false);
+        },
+        destroy: function() {
+            this.uninit();
+
             ['youkuAntiADsMod'].forEach(function(id){
                 var node = document.getElementById(id);
                 if (node) node.parentNode.removeChild(node);
             });
-
-            // this.prefs.revemoObserver('', this, false);
+        },
+        handleEvent: function(event) {
+            switch (event.type) {
+                case 'unload':
+                    if(location == 'chrome://browser/content/browser.xul') {
+                        this.y.unregister();
+                    }
+                    break;
+            }
         },
         initPrefs: function() {  // 未完成
             var defPrefs = [
@@ -420,7 +445,7 @@
             //     }
             // }, false);
 
-            var ins = document.getElementById("devToolsSeparator");
+            var ins = $('jscmdseparator') || $('devToolsSeparator');
             ins.parentNode.insertBefore(menuitem, ins);
         },
         replaceLocalUrl: function() {
@@ -631,23 +656,9 @@
         },
     };
 
-    // register observer
-    var y = new YoukuAntiADs();
+    window.mYoukuAntiADs.init();
 
-    mYoukuAntiADs.init(y);
-
-    if(location == 'chrome://browser/content/browser.xul') {
-        y.register();
-    }
-
-    // unregister observer
-    window.addEventListener('unload', function() {
-        if(location == 'chrome://browser/content/browser.xul') {
-            y.unregister();
-        }
-    });
-
-
+    function $(id) document.getElementById(id)
     function $C(name, attr) {
         var el = document.createElement(name);
         if (attr) Object.keys(attr).forEach(function(n) el.setAttribute(n, attr[n]));

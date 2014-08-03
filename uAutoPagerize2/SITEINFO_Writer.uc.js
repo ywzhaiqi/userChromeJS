@@ -7,9 +7,11 @@
 // @include        main
 // @compatibility  Firefox 5 - firefox 23a1
 // @charset        UTF-8
-// @version        2013.11.23
-// @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/uAutoPagerize2/SITEINFO_Writer.uc.js
+// @version        2014.8.3
+// @startup        window.siteinfo_writer.init();
+// @shutdown       window.siteinfo_writer.destroy();
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/uAutoPagerize2
+// @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/uAutoPagerize2/SITEINFO_Writer.uc.js
 // @note           增加下一页中文选择xpath
 // @note           fix compatibility for firefox 23a1 by lastdream2013
 // @note           まだこれからつくり込む段階
@@ -142,7 +144,7 @@ window.siteinfo_writer = {
                 label: "辅助定制翻页规则",
                 oncommand: "siteinfo_writer.show();",
             });
-            $("devToolsSeparator").parentNode.insertBefore(menuitem, $("devToolsSeparator"));
+            // $("devToolsSeparator").parentNode.insertBefore(menuitem, $("devToolsSeparator"));
 
             setTimeout(function() {
                 if (!window.uAutoPagerize) {
@@ -156,6 +158,7 @@ window.siteinfo_writer = {
                     newMenuItem.setAttribute("id", "sw-popup-menuitem");
                     aupPopup.appendChild(newMenuItem);
                 }
+
             }, 2000);
 
             this.container = $("sw-container");
@@ -782,14 +785,15 @@ Inspector.prototype = {
         }
 
 		var hasId = current.getAttribute("id");
-            var hasPageKey = false;
+        var hasPageKey = false;
 		for (let [i, elem] in Iterator(nodes)) {
 			obj.localnames = elem.localName + "/" + obj.localnames;
 
-                if(this.aType == "nextLink" && !(hasId || hasPageKey)){
-                    hasPageKey = this.PAGE_KEY.test(elem.getAttribute("class"));
-                    obj.ancestor_text = this.getElementXPath(elem, this.ATTR_CLASSID) + "/" + obj.ancestor_text;
-                }
+            if(this.aType == "nextLink" && !(hasId || hasPageKey)){
+                hasPageKey = this.PAGE_KEY.test(elem.getAttribute("class"));
+                obj.ancestor_text = this.getElementXPath(elem, this.ATTR_CLASSID) + "/" + obj.ancestor_text;
+            }
+
 			if (!hasId) {
 				hasId = elem.getAttribute("id");
 				obj.ancestor_classid = this.getElementXPath(elem, this.ATTR_CLASSID) + "/" + obj.ancestor_classid;
@@ -1258,34 +1262,34 @@ var Inspect = (function(){
     };
 
     let start = function(elem, useFirebug){
-        if(!elem){
-            if(useFirebug && Firebug){
+        if (!elem) {
+            if (useFirebug && Firebug) {
                 mainWin.document.getElementById("cmd_firebug_toggleInspecting").doCommand();
-            }else{
+            } else {
                 gDevToolsBrowser.selectToolCommand(gBrowser, "inspector");
             }
             return;
         }
 
         // 已经打开则直接启动
-        if(Firebug && Firebug.isInitialized && Firebug.currentContext){
-            Firebug.browserOverlay.startFirebug(function(Firebug){
+        if (Firebug && Firebug.isInitialized && Firebug.currentContext) {
+            Firebug.browserOverlay.startFirebug(function(Firebug) {
                 Firebug.Inspector.inspectFromContextMenu(elem);
             });
             return;
-        }else{  // 检测自带开发工具是否已经启动
+        } else { // 检测自带开发工具是否已经启动
             let target = devtools.TargetFactory.forTab(gBrowser.selectedTab);
             let toolbox = gDevTools.getToolbox(target);
-            if(toolbox){
+            if (toolbox) {
                 inspectWithDevtools(elem);
                 return;
             }
         }
 
         // 没有打开则启动
-        if(useFirebug && Firebug){
+        if (useFirebug && Firebug) {
             inspectWithFirebug(elem);
-        }else{
+        } else {
             inspectWithDevtools(elem);
         }
     };

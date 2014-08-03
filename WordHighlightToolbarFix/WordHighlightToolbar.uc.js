@@ -10,6 +10,8 @@
 // @version        0.0.8
 // @homePageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/WordHighlightToolbarFix
 // @oHomePageURL   https://github.com/Griever/userChromeJS/tree/master/WordHighlightToolbar
+// @startup        window.gWHT.init();
+// @shutdown       window.gWHT.destroy();
 // @note           增加延迟及 super_preloader 加载下一页高亮的支持 By ywzhaiqi
 // @note           0.0.8 Firefox 25 でエラーが出ていたのを修正
 // @note           0.0.7 ツールバーが自動で消えないことがあったのを修正

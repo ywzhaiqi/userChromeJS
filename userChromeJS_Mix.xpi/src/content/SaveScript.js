@@ -5,38 +5,61 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 (function(){
 
-const BROWSERCHROME = "chrome://browser/content/browser.xul";
-
 const RE_USERCHROME_JS = /\.uc(?:-\d+)?\.(?:js|xul)$/i;
 const RE_CONTENTTYPE = /text\/html/i;
 
-var Utils = {
-    popupNotification: function(details){
-        var win = Utils.getMostRecentWindow();
-        if (win && win.PopupNotifications) {
-            win.PopupNotifications.show(
-                win.gBrowser.selectedBrowser,
-                details.id,
-                details.message,
-                "",
-                details.mainAction,
-                details.secondActions,
-                details.options);
-            return true;
-        }
-
-        return false;
+// Class
+userChromejs.Prefs = function (str) {
+    this.pref = Services.prefs.getBranch(str || '');
+};
+userChromejs.Prefs.prototype = {
+    get: function(name, defaultValue){
+        var value = defaultValue;
+        try {
+            switch(this.pref.getPrefType(name)) {
+                case Ci.nsIPrefBranch.PREF_STRING: value = this.pref.getComplexValue(name, Ci.nsISupportsString).data; break;
+                case Ci.nsIPrefBranch.PREF_INT   : value = this.pref.getIntPref(name); break;
+                case Ci.nsIPrefBranch.PREF_BOOL  : value = this.pref.getBoolPref(name); break;
+            }
+        } catch(e) { }
+        return value;
     },
-    getFocusedWindow: function() {
-        var win = document.commandDispatcher.focusedWindow;
-        return (!win || win == window) ? content : win;
+    set: function(name, value) {
+        try {
+            switch(typeof value) {
+                case 'string' :
+                    var str = Cc["@mozilla.org/supports-string;1"].createInstance(Ci.nsISupportsString);
+                    str.data = value;
+                    this.pref.setComplexValue(name, Ci.nsISupportsString, str);
+                    break;
+                case 'number' : this.pref.setIntPref(name, value); break;
+                case 'boolean': this.pref.setBoolPref(name, value); break;
+            }
+        } catch(e) { }
     },
-    getMostRecentWindow: function(){
-        return Services.wm.getMostRecentWindow("navigator:browser")
+    delete: function(name) {
+        try {
+            this.pref.deleteBranch(name);
+        } catch(e) { }
     },
+    list: function(name) this.pref.getChildList(name, {}),
+    has: function(name){
+        return this.pref.getPrefType(name) !== 0;
+    }
 };
 
-userChromejs.Manganer = (function(){  // 从 uc 脚本管理器中添加或移除
+// 创建一个 prefs 调用
+userChromejs.__defineGetter__("prefs", function(){
+    delete this.prefs;
+    return this.prefs = new userChromejs.Prefs('userChrome.');
+});
+
+// 从 uc 脚本管理器中添加或移除
+userChromejs.Manganer = (function(){
+    function getAll() {
+        return userChrome_js.overlays.concat(userChrome_js.scripts);
+    }
+
     function getArr(script) {
         if (script.type === 'xul') {
             return userChrome_js.overlays;
@@ -49,27 +72,22 @@ userChromejs.Manganer = (function(){  // 从 uc 脚本管理器中添加或移�
 
     function findExistScript(newScript) {
         var arr = getArr(newScript);
-        var oldScript = null;
-        arr.some(function(item){
+        var index = -1,
+            oldScript = null;
+        arr.some(function(item, i){
             // 根据 id 或文件名判断
             if (item.id == newScript.id || item.filename == newScript.filename) {
                 oldScript = item;
-                return true;
-            }
-        });
-
-        return oldScript;
-    }
-
-    function add(script) {
-        var arr = getArr(script);
-        var index = -1;
-        arr.some(function(item, i) {
-            if (script.url == item.url) {
                 index = i;
                 return true;
             }
         });
+
+        return [index, oldScript, arr];
+    }
+
+    function add(script) {
+        var [index, ,arr] = findExistScript(script);
 
         if (script.type == 'xul') {
             script.xul = '<?xul-overlay href=\"'+ script.url +'\"?>\n';
@@ -83,14 +101,7 @@ userChromejs.Manganer = (function(){  // 从 uc 脚本管理器中添加或移�
     }
 
     function remove(script) {
-        var arr = getArr(script);
-        var index = -1;
-        arr.some(function(item, i) {
-            if (script.url == item.url) {
-                index = i;
-                return true;
-            }
-        });
+        var [index, ,arr] = findExistScript(script);
 
         if (index >= 0) {
             arr.splice(index, 1);
@@ -102,10 +113,12 @@ userChromejs.Manganer = (function(){  // 从 uc 脚本管理器中添加或移�
         add: add,
         remove: remove,
         getArr: getArr,
+        getAll: getAll,
         findExistScript: findExistScript
     }
-})()
+})();
 
+// uc 脚本的安装、卸载、启用禁用
 userChromejs.Script = (function(){
 
     function install(aFile) {
@@ -113,14 +126,14 @@ userChromejs.Script = (function(){
             msg = "安装成功",
             restartless = true;
 
-        var oldScript = userChromejs.Manganer.findExistScript(script);
-        if(script.regex.test(BROWSERCHROME)) {
+        var oldScript = userChromejs.Manganer.findExistScript(script)[1];
+        if(script.includeMain) {
             if (oldScript && oldScript.isRunning) {
                 if (oldScript.restartless) {
                     shutdown(oldScript);
                     // 清除缓存
                     Services.obs.notifyObservers(null, "startupcache-invalidate", "");
-                    msg = '升级完毕';
+                    msg = '重新安装成功';
                 } else {
                     msg = '已经存在，需要重启生效';
                     restartless = false;
@@ -145,6 +158,11 @@ userChromejs.Script = (function(){
         shutdown(script);
         script.file.remove(false);
         var success = userChromejs.Manganer.remove(script);
+        console.log('success', success, script.restartless)
+        if (success) {
+            userChromejs.Save.showInstallMessage(script.filename, '已成功卸载', script.restartless);
+        }
+
         return success;
     }
 
@@ -174,7 +192,7 @@ userChromejs.Script = (function(){
         startup: startup,
         shutdown: shutdown
     }
-})()
+})();
 
 userChromejs.Save = {
     get SCRIPTS_FOLDER() {
@@ -217,14 +235,14 @@ userChromejs.Save = {
         // automatically onclick and on page navigation, but we need to remove
         // them ourselves in the case of reload, or they stack up.
         for (var i = 0, child; child = notificationBox.childNodes[i]; i++)
-            if (child.getAttribute("value") == "install-userChromeJS")
+            if (child.getAttribute("value") == "install-userChromejs")
                 notificationBox.removeNotification(child);
 
         var self = this;
 
         var notification = notificationBox.appendNotification(
             greeting,
-            "install-userChromeJS",
+            "install-userChromejs",
             null,
             notificationBox.PRIORITY_WARNING_MEDIUM,
             [{
@@ -232,20 +250,19 @@ userChromejs.Save = {
                 accessKey: "I",
                 popup: null,
                 callback: function() {
-                    self.saveScript();
+                    self.saveScript(null);
                 }
             }]
         );
     },
-    saveScript: function(url) {
+    saveScript: function(url, skipSelect) {
         var win = Utils.getFocusedWindow();
 
-        var doc, name, filename, fileExt, charset;
+        var doc, name, filename, fileExt;
         if (!url) {
             url = win.location.href;
             doc = win.document;
             // name = doc.body.textContent.match(/\/\/\s*@name\s+(.*)/i);
-            charset = doc.body.textContent.match(/\/\/\s*@charset\s+(.*)/i);
         } else {
             if (url.match(/^https?:\/\/github\.com\/\w+\/\w+\/blob\//)) {
                 url = url.replace("/blob/", "/raw/");
@@ -260,9 +277,41 @@ userChromejs.Save = {
                 filename += m[1];
         }
 
+        var download = function(url, target) {
+            var persist = Cc["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"].createInstance(Ci.nsIWebBrowserPersist);
+            persist.persistFlags = persist.PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION;
+
+            var obj_URI = Services.io.newURI(url, null, null);
+
+            persist.progressListener = {
+                onProgressChange: function(aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress) {
+                },
+                onStateChange: function(aWebProgress, aRequest, flags, status) {
+                    if((flags & Ci.nsIWebProgressListener.STATE_STOP) && status == 0){
+                        userChromejs.Script.install(target);
+                        // TODO: 保存其它文件，不仅仅是 uc 脚本？
+                        // if (RE_USERCHROME_JS)
+                        //     userChromejs.Script.install(fp.file);
+                        // else
+                        //     userChromejs.Save.showInstallMessage(fp.file.leafName, '保存完毕', false);
+                    }
+                }
+            };
+
+            persist.saveURI(obj_URI, null, null, null, "", target, null);
+        };
+
+        if (typeof skipSelect === 'undefined')
+            skipSelect = userChromejs.prefs.get('install_skipSelect');
+        if (skipSelect) {
+            var target = this.SCRIPTS_FOLDER.clone();
+            target.append(filename);
+            download(url, target);
+            return;
+        }
+
         fileExt = name.match(/\.uc\.(js|xul)$/i);
         fileExt = fileExt && fileExt[1] ? fileExt[1] : "js";
-        charset = charset && charset[1] ? charset[1] : "UTF-8";
 
         // https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL/Tutorial/Open_and_Save_Dialogs
         var fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
@@ -276,39 +325,15 @@ userChromejs.Save = {
             done: function(res) {
                 if (res != fp.returnOK && res != fp.returnReplace) return;
 
-                var persist = Cc["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"].createInstance(Ci.nsIWebBrowserPersist);
-                persist.persistFlags = persist.PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION;
-
-                // var obj_URI;
-                // if(doc && fileExt != 'xul'){
-                //     obj_URI = doc.documentURIObject;
-                // }else{
-                //     obj_URI = Services.io.newURI(url, null, null);
-                // }
-                var obj_URI = Services.io.newURI(url, null, null);
-
-                persist.progressListener = {
-                    onProgressChange: function(aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress) {
-                    },
-                    onStateChange: function(aWebProgress, aRequest, flags, status) {
-                        if((flags & Ci.nsIWebProgressListener.STATE_STOP) && status == 0){
-                            if (RE_USERCHROME_JS)
-                                userChromejs.Script.install(fp.file);
-                            else
-                                userChromejs.Save.showInstallMessage(fp.file.leafName, '保存完毕', false);
-                        }
-                    }
-                };
-
-                persist.saveURI(obj_URI, null, null, null, "", fp.file, null);
+                download(url, fp.file);
             }
         };
         fp.open(callbackObj);
     },
     showInstallMessage: function(scriptName, msg, restartless){
         var showedMsg = Utils.popupNotification({
-            id: "userchromejs-install-popup-notification",
-            message: "'" + scriptName + "' 脚本" +  msg,
+            id: "userChromejs-install-popup-notification",
+            message: "" + scriptName + " 脚本" +  msg,
             mainAction: restartless ? null : {
                 label: "立即重启",
                 accessKey: "R",
@@ -318,12 +343,126 @@ userChromejs.Save = {
             options: {
                 removeOnDismissal: true,
                 persistWhileVisible: true,
-                popupIconURL: "chrome://userchromejs/skin/icon32.png"
+                popupIconURL: "chrome://userChromejs/skin/icon32.png"
             }
         });
         return showedMsg;
-    },  
+    },
+
+    exportPrefs: function() {
+        var ok = confirm('是否要导出脚本或自定义的设置？');
+        if (!ok) return;
+
+        var arr = userChrome_js.scripts.concat(userChrome_js.overlays);
+        var prefs = new userChromejs.Prefs('');
+
+        var list = arr.filter(function(s) !!s.config).map(function(s) s.config);
+        // 自定义列表
+        var custom = userChromejs.prefs.get('custom_prefs');
+        var customList = custom.split(',').filter(function(s) !!s).map(function(s) s.trim());
+        list = list.concat(customList);
+        list = Utils.unique(list);
+
+        // 获取所有的 prefs
+        var data = {};
+        list.forEach(function(branch){
+            var l = prefs.list(branch);
+            l.forEach(function(name){
+                data[name] = prefs.get(name, '');
+            });
+        });
+        data = JSON.stringify(data);
+
+        var fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+        fp.init(window, "设置文件备份为", Ci.nsIFilePicker.modeSave);
+        fp.appendFilter("JSON 文件", "*.json");
+        fp.defaultString = 'uc 脚本设置备份.json';
+        if (fp.show() == fp.returnCancel || !fp.file ) { 
+           return;
+        } else {
+            Utils.saveFile(fp.file, data);
+        }
+    },
+    importPrefs: function() {
+        var fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+        fp.init(window, "设置文件", Ci.nsIFilePicker.modeOpen);
+        fp.appendFilter("JSON 文件", "*.json");
+        fp.defaultString = 'uc 脚本设置备份.json';
+        if (fp.show() == fp.returnCancel || !fp.file ) { 
+           return;
+        } else {
+            var data = Utils.loadText(fp.file);
+            data = JSON.parse(data);
+
+            var prefs = new userChromejs.Prefs('');
+            for (var name in data) {
+                prefs.set(name, data[name]);
+            }
+        }
+    }
 };
+
+var Utils = {
+    unique: function (a){
+        var o = {},
+            r = [],
+            t;
+        for (var i = 0, l = a.length; i < l; i++) {
+            t = a[i];
+            if(!o[t]){
+                o[t] = true;
+                r.push(t);
+            }
+        }
+        return r;
+    },
+    saveFile: function(file, data) {
+        var suConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
+        suConverter.charset = 'UTF-8';
+        data = suConverter.ConvertFromUnicode(data);
+
+        var foStream = Cc['@mozilla.org/network/file-output-stream;1'].createInstance(Ci.nsIFileOutputStream);
+        foStream.init(file, 0x02 | 0x08 | 0x20, 0664, 0);
+        foStream.write(data, data.length);
+        foStream.close();
+    },
+    loadText: function (aFile) {
+        var fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
+        var sstream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
+        fstream.init(aFile, -1, 0, 0);
+        sstream.init(fstream);
+
+        var data = sstream.read(sstream.available());
+        try { data = decodeURIComponent(escape(data)); } catch(e) {}
+        sstream.close();
+        fstream.close();
+        return data;
+    },
+    popupNotification: function(details){
+        var win = Utils.getMostRecentWindow();
+        if (win && win.PopupNotifications) {
+            win.PopupNotifications.show(
+                win.gBrowser.selectedBrowser,
+                details.id,
+                details.message,
+                "",
+                details.mainAction,
+                details.secondActions,
+                details.options);
+            return true;
+        }
+
+        return false;
+    },
+    getFocusedWindow: function() {
+        var win = document.commandDispatcher.focusedWindow;
+        return (!win || win == window) ? content : win;
+    },
+    getMostRecentWindow: function(){
+        return Services.wm.getMostRecentWindow("navigator:browser")
+    },
+};
+
 
 userChromejs.Save.init();
 

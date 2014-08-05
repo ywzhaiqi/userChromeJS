@@ -61,7 +61,7 @@
     list-style-image: url(chrome://userchromejs/skin/jscmd_edit_add.png);
 }
 #userChromejs_options > hbox > #jscmd_edit_del {
-    list-style-image: url(chrome://userchromejs/skin/userChromejs_options.png);
+    list-style-image: url(chrome://userchromejs/skin/jscmd_edit_del.png);
 }
 #showToolsMenu {
     list-style-image: url(chrome://userchromejs/skin/showToolsMenu.png);

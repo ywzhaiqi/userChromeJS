@@ -57,6 +57,8 @@
     // editor: "/usr/bin/gedit",
 // --- config ---
     _statusDisplay: null,
+
+  
     get statusDisplay() {
       if (!this._statusDisplay)
         this._statusDisplay = document.getElementById('status-bar') ||
@@ -467,7 +469,7 @@
         parentMenuPopup.appendChild(menuitem);
       });
 
-      document.getElementById("showToolsMenu").setAttribute("label", (userChromejs.ShowToolButton ? "切换到工具菜单" : "切换到按钮"));
+      document.getElementById("showToolsMenu").setAttribute("label", (userChromejs.ShowToolButton ? "切换到菜单栏-工具" : "切换到按钮"));
     },
 
     clickDirMenu: function(event){
@@ -510,11 +512,7 @@
       }else if(event.button==2){
         if (event.ctrlKey) {
           if(confirm('是否要卸载这个脚本？')) {
-            var success = userChromejs.Script.uninstall(script);
-            if (success) {
-              event.target.parentNode.removeChild(event.target);
-              userChromejs.Save.showInstallMessage(script.filename, '已成功卸载', script.restartless);
-            }
+            userChromejs.Script.uninstall(script);
           }
         } else {
           userChromejs.launchEditor(script);
@@ -832,6 +830,7 @@
       else {
         var ss = fp.file.path;
         // userChromejs.editor = ss.replace(/\\/g, "\\\\");
+        userChromejs.editor = ss;
         gPrefService.setCharPref("view_source.editor.path", userChromejs.editor);
       }
     }
@@ -997,14 +996,20 @@
     		<menuitem id="jscmd_edit_add" class="menuitem-iconic" label="添加脚本命令" flex="1" oncommand="userChromejsScriptOptionsMenu.adduserChromejsmenu();"/>
 				  <toolbarbutton id="jscmd_edit_del" tooltiptext="删除脚本命令" oncommand="hidePopup(); userChromejsScriptOptionsMenu.deluserChromejsmenu();"/>
       </hbox>
+      <hbox>
+        <menuitem id="userChromejs_export_prefs" class="menuitem-iconic" label="导出脚本设置" flex="1"
+            tooltiptext="包括uc脚本和自定义的设置" oncommand="userChromejs.Save.exportPrefs();"/>
+        <menuitem id="userChromejs_import_prefs" class="menuitem-iconic" label="导入"
+            tooltiptext="包括uc脚本和自定义的设置" oncommand="userChromejs.Save.importPrefs();"/>
+      </hbox>
       <menuseparator />
       <hbox>
-        <menuitem id="showToolsMenu" label="切换到工具菜单" class="menuitem-iconic" oncommand="userChromejs.toggleUI(1);" flex="1" />
+        <menuitem id="showToolsMenu" label="切换到菜单栏-工具" class="menuitem-iconic" oncommand="userChromejs.toggleUI(1);" flex="1" />
         <checkbox id="userChrome_homebtn"  label="移动菜单" tooltiptext="切换到工具菜单时将脚本命令和脚本目录菜单移动到火狐主页按钮" oncommand="userChromejs.settingHomeMode();" />
       </hbox>
       <hbox>
       	<menuitem id="toolbtn_rebuild" class="menuitem-iconic" label="新建窗口并重载脚本" flex="1" oncommand="userChromejs.rebuild();"/>
-      	<checkbox id="userChrome_setting"  label="默认方式" tooltiptext="每次新建窗口时是否重载脚本?\n默认方式不重载" oncommand="userChromejs.setting();" />
+      	<checkbox id="userChrome_setting"  label="默认方式" tooltiptext="每次新建窗口时是否重载脚本?默认方式不重载" oncommand="userChromejs.setting();" />
       </hbox>
       <hbox>
       	<menuitem id="toolbtn_chromedir" class="menuitem-iconic" label="打开chrome文件夹" flex="1" oncommand="userChromejs.Openchromedir();"/>

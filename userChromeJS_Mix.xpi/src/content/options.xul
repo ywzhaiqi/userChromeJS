@@ -8,16 +8,24 @@
     <prefpane id="main" flex="1">
         <preferences>
             <preference id="closeWindow" type="bool" name="userChrome.closeWindow"/>
+            <preference id="install_skipSelect" type="bool" name="userChrome.install_skipSelect"/>
             <preference id="EXPERIMENT" type="bool" name="userChrome.EXPERIMENT"/>
             <preference id="arrSubdir" type="string" name="userChrome.arrSubdir"/>
+            <preference id="custom_prefs" type="string" name="userChrome.custom_prefs"/>
+            <preference id="rebuild_menues" type="string" name="userChromeJS.rebuildUI.menues"/>
             <preference id="editorPath" type="string" name="view_source.editor.path"/>
         </preferences>
         <groupbox>
-           <caption label="一般设置" />
-           <checkbox label="关闭原窗口" tooltiptext="点击新建窗口并重载脚本按钮后是否关闭原窗口？"
+            <caption label="一般设置" />
+            <checkbox label="安装脚本跳过选择目录" tooltiptext="安装脚本直接保存，跳过选择目录窗口"
+                 preference="install_skipSelect" />
+            <checkbox label="关闭原窗口" tooltiptext="点击新建窗口并重载脚本按钮后是否关闭原窗口？"
                 preference="closeWindow" />
             <label value="编辑器的路径（留空代表代码片段速记器）：" />
             <textbox flex="1" preference="editorPath" />
+            <label value="prefs 自定义导出列表" />
+            <textbox flex="1" preference="custom_prefs"
+                    multiline="true" cols="60" height="60px" />
         </groupbox>
         <groupbox>
             <caption label="需要重启生效的" />
@@ -26,7 +34,12 @@
             <vbox>
                 <label value="导入的目录" />
                 <textbox flex="1" preference="arrSubdir"
-                    multiline="true" cols="60" height="50px" />
+                    multiline="true" cols="60" height="60px" />
+            </vbox>
+            <vbox>
+                <label value="用户脚本菜单" />
+                <textbox flex="1" preference="rebuild_menues"
+                    multiline="true" cols="60" height="60px" />
             </vbox>
         </groupbox>
     </prefpane>

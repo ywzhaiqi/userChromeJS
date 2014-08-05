@@ -1,8 +1,10 @@
-REM è¿™æ˜¯ä¸€ä¸ªè‡ªåŠ¨æ‰“åŒ…æˆ xpi çš„å‘½ä»¤ï¼Œéœ€è¦æœ‰ 7z å‘½ä»¤çš„æ”¯æŒ
+REM ÕâÊÇÒ»¸ö×Ô¶¯´ò°ü³É xpi µÄÃüÁî£¬ĞèÒªÓĞ 7z ÃüÁîµÄÖ§³Ö
+
+SET filename="userChromeJS_Mix-1.5 ²âÊÔ°æ2.xpi"
 
 CD src
 7z a 1.zip *
 MOVE 1.zip ..
 CD ..
-DEL userChromeJS_Mix-1.5 æµ‹è¯•ç‰ˆ.xpi
-RENAME 1.zip userChromeJS_Mix-1.5 æµ‹è¯•ç‰ˆ.xpi
+DEL %filename%
+RENAME 1.zip %filename%

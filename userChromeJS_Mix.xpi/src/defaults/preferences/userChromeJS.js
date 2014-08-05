@@ -8,3 +8,6 @@ pref("userChrome.EXPERIMENT", false);
 
 // userChrome.js 的导入脚本的文件夹
 pref("userChrome.arrSubdir", ", xul, TabMixPlus, withTabMixPlus, SubScript, UCJSFiles, userContent, userMenu");
+
+pref("userChrome.install_skipSelect", true);
+pref("userChrome.custom_prefs", "userChrome., userChromeJS., uAutoPagerize., addMenu.");

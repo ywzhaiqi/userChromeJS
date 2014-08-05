@@ -269,7 +269,7 @@
 
       //メタデータ収集
       function getScriptData(aContent,aFile){
-        var charset, description, author, version, homepageURL, reviewURL, downloadURL, updateURL;
+        var charset, description, author, version;
         var header = (aContent.match(/^\/\/\s*==UserScript==[ \t]*\n(?:.*\n)*?\/\/\s*==\/UserScript==[ \t]*\n/m) || [""])[0];
         var match, rex = { include: [], exclude: []};
         while ((match = findNextRe.exec(header)))
@@ -306,27 +306,39 @@
         if(match)
           author = match.length > 0 ? match[1].replace(/^\s+/,"") : "";
 
+        // name
+        match = header.match(/\/\/ @name\b(.+)\s*/i);
+        var name = "";
+        if(match)
+          name = match.length > 0 ? match[1].replace(/^\s+/,"") : "";
+
+        // namespace
+        match = header.match(/\/\/ @namespace\b(.+)\s*/i);
+        var namespace = "";
+        if(match)
+          namespace = match.length > 0 ? match[1].replace(/^\s+/,"") : "";
+
         // homepageURL
         match = header.match(/\/\/ @homepageURL\b(.+)\s*/i);
-        homepageURL = "";
+        var homepageURL = "";
         if(match)
           homepageURL = match.length > 0 ? match[1].replace(/^\s+/,"") : "";
 
         // reviewURL
         match = header.match(/\/\/ @reviewURL\b(.+)\s*/i);
-        reviewURL = "";
+        var reviewURL = "";
         if(match)
           reviewURL = match.length > 0 ? match[1].replace(/^\s+/,"") : "";
 
         // downloadURL
         match = header.match(/\/\/ @downloadURL\b(.+)\s*/i);
-        downloadURL = "";
+        var downloadURL = "";
         if(match)
           downloadURL = match.length > 0 ? match[1].replace(/^\s+/,"") : "";
 
         // updateURL
         match = header.match(/\/\/ @updateURL\b(.+)\s*/i);
-        updateURL = "";
+        var updateURL = "";
         if(match)
           updateURL = match.length > 0 ? match[1].replace(/^\s+/,"") : "";
 
@@ -365,8 +377,16 @@
         if(match)
           shutdown = match.length > 0 ? match[1].replace(/^\s+/,"") : "";
 
+        // config
+        match = header.match(/\/\/ @config\b(.+)\s*/i);
+        var config = "";
+        if(match)
+          config = match.length > 0 ? match[1].replace(/^\s+/,"") : "";
+
         var url = fph.getURLSpecFromFile(aFile),
-          filename = aFile.leafName;
+            filename = aFile.leafName,
+            regex = new RegExp("^" + exclude + "(" + (rex.include.join("|") || ".*") + ")$", "i"),
+            includeMain = regex.test(BROWSERCHROME);
 
         var type = /\.uc(?:-\d+)?\.js$/i.test(filename) ? 'js' :
                          /\.uc(?:-\d+)?\.xul$/i.test(filename) ? 'xul' : '';
@@ -375,26 +395,30 @@
           filename: filename,
           file: aFile,
           url: url,
-          //namespace: "",
+          name: name,
+          namespace: "",
           charset: charset,
           description: description,
           version: version,
           author: author,
           //code: aContent.replace(header, ""),
-          regex: new RegExp("^" + exclude + "(" + (rex.include.join("|") || ".*") + ")$", "i"),
+          regex: regex,
 
           // new added
-          id: id,
+          id: id ? id : (name || filename) + '@' + (namespace || author),
+          type: type,
           homepageURL: homepageURL,
           reviewURL: reviewURL,
           downloadURL: downloadURL,
           updateURL: updateURL,
           optionsURL: optionsURL,
           fullDescription: fullDescription,
-          type: type,
+
           startup: startup,
           shutdown: shutdown,
-          restartless: !!(startup && shutdown),
+          restartless: includeMain ? !!(startup && shutdown) : true,
+          includeMain: includeMain,
+          config: config
         }
       }
 

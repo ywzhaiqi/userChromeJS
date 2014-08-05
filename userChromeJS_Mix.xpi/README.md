@@ -55,15 +55,20 @@ userChromeJS 扩展、userChrome.js、UC脚本管理器整合版，用于彻底�
     - 在浏览中打开 uc 脚本会出现 **安装工具条**。点击安装按钮后，会自动安装（保存该脚本，然后载入）。
     - 对不存在的脚本会直接安装（无需重启），只是很难判断是否为不存在的脚本，目前是根据id 或文件名判断，如果出现重复添加菜单等情况，请手动重启。
     - 菜单蓝色为无需重启的脚本。
-    - 对无需重启的脚本，直接安装即可。
+    - 对无需重启的脚本，会直接生效。
+    - 对非主窗口的脚本，会直接生效。
  - 卸载脚本
-    - 在脚本的菜单上 Ctrl + 右键卸载
-    - 对无需重启的会直接生效，但并不是完全彻底的卸载，如果需要完全彻底请手动重启。
-    - **注意：卸载脚本会同时删除该脚本**
+    - 在脚本的菜单上 Ctrl + 右键卸载。
+    - 对无需重启的脚本，会直接生效，但并不是完全彻底的卸载，如果需要请手动重启。
+    - 对非主窗口的脚本，会直接生效。
+    - **注意：卸载脚本同时会删除文件。**
  - 启用禁用脚本
-    - 对无需重启的脚本，启用禁用会直接生效。
+    - 对无需重启的脚本，会直接生效。
+    - 对非主窗口的脚本，会直接生效（默认就支持）。
  - 设置界面
  - 编辑器路径为空则用 **代码片段速记器** 打开。
+
+*注：这里的无需重启的脚本指主窗口脚本，非主窗口脚本本身就支持无需重启。*
 
 ![installBar](img/installBar.png)
 
@@ -75,23 +80,21 @@ userChromeJS 扩展、userChrome.js、UC脚本管理器整合版，用于彻底�
 
 ![addMenu_启用禁用效果图.gif](img/addMenu_启用禁用效果图.gif)
 
-#### 问题
-
- - 直接安装如果存在会重复添加菜单，例如 copybookmark.uc.js 脚本
- - 由于没有清除缓存，重复安装的并不是新版。
-
 ### 无需重启（restartless）脚本的说明
 
-需要脚本支持，在支持的脚本中添加以下2个参数即可。
+非主窗口的脚本默认支持无需重启，这里说的是主窗口的脚本。
+
+主窗口的需要脚本支持，在支持的脚本中添加以下2个参数即可。
 
     // @startup        window.uAutoPagerize.init();
     // @shutdown       window.uAutoPagerize.destroy();
 
 目前支持的脚本有：
 
-    - addMenuPlus.uc.js
-    - uAutoPagerize2.uc.js
-    - youkuantiadsModY.uc.js
-    - SimpleDragModY.uc.js
-    - SimpleMusicPlayer.uc.js
-    - SITEINFO_Writer.uc.js
+- 非主窗口的脚本
+- addMenuPlus.uc.js
+- uAutoPagerize2.uc.js
+- youkuantiadsModY.uc.js
+- SimpleDragModY.uc.js
+- SimpleMusicPlayer.uc.js
+- SITEINFO_Writer.uc.js

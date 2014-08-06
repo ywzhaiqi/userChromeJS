@@ -71,7 +71,7 @@ snapLinks.init();
             <menuitem label="复制所有链接标题 + URL (BBS)"
                 id="SnapLinksCopyLinksAndTitlesBBS"
                       class="hasLink"
-                      oncommand="snapLinks.copyLinks(null, false, '[url=%t]%u[/url]');" />
+                      oncommand="snapLinks.copyLinks(null, false, '[url=%u]%t[/url]');" />
             <menuitem label="复制所有链接标题 + URL (筛选)"
                 id="SnapLinksCopyLinksRegExp"
                       class="hasLink"

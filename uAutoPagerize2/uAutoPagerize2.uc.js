@@ -6,7 +6,7 @@
 // @modified       ywzhaiqi
 // @compatibility  Firefox 17
 // @charset        UTF-8
-// @version        2014.8.1
+// @version        2014.8.9
 // version        0.3.0
 // @startup        window.uAutoPagerize.init();
 // @shutdown       window.uAutoPagerize.destroy();
@@ -45,7 +45,7 @@
 (function(css) {
 
 var Config = {
-    isUrlbar: 0,                // 放置的位置，0 为可移动按钮，1 为地址栏
+    isUrlbar: 1,                // 放置的位置，0 为可移动按钮，1 为地址栏
     ORIGINAL_SITEINFO: false,   // 原版JSON规则是否启用？以国外网站为主
     UPDATE_CN_SITEINFO_DAYS: 7, // 更新中文规则的间隔（天）
     SEND_COOKIE: false,         // 是否额外的获取 cookie？百度有问题时需要清除 cookie
@@ -53,7 +53,7 @@ var Config = {
     // 默认值，有些可在右键菜单直接修改
     MAX_PAGER_NUM: -1,          // 默认最大翻页数， -1表示无限制
     IMMEDIATELY_PAGER_NUM: 3,   // 立即加载的默认页数
-    USE_IFRAME: true,           // 是否启用 iframe 加载下一页（浏览器级，默认只允许JavaScript，在 createIframe 中可设置其它允许）
+    USE_IFRAME: true,           // 是否启用 iframe 加载下一页（浏览器级，默认只允许 JavaScript 和 image，在 createIframe 中可设置其它允许）
     PRELOADER_NEXTPAGE: true,   // 提前预读下一页..就是翻完第1页,立马预读第2页,翻完第2页,立马预读第3页..(大幅加快翻页快感-_-!!)
     ADD_TO_HISTORY: false,      // 添加下一页链接到历史记录
     SEPARATOR_RELATIVELY: true, // 分隔符.在使用上滚一页或下滚一页的时候是否保持相对位置..
@@ -68,6 +68,8 @@ var DB_FOLDER = "";
 var prefs = {
     pauseA: false,            // 快速停止翻页开关
     ipages: [false, 2],
+
+    lazyImgSrc: 'zoomfile|file|original|load-src|_src|imgsrc|real_src|src2|data-lazyload-src|data-ks-lazyload|data-lazyload|data-src|data-original|data-thumb|data-imageurl|data-defer-src|data-placeholder',
 };
 
 // ワイルドカード(*)で記述する

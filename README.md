@@ -166,7 +166,7 @@ UA切换，基于 [lastdream2013 的版本](http://bbs.kafan.cn/thread-1534937-1
  - addMenuPlus 或 uAutoPagerize2 载入配置出错会提示第几行，点击可直接定位到这一行。
  - 首先需要设置 `view_source.editor.path` 编辑器路径和 `view_source.editor.args` 参数。
     - `view_source.editor.args` 会替换 `%LINE%` 为 `行`。
-    - `notepad++` 应该添加 `-n%LINE%`
+    - `notepad++` 和 `EverEdit` 应该添加 `-n%LINE%`
     - `Sublime text` 使用 `fixViewSourceEditArgsForST.uc.js` 这个脚本修正后填写 `%file:%line`
     - 其它编辑器参考 Firebug，注意大小写。
 

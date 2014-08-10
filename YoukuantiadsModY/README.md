@@ -15,3 +15,9 @@ youkuantiadsModY.uc.js
 id 为 `youkuAntiADsMod`，执行命令为
 
     oncommand: "document.getElementById('youkuAntiADsMod').doCommand();"
+
+### 网易云音乐增强器
+
+提取自 [网易云音乐增强器\[Chrome\]](https://chrome.google.com/webstore/detail/nmlhnfbdfkfebdofdfffnjmnkfmjcdgb)，具体说明看附件：网易云音乐增强器.rar
+
+[我的 Firefox 分享](http://pan.baidu.com/s/1sjjTpnR#dir/path=%2FShare%2FFirefox)

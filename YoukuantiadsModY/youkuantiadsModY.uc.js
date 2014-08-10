@@ -64,7 +64,7 @@
         {
             name: '网易云音乐 320k 辅助',
             player: ProfD + 'pt_index.js',
-            re: /http:\/\/.*\.music\.126\.net\/.*pt_index\.js/i,
+            re: /^http:\/\/.*\.music\.126\.net\/.*pt_index\.js/i,
         }
     ];
 
@@ -93,7 +93,7 @@
                 'player0': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/iqiyi_out.swf',
                 'player1': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/iqiyi5.swf',
                 'player2': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/iqiyi.swf',
-                're': /http:\/\/www\.iqiyi\.com\/(player\/\d+\/Player|common\/flashplayer\/\d+\/(Main)?Player_.*)\.swf/i
+                're': /https?:\/\/www\.iqiyi\.com\/(player\/\d+\/Player|common\/flashplayer\/\d+\/(Main)?Player_.*)\.swf/i
             },
             'iqiyip2p': {
                 'player': 'http://www.iqiyi.com/player/20140709110406/20088.swf',

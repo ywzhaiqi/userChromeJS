@@ -6,8 +6,8 @@
 // @author          ywzhaiqi && harv.c（原作者）
 // @homepage        http://haoutil.tk
 // @version         1.6.0.26
-// @update          2014.7.23
-// @compatible      17+
+// @update          2014.8.10
+// @compatible      firefox 17+
 // @startup         window.mYoukuAntiADs.init();
 // @shutdown        window.mYoukuAntiADs.destroy();
 // @homePageURL     https://github.com/ywzhaiqi/userChromeJS/tree/master/YoukuantiadsModY
@@ -48,14 +48,25 @@
             .createInstance(Ci.nsIXMLHttpRequest),
         get wbp() Cc["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"]
             .createInstance(Ci.nsIWebBrowserPersist),
+        get ios() Cc["@mozilla.org/network/io-service;1"]
+            .getService(Ci.nsIIOService)
     };
 
-    var getURLSpecFromFile = Cc["@mozilla.org/network/io-service;1"].
-                    getService(Ci.nsIIOService).
-                    getProtocolHandler("file").
-                    QueryInterface(Ci.nsIFileProtocolHandler).
-                    getURLSpecFromFile;
+    var getURLSpecFromFile = Instances.ios
+                    .getProtocolHandler("file").QueryInterface(Ci.nsIFileProtocolHandler)
+                    .getURLSpecFromFile;
 
+    var ProfD = 'file:///' + FileUtils.getDir('UChrm', []).path + '/';
+
+    // 全局替换规则，后面会检验是否存在，不存在会删除
+    var SpecialRules = [
+        // 重定向这个网址 http://s3.music.126.net/s/2/pt_index.js?49d138c4e4dfbd143dc16794a95a4856
+        {
+            name: '网易云音乐 320k 辅助',
+            player: ProfD + 'pt_index.js',
+            re: /http:\/\/.*\.music\.126\.net\/.*pt_index\.js/i,
+        }
+    ];
 
     // YoukuAntiADs, request observer
     function YoukuAntiADs() {};
@@ -82,7 +93,11 @@
                 'player0': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/iqiyi_out.swf',
                 'player1': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/iqiyi5.swf',
                 'player2': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/iqiyi.swf',
-                're': /http:\/\/www\.iqiyi\.com\/player\/\d+\/player\.swf/i
+                're': /http:\/\/www\.iqiyi\.com\/(player\/\d+\/Player|common\/flashplayer\/\d+\/(Main)?Player_.*)\.swf/i
+            },
+            'iqiyip2p': {
+                'player': 'http://www.iqiyi.com/player/20140709110406/20088.swf',
+                're': /http:\/\/www\.iqiyi\.com\/common\/flashplayer\/\d+\/\d[a-z0-9]*.swf/i
             },
             'tudou': {
                 'player': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/tudou.swf',
@@ -217,43 +232,59 @@
         observe: function(aSubject, aTopic, aData) {
             if(aTopic != 'http-on-examine-response') return;
 
-            var http = aSubject.QueryInterface(Ci.nsIHttpChannel);
+            var http = aSubject.QueryInterface(Ci.nsIHttpChannel),
+                url = http.URI.spec;
 
-            var aVisitor = new HttpHeaderVisitor();
-            http.visitResponseHeaders(aVisitor);
-            if (!aVisitor.isFlash()) return;
-
-            var site,
-                fn = this,
-                args = Array.prototype.slice.call(arguments);
-
-            for(var i in this.SITES) {
-                site = this.SITES[i];
-
-                // 跳过禁用的
-                if (site.enable == false) continue;
-
-                if(site['re'].test(http.URI.spec)) {
-
-                    if(typeof site['preHandle'] === 'function')
-                        site['preHandle'].apply(fn, args);
-
-                    if(!site['storageStream'] || !site['count']) {
-                        http.suspend();
-                        this.getPlayer(site, function() {
-                            http.resume();
-                            if(typeof site['callback'] === 'function')
-                                site['callback'].apply(fn, args);
-                        });
-                    }
-
-                    var newListener = new TrackingListener();
-                    aSubject.QueryInterface(Ci.nsITraceableChannel);
-                    newListener.originalListener = aSubject.setNewListener(newListener);
-                    newListener.site = site;
-
-                    break;
+            // 先查找全局规则
+            var site = null;
+            SpecialRules.some(function(rule){
+                if (rule.re.test(url)){
+                    site = rule;
+                    return true;
                 }
+            });
+
+            // 如果不存在，搜索 flash 规则
+            if (!site) {
+                var aVisitor = new HttpHeaderVisitor();
+                http.visitResponseHeaders(aVisitor);
+                if (!aVisitor.isFlash())
+                    return;
+
+                var rule;
+                for(var i in this.SITES) {
+                    rule = this.SITES[i];
+                    // 跳过禁用的
+                    if (rule.enable == false) continue;
+
+                    if(rule['re'].test(http.URI.spec)) {
+                        site = rule;
+                        break;
+                    }
+                }
+            }
+
+            if (site) {
+                // console.log('1111', site.player)
+                var fn = this,
+                    args = Array.prototype.slice.call(arguments);
+
+                if(typeof site['preHandle'] === 'function')
+                    site['preHandle'].apply(fn, args);
+
+                if(!site['storageStream'] || !site['count']) {
+                    http.suspend();
+                    this.getPlayer(site, function() {
+                        http.resume();
+                        if(typeof site['callback'] === 'function')
+                            site['callback'].apply(fn, args);
+                    });
+                }
+
+                var newListener = new TrackingListener();
+                aSubject.QueryInterface(Ci.nsITraceableChannel);
+                newListener.originalListener = aSubject.setNewListener(newListener);
+                newListener.site = site;
             }
         },
         QueryInterface: function(aIID) {
@@ -304,8 +335,14 @@
         }
     };
 
+    if (window.mYoukuAntiADs) {
+        window.mYoukuAntiADs.destroy();
+        delete window.mYoukuAntiADs;
+    }
+
     window.mYoukuAntiADs = {
         enable: true,
+        registerDone: false,
 
         get prefs() {
             delete this.prefs;
@@ -313,11 +350,26 @@
         },
 
         init: function() {
+            this.initSpecialRules();
+
             // register observer
+            // uc 脚本会因为打开新窗口而重复注册
+            var mediator = Cc["@mozilla.org/appshell/window-mediator;1"]
+                           .getService(Ci.nsIWindowMediator);
+            var enumerator = mediator.getEnumerator("navigator:browser");
+            while (enumerator.hasMoreElements()) {
+                var win = enumerator.getNext();
+                if (win.mYoukuAntiADs && win.mYoukuAntiADs.registerDone) {
+                    return;
+                }
+            }
+
             this.y = new YoukuAntiADs();
             this.y.register();
+            this.registerDone = true;
 
             window.addEventListener('unload', this, false);
+
 
             if (!enalbe_localPlayer) return;
 
@@ -338,15 +390,12 @@
             //     }
             // }
         },
-        uninit: function() {
+        destroy: function() {
             this.y.unregister();
 
             window.removeEventListener('unload', this, false);
 
             // this.prefs.revemoObserver('', this, false);
-        },
-        destroy: function() {
-            this.uninit();
 
             ['youkuAntiADsMod'].forEach(function(id){
                 var node = document.getElementById(id);
@@ -361,6 +410,15 @@
                     }
                     break;
             }
+        },
+        initSpecialRules: function() { // 移除不存在的
+            SpecialRules.forEach(function(rule, i){
+                var uri = Services.io.newURI(rule.player, null, null),
+                    file = uri.QueryInterface(Ci.nsIFileURL).file;
+                if (!file.exists()) {
+                    SpecialRules.splice(i, 1);  // 从数组中移除
+                }
+            });
         },
         initPrefs: function() {  // 未完成
             var defPrefs = [
@@ -504,7 +562,6 @@
                 for (let [prop, value] in Iterator(info)) {
                     if (typeof value === 'string' && value.startsWith('http')) {
                         this.updateSize += 1;
-
                         // 备份
                         if (!prop.startsWith('_')) {
                             info['_' + prop] = info[prop];
@@ -515,23 +572,24 @@
                 }
             }
         },
-        _updateOneInfo: function(info, prop, value) {
+        _updateOneInfo: function(info, propName, url) {
             var self = this;
-            var url = value;
 
             var downloader = new Downloader(url, this.swfDir);
             downloader.run(function (aFile, state) {
+                var msg;
                 if (aFile) {
-                    info[prop] = getURLSpecFromFile(aFile);
-                    self.updateMsgs.push('成功下载并替换 ' + aFile.leafName + ' 为 ' + info[prop])
+                    info[propName] = getURLSpecFromFile(aFile);
+                    msg = '成功下载并替换 ' + aFile.leafName + ' 为 ' + info[propName];
                 } else {
-                    var msg = updateStates[state] || state;
-                    self.updateMsgs.push(url + ' <b>' + msg + '</b>');
+                    msg = url + ' <b>' + (updateStates[state] || state) + '</b>';
                 }
+
+                self.updateMsgs.push(msg);
 
                 if (self.updateMsgs.length == self.updateSize) {
                     self.showUpdateMsg(self.updateMsgs.join('<br>'));
-                    debug(self.y.SITES);
+                    debug('更新并替换播放器', self.y.SITES);
                 }
             });
         },
@@ -656,8 +714,6 @@
         },
     };
 
-    window.mYoukuAntiADs.init();
-
     function $(id) document.getElementById(id)
     function $C(name, attr) {
         var el = document.createElement(name);
@@ -673,3 +729,6 @@
     }
 
 })();
+
+
+window.mYoukuAntiADs.init();

@@ -5,100 +5,16 @@
 // @include         chrome://browser/content/browser.xul
 // @author          harv.c
 // @homepage        http://haoutil.com
-// @version         1.4.5
+// @version         2014.8.12
+// version         1.4.5
+// @startup         window.Redirector.init();
+// @shutdown        window.Redirector.destroy();
 // @note            修改为可移动按钮
 // ==/UserScript==
 (function () {
 	Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 	Cu.import("resource://gre/modules/Services.jsm");
 	Cu.import("resource://gre/modules/NetUtil.jsm");
-
-	/* library */
-
-	const ToolbarManager = (function() {
-
-	    /**
-	     * Remember the button position.
-	     * This function Modity from addon-sdk file lib/sdk/widget.js, and
-	     * function BrowserWindow.prototype._insertNodeInToolbar
-	     */
-	    let layoutWidget = function(document, button, isFirstRun) {
-
-	        // Add to the customization palette
-	        let toolbox = document.getElementById('navigator-toolbox');
-	        toolbox.palette.appendChild(button);
-
-	        // Search for widget toolbar by reading toolbar's currentset attribute
-	        let container = null;
-	        let toolbars = document.getElementsByTagName('toolbar');
-	        let id = button.getAttribute('id');
-	        for (let i = 0; i < toolbars.length; i += 1) {
-	            let toolbar = toolbars[i];
-	            if (toolbar.getAttribute('currentset').indexOf(id) !== -1) {
-	                container = toolbar;
-	            }
-	        }
-
-	        // if widget isn't in any toolbar, default add it next to searchbar
-	        if (!container) {
-	            if (isFirstRun) {
-	                container = document.getElementById('nav-bar');
-	            } else {
-	                return;
-	            }
-	        }
-
-	        // Now retrieve a reference to the next toolbar item
-	        // by reading currentset attribute on the toolbar
-	        let nextNode = null;
-	        let currentSet = container.getAttribute('currentset');
-	        let ids = (currentSet === '__empty') ? [] : currentSet.split(',');
-	        let idx = ids.indexOf(id);
-	        if (idx !== -1) {
-	            for (let i = idx; i < ids.length; i += 1) {
-	                nextNode = document.getElementById(ids[i]);
-	                if (nextNode) {
-	                    break;
-	                }
-	            }
-	        }
-
-	        // Finally insert our widget in the right toolbar and in the right position
-	        container.insertItem(id, nextNode, null, false);
-
-	        // Update DOM in order to save position
-	        // in this toolbar. But only do this the first time we add it to the toolbar
-	        if (ids.indexOf(id) === -1) {
-	            container.setAttribute('currentset', container.currentSet);
-	            document.persist(container.id, 'currentset');
-	        }
-	    };
-
-	    let addWidget = function(window, widget, isFirstRun) {
-	        try {
-	            layoutWidget(window.document, widget, isFirstRun);
-	        } catch(error) {
-	            trace(error);
-	        }
-	    };
-
-	    let removeWidget = function(window, widgetId) {
-	        try {
-	            let widget = window.document.getElementById(widgetId);
-	            widget.parentNode.removeChild(widget);
-	        } catch(error) {
-	            trace(error);
-	        }
-	    };
-
-	    let exports = {
-	        addWidget: addWidget,
-	        removeWidget: removeWidget,
-	    };
-	    return exports;
-	})();
-
-	/* main */
 
 	function Redirector() {
 		this.isUrlbar = false;
@@ -121,7 +37,7 @@
 		init : function () {
 			this.loadRule();
 			this.drawUI();
-			if (!this.state) return;
+			// if (!this.state) return;
 			window.addEventListener("click", this, false);
 			let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
 			registrar.registerFactory(this.classID, this.classDescription, this.contractID, this);
@@ -131,8 +47,9 @@
 			Services.obs.addObserver(this, "http-on-modify-request", false);
 			Services.obs.addObserver(this, "http-on-examine-response", false);
 		},
-		destroy : function () {
+		uninit : function () {
 			if (this.state) return;
+
 			window.removeEventListener("click", this, false);
 			let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
 			registrar.unregisterFactory(this.classID, this);
@@ -141,6 +58,14 @@
 			catMan.deleteCategoryEntry(category, this.classDescription, false);
 			Services.obs.removeObserver(this, "http-on-modify-request", false);
 			Services.obs.removeObserver(this, "http-on-examine-response", false);
+		},
+		destroy : function () {
+			this.uninit();
+
+			["redirector-icon", "redirector-menupopup", "redirector-toggle-key"].forEach(function(id){
+				var node = document.getElementById(id);
+				if (node) node.parentNode.removeChild(node);
+			});
 		},
 		//重载规则
 		reload : function (isAlert) {
@@ -202,7 +127,7 @@
 					this.init();
 					Object.keys(menuitems).forEach(function (n)menuitems[n].setAttribute("disabled", false));
 				} else {
-					this.destroy();
+					this.uninit();
 					Object.keys(menuitems).forEach(function (n)menuitems[n].setAttribute("disabled", true));
 				}
 				// update checkbox state
@@ -270,7 +195,8 @@
 		iconClick : function (event) {
 			switch (event.button) {
 				case 0:
-					document.getElementById("redirector-toggle").doCommand();
+					// document.getElementById("redirector-toggle").doCommand();
+					Redirector.toggle();
 					break;
 				case 1:
 					break;
@@ -409,6 +335,8 @@
 				redirectUrl.count = count;
 				if (typeof callback === 'function')
 					callback();
+
+				console.log('[redirect] ', data, count);
 			});
 		},
 		// nsIDOMEventListener interface implementation
@@ -548,16 +476,104 @@
 		QueryInterface : XPCOMUtils.generateQI([Ci.nsIStreamListener, Ci.nsISupports])
 	};
 
-	window.Redirector = null;
+	/* library */
+	const ToolbarManager = (function() {
+
+	    /**
+	     * Remember the button position.
+	     * This function Modity from addon-sdk file lib/sdk/widget.js, and
+	     * function BrowserWindow.prototype._insertNodeInToolbar
+	     */
+	    let layoutWidget = function(document, button, isFirstRun) {
+
+	        // Add to the customization palette
+	        let toolbox = document.getElementById('navigator-toolbox');
+	        toolbox.palette.appendChild(button);
+
+	        // Search for widget toolbar by reading toolbar's currentset attribute
+	        let container = null;
+	        let toolbars = document.getElementsByTagName('toolbar');
+	        let id = button.getAttribute('id');
+	        for (let i = 0; i < toolbars.length; i += 1) {
+	            let toolbar = toolbars[i];
+	            if (toolbar.getAttribute('currentset').indexOf(id) !== -1) {
+	                container = toolbar;
+	            }
+	        }
+
+	        // if widget isn't in any toolbar, default add it next to searchbar
+	        if (!container) {
+	            if (isFirstRun) {
+	                container = document.getElementById('nav-bar');
+	            } else {
+	                return;
+	            }
+	        }
+
+	        // Now retrieve a reference to the next toolbar item
+	        // by reading currentset attribute on the toolbar
+	        let nextNode = null;
+	        let currentSet = container.getAttribute('currentset');
+	        let ids = (currentSet === '__empty') ? [] : currentSet.split(',');
+	        let idx = ids.indexOf(id);
+	        if (idx !== -1) {
+	            for (let i = idx; i < ids.length; i += 1) {
+	                nextNode = document.getElementById(ids[i]);
+	                if (nextNode) {
+	                    break;
+	                }
+	            }
+	        }
+
+	        // Finally insert our widget in the right toolbar and in the right position
+	        container.insertItem(id, nextNode, null, false);
+
+	        // Update DOM in order to save position
+	        // in this toolbar. But only do this the first time we add it to the toolbar
+	        if (ids.indexOf(id) === -1) {
+	            container.setAttribute('currentset', container.currentSet);
+	            document.persist(container.id, 'currentset');
+	        }
+	    };
+
+	    let addWidget = function(window, widget, isFirstRun) {
+	        try {
+	            layoutWidget(window.document, widget, isFirstRun);
+	        } catch(error) {
+	            trace(error);
+	        }
+	    };
+
+	    let removeWidget = function(window, widgetId) {
+	        try {
+	            let widget = window.document.getElementById(widgetId);
+	            widget.parentNode.removeChild(widget);
+	        } catch(error) {
+	            trace(error);
+	        }
+	    };
+
+	    let exports = {
+	        addWidget: addWidget,
+	        removeWidget: removeWidget,
+	    };
+	    return exports;
+	})();
+
+
 	if (location == 'chrome://browser/content/browser.xul') {
-		if (!window.Redirector)
-			window.Redirector = new Redirector();
+		if (window.Redirector) {
+			window.Redirector.destroy();
+			delete window.Redirector;
+		}
+
+		window.Redirector = new Redirector();
 		window.Redirector.init();
 	}
 	window.addEventListener('unload', function () {
 		if (location == 'chrome://browser/content/browser.xul') {
 			if (window.Redirector)
-				window.Redirector.destroy();
+				window.Redirector.uninit();
 		}
 	});
 })();

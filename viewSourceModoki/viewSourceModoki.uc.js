@@ -5,8 +5,12 @@
 // @include        main
 // @compatibility  Firefox 2.0 3.0
 // @author         Alice0775
+// @startup        window.viewSourceModoki.init();
+// @shutdown       window.viewSourceModoki.destory();
+// @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/viewSourceModoki
 // @version        2008/07/06 00:00 例外処理
 // ==/UserScript==
+// @version        2014/08/12 12:00 add startup and shutdown
 // @version        2012/03/25 18:00 aLineNumber
 // @version        2012/01/08 23:00 aLineNumber
 // @version        2008/03/24 13:00 テンポラリファイルを削除するように
@@ -26,6 +30,12 @@
     }
   }
 */
+
+if (window.viewSourceModoki) {
+  window.viewSourceModoki.destory();
+  delete window.viewSourceModoki;
+}
+
 var viewSourceModoki = {
   MAXLEN:100,
   LASTDOC:null,
@@ -35,8 +45,13 @@ var viewSourceModoki = {
 
     var menu, menupopup, menuitem;
     menu = document.createElement('menu');
+    menu.setAttribute('id', 'view_source_with');
     menu.setAttribute('label','View Source With');
     menu.setAttribute('accesskey','W');
+
+    // 配合 addMenu，不在输入框显示
+    menu.setAttribute('class', 'addMenu addMenuNot');
+    menu.setAttribute('condition', 'noinput');
 
     menupopup = document.createElement('menupopup');
     menupopup.setAttribute('onpopupshowing','event.stopPropagation();viewSourceModoki.popup(event)');
@@ -67,6 +82,12 @@ var viewSourceModoki = {
 
     menu.appendChild(menupopup);
     document.getElementById('contentAreaContextMenu').appendChild(menu);
+  },
+  destory: function() {
+    ["view_source_with"].forEach(function(id){
+        var node = document.getElementById(id);
+        if (node) node.parentNode.removeChild(node);
+    });
   },
 
   popup: function(event){

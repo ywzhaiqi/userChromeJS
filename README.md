@@ -167,7 +167,7 @@ UA切换，基于 [lastdream2013 的版本](http://bbs.kafan.cn/thread-1534937-1
  - 首先需要设置 `view_source.editor.path` 编辑器路径和 `view_source.editor.args` 参数。
     - `view_source.editor.args` 会替换 `%LINE%` 为 `行`。
     - `notepad++` 和 `EverEdit` 应该添加 `-n%LINE%`
-    - `Sublime text` 使用 `fixViewSourceEditArgsForST.uc.js` 这个脚本修正后填写 `%file:%line`
+    - `Sublime text` 使用 `fixViewSourceEditArgsForST.uc.js` 这个脚本修正后填写 `"%file:%line"`
     - 其它编辑器参考 Firebug，注意大小写。
 
  ![编辑器参数.png](编辑器参数.png)

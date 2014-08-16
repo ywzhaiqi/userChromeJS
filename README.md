@@ -86,6 +86,7 @@ userChromeJS for Firefox
  - [openLinkTabThirdPart.uc.js](openLinkTabThirdPart.uc.js)，域名第三方新标签页打开，否则当前标签页打开。
  - [placesToolbarMiddleClick.uc.js](placesToolbarMiddleClick.uc.js)，禁用书签栏文件夹的鼠标中键打开所有标签页。
  - [setRelativeEditPath.uc.js](setRelativeEditPath.uc.js)，设置相对路径的编辑器到 `view_source.editor.path`。
+ - [sendToGmail.uc.js](sendToGmail.uc.js)，修正失效的问题（2014/8/17）。
  - [SidebarGestures.uc.js](SidebarGestures.uc.js)，给侧边栏网页加上鼠标手势，左：后退，右：前进，上下：刷新。
  - [SimpleDragModY.uc.js](SimpleDragModY.uc.js)，简单拖曳的修改版，向上拖曳前台打开链接或搜索文字，其它方向后台。
  	- 忽略了 javascript: 开头的链接，增加了文字链接、file:// 和 about:config?filter 开头链接的识别。

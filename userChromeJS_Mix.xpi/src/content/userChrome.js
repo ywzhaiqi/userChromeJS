@@ -405,7 +405,7 @@
           regex: regex,
 
           // new added
-          id: id ? id : (name || filename) + '@' + (namespace || author),
+          id: id ? id : (name || filename) + '@' + (namespace || author || ''),
           type: type,
           homepageURL: homepageURL,
           reviewURL: reviewURL,
@@ -418,6 +418,7 @@
           shutdown: shutdown,
           restartless: includeMain ? !!(startup && shutdown) : true,
           includeMain: includeMain,
+          isRunning: false,
           config: config
         }
       }
@@ -644,10 +645,10 @@
       if( !this.EXPERIMENT && true ){ //← uc.jsでのloadOverlayに対応
         for(var m=0,len=this.overlays.length; m<len; m++){
           overlay = this.overlays[m];
-          if( overlay.filename != this.ALWAYSEXECUTE
-            && ( !!this.dirDisable['*']
+          if( overlay.filename == this.ALWAYSEXECUTE
+                 || !!this.dirDisable['*']
                  || !!this.dirDisable[overlay.dir]
-                 || !!this.scriptDisable[overlay.filename]) ) continue;
+                 || !!this.scriptDisable[overlay.filename] ) continue;
 
           // decide whether to run the script
           if(overlay.regex.test(dochref)){
@@ -661,10 +662,10 @@
         var count =0;
         for(var m=0,len=this.overlays.length; m<len; m++){
           overlay = this.overlays[m];
-          if( overlay.filename != this.ALWAYSEXECUTE
-            && ( !!this.dirDisable['*']
+          if( overlay.filename == this.ALWAYSEXECUTE
+                 || !!this.dirDisable['*']
                  || !!this.dirDisable[overlay.dir]
-                 || !!this.scriptDisable[overlay.filename]) ) continue;
+                 || !!this.scriptDisable[overlay.filename] ) continue;
           // decide whether to run the script
           if(overlay.regex.test(dochref)){
             XUL += overlay.xul;

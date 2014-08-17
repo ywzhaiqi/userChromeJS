@@ -1,46 +1,84 @@
 <?xml version="1.0"?>
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xml-stylesheet type="text/css" href="chrome://userchromejs/skin/option.css" ?>
+
 <prefwindow
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
     id="userChromejs"
     title="userChromejs 设置"
+    ondialogaccept="userChromeOptions.onDialogAccept();"
     windowtype="userChromejs:Preferences">
     <prefpane id="main" flex="1">
         <preferences>
-            <preference id="closeWindow" type="bool" name="userChrome.closeWindow"/>
             <preference id="install_skipSelect" type="bool" name="userChrome.install_skipSelect"/>
+            <preference id="closeWindow" type="bool" name="userChrome.closeWindow"/>
+            <preference id="enableReuse" type="bool" name="userChrome.enable.reuse"/>
             <preference id="EXPERIMENT" type="bool" name="userChrome.EXPERIMENT"/>
             <preference id="arrSubdir" type="string" name="userChrome.arrSubdir"/>
             <preference id="custom_prefs" type="string" name="userChrome.custom_prefs"/>
             <preference id="rebuild_menues" type="string" name="userChromeJS.rebuildUI.menues"/>
             <preference id="editorPath" type="string" name="view_source.editor.path"/>
         </preferences>
-        <groupbox>
-            <caption label="一般设置" />
-            <checkbox label="安装脚本跳过选择目录" tooltiptext="安装脚本直接保存，跳过选择目录窗口"
-                 preference="install_skipSelect" />
-            <checkbox label="关闭原窗口" tooltiptext="点击新建窗口并重载脚本按钮后是否关闭原窗口？"
-                preference="closeWindow" />
-            <label value="编辑器的路径（留空代表代码片段速记器）：" />
-            <textbox flex="1" preference="editorPath" />
-            <label value="prefs 自定义导出列表" />
-            <textbox flex="1" preference="custom_prefs"
-                    multiline="true" cols="60" height="60px" />
-        </groupbox>
-        <groupbox>
-            <caption label="需要重启生效的" />
-            <checkbox label="取消延迟加载（实验）" tooltiptext="会让部分脚本失效"
-                preference="EXPERIMENT" />
-            <vbox>
-                <label value="导入的目录" />
-                <textbox flex="1" preference="arrSubdir"
-                    multiline="true" cols="60" height="60px" />
-            </vbox>
-            <vbox>
-                <label value="用户脚本菜单" />
-                <textbox flex="1" preference="rebuild_menues"
-                    multiline="true" cols="60" height="60px" />
-            </vbox>
-        </groupbox>
+
+        <tabbox flex="1">
+            <tabs>
+                <tab label="常规" />
+                <tab label="用户脚本菜单" />
+                <tab label="高级" />
+            </tabs>
+            <tabpanels>
+                <tabpanel>
+                    <vbox flex="1" >
+                        <groupbox>
+                            <caption label="安装脚本" />
+                            <checkbox label="安装脚本跳过选择目录" tooltiptext="安装脚本直接保存，跳过选择目录窗口"
+                                 preference="install_skipSelect" />
+                        </groupbox>
+                        <groupbox>
+                            <caption label="新窗口" />
+                            <checkbox label="新窗口重载脚本" tooltiptext="每次新建窗口时是否重载脚本?"
+                                preference="enableReuse" />
+                            <checkbox label="新窗口关闭原窗口" tooltiptext="点击新建窗口并重载脚本按钮后是否关闭原窗口？"
+                                preference="closeWindow" />
+                        </groupbox>
+                        <groupbox>
+                            <caption label="编辑器路径（留空代表代码片段速记器）" />
+                            <hbox>
+                                <textbox id="editorPath" flex="1" preference="editorPath" />
+                                <toolbarbutton id="toolbtn_setEditor" tooltiptext="设置全局脚本编辑器" oncommand="userChromeOptions.openEdit();"/>
+                            </hbox>
+                        </groupbox>
+                    </vbox>
+                </tabpanel>
+                <tabpanel>
+                    <vbox flex="1" >
+                        <label value="用户脚本菜单" />
+                        <textbox flex="1" preference="rebuild_menues"
+                            multiline="true" cols="60"/>
+                    </vbox>
+                </tabpanel>
+                <tabpanel>
+                    <vbox flex="1" >
+                        <groupbox>
+                            <caption label="需要重启生效" />
+                            <checkbox label="取消延迟加载（实验）" tooltiptext="会让部分脚本失效"
+                                preference="EXPERIMENT" />
+                            <vbox>
+                                <label value="导入的目录" />
+                                <textbox flex="1" preference="arrSubdir"
+                                    multiline="true" cols="60" height="60px" />
+                            </vbox>
+                        </groupbox>
+                        <groupbox>
+                            <caption label="自定义导出列表" />    
+                            <textbox flex="1" preference="custom_prefs"
+                                    multiline="true" cols="60" height="60px" />
+                        </groupbox>
+                    </vbox>
+                </tabpanel>
+            </tabpanels>
+        </tabbox>
     </prefpane>
+
+    <script type="application/javascript" src="chrome://userchromejs/content/options.js"></script>
 </prefwindow>

@@ -75,8 +75,8 @@ userChromejs.Manganer = (function(){
         var index = -1,
             oldScript = null;
         arr.some(function(item, i){
-            // 根据 id 或文件名判断
-            if (item.id == newScript.id || item.filename == newScript.filename) {
+            // 根据 id 判断
+            if (item.id == newScript.id) {
                 oldScript = item;
                 index = i;
                 return true;
@@ -121,16 +121,32 @@ userChromejs.Manganer = (function(){
 // uc 脚本的安装、卸载、启用禁用
 userChromejs.Script = (function(){
 
-    function install(aFile) {
-        let script = userChrome_js.parseScript(aFile),
-            msg = "安装成功",
-            restartless = true;
-
+    function install(aFile, checkExists) {
+        var script = userChrome_js.parseScript(aFile);
         var oldScript = userChromejs.Manganer.findExistScript(script)[1];
+
+        var msg = "安装成功",
+            restartless = true;
+        if (typeof checkExists === 'undefined') checkExists = true;
+
+        if (checkExists && oldScript) {
+            var ok = confirm('脚本已经存在，是否要替换安装？');
+            if (ok) {
+                aFile.renameTo(oldScript.file.parent, oldScript.filename);
+                script.filename = oldScript.filename;
+                script.file = oldScript.file;
+                script.isRunning = oldScript.isRunning;
+            } else {
+                if (script.file.path != oldScript.file.path) {
+                    aFile.remove(false);
+                }
+                return;
+            }
+        }
+
         if(script.includeMain) {
             if (oldScript && oldScript.isRunning) {
                 if (oldScript.restartless) {
-                    shutdown(oldScript);
                     // 清除缓存
                     Services.obs.notifyObservers(null, "startupcache-invalidate", "");
                     msg = '重新安装成功';
@@ -140,14 +156,20 @@ userChromejs.Script = (function(){
                 }
             }
 
-            if (restartless) {
+            var disabled = userChrome_js.scriptDisable[script.filename];
+            if (disabled) {
+                msg = '已更新，但原来是禁用状态';
+            }
+
+            // 排除禁用的脚本
+            if (restartless && !disabled) {
                 userChrome.import(aFile.path);
                 script.isRunning = true;
             }
         }
 
         if (restartless) {
-            script.dir = aFile.parent.leafName.replace('chrome', 'root');
+            script.dir = script.file.parent.leafName.replace('chrome', 'root');
             userChromejs.Manganer.add(script);
         }
 
@@ -158,7 +180,6 @@ userChromejs.Script = (function(){
         shutdown(script);
         script.file.remove(false);
         var success = userChromejs.Manganer.remove(script);
-        console.log('success', success, script.restartless)
         if (success) {
             userChromejs.Save.showInstallMessage(script.filename, '已成功卸载', script.restartless);
         }
@@ -169,12 +190,16 @@ userChromejs.Script = (function(){
     function startup(script) {
         if (!script.startup) return;
 
+        if (!script.isRunning) {
+            install(script.file, false);
+            return;
+        }
+
         try {
             eval(script.startup);
         } catch (e) {
-            // console.error('startup', e)
+            console.error('startup', e)
             // 可能会有 2 种情况，第一种启动时就没载入，第二种为 undefined
-            install(script.file);
         }
     }
 
@@ -400,6 +425,10 @@ userChromejs.Save = {
             }
         }
     }
+};
+
+userChromejs.AddonPage = {
+    
 };
 
 var Utils = {

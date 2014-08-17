@@ -314,10 +314,11 @@
                 'chrome,titlebar,toolbar,centerscreen,dialog=no');
     },
     onpopup: function(){
-      var menu;
-      var flag = this.getPref("userChrome.enable.reuse",'bool',true);
-      var menuitem = document.getElementById('userChrome_setting');
-      menuitem.setAttribute('checked', !flag);
+      var menu,
+          flag;
+      // flag = this.getPref("userChrome.enable.reuse",'bool',true);
+      // var menuitem = document.getElementById('userChrome_setting');
+      // menuitem.setAttribute('checked', !flag);
       
       //dannylee
       flag = this.getPref("userChrome.enable.uerHomebutton",'bool',false);
@@ -326,18 +327,22 @@
       if (!document.getElementById("home-button"))
         menuitem.setAttribute("disabled", true);
 
-      var menupopup = document.getElementById("userChromejs_script_options");//userChromejs_options 
-      for(var i = 1, len = menupopup.childNodes.length; i <= len; i++){
-        menupopup.removeChild(menupopup.lastChild);
+      var menupopup = document.getElementById("userChromejs_options");
+
+      // remove script menuitem
+      var nodes = menupopup.querySelectorAll('.userChromejs_script');
+      for(var i = 0, len = nodes.length; i < len; i++){
+        nodes[i].parentNode.removeChild(nodes[i]);
       }
 
       menuitem = document.createElement('menuitem');
-      menuitem.setAttribute('label','启用Chrome下所有目录');
+      menuitem.setAttribute('class','userChromejs_script');
+      menuitem.setAttribute('label','启用 Chrome 下所有目录');
       menuitem.setAttribute('oncommand','userChromejs.chgDirStat("*");');
       menuitem.setAttribute('onclick','if(event.button != 0) {event.stopPropagation();event.preventDefault();userChromejs.clickDirMenuitem(event,true);}');
       menuitem.setAttribute('type','checkbox');
       menuitem.setAttribute('checked', !userChrome_js.dirDisable['*']);
-      menuitem.setAttribute('disabled',true);
+      // menuitem.setAttribute('disabled',true);
       menuitem.dirName = '*';
       menupopup.appendChild(menuitem);
 
@@ -372,7 +377,7 @@
         if(!flg) continue;
 
         menu = document.createElement('menu');
-        // menu.setAttribute('label','脚本目录chrome/' + (dirName=="root"?"":dirName) );
+        menu.setAttribute('class','userChromejs_script');
         menu.setAttribute('label','脚本目录 ' + (dirName=="root"?"":dirName) );
         menu.setAttribute('onclick','if(event.button != 0) {event.stopPropagation();event.preventDefault();userChromejs.clickDirMenu(event);}');
         if(userChrome_js.dirDisable[dirName])
@@ -423,6 +428,7 @@
 
             menuitem.script = script;
             if (dirName === 'root') {
+              menuitem.setAttribute('class','userChromejs_script');
               topMenuitems.push(menuitem);
             } else {
               menupopup.appendChild(menuitem);
@@ -453,14 +459,13 @@
 
             menuitem.script = script;
             if (dirName === 'root') {
+              menuitem.setAttribute('class','userChromejs_script');
               topMenuitems.push(menuitem);
             } else {
               menupopup.appendChild(menuitem);
             }
         }
         menu.appendChild(menupopup);
-        // menupopup = document.getElementById("userChromejs_script_options"); //userChromejs_options
-        // menupopup.appendChild(menu);
         parentMenuPopup.appendChild(menu);
       }
 
@@ -511,7 +516,7 @@
         }
       }else if(event.button==2){
         if (event.ctrlKey) {
-          if(confirm('是否要卸载这个脚本？')) {
+          if(confirm('是否要卸载这个脚本？注意：会删除该文件')) {
             userChromejs.Script.uninstall(script);
           }
         } else {
@@ -832,6 +837,7 @@
         // userChromejs.editor = ss.replace(/\\/g, "\\\\");
         userChromejs.editor = ss;
         gPrefService.setCharPref("view_source.editor.path", userChromejs.editor);
+        return ss;
       }
     }
   }
@@ -858,7 +864,7 @@
          gPrefService.setCharPref(this.UIMENU, this.menues.join(","));
       }
       this.menues = [];
-      this.menues = gPrefService.getCharPref(this.UIMENU).trim().split(",");
+      this.menues = gPrefService.getCharPref(this.UIMENU).split(",").map(function(s) s.trim());
       //end
       
       userChromejs.toggleUI(0);
@@ -988,35 +994,36 @@
                  onclick="userChromejsScriptOptionsMenu.resetMenu(event);" >
     <menupopup id="userChromejs_options"  onpopupshowing="userChromejs.onpopup();">
     	<menuseparator id="jscmdseparator" hidden="true" />
-    	<menu id="userChromejs_script_options_Menu" label="UC脚本目录" >
-      	<menupopup id="userChromejs_script_options" />
-      </menu>
-      <menuseparator id="settingseparator" />
+      
       <hbox>
-    		<menuitem id="jscmd_edit_add" class="menuitem-iconic" label="添加脚本命令" flex="1" oncommand="userChromejsScriptOptionsMenu.adduserChromejsmenu();"/>
-				  <toolbarbutton id="jscmd_edit_del" tooltiptext="删除脚本命令" oncommand="hidePopup(); userChromejsScriptOptionsMenu.deluserChromejsmenu();"/>
-      </hbox>
-      <hbox>
-        <menuitem id="userChromejs_export_prefs" class="menuitem-iconic" label="导出脚本设置" flex="1"
-            tooltiptext="包括uc脚本和自定义的设置" oncommand="userChromejs.Save.exportPrefs();"/>
-        <menuitem id="userChromejs_import_prefs" class="menuitem-iconic" label="导入"
-            tooltiptext="包括uc脚本和自定义的设置" oncommand="userChromejs.Save.importPrefs();"/>
-      </hbox>
-      <menuseparator />
-      <hbox>
-        <menuitem id="showToolsMenu" label="切换到菜单栏-工具" class="menuitem-iconic" oncommand="userChromejs.toggleUI(1);" flex="1" />
-        <checkbox id="userChrome_homebtn"  label="移动菜单" tooltiptext="切换到工具菜单时将脚本命令和脚本目录菜单移动到火狐主页按钮" oncommand="userChromejs.settingHomeMode();" />
-      </hbox>
-      <hbox>
-      	<menuitem id="toolbtn_rebuild" class="menuitem-iconic" label="新建窗口并重载脚本" flex="1" oncommand="userChromejs.rebuild();"/>
-      	<checkbox id="userChrome_setting"  label="默认方式" tooltiptext="每次新建窗口时是否重载脚本?默认方式不重载" oncommand="userChromejs.setting();" />
+        <menuitem id="toolbtn_rebuild" class="menuitem-iconic" label="新建窗口并重载脚本" flex="1" oncommand="userChromejs.rebuild();"/>
+        <toolbarbutton id="toolbtn_openPrefs" tooltiptext="打开设置窗口" oncommand="hidePopup(); userChromejs.openPrefs();"/>
       </hbox>
       <hbox>
       	<menuitem id="toolbtn_chromedir" class="menuitem-iconic" label="打开chrome文件夹" flex="1" oncommand="userChromejs.Openchromedir();"/>
-        <toolbarbutton id="toolbtn_openPrefs" tooltiptext="打开设置窗口" oncommand="hidePopup(); userChromejs.openPrefs();"/>
-      	<toolbarbutton id="toolbtn_setEditor" tooltiptext="设置全局脚本编辑器" oncommand="hidePopup(); userChromejs.setEditor();"/>
       	<toolbarbutton id="toolbtn_restartApp" tooltiptext="重启浏览器" oncommand="hidePopup(); userChromejs.restartApp();"/>
       </hbox>
+      <menu id="userChromejs_script_setting" label="其它设置" >
+        <menupopup >
+          <hbox>
+            <menuitem id="jscmd_edit_add" class="menuitem-iconic" label="添加脚本命令" flex="1" oncommand="userChromejsScriptOptionsMenu.adduserChromejsmenu();"/>
+              <toolbarbutton id="jscmd_edit_del" tooltiptext="删除脚本命令" oncommand="hidePopup(); userChromejsScriptOptionsMenu.deluserChromejsmenu();"/>
+          </hbox>
+          <hbox>
+            <menuitem id="userChromejs_export_prefs" class="menuitem-iconic" label="导出脚本设置" flex="1"
+                tooltiptext="包括uc脚本和自定义的设置" oncommand="userChromejs.Save.exportPrefs();"/>
+            <menuitem id="userChromejs_import_prefs" class="menuitem-iconic" label="导入"
+                tooltiptext="包括uc脚本和自定义的设置" oncommand="userChromejs.Save.importPrefs();"/>
+          </hbox>
+          <hbox>
+            <menuitem id="showToolsMenu" label="切换到工具菜单" class="menuitem-iconic" oncommand="userChromejs.toggleUI(1);" flex="1" tooltiptext="新菜单在菜单栏的工具菜单中，再次点击后切换回按钮" />
+            <checkbox id="userChrome_homebtn"  label="移动菜单" tooltiptext="切换到工具菜单时将脚本命令和脚本目录菜单移动到火狐主页按钮" oncommand="userChromejs.settingHomeMode();" />
+          </hbox>
+        </menupopup>
+      </menu>
+
+      <menuseparator id="userChromejs_script_options" />
+
     </menupopup>
   </toolbarbutton>                           
 </toolbarpalette>

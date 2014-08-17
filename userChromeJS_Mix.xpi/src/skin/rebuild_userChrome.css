@@ -14,7 +14,7 @@
 
 #userChromebtnMenu,
 #userChromejs_Tools_Menu {
-    list-style-image: url(chrome://userchromejs/skin/icon16.png);
+    list-style-image: url(chrome://userchromejs/skin/img/icon16.png);
 }
 
 /* 原版的限定宽度会影响到给图标加边框等样式，已删除 */
@@ -40,31 +40,28 @@
 }
 
 
-#userChromejs_options > hbox > #toolbtn_rebuild {
-    list-style-image: url(chrome://userchromejs/skin/toolbtn_rebuild.png);
+#userChromejs_options #toolbtn_rebuild {
+    list-style-image: url(chrome://userchromejs/skin/img/toolbtn_rebuild.png);
 }
-#userChromejs_options > hbox > #toolbtn_chromedir {
-    list-style-image: url(chrome://userchromejs/skin/toolbtn_chromedir.png);
+#userChromejs_options #toolbtn_chromedir {
+    list-style-image: url(chrome://userchromejs/skin/img/toolbtn_chromedir.png);
 }
-#userChromejs_options > hbox > #toolbtn_restartApp {
-    list-style-image: url(chrome://userchromejs/skin/toolbtn_restartApp.png);
-}
-#userChromejs_options > hbox > #toolbtn_setEditor {
-    list-style-image: url(chrome://userchromejs/skin/toolbtn_setEditor.png);
+#userChromejs_options #toolbtn_restartApp {
+    list-style-image: url(chrome://userchromejs/skin/img/toolbtn_restartApp.png);
 }
 
-#userChromejs_options > hbox > #toolbtn_openPrefs {
-    list-style-image: url(chrome://userchromejs/skin/toolbtn_openPrefs.png);
+#userChromejs_options #toolbtn_openPrefs {
+    list-style-image: url(chrome://userchromejs/skin/img/toolbtn_openPrefs.png);
 }
 
 #jscmd_edit_add {
-    list-style-image: url(chrome://userchromejs/skin/jscmd_edit_add.png);
+    list-style-image: url(chrome://userchromejs/skin/img/jscmd_edit_add.png);
 }
-#userChromejs_options > hbox > #jscmd_edit_del {
-    list-style-image: url(chrome://userchromejs/skin/jscmd_edit_del.png);
+#userChromejs_options #jscmd_edit_del {
+    list-style-image: url(chrome://userchromejs/skin/img/jscmd_edit_del.png);
 }
 #showToolsMenu {
-    list-style-image: url(chrome://userchromejs/skin/showToolsMenu.png);
+    list-style-image: url(chrome://userchromejs/skin/img/showToolsMenu.png);
 }
 #userChrome_setting, #userChrome_homebtn {
     list-style-image: none;
@@ -73,6 +70,6 @@
 }
 
 
-#userChromejs_script_options menuitem[restartless="true"] {
+#userChromejs_options menuitem[restartless="true"] {
     color: blue;
 }

@@ -11,7 +11,7 @@ userChromeJS 扩展、userChrome.js、UC脚本管理器整合版，用于彻底�
 注意
 ----
 
- - 如果你需要按钮在地址栏的，请不要使用这个版本。
+ - 如果你需要按钮在地址栏的，请使用扩展 。
  - 如果 chrome 目录下已经存在 rebuild_userChrome.uc.xul，请手动删除。
  - 由于扩展的更新机制会移除原有的再安装，如果在 content 里面放了文件，更新后会消失。
  - 如果没用过 Alice0775 版的 userChrome.js，里面的 uc 脚本可能存在失效的问题。
@@ -27,7 +27,7 @@ userChromeJS 扩展、userChrome.js、UC脚本管理器整合版，用于彻底�
 其它说明
 -------
 
-1、为什么不采用卡饭论坛的 userChromeJS 扩展 2.0 修改版？
+1、为什么不采用卡饭论坛的 userChromeJS 扩展 2.0+ 修改版？
 
     xul 文件是通过 userChrome.js 导入的，而 userChrome.js 里面并没有修改版所说的问题。
 

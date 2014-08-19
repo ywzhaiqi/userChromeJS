@@ -7,7 +7,7 @@
 // @license        MIT License
 // @compatibility  Firefox 21
 // @charset        UTF-8
-// @version        2014.7.31
+// @version        2014.8.19
 // version         0.0.8
 // @startup        window.addMenu.init();
 // @shutdown       window.addMenu.destroy();
@@ -617,10 +617,10 @@ window.addMenu = {
                 if (!isDupMenu && !cls.contains('addMenuNot'))
                     cls.add('addMenuNot');
 
-                // 没有插入位置的默认放在原来那个菜单的后面
-                if(isDupMenu && !obj.insertAfter && !obj.insertBefore && !obj.position){
-                    obj.insertAfter = obj.id;
-                }
+                // // 没有插入位置的默认放在原来那个菜单的后面
+                // if(isDupMenu && !obj.insertAfter && !obj.insertBefore && !obj.position){
+                //     obj.insertAfter = obj.id;
+                // }
                 let noMove = !isDupMenu;
                 insertMenuItem(obj, dupMenuitem, noMove);
 
@@ -878,15 +878,15 @@ window.addMenu = {
         } catch(e) {}
 
         if (!editor || !editor.exists()) {
-            alert("编辑器的路径未设置!!!\n请先设置");
+            alert("请先设置编辑器的路径!!!");
             var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
             fp.init(window, "设置全局脚本编辑器", fp.modeOpen);
             fp.appendFilter("执行文件", "*.exe");
             if (fp.show() == fp.returnCancel || !fp.file)
                 return;
             else {
-                var ss = fp.file.path;
-                gPrefService.setCharPref("view_source.editor.path", ss);
+                editor = fp.file;
+                Services.prefs.setCharPref("view_source.editor.path", editor.path);
             }
         }
 

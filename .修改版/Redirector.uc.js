@@ -5,11 +5,11 @@
 // @include         chrome://browser/content/browser.xul
 // @author          harv.c
 // @homepage        http://haoutil.com
-// @version         2014.8.12
+// @version         2014.8.23
 // version         1.4.5
 // @startup         window.Redirector.init();
 // @shutdown        window.Redirector.destroy();
-// @note            修改为可移动按钮
+// @note            修改为可移动按钮，第一次使用需要从定制窗口拖出
 // ==/UserScript==
 (function () {
 	Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -39,25 +39,37 @@
 			this.drawUI();
 			// if (!this.state) return;
 			window.addEventListener("click", this, false);
-			let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
-			registrar.registerFactory(this.classID, this.classDescription, this.contractID, this);
-			let catMan = Cc["@mozilla.org/categorymanager;1"].getService(Ci.nsICategoryManager);
-			for each(let category in this.xpcom_categories)
-			catMan.addCategoryEntry(category, this.classDescription, this.contractID, false, true);
-			Services.obs.addObserver(this, "http-on-modify-request", false);
-			Services.obs.addObserver(this, "http-on-examine-response", false);
+
+			// 防止打开多窗口而重复注册
+			if (!(this.contractID in Cc)) {
+				let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
+				registrar.registerFactory(this.classID, this.classDescription, this.contractID, this);
+
+				let catMan = Cc["@mozilla.org/categorymanager;1"].getService(Ci.nsICategoryManager);
+				for each(let category in this.xpcom_categories)
+					catMan.addCategoryEntry(category, this.classDescription, this.contractID, false, true);
+				Services.obs.addObserver(this, "http-on-modify-request", false);
+				Services.obs.addObserver(this, "http-on-examine-response", false);
+
+				this.registrarDone = true;
+			}
 		},
 		uninit : function () {
-			if (this.state) return;
+			// if (this.state) return;
 
 			window.removeEventListener("click", this, false);
-			let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
-			registrar.unregisterFactory(this.classID, this);
-			let catMan = Cc["@mozilla.org/categorymanager;1"].getService(Ci.nsICategoryManager);
-			for each(let category in this.xpcom_categories)
-			catMan.deleteCategoryEntry(category, this.classDescription, false);
-			Services.obs.removeObserver(this, "http-on-modify-request", false);
-			Services.obs.removeObserver(this, "http-on-examine-response", false);
+
+			if (this.registrarDone) {
+				let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
+				registrar.unregisterFactory(this.classID, this);
+				let catMan = Cc["@mozilla.org/categorymanager;1"].getService(Ci.nsICategoryManager);
+				for each(let category in this.xpcom_categories)
+					catMan.deleteCategoryEntry(category, this.classDescription, false);
+				Services.obs.removeObserver(this, "http-on-modify-request", false);
+				Services.obs.removeObserver(this, "http-on-examine-response", false);
+
+				this.registrarDone = false;
+			}
 		},
 		destroy : function () {
 			this.uninit();

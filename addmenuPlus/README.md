@@ -1,27 +1,6 @@
 addMenuPlus.uc.js
 =================
 
-Base on [Griever/addMenu.uc.js](https://github.com/Griever/userChromeJS/tree/master/addMenu). Now not only can add menu, you can modify the menu.
-
-### Add Variables
-
- - %TITLES%, simple title.
- - %FAVICON_BASE64%, Favicon's Base64.
- - %IMAGE_BASE64%, Image's Base64.
-
-### Modify the menu
-
-modify the firebug key
-
-    page({
-        id: "menu_firebug_firebugInspect",
-        accesskey: "F",
-        clone: false
-    });
-
-
-## 中文说明
-
 addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文件可添加、修改、隐藏菜单，修改后无需重启生效。
 
 基于 [Griever/addMenu.uc.js](https://github.com/Griever/userChromeJS/tree/master/addMenu) 修改
@@ -38,6 +17,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
  - 菜单栏的 "工具" 菜单中有个 "addMenu 的重新载入和编辑" 菜单，左键点击重新载入配置，右键打开文件编辑（需要首先设置 about:config 中 view_source.editor.path 编辑器的路径）
  - ID 为 `addMenu-rebuild`，可添加到 rebuild_userChrome.uc.xul 统一进行管理
  - 新增 `载入配置出错提示`，点击可直接定位到第几行，需要首先设置参数，详见 [编辑器及参数说明](https://github.com/ywzhaiqi/userChromeJS#%E7%BC%96%E8%BE%91%E5%99%A8%E5%8F%8A%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E)。
+ - **[addMenu 脚本配置生成器](http://ywzhaiqi.github.io/addMenu_creator/)**
 
 ### 可参考的配置
 
@@ -59,8 +39,8 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
 
  - page: 页面右键菜单
  - tab: 标签右键
+ - tool: 工具菜单
  - app: 左上角橙色菜单（firefox 29 以下版本）
- - too: 工具菜单
 
 二级子菜单
 
@@ -448,7 +428,7 @@ pagesub([
         accesskey: "r",
         oncommand: "setTimeout(function(){ addMenu.rebuild(true); }, 10);"
     }
-])
+]);
 ```
 
 示例：菜单出现的条件，排除了链接、图片、输入框、选择等多个条件

@@ -31,12 +31,12 @@
                     <vbox flex="1" >
                         <groupbox>
                             <caption label="安装脚本" />
-                            <checkbox label="安装脚本跳过选择目录" tooltiptext="安装脚本直接保存，跳过选择目录窗口"
+                            <checkbox label="跳过选择目录" tooltiptext="直接保存，跳过选择保存目录对话框"
                                  preference="install_skipSelect" />
                         </groupbox>
                         <groupbox>
                             <caption label="新窗口" />
-                            <checkbox label="新窗口重载脚本" tooltiptext="每次新建窗口时是否重载脚本?"
+                            <checkbox label="使用脚本缓存" tooltiptext="每次新建窗口时使用缓存，则不会重新读取文件。"
                                 preference="enableReuse" />
                             <checkbox label="新窗口关闭原窗口" tooltiptext="点击新建窗口并重载脚本按钮后是否关闭原窗口？"
                                 preference="closeWindow" />
@@ -65,12 +65,12 @@
                                 preference="EXPERIMENT" />
                             <vbox>
                                 <label value="导入的目录" />
-                                <textbox flex="1" preference="arrSubdir"
+                                <textbox flex="1" preference="arrSubdir" tooltiptext="userChrome.js 会自动导入这几个目录中的 uc 脚本"
                                     multiline="true" cols="60" height="60px" />
                             </vbox>
                         </groupbox>
                         <groupbox>
-                            <caption label="自定义导出列表" />    
+                            <caption label="自定义导出设置列表" tooltiptext="导出脚本设置会导出符合的 about:config 设置" />    
                             <textbox flex="1" preference="custom_prefs"
                                     multiline="true" cols="60" height="60px" />
                         </groupbox>

@@ -6,6 +6,8 @@ pref("userChrome.closeWindow", false);
 // userChrome.js 的实验模式
 pref("userChrome.EXPERIMENT", false);
 
+pref("userChrome.enable.reuse", true);
+
 // userChrome.js 的导入脚本的文件夹
 pref("userChrome.arrSubdir", ", xul, TabMixPlus, withTabMixPlus, SubScript, UCJSFiles, userContent, userMenu");
 

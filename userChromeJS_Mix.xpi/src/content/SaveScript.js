@@ -1,52 +1,11 @@
 
 // var EXPORTED_SYMBOLS = ["SaveUserChromeJS"];
 
-Cu.import("resource://gre/modules/Services.jsm");
-
 (function(){
 
 const RE_USERCHROME_JS = /\.uc(?:-\d+)?\.(?:js|xul)$/i;
 const RE_CONTENTTYPE = /text\/html/i;
 
-// Class
-userChromejs.Prefs = function (str) {
-    this.pref = Services.prefs.getBranch(str || '');
-};
-userChromejs.Prefs.prototype = {
-    get: function(name, defaultValue){
-        var value = defaultValue;
-        try {
-            switch(this.pref.getPrefType(name)) {
-                case Ci.nsIPrefBranch.PREF_STRING: value = this.pref.getComplexValue(name, Ci.nsISupportsString).data; break;
-                case Ci.nsIPrefBranch.PREF_INT   : value = this.pref.getIntPref(name); break;
-                case Ci.nsIPrefBranch.PREF_BOOL  : value = this.pref.getBoolPref(name); break;
-            }
-        } catch(e) { }
-        return value;
-    },
-    set: function(name, value) {
-        try {
-            switch(typeof value) {
-                case 'string' :
-                    var str = Cc["@mozilla.org/supports-string;1"].createInstance(Ci.nsISupportsString);
-                    str.data = value;
-                    this.pref.setComplexValue(name, Ci.nsISupportsString, str);
-                    break;
-                case 'number' : this.pref.setIntPref(name, value); break;
-                case 'boolean': this.pref.setBoolPref(name, value); break;
-            }
-        } catch(e) { }
-    },
-    delete: function(name) {
-        try {
-            this.pref.deleteBranch(name);
-        } catch(e) { }
-    },
-    list: function(name) this.pref.getChildList(name, {}),
-    has: function(name){
-        return this.pref.getPrefType(name) !== 0;
-    }
-};
 
 // 创建一个 prefs 调用
 userChromejs.__defineGetter__("prefs", function(){
@@ -226,23 +185,26 @@ userChromejs.Save = {
     },
 
     init: function() {
-        Services.obs.addObserver(this, "content-document-global-created", false);
+        gBrowser.mPanelContainer.addEventListener('DOMContentLoaded', this, true);
+
+        // 下面的 addObserver 的方式会因为每个窗口而重复注册
+        // Services.obs.addObserver(this, "content-document-global-created", false);
     },
     uninit: function() {
-        Services.obs.removeObserver(this, "content-document-global-created", false);
+        gBrowser.mPanelContainer.removeEventListener('DOMContentLoaded', this, true);
+        // Services.obs.removeObserver(this, "content-document-global-created", false);
     },
-    observe: function(aSubject, aTopic, aData) {
-        switch (aTopic) {
-            case "content-document-global-created":
-                let safeWin = aSubject;
-                let gBrowser = window.gBrowser;
-                if (!gBrowser) return;
+    handleEvent: function(event) {
+        switch(event.type) {
+            case "DOMContentLoaded":
+                var safeWin = event.target.defaultView;
+                if (safeWin !== safeWin.top) return;
 
-                let lhref = safeWin.location.href;
-                if(lhref.startsWith("view-source")) return;
+                if (safeWin.location.protocol === 'view-source:') return;
 
-                let self = this;
-                if (safeWin === safeWin.top && RE_USERCHROME_JS.test(lhref) && !RE_CONTENTTYPE.test(safeWin.document.contentType)) {
+                var lhref = safeWin.location.href;
+                var self = this;
+                if (RE_USERCHROME_JS.test(lhref) && !RE_CONTENTTYPE.test(safeWin.document.contentType)) {
                     safeWin.setTimeout(function(){
                         self.showInstallBanner(gBrowser.getBrowserForDocument(safeWin.document), gBrowser);
                     }, 500);
@@ -250,6 +212,26 @@ userChromejs.Save = {
                 break;
         }
     },
+    // observe: function(aSubject, aTopic, aData) {
+    //     switch (aTopic) {
+    //         case "content-document-global-created":
+    //             let safeWin = aSubject;
+    //             let gBrowser = window.gBrowser;
+    //             if (!gBrowser) return;
+    //             if (safeWin !== safeWin.top) return;
+
+    //             let lhref = safeWin.location.href;
+    //             if(lhref.indexOf("view-source") === 0) return;
+
+    //             let self = this;
+    //             if (RE_USERCHROME_JS.test(lhref) && !RE_CONTENTTYPE.test(safeWin.document.contentType)) {
+    //                 safeWin.setTimeout(function(){
+    //                     self.showInstallBanner(gBrowser.getBrowserForDocument(safeWin.document), gBrowser);
+    //                 }, 500);
+    //             }
+    //             break;
+    //     }
+    // },
     showInstallBanner: function(browser, gBrowser) {
         var notificationBox = gBrowser.getNotificationBox(browser);
         // var greeting = "This is a userChrome script. Click install to start using it.";
@@ -281,7 +263,7 @@ userChromejs.Save = {
         );
     },
     saveScript: function(url, skipSelect) {
-        var win = Utils.getFocusedWindow();
+        var win = userChromejs.Utils.getFocusedWindow();
 
         var doc, name, filename, fileExt;
         if (!url) {
@@ -356,7 +338,7 @@ userChromejs.Save = {
         fp.open(callbackObj);
     },
     showInstallMessage: function(scriptName, msg, restartless){
-        var showedMsg = Utils.popupNotification({
+        var showedMsg = userChromejs.Utils.popupNotification({
             id: "userChromejs-install-popup-notification",
             message: "" + scriptName + " 脚本" +  msg,
             mainAction: restartless ? null : {
@@ -368,7 +350,7 @@ userChromejs.Save = {
             options: {
                 removeOnDismissal: true,
                 persistWhileVisible: true,
-                popupIconURL: "chrome://userChromejs/skin/icon32.png"
+                popupIconURL: "chrome://userChromejs/skin/img/icon32.png"
             }
         });
         return showedMsg;
@@ -386,7 +368,7 @@ userChromejs.Save = {
         var custom = userChromejs.prefs.get('custom_prefs');
         var customList = custom.split(',').filter(function(s) !!s).map(function(s) s.trim());
         list = list.concat(customList);
-        list = Utils.unique(list);
+        list = userChromejs.Utils.unique(list);
 
         // 获取所有的 prefs
         var data = {};
@@ -405,7 +387,7 @@ userChromejs.Save = {
         if (fp.show() == fp.returnCancel || !fp.file ) { 
            return;
         } else {
-            Utils.saveFile(fp.file, data);
+            userChromejs.Utils.saveFile(fp.file, data);
         }
     },
     importPrefs: function() {
@@ -416,7 +398,7 @@ userChromejs.Save = {
         if (fp.show() == fp.returnCancel || !fp.file ) { 
            return;
         } else {
-            var data = Utils.loadText(fp.file);
+            var data = userChromejs.Utils.loadText(fp.file);
             data = JSON.parse(data);
 
             var prefs = new userChromejs.Prefs('');
@@ -431,106 +413,122 @@ userChromejs.AddonPage = {
     
 };
 
-var Utils = {
-    unique: function (a){
-        var o = {},
-            r = [],
-            t;
-        for (var i = 0, l = a.length; i < l; i++) {
-            t = a[i];
-            if(!o[t]){
-                o[t] = true;
-                r.push(t);
+function addWebSites() {
+    var data = [
+        ['卡饭论坛uc脚本索引', 'http://bbs.kafan.cn/forum.php?mod=viewthread&tid=1340501&page=1#pid25548028'],
+        ['Mozest uc脚本论坛区', 'https://g.mozest.com/forum-75-1'],
+        ['ywzhaiqi/userChromeJS', 'https://github.com/ywzhaiqi/userChromeJS'],
+        ['defpt/userChromeJs', 'https://github.com/defpt/userChromeJs'],
+        ['feiruo/userChromeJS', 'https://github.com/feiruo/userChromeJS'],
+        ['Drager-oos/userChrome', 'https://github.com/Drager-oos/userChrome'],
+        ['紫云飞 - UserChromeJS脚本', 'http://www.cnblogs.com/ziyunfei/archive/2011/11/25/2263756.html', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAADCklEQVQ4jZWU3UvTYRTH9wd4oSvNrW02V1PzlZpJFs6ZryM0X8qkbZUv058u6cWZWs2XXFvOiinZrKzowi6iQJCIoCKMFCmCgqQrrQjrpiCiuurTxS+2fmiZBw6H3/N8nw/nOb/zHJnsH1ah0WBbp0NIjKfJkEzNxiSKE9fyrzOL2h6NmtNpqYznZ/PSWs77RhsfnPXMnhC4X1NJZ04mRXGxS4M3h0fg0MVy12hkvrIMHDXQ7QSfCwZ6YNgDQ128cjUwWJJLRZIegyp6cfCGsDAOamN5mmPiZ1UltBwAVwu426G/E4Y8cHsQZm7A62t8vHQUi0GLxaBl6xrVQuhupToowFEPzmbocoL3uLgW8MLUFZh/BB8mgtqxvWXsTUuQAk3ylfgTk4Iii0EL7YfgpJgF/m4xPrkIb8YkunmXg77CLDYpo0LQeo2G6aws8RCEoO4OMQ72ivHOQGjvtw5fKw+rKyjV60Tg1vBwrian8NNsDgolUH8PnHdDwCOBBYEBD586BLymTNZHhCMri4yCknJoEMBeK712vysII+CBy17p/mWvuN7XzgNrObkxq5E1KFVwpB0Ot0D1fmhuEOvX2wZnu+HCqRAw4IFhL4z4fnu/6OfdzDbvY3+CHplLrYaR69DaBlYrNNqh47DYLme7ROCID670w9UzcDMAU2Pw4h5Mj8O7KZi4xVennba0FGTH1DHgHoA6QXKd5Thzk3xpqqYpPg6ZbZUCymywY+fCgv9hf/u2GLRwd5RnpWaKlQrxT48kJPM5O08q+s9oMWihtZEBw8ZQH9qVKh6nb1nQFv+b6URuDlUatfS1+OMSmNliWnb9nhfl44zTL3zL1ujV9K3VM5mewff8Iti5C/ZYoLYGHAIcPCC6YId9Nn6UljBtMtKl12OURyw+cXLlKxHUMYwmJTOXZYLicjjihDPnwO+HUx6oreNTYQHj6Rl06HTkR65aei4WylfQGqPjVuoG3hpzoHA7mIv5llfAVEYmPn08VoVi+ZN7mzySqmgldSoNglqLVaHEvERGvwC5vwKViDoIawAAAABJRU5ErkJggg=='],
+        ['zbinlin — Bitbucket', 'https://bitbucket.org/zbinlin'],
+        ['lastdream2013/userChrome', 'https://github.com/lastdream2013/userChrome'],
+        null,
+        ['alice0775/userChrome.js', 'https://github.com/alice0775/userChrome.js'],
+        ['Griever/userChromeJS', 'https://github.com/Griever/userChromeJS'],
+        ['ardiman/userChrome.js', 'https://github.com/ardiman/userChrome.js'],
+        ['userChrome.js用スクリプト - wiki@nothing', 'http://wiki.nothing.sh/page/userChrome.js%CD%D1%A5%B9%A5%AF%A5%EA%A5%D7%A5%C8', 'moz-anno:http://wiki.nothing.sh/favicon.ico']
+    ];
+    var Icons = {
+        'github.com': 'moz-anno:favicon:https://assets-cdn.github.com/favicon.ico',
+        'bbs.kafan.cn': 'moz-anno:favicon:http://bbs.kafan.cn/favicon.ico',
+        'g.mozest.com': 'moz-anno:favicon:https://g.mozest.com/favicon.ico',
+        'bitbucket.org': 'moz-anno:https://d3oaxc4q5k2d6q.cloudfront.net/m/8cbb38b7bdad/img/favicon.png'
+    };
+
+    var popup = document.getElementById("userChrome_websites");
+
+    data.forEach(function(item){
+        if (!item) {
+            popup.appendChild($C('menuseparator'));
+            return;
+        }
+
+        var url = item[1];
+        var menuitem = $C('menuitem', {
+            label: item[0],
+            url: url,
+            tooltiptext: url,
+            class: 'menuitem-iconic',
+            oncommand: 'gBrowser.selectedTab = gBrowser.addTab(this.getAttribute("url"));'
+        });
+        popup.appendChild(menuitem);
+
+        var uri = Services.io.newURI(url, null, null);
+        var imgSrc = item[2] || Icons[uri.host];
+        if (imgSrc) {
+            menuitem.setAttribute("image", imgSrc);
+        } else {
+            PlacesUtils.favicons.getFaviconDataForPage(uri, {
+                onComplete: function(aURI, aDataLen, aData, aMimeType) {
+                    try {
+                        // javascript: URI の host にアクセスするとエラー
+                        menuitem.setAttribute("image", aURI && aURI.spec?
+                            "moz-anno:favicon:" + aURI.spec:
+                            "moz-anno:favicon:" + uri.scheme + "://" + uri.host + "/favicon.ico");
+                    } catch (e) { }
+                }
+            });
+        }
+    });
+}
+
+
+// 每个窗口都会运行一次，不管放在里面还是外面
+window.addEventListener('load', function ucload(e) {
+    // remove obsolete event listener
+    window.removeEventListener("load", ucload, false);
+
+    Application.getExtensions(function(extensions) {
+        let extension = extensions.get('userChromeJS@mozdev.org');
+
+        // 第一次启动
+        if (extension.firstRun) {
+            var buttonId = "userChromebtnMenu";
+            var navBarId = "nav-bar";
+
+            var navBar = top.document.getElementById(navBarId);
+            var currentSet = navBar.currentSet;
+
+            // Append only if the button is not already there.
+            var curSet = currentSet.split(",");
+            if (curSet.indexOf(buttonId) == -1) {
+                navBar.insertItem(buttonId);
+                navBar.setAttribute("currentset", navBar.currentSet);
+                navBar.ownerDocument.persist(navBarId, "currentset");
             }
+
+            // 第一次启动创建文件夹
+            Components.utils.import("resource://gre/modules/FileUtils.jsm");
+            var arrSubdir = ["xul", "SubScript"];
+            arrSubdir.forEach(function(dir) {
+                FileUtils.getDir("UChrm", [dir], true);
+            });
         }
-        return r;
-    },
-    saveFile: function(file, data) {
-        var suConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
-        suConverter.charset = 'UTF-8';
-        data = suConverter.ConvertFromUnicode(data);
+    });
 
-        var foStream = Cc['@mozilla.org/network/file-output-stream;1'].createInstance(Ci.nsIFileOutputStream);
-        foStream.init(file, 0x02 | 0x08 | 0x20, 0664, 0);
-        foStream.write(data, data.length);
-        foStream.close();
-    },
-    loadText: function (aFile) {
-        var fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
-        var sstream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
-        fstream.init(aFile, -1, 0, 0);
-        sstream.init(fstream);
+    userChromejs.init();
+    userChromejsScriptOptionsMenu.run();
+    userChromejs.Save.init();
 
-        var data = sstream.read(sstream.available());
-        try { data = decodeURIComponent(escape(data)); } catch(e) {}
-        sstream.close();
-        fstream.close();
-        return data;
-    },
-    popupNotification: function(details){
-        var win = Utils.getMostRecentWindow();
-        if (win && win.PopupNotifications) {
-            win.PopupNotifications.show(
-                win.gBrowser.selectedBrowser,
-                details.id,
-                details.message,
-                "",
-                details.mainAction,
-                details.secondActions,
-                details.options);
-            return true;
-        }
+    setTimeout(function() {
+        addWebSites();
+    }, 1000);
 
-        return false;
-    },
-    getFocusedWindow: function() {
-        var win = document.commandDispatcher.focusedWindow;
-        return (!win || win == window) ? content : win;
-    },
-    getMostRecentWindow: function(){
-        return Services.wm.getMostRecentWindow("navigator:browser")
-    },
-};
+}, false);
+
+window.addEventListener('unload', function(){
+    userChromejs.Save.uninit();
+});
 
 
-userChromejs.Save.init();
-
+function $C(name, attr) {
+    var el = document.createElement(name);
+    if (attr) Object.keys(attr).forEach(function(n) el.setAttribute(n, attr[n]));
+    return el;
+}
 
 })()
 
 
-window.addEventListener('load', function ucload(e){
-  // remove obsolete event listener
-  window.removeEventListener("load", ucload, false);
-
-  Application.getExtensions(function (extensions) {
-      let extension = extensions.get('userChromeJS@mozdev.org');
-
-      // 第一次启动
-      if (extension.firstRun) {
-        var buttonId = "userChromebtnMenu";
-        var navBarId = "nav-bar";
-
-        var navBar = top.document.getElementById(navBarId);
-        var currentSet = navBar.currentSet;
-
-        // Append only if the button is not already there.
-        var curSet = currentSet.split(",");
-        if (curSet.indexOf(buttonId) == -1) {
-            navBar.insertItem(buttonId);
-            navBar.setAttribute("currentset", navBar.currentSet);
-            navBar.ownerDocument.persist(navBarId, "currentset");
-        }
-
-        // 第一次启动创建文件夹
-        Components.utils.import("resource://gre/modules/FileUtils.jsm");
-        var arrSubdir = ["xul", "SubScript"];
-        arrSubdir.forEach(function(dir){
-            FileUtils.getDir("UChrm", [dir], true);
-        });
-      }
-  });
-
-  userChromejs.init();
-  userChromejsScriptOptionsMenu.run();
-}, false);

@@ -985,6 +985,7 @@
 
   ]]></script>
 
+<script type="application/javascript" src="chrome://userchromejs/content/utils.js"></script>
 <script type="application/javascript" src="chrome://userchromejs/content/SaveScript.js"></script>
 
 <toolbarpalette id="addon-bar">
@@ -1010,15 +1011,23 @@
               <toolbarbutton id="jscmd_edit_del" tooltiptext="删除脚本命令" oncommand="hidePopup(); userChromejsScriptOptionsMenu.deluserChromejsmenu();"/>
           </hbox>
           <hbox>
+            <menuitem id="showToolsMenu" label="切换到工具菜单" class="menuitem-iconic" oncommand="userChromejs.toggleUI(1);" flex="1" tooltiptext="新菜单在菜单栏的工具菜单中，再次点击后切换回按钮" />
+            <checkbox id="userChrome_homebtn"  label="移动菜单" tooltiptext="切换到工具菜单时将脚本命令和脚本目录菜单移动到火狐主页按钮" oncommand="userChromejs.settingHomeMode();" />
+          </hbox>
+          <hbox>
             <menuitem id="userChromejs_export_prefs" class="menuitem-iconic" label="导出脚本设置" flex="1"
                 tooltiptext="包括uc脚本和自定义的设置" oncommand="userChromejs.Save.exportPrefs();"/>
             <menuitem id="userChromejs_import_prefs" class="menuitem-iconic" label="导入"
                 tooltiptext="包括uc脚本和自定义的设置" oncommand="userChromejs.Save.importPrefs();"/>
           </hbox>
-          <hbox>
-            <menuitem id="showToolsMenu" label="切换到工具菜单" class="menuitem-iconic" oncommand="userChromejs.toggleUI(1);" flex="1" tooltiptext="新菜单在菜单栏的工具菜单中，再次点击后切换回按钮" />
-            <checkbox id="userChrome_homebtn"  label="移动菜单" tooltiptext="切换到工具菜单时将脚本命令和脚本目录菜单移动到火狐主页按钮" oncommand="userChromejs.settingHomeMode();" />
-          </hbox>
+          <menuseparator />
+          <menuitem id="userChromejs_addMenu_creator" class="menuitem-iconic" label="addMenuPlus 生成器" flex="1" oncommand="gBrowser.selectedTab = gBrowser.addTab('http://ywzhaiqi.github.io/addMenu_creator/');"/>
+          <menuitem id="userChromejs_ucjsMouseGestures_creator" class="menuitem-iconic" label="紫云飞鼠标手势生成器" flex="1" oncommand="gBrowser.selectedTab = gBrowser.addTab('chrome://userchromejs/content/ucjsMouseGestures_creator.html');"/>
+          <menuitem id="userChromejs_ucjsMouseDrag_creator" class="menuitem-iconic" label="紫云飞拖曳生成器" flex="1" oncommand="gBrowser.selectedTab = gBrowser.addTab('chrome://userchromejs/content/ucjsMouseDrag_creator.html');"/>
+        </menupopup>
+      </menu>
+      <menu label="在线网址">
+        <menupopup id="userChrome_websites">
         </menupopup>
       </menu>
 

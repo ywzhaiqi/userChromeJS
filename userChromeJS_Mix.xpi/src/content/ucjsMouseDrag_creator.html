@@ -1,0 +1,689 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-cn">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>鼠标拖拽 UserChromeJS 脚本生成器 -- 紫云飞</title>
+    <link type="text/css" rel="stylesheet" href="style/ziyunfei_creator.css">
+    <script src="script/jquery.min.js" type="text/javascript"></script>
+</head>
+<body>
+    <!-- 来源：http://www.cnblogs.com/ziyunfei/archive/2011/12/15/2289504.html -->
+    <div id="topics">
+        <div class="post">
+            <div class="postTitle">
+                <h1>鼠标拖拽 UserChromeJS 脚本生成器</h1>
+                <em>
+                    <a id="cb_post_title_url" class="postTitle2" href="http://www.cnblogs.com/ziyunfei/archive/2011/12/20/2293928.html">作者：紫云飞</a>
+                    （修改版）
+                </em>
+            </div>
+
+            <div class="postBody">
+                <div id="cnblogs_post_body">
+                    <form id="ucjsMouseDrag">
+                        <label>拖拽方式:
+                            <select id="dragStyle" style="width: 100px;" onchange="MouseDrag.changeDragCommand()">
+                                <option value="t">文字</option>
+                                <option value="ct">文字 + ctrl</option>
+                                <option value="at">文字 + alt</option>
+                                <option value="st">文字 + shift</option>
+                                <option value="l">链接</option>
+                                <option value="cl">链接 + ctrl</option>
+                                <option value="al">链接 + alt</option>
+                                <option value="sl">链接 + shift</option>
+                                <option value="i">图片</option>
+                                <option value="ci">图片 + ctrl</option>
+                                <option value="ai">图片 + alt</option>
+                                <option value="si">图片 + shift</option>
+                                <option value="ete">文字 + 任意</option>
+                                <option value="etu">文字 + 上</option>
+                                <option value="etd">文字 + 下</option>
+                                <option value="etl">文字 + 左</option>
+                                <option value="etr">文字 + 右</option>
+                                <option value="ele">链接 + 任意</option>
+                                <option value="elu">链接 + 上</option>
+                                <option value="eld">链接 + 下</option>
+                                <option value="ell">链接 + 左</option>
+                                <option value="elr">链接 + 右</option>
+                                <option value="eie">图片 + 任意</option>
+                                <option value="eiu">图片 + 上</option>
+                                <option value="eid">图片 + 下</option>
+                                <option value="eil">图片 + 左</option>
+                                <option value="eir">图片 + 右</option>
+                                <option title="U" value="ptu">文字 + 上</option>
+                                <option title="D" value="ptd">文字 + 下</option>
+                                <option title="L" value="ptl">文字 + 左</option>
+                                <option title="R" value="ptr">文字 + 右</option>
+                                <option title="UD" value="ptud">文字 + 上下</option>
+                                <option title="UL" value="ptul">文字 + 上左</option>
+                                <option title="UR" value="ptur">文字 + 上右</option>
+                                <option title="DU" value="ptdu">文字 + 下上</option>
+                                <option title="DL" value="ptdl">文字 + 下左</option>
+                                <option title="DR" value="ptdr">文字 + 下右</option>
+                                <option title="LR" value="pdlr">文字 + 左右</option>
+                                <option title="LU" value="ptlu">文字 + 左上</option>
+                                <option title="LD" value="ptld">文字 + 左下</option>
+                                <option title="RL" value="ptrl">文字 + 右左</option>
+                                <option title="RU" value="ptru">文字 + 右上</option>
+                                <option title="RD" value="ptrd">文字 + 右下</option>
+                                <option title="U" value="plu">链接 + 上</option>
+                                <option title="D" value="pld">链接 + 下</option>
+                                <option title="L" value="pll">链接 + 左</option>
+                                <option title="R" value="plr">链接 + 右</option>
+                                <option title="UD" value="plud">链接 + 上下</option>
+                                <option title="UL" value="plul">链接 + 上左</option>
+                                <option title="UR" value="plur">链接 + 上右</option>
+                                <option title="DU" value="pldu">链接 + 下上</option>
+                                <option title="DL" value="pldl">链接 + 下左</option>
+                                <option title="DR" value="pldr">链接 + 下右</option>
+                                <option title="LR" value="pdlr">链接 + 左右</option>
+                                <option title="LU" value="pllu">链接 + 左上</option>
+                                <option title="LD" value="plld">链接 + 左下</option>
+                                <option title="RL" value="plrl">链接 + 右左</option>
+                                <option title="RU" value="plru">链接 + 右上</option>
+                                <option title="RD" value="plrd">链接 + 右下</option>
+                                <option title="U" value="piu">图片 + 上</option>
+                                <option title="D" value="pid">图片 + 下</option>
+                                <option title="L" value="pil">图片 + 左</option>
+                                <option title="R" value="pir">图片 + 右</option>
+                                <option title="UD" value="piud">图片 + 上下</option>
+                                <option title="UL" value="piul">图片 + 上左</option>
+                                <option title="UR" value="piur">图片 + 上右</option>
+                                <option title="DU" value="pidu">图片 + 下上</option>
+                                <option title="DL" value="pidl">图片 + 下左</option>
+                                <option title="DR" value="pidr">图片 + 下右</option>
+                                <option title="LR" value="pdlr">图片 + 左右</option>
+                                <option title="LU" value="pilu">图片 + 左上</option>
+                                <option title="LD" value="pild">图片 + 左下</option>
+                                <option title="RL" value="pirl">图片 + 右左</option>
+                                <option title="RU" value="piru">图片 + 右上</option>
+                                <option title="RD" value="pird">图片 + 右下</option>
+                            </select>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                        <label>拖拽命令:
+                            <select id="dragCommand" style="width: 200px;"></select>
+                        </label>&nbsp;&nbsp;&nbsp;
+                        <label>
+                            <input id="generateMouseDragScript" onclick="MouseDrag.generateScript()" type="button" value="添加" />
+                        </label>&nbsp;
+                        <label>
+                            <input id="openChromeDir" onclick="MouseDrag.openChrome()" type="button" value="打开chrome目录" />
+                        </label>&nbsp;&nbsp;&nbsp;
+                        <label title="直接保存到 chrome 目录下">
+                            <input id="saveUC" onclick="MouseDrag.saveUC()" type="button" value="直接保存uc脚本" />
+                        </label>&nbsp;
+                        <label title="在桌面生成xpi文件">
+                            <input id="makeXPI" onclick="MouseDrag.makeXPI()" type="button" value="生成扩展" />
+                        </label>
+                        <div id="setting">
+                            <label title="没有拖拽方向,只有修饰键">
+                                <input id="quickdrag" onclick="MouseDrag.changeDragStyle()" type="radio" name="dragtype" />QuickDrag模式</label>&nbsp;
+                            <label title="没有修饰键,可拖拽四向">
+                                <input id="easydrag" onclick="MouseDrag.changeDragStyle()" type="radio" name="dragtype" />EasyDrag模式</label>&nbsp;
+                            <label title="没有修饰键,支持拖拽路径">
+                                <input id="superdrag" onclick="MouseDrag.changeDragStyle()" type="radio" name="dragtype" />SuperDrag模式</label>
+                            <label title="只会显示手势命令对应的代码">
+                                <input id="doNotGenerate" onclick="MouseDrag.doNotGenerate()" type="checkbox" />代码片段
+                            </label>
+                        </div>
+                        <script type="text/javascript">
+                        // <![CDATA[
+                        navigator.product != "Gecko" && ($("#dragStyle").closest(".postCon").length ? $("#dragStyle").closest(".postCon") : $("#dragStyle").closest(".postBody")).html('<b style="color:black;line-height:1em;font-size: 100px;">FIREFOX ONLY</b>').css({
+                            "padding": "50px"
+                        })
+                         // ]]>
+                        </script>
+                        <script type="text/javascript" src="script/js_beautify.min.js"></script>
+                        <script type="text/javascript">
+                        // <![CDATA[
+                        var checkSupport = (location.protocol !== 'chrome:');
+                        MouseDrag = {
+                            quickDragTemplate: "bG9jYXRpb24gPT0gImNocm9tZTovL2Jyb3dzZXIvY29udGVudC9icm93c2VyLnh1bCIgJiYgKGZ1bmN0aW9uIChldmVudCkgewoJdmFyIHNlbGYgPSBhcmd1bWVudHMuY2FsbGVlOwoJaWYgKCFldmVudCkgewoJCVsiZHJhZ3N0YXJ0IiwgImRyYWciLCAiZHJhZ292ZXIiLCAiZHJvcCJdLmZvckVhY2goZnVuY3Rpb24gKHR5cGUpIHsKCQkJZ0Jyb3dzZXIubVBhbmVsQ29udGFpbmVyLmFkZEV2ZW50TGlzdGVuZXIodHlwZSwgc2VsZiwgZmFsc2UpOwoJCX0pOwoJCXdpbmRvdy5hZGRFdmVudExpc3RlbmVyKCJ1bmxvYWQiLCBmdW5jdGlvbiAoKSB7CgkJCVsiZHJhZ3N0YXJ0IiwgImRyYWciLCAiZHJhZ292ZXIiLCAiZHJvcCJdLmZvckVhY2goZnVuY3Rpb24gKHR5cGUpIHsKCQkJCWdCcm93c2VyLm1QYW5lbENvbnRhaW5lci5yZW1vdmVFdmVudExpc3RlbmVyKHR5cGUsIHNlbGYsIGZhbHNlKTsKCQkJfSk7CgkJfSwgZmFsc2UpOwoJCXJldHVybjsKCX0KCXN3aXRjaCAoZXZlbnQudHlwZSkgewoJY2FzZSAiZHJhZ3N0YXJ0IjoKCQl7CgkJCWV2ZW50LnRhcmdldC5sb2NhbE5hbWUgPT0gImltZyIgJiYgZXZlbnQuZGF0YVRyYW5zZmVyLnNldERhdGEoImFwcGxpY2F0aW9uL3gtbW96LWZpbGUtcHJvbWlzZS11cmwiLGV2ZW50LnRhcmdldC5zcmMpOwoJCQlicmVhazsKCQl9CgljYXNlICJkcmFnIjoKCQl7CgkJCXNlbGYuZHJhZ0Zyb21JbnNpZGUgPSB0cnVlOwoJCQlzZWxmLnNvdXJjZU5vZGUgPSBldmVudC50YXJnZXQ7CgkJCWJyZWFrOwoJCX0KCWNhc2UgImRyYWdvdmVyIjoKCQl7CgkJCXNlbGYuZHJhZ0Zyb21JbnNpZGUgJiYgKENvbXBvbmVudHMuY2xhc3Nlc1siQG1vemlsbGEub3JnL3dpZGdldC9kcmFnc2VydmljZTsxIl0uZ2V0U2VydmljZShDb21wb25lbnRzLmludGVyZmFjZXMubnNJRHJhZ1NlcnZpY2UpLmdldEN1cnJlbnRTZXNzaW9uKCkuY2FuRHJvcCA9IHRydWUpOwoJCQlicmVhazsKCQl9CgljYXNlICJkcm9wIjoKCQl7CgkJCWlmIChzZWxmLmRyYWdGcm9tSW5zaWRlICYmIGV2ZW50LnRhcmdldC5sb2NhbE5hbWUgIT0gInRleHRhcmVhIiAmJiAoIShldmVudC50YXJnZXQubG9jYWxOYW1lID09ICJpbnB1dCIgJiYgKGV2ZW50LnRhcmdldC50eXBlID09ICJ0ZXh0IiB8fCBldmVudC50YXJnZXQudHlwZSA9PSAicGFzc3dvcmQiKSkpICYmIGV2ZW50LnRhcmdldC5jb250ZW50RWRpdGFibGUgIT0gInRydWUiKSB7CgkJCQlldmVudC5wcmV2ZW50RGVmYXVsdCgpOwoJCQkJZXZlbnQuc3RvcFByb3BhZ2F0aW9uKCk7CgkJCQlpZiAoZXZlbnQuZGF0YVRyYW5zZmVyLnR5cGVzLmNvbnRhaW5zKCJhcHBsaWNhdGlvbi94LW1vei1maWxlLXByb21pc2UtdXJsIikpIHsKCQkJCQlpZiAoZXZlbnQuY3RybEtleSkgewoJCQkJCQkvL2NpCgkJCQkJCXJldHVybjsKCQkJCQl9CgkJCQkJaWYgKGV2ZW50LmFsdEtleSkgewoJCQkJCQkvL2FpCgkJCQkJCXJldHVybjsKCQkJCQl9CgkJCQkJaWYgKGV2ZW50LnNoaWZ0S2V5KSB7CgkJCQkJCS8vc2kKCQkJCQkJcmV0dXJuOwoJCQkJCX0KCQkJCQkvL2kKCQkJCX0gZWxzZSBpZiAoZXZlbnQuZGF0YVRyYW5zZmVyLnR5cGVzLmNvbnRhaW5zKCJ0ZXh0L3gtbW96LXVybCIpKSB7CgkJCQkJaWYgKGV2ZW50LmN0cmxLZXkpIHsKCQkJCQkJLy9jbAoJCQkJCQlyZXR1cm47CgkJCQkJfQoJCQkJCWlmIChldmVudC5hbHRLZXkpIHsKCQkJCQkJLy9hbAoJCQkJCQlyZXR1cm47CgkJCQkJfQoJCQkJCWlmIChldmVudC5zaGlmdEtleSkgewoJCQkJCQkvL3NsCgkJCQkJCXJldHVybjsKCQkJCQl9CgkJCQkJLy9sCgkJCQl9IGVsc2UgewoJCQkJCWlmIChldmVudC5jdHJsS2V5KSB7CgkJCQkJCS8vY3QKCQkJCQkJcmV0dXJuOwoJCQkJCX0KCQkJCQlpZiAoZXZlbnQuYWx0S2V5KSB7CgkJCQkJCS8vYXQKCQkJCQkJcmV0dXJuOwoJCQkJCX0KCQkJCQlpZiAoZXZlbnQuc2hpZnRLZXkpIHsKCQkJCQkJLy9zdAoJCQkJCQlyZXR1cm47CgkJCQkJfQoJCQkJCS8vdAoJCQkJfQoJCQkJc2VsZi5kcmFnRnJvbUluc2lkZSA9IGZhbHNlOwoJCQl9CgkJfQoJfQp9KSgp",
+                            easyDragTemplate: "bG9jYXRpb24gPT0gImNocm9tZTovL2Jyb3dzZXIvY29udGVudC9icm93c2VyLnh1bCIgJiYgKGZ1bmN0aW9uIChldmVudCkgewoJdmFyIHNlbGYgPSBhcmd1bWVudHMuY2FsbGVlOwoJaWYgKCFldmVudCkgewoJCVsiZHJhZ3N0YXJ0IiwgImRyYWdvdmVyIiwgImRyb3AiXS5mb3JFYWNoKGZ1bmN0aW9uICh0eXBlKSB7CgkJCWdCcm93c2VyLm1QYW5lbENvbnRhaW5lci5hZGRFdmVudExpc3RlbmVyKHR5cGUsIHNlbGYsIGZhbHNlKTsKCQl9KTsKCQl3aW5kb3cuYWRkRXZlbnRMaXN0ZW5lcigidW5sb2FkIiwgZnVuY3Rpb24gKCkgewoJCQlbImRyYWdzdGFydCIsICJkcmFnb3ZlciIsICJkcm9wIl0uZm9yRWFjaChmdW5jdGlvbiAodHlwZSkgewoJCQkJZ0Jyb3dzZXIubVBhbmVsQ29udGFpbmVyLnJlbW92ZUV2ZW50TGlzdGVuZXIodHlwZSwgc2VsZiwgZmFsc2UpOwoJCQl9KTsKCQl9LCBmYWxzZSk7CgkJcmV0dXJuOwoJfQoJc3dpdGNoIChldmVudC50eXBlKSB7CgljYXNlICJkcmFnc3RhcnQiOgoJCXsKCQkJc2VsZi5zdGFydFBvaW50ID0gW2V2ZW50LnNjcmVlblgsIGV2ZW50LnNjcmVlblldOwoJCQlzZWxmLnNvdXJjZU5vZGUgPSBldmVudC50YXJnZXQ7CgkJCWV2ZW50LnRhcmdldC5sb2NhbE5hbWUgPT0gImltZyIgJiYgZXZlbnQuZGF0YVRyYW5zZmVyLnNldERhdGEoImFwcGxpY2F0aW9uL3gtbW96LWZpbGUtcHJvbWlzZS11cmwiLCBldmVudC50YXJnZXQuc3JjKTsKCQkJYnJlYWs7CgkJfQoJY2FzZSAiZHJhZ292ZXIiOgoJCXsKCQkJc2VsZi5zdGFydFBvaW50ICYmIChDb21wb25lbnRzLmNsYXNzZXNbIkBtb3ppbGxhLm9yZy93aWRnZXQvZHJhZ3NlcnZpY2U7MSJdLmdldFNlcnZpY2UoQ29tcG9uZW50cy5pbnRlcmZhY2VzLm5zSURyYWdTZXJ2aWNlKS5nZXRDdXJyZW50U2Vzc2lvbigpLmNhbkRyb3AgPSB0cnVlKTsKCQkJYnJlYWs7CgkJfQoJY2FzZSAiZHJvcCI6CgkJewoJCQlpZiAoc2VsZi5zdGFydFBvaW50ICYmIGV2ZW50LnRhcmdldC5sb2NhbE5hbWUgIT0gInRleHRhcmVhIiAmJiAoIShldmVudC50YXJnZXQubG9jYWxOYW1lID09ICJpbnB1dCIgJiYgKGV2ZW50LnRhcmdldC50eXBlID09ICJ0ZXh0IiB8fCBldmVudC50YXJnZXQudHlwZSA9PSAicGFzc3dvcmQiKSkpICYmIGV2ZW50LnRhcmdldC5jb250ZW50RWRpdGFibGUgIT0gInRydWUiKSB7CgkJCQlldmVudC5wcmV2ZW50RGVmYXVsdCgpOwoJCQkJZXZlbnQuc3RvcFByb3BhZ2F0aW9uKCk7CgkJCQl2YXIgW3N1YlgsIHN1YlldID0gW2V2ZW50LnNjcmVlblggLSBzZWxmLnN0YXJ0UG9pbnRbMF0sIGV2ZW50LnNjcmVlblkgLSBzZWxmLnN0YXJ0UG9pbnRbMV1dOwoJCQkJdmFyIFtkaXN0WCwgZGlzdFldID0gWyhzdWJYID4gMCA/IHN1YlggOiAoLXN1YlgpKSwgKHN1YlkgPiAwID8gc3ViWSA6ICgtc3ViWSkpXTsKCQkJCXZhciBkaXJlY3Rpb247CgkJCQlpZiAoZGlzdFggPiBkaXN0WSkgZGlyZWN0aW9uID0gc3ViWCA8IDAgPyAiTCIgOiAiUiI7CgkJCQllbHNlIGRpcmVjdGlvbiA9IHN1YlkgPCAwID8gIlUiIDogIkQiOwoJCQkJaWYgKGV2ZW50LmRhdGFUcmFuc2Zlci50eXBlcy5jb250YWlucygiYXBwbGljYXRpb24veC1tb3otZmlsZS1wcm9taXNlLXVybCIpKSB7CgkJCQkJaWYgKGRpcmVjdGlvbiA9PSAiVSIpIHsKCQkJCQkJLy9laXUKCQkJCQkJcmV0dXJuOwoJCQkJCX0KCQkJCQlpZiAoZGlyZWN0aW9uID09ICJEIikgewoJCQkJCQkvL2VpZAoJCQkJCQlyZXR1cm47CgkJCQkJfQoJCQkJCWlmIChkaXJlY3Rpb24gPT0gIkwiKSB7CgkJCQkJCS8vZWlsCgkJCQkJCXJldHVybjsKCQkJCQl9CgkJCQkJaWYgKGRpcmVjdGlvbiA9PSAiUiIpIHsKCQkJCQkJLy9laXIKCQkJCQkJcmV0dXJuOwoJCQkJCX0KIAoJCQkJCS8vZWllCiAKIAoJCQkJfSBlbHNlIGlmIChldmVudC5kYXRhVHJhbnNmZXIudHlwZXMuY29udGFpbnMoInRleHQveC1tb3otdXJsIikpIHsKCQkJCQlpZiAoZGlyZWN0aW9uID09ICJVIikgewoJCQkJCQkvL2VsdQoJCQkJCQlyZXR1cm47CgkJCQkJfQoJCQkJCWlmIChkaXJlY3Rpb24gPT0gIkQiKSB7CgkJCQkJCS8vZWxkCgkJCQkJCXJldHVybjsKCQkJCQl9CgkJCQkJaWYgKGRpcmVjdGlvbiA9PSAiTCIpIHsKCQkJCQkJLy9lbGwKCQkJCQkJcmV0dXJuOwoJCQkJCX0KCQkJCQlpZiAoZGlyZWN0aW9uID09ICJSIikgewoJCQkJCQkvL2VscgoJCQkJCQlyZXR1cm47CgkJCQkJfQogCgkJCQkJLy9lbGUKIAogCgkJCQl9IGVsc2UgewoJCQkJCWlmIChkaXJlY3Rpb24gPT0gIlUiKSB7CgkJCQkJCS8vZXR1CgkJCQkJCXJldHVybjsKCQkJCQl9CgkJCQkJaWYgKGRpcmVjdGlvbiA9PSAiRCIpIHsKCQkJCQkJLy9ldGQKCQkJCQkJcmV0dXJuOwoJCQkJCX0KCQkJCQlpZiAoZGlyZWN0aW9uID09ICJMIikgewoJCQkJCQkvL2V0bAoJCQkJCQlyZXR1cm47CgkJCQkJfQoJCQkJCWlmIChkaXJlY3Rpb24gPT0gIlIiKSB7CgkJCQkJCS8vZXRyCgkJCQkJCXJldHVybjsKCQkJCQl9CiAKCQkJCQkvL2V0ZQogCiAKCQkJCX0KCQkJCXNlbGYuc3RhcnRQb2ludCA9IDA7CgkJCX0KCQl9Cgl9Cn0pKCk=",
+                            superDragTemplate: "bG9jYXRpb24gPT0gImNocm9tZTovL2Jyb3dzZXIvY29udGVudC9icm93c2VyLnh1bCIgJiYgKGZ1bmN0aW9uIChldmVudCkgewoJdmFyIHNlbGYgPSBhcmd1bWVudHMuY2FsbGVlOwoJaWYgKCFldmVudCkgewoJCXNlbGYuR0VTVFVSRVMgPSB7CgkJCWltYWdlOiB7CgkJCQkvL0kKCQkJfSwKCQkJbGluazogewoJCQkJLy9MCgkJCX0sCgkJCXRleHQ6IHsKCQkJCS8vVAoJCQl9LAoJCX07CgkJWyJkcmFnc3RhcnQiLCAiZHJhZ292ZXIiLCAiZHJvcCJdLmZvckVhY2goZnVuY3Rpb24gKHR5cGUpIHsKCQkJZ0Jyb3dzZXIubVBhbmVsQ29udGFpbmVyLmFkZEV2ZW50TGlzdGVuZXIodHlwZSwgc2VsZiwgZmFsc2UpOwoJCX0pOwoJCXdpbmRvdy5hZGRFdmVudExpc3RlbmVyKCJ1bmxvYWQiLCBmdW5jdGlvbiAoKSB7CgkJCVsiZHJhZ3N0YXJ0IiwgImRyYWdvdmVyIiwgImRyb3AiXS5mb3JFYWNoKGZ1bmN0aW9uICh0eXBlKSB7CgkJCQlnQnJvd3Nlci5tUGFuZWxDb250YWluZXIucmVtb3ZlRXZlbnRMaXN0ZW5lcih0eXBlLCBzZWxmLCBmYWxzZSk7CgkJCX0pOwoJCX0sIGZhbHNlKTsKCQlyZXR1cm47Cgl9Cglzd2l0Y2ggKGV2ZW50LnR5cGUpIHsKCWNhc2UgImRyYWdzdGFydCI6CgkJewoJCQlzZWxmLmxhc3RQb2ludCA9IFtldmVudC5zY3JlZW5YLCBldmVudC5zY3JlZW5ZXTsKCQkJc2VsZi5zb3VyY2VOb2RlID0gZXZlbnQudGFyZ2V0OwoJCQlzZWxmLmRpcmVjdGlvbkNoYWluID0gIiI7CgkJCWV2ZW50LnRhcmdldC5sb2NhbE5hbWUgPT0gImltZyIgJiYgZXZlbnQuZGF0YVRyYW5zZmVyLnNldERhdGEoImFwcGxpY2F0aW9uL3gtbW96LWZpbGUtcHJvbWlzZS11cmwiLCBldmVudC50YXJnZXQuc3JjKTsKCQkJaWYgKGV2ZW50LmRhdGFUcmFuc2Zlci50eXBlcy5jb250YWlucygiYXBwbGljYXRpb24veC1tb3otZmlsZS1wcm9taXNlLXVybCIpKSB7CgkJCQlzZWxmLnR5cGUgPSAiaW1hZ2UiOwoJCQl9IGVsc2UgaWYgKGV2ZW50LmRhdGFUcmFuc2Zlci50eXBlcy5jb250YWlucygidGV4dC94LW1vei11cmwiKSkgewoJCQkJc2VsZi50eXBlID0gImxpbmsiOwoJCQl9IGVsc2UgewoJCQkJc2VsZi50eXBlID0gInRleHQiOwoJCQl9CgkJCWJyZWFrOwoJCX0KCWNhc2UgImRyYWdvdmVyIjoKCQl7CgkJCWlmICghc2VsZi5sYXN0UG9pbnQpIHJldHVybjsKCQkJQ29tcG9uZW50cy5jbGFzc2VzWyJAbW96aWxsYS5vcmcvd2lkZ2V0L2RyYWdzZXJ2aWNlOzEiXS5nZXRTZXJ2aWNlKENvbXBvbmVudHMuaW50ZXJmYWNlcy5uc0lEcmFnU2VydmljZSkuZ2V0Q3VycmVudFNlc3Npb24oKS5jYW5Ecm9wID0gdHJ1ZTsKCQkJdmFyIFtzdWJYLCBzdWJZXSA9IFtldmVudC5zY3JlZW5YIC0gc2VsZi5sYXN0UG9pbnRbMF0sIGV2ZW50LnNjcmVlblkgLSBzZWxmLmxhc3RQb2ludFsxXV07CgkJCXZhciBbZGlzdFgsIGRpc3RZXSA9IFsoc3ViWCA+IDAgPyBzdWJYIDogKC1zdWJYKSksIChzdWJZID4gMCA/IHN1YlkgOiAoLXN1YlkpKV07CgkJCXZhciBkaXJlY3Rpb247CgkJCWlmIChkaXN0WCA8IDEwICYmIGRpc3RZIDwgMTApIHJldHVybjsKCQkJaWYgKGRpc3RYID4gZGlzdFkpIGRpcmVjdGlvbiA9IHN1YlggPCAwID8gIkwiIDogIlIiOwoJCQllbHNlIGRpcmVjdGlvbiA9IHN1YlkgPCAwID8gIlUiIDogIkQiOwoJCQlpZiAoZGlyZWN0aW9uICE9IHNlbGYuZGlyZWN0aW9uQ2hhaW4uY2hhckF0KHNlbGYuZGlyZWN0aW9uQ2hhaW4ubGVuZ3RoIC0gMSkpIHsKCQkJCXNlbGYuZGlyZWN0aW9uQ2hhaW4gKz0gZGlyZWN0aW9uOwoJCQkJWFVMQnJvd3NlcldpbmRvdy5zdGF0dXNUZXh0RmllbGQubGFiZWwgPSBzZWxmLkdFU1RVUkVTW3NlbGYudHlwZV1bc2VsZi5kaXJlY3Rpb25DaGFpbl0gPyAiXHU2MjRiXHU1MmJmOiAiICsgc2VsZi5kaXJlY3Rpb25DaGFpbiArICIgIiArIHNlbGYuR0VTVFVSRVNbc2VsZi50eXBlXVtzZWxmLmRpcmVjdGlvbkNoYWluXS5uYW1lIDogIlx1NjcyYVx1NzdlNVx1NjI0Ylx1NTJiZjoiICsgc2VsZi5kaXJlY3Rpb25DaGFpbjsKCQkJCXNlbGYuY21kID0gc2VsZi5HRVNUVVJFU1tzZWxmLnR5cGVdW3NlbGYuZGlyZWN0aW9uQ2hhaW5dID8gc2VsZi5HRVNUVVJFU1tzZWxmLnR5cGVdW3NlbGYuZGlyZWN0aW9uQ2hhaW5dLmNtZCA6ICIiOwoJCQl9CgkJCXNlbGYubGFzdFBvaW50ID0gW2V2ZW50LnNjcmVlblgsIGV2ZW50LnNjcmVlblldOwoJCQlicmVhazsKCQl9CgljYXNlICJkcm9wIjoKCQl7CgkJCWlmIChzZWxmLmxhc3RQb2ludCAmJiBldmVudC50YXJnZXQubG9jYWxOYW1lICE9ICJ0ZXh0YXJlYSIgJiYgKCEoZXZlbnQudGFyZ2V0LmxvY2FsTmFtZSA9PSAiaW5wdXQiICYmIChldmVudC50YXJnZXQudHlwZSA9PSAidGV4dCIgfHwgZXZlbnQudGFyZ2V0LnR5cGUgPT0gInBhc3N3b3JkIikpKSAmJiBldmVudC50YXJnZXQuY29udGVudEVkaXRhYmxlICE9ICJ0cnVlIikgewoJCQkJZXZlbnQucHJldmVudERlZmF1bHQoKTsKCQkJCWV2ZW50LnN0b3BQcm9wYWdhdGlvbigpOwoJCQkJc2VsZi5sYXN0UG9pbnQgPSBYVUxCcm93c2VyV2luZG93LnN0YXR1c1RleHRGaWVsZC5sYWJlbCA9ICIiOwoJCQkJc2VsZi5jbWQgJiYgc2VsZi5jbWQoZXZlbnQsc2VsZik7CgkJCX0KCQl9Cgl9Cn0pKCk=",
+                            install_rdf: "PD94bWwgdmVyc2lvbj0iMS4wIj8+CjxSREYgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiIHhtbG5zOmVtPSJodHRwOi8vd3d3Lm1vemlsbGEub3JnLzIwMDQvZW0tcmRmIyI+Cgk8RGVzY3JpcHRpb24gYWJvdXQ9InVybjptb3ppbGxhOmluc3RhbGwtbWFuaWZlc3QiPgoJCTxlbTppZD5EcmFnTmFtZUB6aXl1bmZlaTwvZW06aWQ+CgkJPGVtOnZlcnNpb24+MS4wPC9lbTp2ZXJzaW9uPgoJCTxlbTp0YXJnZXRBcHBsaWNhdGlvbj4KCQkJPERlc2NyaXB0aW9uPgoJCQkJPGVtOmlkPntlYzgwMzBmNy1jMjBhLTQ2NGYtOWIwZS0xM2EzYTllOTczODR9PC9lbTppZD4KCQkJCTxlbTptaW5WZXJzaW9uPjEuMDwvZW06bWluVmVyc2lvbj4KCQkJCTxlbTptYXhWZXJzaW9uPjEwLio8L2VtOm1heFZlcnNpb24+CgkJCTwvRGVzY3JpcHRpb24+CgkJPC9lbTp0YXJnZXRBcHBsaWNhdGlvbj4KCQk8ZW06bmFtZT5EcmFnTmFtZTwvZW06bmFtZT4KCQk8ZW06ZGVzY3JpcHRpb24+RHJhZ05hbWU8L2VtOmRlc2NyaXB0aW9uPgoJCTxlbTpjcmVhdG9yPue0q+S6kemjnjwvZW06Y3JlYXRvcj4KCTwvRGVzY3JpcHRpb24+CjwvUkRGPg==",
+                            chrome_manifest: "Y29udGVudCBEcmFnTmFtZSAuLwpvdmVybGF5IGNocm9tZTovL2Jyb3dzZXIvY29udGVudC9icm93c2VyLnh1bCBjaHJvbWU6Ly9EcmFnTmFtZS9jb250ZW50L292ZXJsYXkueHVs",
+                            overlay_xul: "PD94bWwgdmVyc2lvbj0iMS4wIj8+CjxvdmVybGF5IHhtbG5zPSJodHRwOi8vd3d3Lm1vemlsbGEub3JnL2tleW1hc3Rlci9nYXRla2VlcGVyL3RoZXJlLmlzLm9ubHkueHVsIj4KCTxzY3JpcHQ+CgkJPCFbQ0RBVEFbIAp3aW5kb3cuYWRkRXZlbnRMaXN0ZW5lcigibG9hZCIsZnVuY3Rpb24oKXsKLy8vCn0sZmFsc2UpCgkJXV0+Cgk8L3NjcmlwdD4KPC9vdmVybGF5Pg==",
+                            selectedDragStyle: [],
+                            changeDragCommand: function() {
+                                var arr = {
+                                    t: "text",
+                                    i: "image",
+                                    l: "link"
+                                };
+                                Array.filter($("#dragCommand")[0].options, function(o) {
+                                    return !(!!~o.value.toLowerCase().indexOf(arr[$("#dragStyle").val().length > 1 ? $("#dragStyle").val().slice(1, 2) : $("#dragStyle").val().slice(-1)]) ? o.style.display = "" : o.style.display = "none");
+                                })[0].selected = true;
+                            },
+                            changeDragStyle: function() {
+                                Array.filter($("#dragStyle")[0].options, function(o) {
+                                    return !(o.style.display = (($("#easydrag:checked").length ? /^e/ : $("#superdrag:checked").length ? /^p/ : /^[^ep]/).test(o.value) ? "" : "none"));
+                                })[0].selected = true;
+                                MouseDrag.changeDragCommand();
+                            },
+                            openChrome: function() {
+                                try {
+                                    checkSupport && netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+                                    Components.classes["@mozilla.org/file/directory_service;1"].getService(Components.interfaces.nsIProperties).get("UChrm", Components.interfaces.nsILocalFile).reveal();
+                                } catch (e) {
+                                    alert("about:config中signed.applets.codebase_principal_support禁止了该行为");
+                                }
+                            },
+                            saveUC: function() {
+                                var data = $("#dragStyle").val();
+                                if (!data) {
+                                    alert("请先选择");
+                                }
+                                try {
+                                    checkSupport && netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+                                } catch (e) {
+                                    alert("about:config中 signed.applets.codebase_principal_support 禁止了该行为");
+                                    return;
+                                }
+
+                                var file = Components.classes["@mozilla.org/file/directory_service;1"].getService(Components.interfaces.nsIProperties).get("UChrm", Components.interfaces.nsILocalFile);
+                                var filename = $("#quickdrag:checked").length ? "QuickDrag" : $("#easydrag:checked").length ? "EasyDrag" : "SuperDrag";
+                                file.append(filename + ".uc.js");
+
+                                var suConverter = Components.classes["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Components.interfaces.nsIScriptableUnicodeConverter);
+                                suConverter.charset = 'UTF-8';
+                                data = suConverter.ConvertFromUnicode(data);
+
+                                var foStream = Components.classes['@mozilla.org/network/file-output-stream;1'].createInstance(Components.interfaces.nsIFileOutputStream);
+                                foStream.init(file, 0x02 | 0x08 | 0x20, 0664, 0);
+                                foStream.write(data, data.length);
+                                foStream.close();
+
+                                alert('已经成功保存 "' + file.name + '" 到 chrome 目录下');
+                            },
+                            makeXPI: function() {
+                                if (!$("#dragStyle").val()) {
+                                    alert("请先选择");
+                                }
+                                try {
+                                    checkSupport && netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+                                } catch (e) {
+                                    alert("about:config中 signed.applets.codebase_principal_support 禁止了该行为");
+                                    return;
+                                }
+                                var zipW = new Components.Constructor("@mozilla.org/zipwriter;1", "nsIZipWriter")();
+                                var file = Components.classes["@mozilla.org/file/directory_service;1"].getService(Components.interfaces.nsIProperties).get("DeskP", Components.interfaces.nsILocalFile);
+                                var xpiname = $("#quickdrag:checked").length ? "QuickDrag" : $("#easydrag:checked").length ? "EasyDrag" : "SuperDrag";
+                                file.append(xpiname + ".xpi");
+                                zipW.open(file, 44);
+                                var converter = Components.classes["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Components.interfaces.nsIScriptableUnicodeConverter);
+                                converter.charset = "UTF-8";
+                                zipW.addEntryStream("install.rdf", Components.interfaces.nsIZipWriter.COMPRESSION_DEFAULT, null, converter.convertToInputStream(decodeURIComponent(escape(atob(this.install_rdf))).replace(/DragName/g, xpiname)), false);
+                                zipW.addEntryStream("chrome.manifest", Components.interfaces.nsIZipWriter.COMPRESSION_DEFAULT, null, converter.convertToInputStream(decodeURIComponent(escape(atob(this.chrome_manifest))).replace(/DragName/g, xpiname)), false);
+                                zipW.addEntryStream("overlay.xul", Components.interfaces.nsIZipWriter.COMPRESSION_DEFAULT, null, converter.convertToInputStream(decodeURIComponent(escape(atob(this.overlay_xul))).replace(/\/\/\//g, $("#MouseDragScript").val())), false);
+                                zipW.close();
+
+                                file.reveal();
+                            },
+                            generateScript: function() {
+                                if (!$("#dragStyle").val())
+                                    return;
+                                if ($("#superdrag:checked").length) {
+                                    this.selectedDragStyle[$("#dragStyle").val()] = $("#dragStyle").val().slice(2).toUpperCase() + ':{' + "\n//" + this[$("#dragCommand").val()].name + '\nname:"' + this[$("#dragCommand").val()].name.replace(/[^\u0000-\u00FF]/g, function($0) {
+                                        return "\\u" + $0.charCodeAt(0).toString(16);
+                                    }) + '",\ncmd:' + this[$("#dragCommand").val()].cmd.toString().replace("(", "(event,self") + '\n},'
+                                    var script = decodeURIComponent(escape(atob(this.superDragTemplate)));
+                                    $("#MouseDragScript").val(js_beautify(script.replace("//T", [this.selectedDragStyle[i]
+                                        for (i in this.selectedDragStyle)
+                                            if (/^pt/.test(i))
+                                    ].join("")).replace("//I", [this.selectedDragStyle[i]
+                                        for (i in this.selectedDragStyle)
+                                            if (/^pi/.test(i))
+                                    ].join("")).replace("//L", [this.selectedDragStyle[i]
+                                        for (i in this.selectedDragStyle)
+                                            if (/^pl/.test(i))
+                                    ].join(""))));
+                                } else {
+                                    this.selectedDragStyle[$("#dragStyle").val()] = "//" + this[$("#dragCommand").val()].name + "\n" + this[$("#dragCommand").val()].cmd.toString().split("\n").slice(1, -1).join("\n");
+                                    if ($("#quickdrag:checked").length) {
+                                        var script = decodeURIComponent(escape(atob(this.quickDragTemplate)));
+                                    } else {
+                                        var script = decodeURIComponent(escape(atob(this.easyDragTemplate)));
+                                    }
+                                    for (i in this.selectedDragStyle) {
+                                        script = script.replace("//" + i, this.selectedDragStyle[i]);
+                                    }
+                                    $("#MouseDragScript").val(js_beautify(script.replace(/.+[\t ]*\n[\t ]*\/\/...?\n.+\n.+/g, "").replace(/\/\/.\n/g, "")));
+                                }
+                                $("#dragStyle")[0].options[$("#dragStyle")[0].selectedIndex].style.backgroundColor = "pink";
+                                $("#dragCommand")[0].options[$("#dragCommand")[0].selectedIndex].style.backgroundColor = "pink";
+                                $("#dragStyle")[0].selectedIndex++;
+                                MouseDrag.changeDragCommand();
+                                $("#MouseDragScriptLineNum").text("行数:" + ($("#MouseDragScript").val().match(/\n/g).length + 1));
+                                if ($("#quickdrag:checked").length && $("#dragStyle").val().length > 2) {
+                                    $("#dragStyle")[0].selectedIndex = -1;
+                                }
+                                if (($("#easydrag:checked").length) && /^[^e]/.test($("#dragStyle").val())) {
+                                    $("#dragStyle")[0].selectedIndex = -1;
+                                }
+                                if (($("#superdrag:checked").length) && /^[^p]/.test($("#dragStyle").val())) {
+                                    $("#dragStyle")[0].selectedIndex = -1;
+                                }
+                            },
+                            openImage: {
+                                name: "当前标签打开图片",
+                                cmd: function() {
+                                    loadURI(event.dataTransfer.getData("application/x-moz-file-promise-url"));
+                                }
+                            },
+                            newTabOpenImage: {
+                                name: "新标签打开图片(前台)",
+                                cmd: function() {
+                                    gBrowser.selectedTab = gBrowser.addTab(event.dataTransfer.getData("application/x-moz-file-promise-url"));
+                                }
+                            },
+                            newTabOpenImageBG: {
+                                name: "新标签打开图片(后台)",
+                                cmd: function() {
+                                    gBrowser.addTab(event.dataTransfer.getData("application/x-moz-file-promise-url"));
+                                }
+                            },
+                            openImageLK: {
+                                name: "当前标签打开图片链接",
+                                cmd: function() {
+                                    loadURI(event.dataTransfer.getData("text/x-moz-url").split("\n")[0]);
+                                }
+                            },
+                            newTabOpenImageLk: {
+                                name: "新标签打开图片链接(前台)",
+                                cmd: function() {
+                                    gBrowser.selectedTab = gBrowser.addTab(event.dataTransfer.getData("text/x-moz-url").split("\n")[0]);
+                                }
+                            },
+                            newTabOpenImageLkBG: {
+                                name: "新标签打开图片链接(后台)",
+                                cmd: function() {
+                                    gBrowser.addTab(event.dataTransfer.getData("text/x-moz-url").split("\n")[0]);
+                                }
+                            },
+                            copyImageURL: {
+                                name: "复制图片地址",
+                                cmd: function() {
+                                    Components.classes['@mozilla.org/widget/clipboardhelper;1'].createInstance(Components.interfaces.nsIClipboardHelper).copyString(event.dataTransfer.getData("application/x-moz-file-promise-url"));
+                                }
+                            },
+                            copyImageContents: {
+                                name: "复制图片",
+                                cmd: function() {
+                                    (document.popupNode = content.document.createElement('img')).src = event.dataTransfer.getData("application/x-moz-file-promise-url");
+                                    goDoCommand('cmd_copyImageContents');
+                                }
+                            },
+                            saveImage: {
+                                name: "下载图片",
+                                cmd: function() {
+                                    saveImageURL(event.dataTransfer.getData("application/x-moz-file-promise-url"), null, null, null, null, null, document);
+                                }
+                            },
+                            saveImageSkipPrompt: {
+                                name: "下载图片(不弹窗)",
+                                cmd: function() {
+                                    saveImageURL(event.dataTransfer.getData("application/x-moz-file-promise-url"), null, null, null, true, null, document);
+                                }
+                            },
+                            saveImageSomeWhereSkipPrompt: {
+                                name: "下载图片(指定位置不弹窗)",
+                                cmd: function() {
+                                    var path = "c:";
+                                    var uri = Components.classes["@mozilla.org/network/io-service;1"].getService(Components.interfaces.nsIIOService).newURI(event.dataTransfer.getData("application/x-moz-file-promise-url"), null, null)
+                                    var file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+                                    file.initWithPath(path);
+                                    file.append(getDefaultFileName(null, uri));
+                                    internalSave(null, null, null, null, null, null, null, {
+                                        file: file,
+                                        uri: uri
+                                    }, null, internalSave.length === 12 ? document : true, internalSave.length === 12 ? true : null, null);
+                                }
+                            },
+                            searchImageBD: {
+                                name: "搜索相似图片(baidu)",
+                                cmd: function() {
+                                    gBrowser.addTab('http://stu.baidu.com/i?rt=0&rn=10&ct=1&tn=baiduimage&objurl=' + encodeURIComponent(event.dataTransfer.getData("application/x-moz-file-promise-url")));
+                                }
+                            },
+                            searchImageGG: {
+                                name: "搜索相似图片(Google)",
+                                cmd: function() {
+                                    gBrowser.addTab('http://www.google.com/searchbyimage?image_url=' + encodeURIComponent(event.dataTransfer.getData("application/x-moz-file-promise-url")));
+                                }
+                            },
+                            searchImageSG: {
+                                name: "搜索相似图片(sougou)",
+                                cmd: function() {
+                                    gBrowser.addTab('http://pic.sogou.com/ris?query=' + encodeURIComponent(event.dataTransfer.getData("application/x-moz-file-promise-url")));
+                                }
+                            },
+                            searchImageTE: {
+                                name: "搜索相似图片(tineye)",
+                                cmd: function() {
+                                    gBrowser.addTab('http://www.tineye.com/search/?pluginver=firefox-1.0&sort=size&order=desc&url=' + encodeURIComponent(event.dataTransfer.getData("application/x-moz-file-promise-url")));
+                                }
+                            },
+                            searchImageAll: {
+                                name: "搜索相似图片(全部引擎)",
+                                cmd: function() {
+                                    gBrowser.addTab('http://www.tineye.com/search/?pluginver=firefox-1.0&sort=size&order=desc&url=' + encodeURIComponent(event.dataTransfer.getData("application/x-moz-file-promise-url")));
+                                    gBrowser.addTab('http://stu.baidu.com/i?rt=0&rn=10&ct=1&tn=baiduimage&objurl=' + encodeURIComponent(event.dataTransfer.getData("application/x-moz-file-promise-url")));
+                                    gBrowser.addTab('http://www.google.com/searchbyimage?image_url=' + encodeURIComponent(event.dataTransfer.getData("application/x-moz-file-promise-url")));
+                                    gBrowser.addTab('http://pic.sogou.com/ris?query=' + encodeURIComponent(event.dataTransfer.getData("application/x-moz-file-promise-url")));
+                                }
+                            },
+                            openLink: {
+                                name: "当前标签打开链接",
+                                cmd: function() {
+                                    loadURI(event.dataTransfer.getData("text/x-moz-url").split("\n")[0]);
+                                }
+                            },
+                            newTabOpenLink: {
+                                name: "新标签打开链接(前台)",
+                                cmd: function() {
+                                    gBrowser.selectedTab = gBrowser.addTab(event.dataTransfer.getData("text/x-moz-url").split("\n")[0]);
+                                }
+                            },
+                            newTabOpenLinkBG: {
+                                name: "新标签打开链接(后台)",
+                                cmd: function() {
+                                    gBrowser.addTab(event.dataTransfer.getData("text/x-moz-url").split("\n")[0]);
+                                }
+                            },
+                            searchLink: {
+                                name: "搜索框搜索链接文字(前台)",
+                                cmd: function() {
+                                    gBrowser.selectedTab = gBrowser.addTab();
+                                    BrowserSearch.loadSearch(event.dataTransfer.getData("text/x-moz-url").split("\n")[1], false);
+                                }
+                            },
+                            searchLinkBG: {
+                                name: "搜索框搜索链接文字(后台)",
+                                cmd: function() {
+                                    BrowserSearch.loadSearch(event.dataTransfer.getData("text/x-moz-url").split("\n")[1], true);
+                                }
+                            },
+                            searchLinkGG: {
+                                name: "Google搜索链接文字(前台)",
+                                cmd: function() {
+                                    gBrowser.selectedTab = gBrowser.addTab('http://www.google.com/search?q=' + encodeURIComponent(event.dataTransfer.getData("text/x-moz-url").split("\n")[1]));
+                                }
+                            },
+                            searchLinkGGBG: {
+                                name: "Google搜索链接文字(后台)",
+                                cmd: function() {
+                                    gBrowser.addTab('http://www.google.com/search?q=' + encodeURIComponent(event.dataTransfer.getData("text/x-moz-url").split("\n")[1]));
+                                }
+                            },
+                            searchLinkBD: {
+                                name: "baidu搜索链接文字(前台)",
+                                cmd: function() {
+                                    gBrowser.selectedTab = gBrowser.addTab('http://www.baidu.com/s?wd=' + event.dataTransfer.getData("text/x-moz-url").split("\n")[1]);
+                                }
+                            },
+                            searchLinkBDBG: {
+                                name: "baidu搜索链接文字(后台)",
+                                cmd: function() {
+                                    gBrowser.addTab('http://www.baidu.com/s?wd=' + event.dataTransfer.getData("text/x-moz-url").split("\n")[1]);
+                                }
+                            },
+                            copyLink: {
+                                name: "复制链接",
+                                cmd: function() {
+                                    Components.classes['@mozilla.org/widget/clipboardhelper;1'].createInstance(Components.interfaces.nsIClipboardHelper).copyString(event.dataTransfer.getData("text/x-moz-url").split("\n")[0]);
+                                }
+                            },
+                            copyLinkName: {
+                                name: "复制链接文字",
+                                cmd: function() {
+                                    Components.classes['@mozilla.org/widget/clipboardhelper;1'].createInstance(Components.interfaces.nsIClipboardHelper).copyString(event.dataTransfer.getData("text/x-moz-url").split("\n")[1]);
+                                }
+                            },
+                            saveLink: {
+                                name: "下载链接",
+                                cmd: function() {
+                                    saveImageURL(event.dataTransfer.getData("text/x-moz-url").split("\n")[0], null, null, null, null, null, document);
+                                }
+                            },
+                            saveLinkSkipPrompt: {
+                                name: "下载链接(不弹窗)",
+                                cmd: function() {
+                                    saveImageURL(event.dataTransfer.getData("text/x-moz-url").split("\n")[0], null, null, null, true, null, document);
+                                }
+                            },
+                            searchText: {
+                                name: "搜索框搜索选中文字(前台)",
+                                cmd: function() {
+                                    gBrowser.selectedTab = gBrowser.addTab();
+                                    BrowserSearch.loadSearch(event.dataTransfer.getData("text/unicode"), false);
+                                }
+                            },
+                            searchTextBG: {
+                                name: "搜索框搜索选中文字(后台)",
+                                cmd: function() {
+                                    BrowserSearch.loadSearch(event.dataTransfer.getData("text/unicode"), true);
+                                }
+                            },
+                            searchTextPopup: {
+                                name: "弹出搜索框(前台)",
+                                cmd: function() {
+                                    var popup = document.getAnonymousElementByAttribute(document.querySelector("#searchbar").searchButton, "anonid", "searchbar-popup");
+                                    var text = event.dataTransfer.getData("text/unicode");
+                                    var serach = function() {
+                                        popup.removeEventListener("command", serach, false);
+                                        popup.removeEventListener("popuphidden", closeSerach, false)
+                                        setTimeout(function(selectedEngine) {
+                                            gBrowser.selectedTab = gBrowser.addTab();
+                                            BrowserSearch.loadSearch(text, false);
+                                            popup.querySelectorAll("#" + selectedEngine.id)[0].click();
+                                        }, 10, popup.querySelector("*[selected=true]"))
+                                    }
+                                    var closeSerach = function() {
+                                        popup.removeEventListener("command", serach, false);
+                                        popup.removeEventListener("popuphidden", closeSerach, false)
+                                    }
+                                    popup.addEventListener("command", serach, false)
+                                    popup.addEventListener("popuphidden", closeSerach, false)
+                                    popup.openPopup(null, null, event.screenX - 100, event.screenY - 100);
+                                }
+                            },
+                            searchTextPopupBG: {
+                                name: "弹出搜索框(后台)",
+                                cmd: function() {
+                                    var popup = document.getAnonymousElementByAttribute(document.querySelector("#searchbar").searchButton, "anonid", "searchbar-popup");
+                                    var text = event.dataTransfer.getData("text/unicode");
+                                    var serach = function() {
+                                        popup.removeEventListener("command", serach, false);
+                                        popup.removeEventListener("popuphidden", closeSerach, false)
+                                        setTimeout(function(selectedEngine) {
+                                            BrowserSearch.loadSearch(text, true);
+                                            popup.querySelectorAll("#" + selectedEngine.id)[0].click();
+                                        }, 10, popup.querySelector("*[selected=true]"))
+                                    }
+                                    var closeSerach = function() {
+                                        popup.removeEventListener("command", serach, false);
+                                        popup.removeEventListener("popuphidden", closeSerach, false)
+                                    }
+                                    popup.addEventListener("command", serach, false)
+                                    popup.addEventListener("popuphidden", closeSerach, false)
+                                    popup.openPopup(null, null, event.screenX - 100, event.screenY - 100);
+                                }
+                            },
+                            searchTextGG: {
+                                name: "Google搜索选中文字(前台)",
+                                cmd: function() {
+                                    gBrowser.selectedTab = gBrowser.addTab('http://www.google.com/search?q=' + encodeURIComponent(event.dataTransfer.getData("text/unicode")));
+                                }
+                            },
+                            searchTextGGBG: {
+                                name: "Google搜索选中文字(后台)",
+                                cmd: function() {
+                                    gBrowser.addTab('http://www.google.com/search?q=' + encodeURIComponent(event.dataTransfer.getData("text/unicode")));
+                                }
+                            },
+                            searchTextBD: {
+                                name: "baidu搜索选中文字(前台)",
+                                cmd: function() {
+                                    gBrowser.selectedTab = gBrowser.addTab('http://www.baidu.com/s?wd=' + event.dataTransfer.getData("text/unicode"));
+                                }
+                            },
+                            searchTextBDBG: {
+                                name: "baidu搜索选中文字(后台)",
+                                cmd: function() {
+                                    gBrowser.addTab('http://www.baidu.com/s?wd=' + event.dataTransfer.getData("text/unicode"));
+                                }
+                            },
+                            searchTextNotURI: {
+                                name: "搜索框搜索选中文字(前台)[识别URL并打开]",
+                                cmd: function() {
+                                    (/^\s*(?:(?:(?:ht|f)tps?:\/\/)?(?:(?:\w+?)(?:\.(?:[\w-]+?))*(?:\.(?:[a-zA-Z]{2,5}))|(?:(?:\d+)(?:\.\d+){3}))(?::\d{2,5})?(?:\/\S*|$)|data:text\/[\u0025-\u007a]+)\s*$/.test(event.dataTransfer.getData("text/unicode")) && (gBrowser.selectedTab = gBrowser.addTab(event.dataTransfer.getData("text/unicode")))) || ((gBrowser.selectedTab = gBrowser.addTab()) & BrowserSearch.loadSearch(event.dataTransfer.getData("text/unicode"), false));
+                                }
+                            },
+                            searchTextNotURIBG: {
+                                name: "搜索框搜索选中文字(后台)[识别URL并打开]",
+                                cmd: function() {
+                                    (/^\s*(?:(?:(?:ht|f)tps?:\/\/)?(?:(?:\w+?)(?:\.(?:[\w-]+?))*(?:\.(?:[a-zA-Z]{2,5}))|(?:(?:\d+)(?:\.\d+){3}))(?::\d{2,5})?(?:\/\S*|$)|data:text\/[\u0025-\u007a]+)\s*$/.test(event.dataTransfer.getData("text/unicode")) && gBrowser.addTab(event.dataTransfer.getData("text/unicode"))) || BrowserSearch.loadSearch(event.dataTransfer.getData("text/unicode"), true);
+                                }
+                            },
+                            searchTextNotURIGG: {
+                                name: "Google搜索选中文字(前台)[识别URL并打开]",
+                                cmd: function() {
+                                    (/^\s*(?:(?:(?:ht|f)tps?:\/\/)?(?:(?:\w+?)(?:\.(?:[\w-]+?))*(?:\.(?:[a-zA-Z]{2,5}))|(?:(?:\d+)(?:\.\d+){3}))(?::\d{2,5})?(?:\/\S*|$)|data:text\/[\u0025-\u007a]+)\s*$/.test(event.dataTransfer.getData("text/unicode")) && (gBrowser.selectedTab = gBrowser.addTab(event.dataTransfer.getData("text/unicode")))) || (gBrowser.selectedTab = gBrowser.addTab('http://www.google.com/search?q=' + encodeURIComponent(event.dataTransfer.getData("text/unicode"))));
+                                }
+                            },
+                            searchTextNotURIGGBG: {
+                                name: "Google搜索选中文字(后台)[识别URL并打开]",
+                                cmd: function() {
+                                    (/^\s*(?:(?:(?:ht|f)tps?:\/\/)?(?:(?:\w+?)(?:\.(?:[\w-]+?))*(?:\.(?:[a-zA-Z]{2,5}))|(?:(?:\d+)(?:\.\d+){3}))(?::\d{2,5})?(?:\/\S*|$)|data:text\/[\u0025-\u007a]+)\s*$/.test(event.dataTransfer.getData("text/unicode")) && gBrowser.addTab(event.dataTransfer.getData("text/unicode"))) || gBrowser.addTab('http://www.google.com/search?q=' + encodeURIComponent(event.dataTransfer.getData("text/unicode")));
+                                }
+                            },
+                            searchTextNotURIBD: {
+                                name: "baidu搜索选中文字(前台)[识别URL并打开]",
+                                cmd: function() {
+                                    (/^\s*(?:(?:(?:ht|f)tps?:\/\/)?(?:(?:\w+?)(?:\.(?:[\w-]+?))*(?:\.(?:[a-zA-Z]{2,5}))|(?:(?:\d+)(?:\.\d+){3}))(?::\d{2,5})?(?:\/\S*|$)|data:text\/[\u0025-\u007a]+)\s*$/.test(event.dataTransfer.getData("text/unicode")) && (gBrowser.selectedTab = gBrowser.addTab(event.dataTransfer.getData("text/unicode")))) || (gBrowser.selectedTab = gBrowser.addTab('http://www.baidu.com/s?wd=' + event.dataTransfer.getData("text/unicode")));
+                                }
+                            },
+                            searchTextNotURIBDBG: {
+                                name: "baidu搜索选中文字(后台)[识别URL并打开]",
+                                cmd: function() {
+                                    (/^\s*(?:(?:(?:ht|f)tps?:\/\/)?(?:(?:\w+?)(?:\.(?:[\w-]+?))*(?:\.(?:[a-zA-Z]{2,5}))|(?:(?:\d+)(?:\.\d+){3}))(?::\d{2,5})?(?:\/\S*|$)|data:text\/[\u0025-\u007a]+)\s*$/.test(event.dataTransfer.getData("text/unicode")) && gBrowser.addTab(event.dataTransfer.getData("text/unicode"))) || gBrowser.addTab('http://www.baidu.com/s?wd=' + event.dataTransfer.getData("text/unicode"));
+                                }
+                            },
+                            searchTextInSite: {
+                                name: "搜索框搜索选中文字(站内)(前台)",
+                                cmd: function() {
+                                    gBrowser.selectedTab = gBrowser.addTab();
+                                    BrowserSearch.loadSearch("site:" + content.location.host + " " + event.dataTransfer.getData("text/unicode"), false);
+                                }
+                            },
+                            searchTextInSiteBG: {
+                                name: "搜索框搜索选中文字(站内)(后台)",
+                                cmd: function() {
+                                    BrowserSearch.loadSearch("site:" + content.location.host + " " + event.dataTransfer.getData("text/unicode"), true);
+                                }
+                            },
+                            searchTextInSiteGG: {
+                                name: "Google搜索选中文字(站内)(前台)",
+                                cmd: function() {
+                                    gBrowser.selectedTab = gBrowser.addTab('http://www.google.com/search?q=' + "site:" + content.location.host + " " + encodeURIComponent(event.dataTransfer.getData("text/unicode")));
+                                }
+                            },
+                            searchTextInSiteGGBG: {
+                                name: "Google搜索选中文字(站内)(后台)",
+                                cmd: function() {
+                                    gBrowser.addTab('http://www.google.com/search?q=' + "site:" + content.location.host + " " + encodeURIComponent(event.dataTransfer.getData("text/unicode")));
+                                }
+                            },
+                            searchTextInSiteBD: {
+                                name: "baidu搜索选中文字(站内)(前台)",
+                                cmd: function() {
+                                    gBrowser.selectedTab = gBrowser.addTab('http://www.baidu.com/s?wd=' + "site:" + content.location.host + " " + event.dataTransfer.getData("text/unicode"));
+                                }
+                            },
+                            searchTextInSiteBDBG: {
+                                name: "baidu搜索选中文字(站内)(后台)",
+                                cmd: function() {
+                                    gBrowser.addTab('http://www.baidu.com/s?wd=' + "site:" + content.location.host + " " + event.dataTransfer.getData("text/unicode"));
+                                }
+                            },
+                            copyText: {
+                                name: "复制文本",
+                                cmd: function() {
+                                    Components.classes['@mozilla.org/widget/clipboardhelper;1'].createInstance(Components.interfaces.nsIClipboardHelper).copyString(event.dataTransfer.getData("text/unicode"));
+                                }
+                            },
+                            transText: {
+                                name: "Google翻译文本",
+                                cmd: function() {
+                                    var div = content.document.documentElement.appendChild(content.document.createElement("div"));
+                                    div.style.cssText = "position:absolute;z-index:1000;border-left:solid 0.5px #0000AA;border-top:solid 1px #0000AA;border-right:solid 2.5px #0000AA;border-bottom:solid 2px #0000AA;background-color:white;padding-left:5px;padding: 1pt 3pt 1pt 3pt;font-size: 10pt;color: black;left:" + +(event.clientX + content.scrollX + 10) + 'px;top:' + +(event.clientY + content.scrollY + 10) + "px";
+                                    var xmlhttp = new XMLHttpRequest;
+                                    xmlhttp.open("get", "http://translate.google.cn/translate_a/t?client=t&hl=zh-CN&sl=auto&tl=zh-CN&text=" + event.dataTransfer.getData("text/unicode"), 0);
+                                    xmlhttp.send();
+                                    div.textContent = eval("(" + xmlhttp.responseText + ")")[0][0][0];
+                                    content.addEventListener("click", function() {
+                                        content.removeEventListener("click", arguments.callee, false);
+                                        div.parentNode.removeChild(div);
+                                    }, false);
+                                }
+                            },
+                            openText: {
+                                name: "按URL打开文本",
+                                cmd: function() {
+                                    gBrowser.selectedTab = gBrowser.addTab(event.dataTransfer.getData("text/unicode"));
+                                }
+                            },
+                            searchBarOpenText: {
+                                name: "打开查找栏搜索文本",
+                                cmd: function() {
+                                    gFindBar._findField.value = event.dataTransfer.getData("text/unicode");
+                                    gFindBar.open();
+                                    gFindBar.toggleHighlight(1);
+                                }
+                            },
+                            searchBarHideText: {
+                                name: "不打开查找栏搜索文本",
+                                cmd: function() {
+                                    gFindBar._findField.value = event.dataTransfer.getData("text/unicode");
+                                    gFindBar.toggleHighlight(1);
+                                }
+                            },
+                            saveText: {
+                                name: "下载文字",
+                                cmd: function() {
+                                    saveImageURL('data:text/plain;charset=UTF-8;base64,' + btoa(unescape(encodeURIComponent(event.dataTransfer.getData("text/unicode")))), event.dataTransfer.getData("text/unicode").slice(0, 5) + ".txt", null, null, null, null, document);
+                                }
+                            },
+                            saveTextSkipPrompt: {
+                                name: "下载文字(不弹窗)",
+                                cmd: function() {
+                                    saveImageURL('data:text/plain;charset=UTF-8;base64,' + btoa(unescape(encodeURIComponent(event.dataTransfer.getData("text/unicode")))), event.dataTransfer.getData("text/unicode").slice(0, 5) + ".txt", null, null, true, null, document);
+                                }
+                            },
+                        }
+                        $(function() {
+                            $("#superdrag").parent().after('<br/><b id="MouseDragScriptLineNum" style="float:right">行数:0</b><br/><textarea spellcheck="false" style="background-color:#000000;color: #FFFFFF;width:100%;height:500px" id="MouseDragScript"></textarea>');
+                            [i
+                                for (i in MouseDrag)
+                                    if (MouseDrag[i].toString() == "[object Object]")
+                            ].map(
+                                function(key) {
+                                    $("#dragCommand").append('<option value="' + key + '">' + MouseDrag[key].name + '</option>')
+                                })
+                            $("#easydrag").attr("checked", true);
+                            $("#easydrag").click();
+                            $("#dragCommand").parent().after('<label style="color:white">' + $("#dragCommand>*").length + '</label>');
+                        })
+                         // ]]>
+                        </script>
+                    </form>
+                </div>
+            </div>
+        
+        </div>
+        
+    </div>
+</body>
+
+</html>

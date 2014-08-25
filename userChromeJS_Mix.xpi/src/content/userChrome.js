@@ -396,7 +396,7 @@
           file: aFile,
           url: url,
           name: name,
-          namespace: "",
+          namespace: namespace,
           charset: charset,
           description: description,
           version: version,
@@ -405,7 +405,7 @@
           regex: regex,
 
           // new added
-          id: id ? id : (name || filename) + '@' + (namespace || author || ''),
+          id: id ? id : (name || filename) + '@' + (namespace || author || 'userChromejs'),
           type: type,
           homepageURL: homepageURL,
           reviewURL: reviewURL,

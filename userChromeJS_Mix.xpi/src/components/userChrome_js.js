@@ -36,14 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-if (Cc == undefined)
-  var Cc = Components.classes;
-if (Ci == undefined)
-  var Ci = Components.interfaces;
-if (Cr == undefined)
-  var Cr = Components.results;
-if (Cu == undefined)
-  var Cu = Components.utils;
+var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -166,7 +159,7 @@ UserChrome_js.prototype = {
 /**
  * The following line is what XPCOM uses to create components. Each component
  * prototype must have a .classID which is used to create it.
- * 
+ *
  * XPCOMUtils.generateNSGetFactory was introduced in Mozilla 2 (Firefox 4).
  * XPCOMUtils.generateNSGetModule is for Mozilla 1.9.2 (Firefox 3.6).
  */

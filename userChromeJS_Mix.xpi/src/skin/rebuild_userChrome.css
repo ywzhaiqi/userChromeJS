@@ -1,4 +1,4 @@
-#userChromebtnMenu {
+/*#userChromebtnMenu {
     -moz-appearance: none;
     border-style: none;
     border-radius: 0;
@@ -11,7 +11,6 @@
     min-width: 18px;
     min-height: 18px;
 }
-/* 原版的限定宽度会影响到给图标加边框等样式，已删除 */
 #userChromebtnMenu > .toolbarbutton-icon {
     padding: 0 !important;
     margin: 0 !important;
@@ -31,6 +30,13 @@
 #userChromebtnMenu:not([disabled="true"])[open="true"],
 #userChromebtnMenu:not([disabled="true"])[type="menu"][open="true"] {
     background-image: -moz-linear-gradient(rgba(242, 245, 249, 0.95), rgba(220, 223, 225, 0.67) 49%, rgba(198, 204, 208, 0.65) 51%, rgba(194, 197, 201, 0.3));
+}*/
+
+#userChromebtnMenu dropmarker {
+    display: none!important;
+}
+#userChromebtnMenu > image {
+    padding: 2px 6px!important;
 }
 
 

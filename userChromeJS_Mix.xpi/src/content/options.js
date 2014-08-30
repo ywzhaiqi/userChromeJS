@@ -8,7 +8,7 @@ var userChromeOptions = {
 
     },
     openEdit: function() {
-        var path = this.mainWindow.userChromejs.setEditor();
+        var path = this.setEditor();
         if (path) {
             document.getElementById('editorPath').value = path;
         }
@@ -16,6 +16,22 @@ var userChromeOptions = {
     onDialogAccept: function() {
         this.mainWindow.userChromejsScriptOptionsMenu.run();
     },
+    setEditor: function() {
+        var userChromejs = this.mainWindow.userChromejs;
+
+        var fp = Components.classes['@mozilla.org/filepicker;1']
+            .createInstance(Components.interfaces.nsIFilePicker);
+        fp.init(window, "设置全局脚本编辑器", fp.modeOpen);
+        fp.appendFilter("执行文件", "*.exe");
+        if (fp.show() == fp.returnCancel || !fp.file)
+            return;
+        else {
+            var ss = fp.file.path;
+            gPrefService.setCharPref("view_source.editor.path", ss);
+            userChromejs.editor = ss;
+            return ss;
+        }
+    }
 };
 
 window.addEventListener('load', userChromeOptions.init);

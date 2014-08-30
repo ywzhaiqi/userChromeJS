@@ -31,14 +31,14 @@
                     <vbox flex="1" >
                         <groupbox>
                             <caption label="安装脚本" />
-                            <checkbox label="跳过选择目录" tooltiptext="直接保存，跳过选择保存目录对话框"
+                            <checkbox label="跳过选择目录" tooltiptext="直接保存，跳过保存目录选择对话框"
                                  preference="install_skipSelect" />
                         </groupbox>
                         <groupbox>
                             <caption label="新窗口" />
                             <checkbox label="使用脚本缓存" tooltiptext="每次新建窗口时使用缓存，则不会重新读取文件。"
                                 preference="enableReuse" />
-                            <checkbox label="新窗口关闭原窗口" tooltiptext="点击新建窗口并重载脚本按钮后是否关闭原窗口？"
+                            <checkbox label="关闭原窗口" tooltiptext="点击新建窗口并重载脚本按钮后是否关闭原窗口？"
                                 preference="closeWindow" />
                         </groupbox>
                         <groupbox>
@@ -54,7 +54,8 @@
                     <vbox flex="1" >
                         <label value="用户脚本菜单" />
                         <textbox flex="1" preference="rebuild_menues"
-                            multiline="true" cols="60"/>
+                            tooltiptext="一行一个，点击确定后无需重启自动移动"
+                            multiline="true" cols="60" />
                     </vbox>
                 </tabpanel>
                 <tabpanel>
@@ -70,7 +71,7 @@
                             </vbox>
                         </groupbox>
                         <groupbox>
-                            <caption label="自定义导出设置列表" tooltiptext="导出脚本设置会导出符合的 about:config 设置" />    
+                            <caption label="自定义导出设置列表" tooltiptext="导出脚本的设置，会导出符合的 about:config 中的值" />    
                             <textbox flex="1" preference="custom_prefs"
                                     multiline="true" cols="60" height="60px" />
                         </groupbox>

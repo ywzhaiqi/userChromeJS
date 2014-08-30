@@ -505,14 +505,14 @@
       if (!script) return;
 
       if(event.button==1){
-        if (event.ctrlKey) {  // Ctrl + 中键：连续启用禁用多个脚本
-          userChromejs.chgScriptStat(script.filename);
-          event.target.setAttribute('checked',!userChrome_js.scriptDisable[script.filename] );
-        } else {
+        if (event.ctrlKey) {  // 中键：连续启用禁用多个脚本
           let url = event.target.getAttribute('homeURL');
           if (url) {
             gBrowser.addTab(url);
           }
+        } else {  // Ctrl + 中键：打开主页
+          userChromejs.chgScriptStat(script.filename);
+          event.target.setAttribute('checked',!userChrome_js.scriptDisable[script.filename] );
         }
       }else if(event.button==2){
         if (event.ctrlKey) {
@@ -777,7 +777,7 @@
           homepop.setAttribute("onpopupshowing", "userChromejs.onpopup();");
           homebtn.appendChild(homepop);
           var cmdmenues = [];
-          cmdmenues = gPrefService.getCharPref(userChromejsScriptOptionsMenu.UIMENU).trim().split(",");
+          cmdmenues = userChromejsScriptOptionsMenu.Menu.get();
           var i = 0;
           while (i < cmdmenues.length) {
           	if (cmdmenues[i].indexOf("@clone_") == -1)
@@ -852,6 +852,25 @@
       // "JSCSS-menuitem", // js、css、ahk 代码着色
       "addMenu-rebuild", // addMenu 的重新载入配置
     ],
+    Menu: {
+      get: function() {
+        var menuStr = gPrefService.getCharPref(userChromejsScriptOptionsMenu.UIMENU).trim();
+        if (menuStr.indexOf(',') != -1) {  // 转换以前的写法
+          menuStr = menuStr.replace(/,\s*/g, '\n');
+          userChromejsScriptOptionsMenu.Menu.set(menuStr);
+        }
+        return menuStr.split(/\n+/).map(function(s) s.trim());
+      },
+      set: function(menues) {
+        if (Array.isArray(menues)) {
+          menues = menues.join("\n");
+        }
+        gPrefService.setCharPref(userChromejsScriptOptionsMenu.UIMENU, menues);
+      },
+      has: function() {
+        return gPrefService.prefHasUserValue(userChromejsScriptOptionsMenu.UIMENU);
+      }
+    },
 
     interval: 500, //0.5秒間隔
     maxcount: 50,   //最大50回までトライ
@@ -859,13 +878,11 @@
     timer: null,
 
     run: function() {
-      //dannylee
-      if (!gPrefService.prefHasUserValue(this.UIMENU)) {
-         gPrefService.setCharPref(this.UIMENU, this.menues.join(","));
+      if (!this.Menu.has()) {
+        this.Menu.set(this.menues);
       }
-      this.menues = [];
-      this.menues = gPrefService.getCharPref(this.UIMENU).split(",").map(function(s) s.trim());
-      //end
+      this.menues = this.Menu.get();
+      this.count = 0;
       
       userChromejs.toggleUI(0);
 
@@ -915,7 +932,7 @@
       if (evt.button == 0) return;
       // 不作用于按钮弹出菜单上
       if (evt.target.id != 'userChromebtnMenu' && evt.target.id != 'jscmd_edit_add') return;
-      var currentList = gPrefService.getCharPref(userChromejsScriptOptionsMenu.UIMENU).trim();
+      var currentList = userChromejsScriptOptionsMenu.Menu.get();
       if (evt.button == 1) {
         userChromejsScriptOptionsMenu.deluserChromejsmenu();
       } else if (evt.button == 2) {
@@ -926,7 +943,7 @@
     },
     
     adduserChromejsmenu: function(){
-        var currentList = gPrefService.getCharPref(this.UIMENU).trim();
+        var currentList = userChromejsScriptOptionsMenu.Menu.get();
         var prompts = Components.classes["@mozilla.org/embedcomp/prompt-service;1"]
                         .getService(Components.interfaces.nsIPromptService);
         var check = {value: false};                  
@@ -952,10 +969,10 @@
           var menupopup = document.getElementById('home-button-popup');
         else
           var menupopup = document.getElementById('userChromejs_options'); 
-        if (currentList == "") 
-           gPrefService.setCharPref(this.UIMENU, nMenu);
-        else
-           gPrefService.setCharPref(this.UIMENU, currentList + "," + nMenu);
+
+        currentList.push(nMenu);
+        userChromejsScriptOptionsMenu.Menu.set(currentList);
+ 
         var menubefore = document.getElementById('jscmdseparator');
         setTimeout(function(menupopup, menu ,menubefore){
                      menupopup.insertBefore(menu, menubefore);
@@ -965,19 +982,15 @@
     },
     
     deluserChromejsmenu: function(){
-        var currentList = gPrefService.getCharPref(this.UIMENU).trim();
-        if (currentList == "") return;
+        var items = userChromejsScriptOptionsMenu.Menu.get();
+        if (items.length === 0) return;
         var prompts = Components.classes["@mozilla.org/embedcomp/prompt-service;1"].getService(Components.interfaces.nsIPromptService);
-        var items = [];
-        items = currentList.split(",");
         var uselected = {};  
         var result = prompts.select(null, "userChromejs脚本管理器", "选择需要删除的UC脚本命令：", items.length, items, uselected); 
         if (result) {
-          items.splice(uselected.value, 1); 
-          if (items.length > 0)
-            gPrefService.setCharPref(this.UIMENU, items.join(","));
-          else
-            gPrefService.setCharPref(this.UIMENU, "");
+          items.splice(uselected.value, 1);
+          userChromejsScriptOptionsMenu.Menu.set(items);
+
           prompts.alert(null, "userChromejs脚本管理器", "删除成功，重启后生效！");
         }
     }

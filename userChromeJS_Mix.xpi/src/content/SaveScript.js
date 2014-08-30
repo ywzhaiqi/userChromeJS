@@ -428,13 +428,13 @@ function addWebSites() {
         ['alice0775/userChrome.js', 'https://github.com/alice0775/userChrome.js'],
         ['Griever/userChromeJS', 'https://github.com/Griever/userChromeJS'],
         ['ardiman/userChrome.js', 'https://github.com/ardiman/userChrome.js'],
-        ['userChrome.js用スクリプト - wiki@nothing', 'http://wiki.nothing.sh/page/userChrome.js%CD%D1%A5%B9%A5%AF%A5%EA%A5%D7%A5%C8', 'moz-anno:http://wiki.nothing.sh/favicon.ico']
+        ['userChrome.js用スクリプト', 'http://wiki.nothing.sh/page/userChrome.js%CD%D1%A5%B9%A5%AF%A5%EA%A5%D7%A5%C8', 'http://wiki.nothing.sh/favicon.ico']
     ];
     var Icons = {
         'github.com': 'moz-anno:favicon:https://assets-cdn.github.com/favicon.ico',
         'bbs.kafan.cn': 'moz-anno:favicon:http://bbs.kafan.cn/favicon.ico',
         'g.mozest.com': 'moz-anno:favicon:https://g.mozest.com/favicon.ico',
-        'bitbucket.org': 'moz-anno:https://d3oaxc4q5k2d6q.cloudfront.net/m/8cbb38b7bdad/img/favicon.png'
+        'bitbucket.org': 'https://d3oaxc4q5k2d6q.cloudfront.net/m/8cbb38b7bdad/img/favicon.png'
     };
 
     var popup = document.getElementById("userChrome_websites");
@@ -509,11 +509,13 @@ window.addEventListener('load', function ucload(e) {
     });
 
     userChromejs.init();
-    userChromejsScriptOptionsMenu.run();
     userChromejs.Save.init();
 
     setTimeout(function() {
         addWebSites();
+
+        // 延时运行，否则一些 uc 脚本的菜单没加上，会造成顺序不正确
+        userChromejsScriptOptionsMenu.run();
     }, 1000);
 
 }, false);

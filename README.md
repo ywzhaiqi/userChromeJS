@@ -28,6 +28,10 @@ userChromeJS for Firefox
  - [Harv/userChromeJS](https://github.com/Harv/userChromeJS)，主要包含 youkuantiads.uc.js、redirector.uc.js。
  - 更多搜索：[Search · userChrome](https://github.com/search?q=userChrome&nwo=defpt%2FuserChromeJs&search_target=global&ref=cmdform)
 
+其它
+
+ - [鼠标手势UserChromeJS脚本在线生成器 - 紫云飞](http://www.cnblogs.com/ziyunfei/archive/2011/12/15/2289504.html)
+
 说明
 ----
 
@@ -44,7 +48,7 @@ userChromeJS for Firefox
  - [ExternalVideoPlayer](ExternalVideoPlayer)，调用外部播放器播放网络视频（原创）。[yunPlayer.uc.js](ExternalVideoPlayer/yunPlayer.uc.js)，右键菜单云播放视频。
  - [InspectElementModY](InspectElementModY)，元素查看调用工具，修改增强版。
  - [moveButton](moveButton)，移动或克隆按钮/菜单到任意位置（原创）。
- - [MyNovelReader](MyNovelReader)，小说阅读uc版（原创），已弃用，请用 [小说阅读GM版](https://userscripts.org/scripts/show/165951)（原创）和[autoLanuchReader](autoLanuchReader)。
+ - [MyNovelReader](MyNovelReader)，小说阅读uc版（原创），已弃用，请用 [小说阅读GM版](https://userscripts.org/scripts/show/165951)（原创）和[autoLaunchReader](autoLaunchReader)。
  - [rebuild_userChrome](rebuild_userChrome)，脚本管理器，基于 [UserChromeJS脚本管理器Dannylee强化版](http://g.mozest.com/thread-41292-1-1)，修改为可移动版。**已弃用，改用下面的 userChromeJS_Mix 扩展。**
  - [SaveUserChromeJS](SaveUserChromeJS)，像 Greasemonkey 一样保存 uc脚本（原创）。
  - [SidebarModfix](SidebarModfix)，侧边栏增强（修改版）。

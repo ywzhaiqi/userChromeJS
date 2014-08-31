@@ -1,17 +1,18 @@
 userChromeJS Mix 扩展
 ====================
 
-userChromeJS 扩展、userChrome.js、UC脚本管理器整合版，用于彻底解决可移动按钮消失的问题。
+**userChromeJS Mix 扩展 = userChromeJS 扩展 + userChrome.js + rebuild_userChrome.uc.xul + SaveUserChromeJS.uc.js**
 
- - userChromeJS 扩展为[官方的 1.5 版本](http://userchromejs.mozdev.org/)。
- - userChrome.js 为 [Alice0775 的修改版](https://github.com/ywzhaiqi/userChromeJS/blob/master/userChrome.js)。和默认的一样，如果 chrome 目录下已经存在则不会替换。
+ - userChromeJS 扩展为[官方的 1.6 版本](http://userchromejs.mozdev.org/)。
+ - userChrome.js 为 [Alice0775 的修改版](https://github.com/ywzhaiqi/userChromeJS/blob/master/userChrome.js)。
  - UC脚本管理器为 [dannylee 的UC脚本管理器（2014.4.29版）](https://g.mozest.com/thread-41292-1-4) 的修改版。
  - **安装后会自动更新，不再需要下载附件更新。**
+ - 版本 1.5 以上有了大幅改进。
 
 注意
 ----
 
- - 如果你需要按钮在地址栏的，请使用扩展 [url-addon-bar](https://addons.mozilla.org/zh-cn/firefox/addon/url-addon-bar/) 实现。
+ - 如果你需要按钮在地址栏的，请使用 [url-addon-bar](https://addons.mozilla.org/zh-cn/firefox/addon/url-addon-bar/) 扩展实现。
  - 如果 chrome 目录下已经存在 rebuild_userChrome.uc.xul，请手动删除。
  - 由于扩展的更新机制会移除原有的再安装，如果在 content 里面放了文件，更新后会消失。
  - 如果没用过 Alice0775 版的 userChrome.js，里面的 uc 脚本可能存在失效的问题。
@@ -41,8 +42,8 @@ userChromeJS 扩展、userChrome.js、UC脚本管理器整合版，用于彻底�
 
 - 使用了 zAutoPopup.uc.xul 后，滑过重启按钮，还没按下去便关了菜单。
 
-1.5 说明
---------
+1.5 以上说明
+-----------
 
 ### 几个注意事项
 

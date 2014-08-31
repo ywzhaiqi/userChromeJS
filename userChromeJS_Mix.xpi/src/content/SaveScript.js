@@ -417,6 +417,7 @@ function addWebSites() {
     var data = [
         ['卡饭论坛uc脚本索引', 'http://bbs.kafan.cn/forum.php?mod=viewthread&tid=1340501&page=1#pid25548028'],
         ['Mozest uc脚本论坛区', 'https://g.mozest.com/forum-75-1'],
+        ['Mozest uc脚本下载区', 'https://j.mozest.com/zh-CN/ucscript/'],
         ['ywzhaiqi/userChromeJS', 'https://github.com/ywzhaiqi/userChromeJS'],
         ['defpt/userChromeJs', 'https://github.com/defpt/userChromeJs'],
         ['feiruo/userChromeJS', 'https://github.com/feiruo/userChromeJS'],

@@ -810,7 +810,8 @@
   // 载入存储的设置
   try {  // 会有个错误：prefObj.getBoolPref is not a function
     that.EXPERIMENT = prefObj.getBoolPref("userChrome.EXPERIMENT");
-    that.arrSubdir = prefObj.getCharPref("userChrome.arrSubdir").split(',').map(function(d) d.trim());
+    that.arrSubdir = prefObj.getComplexValue("userChrome.arrSubdir", Ci.nsISupportsString).data
+                        .split(',').map(function(d) d.trim());
   } catch(e) {}
 
   window.addEventListener("unload", function(){

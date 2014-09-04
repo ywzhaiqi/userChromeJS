@@ -6,7 +6,7 @@
 // @modified       ywzhaiqi
 // @compatibility  Firefox 17
 // @charset        UTF-8
-// @version        2014.8.9
+// @version        2014.9.4
 // version        0.3.0
 // @startup        window.uAutoPagerize.init();
 // @shutdown       window.uAutoPagerize.destroy();
@@ -68,6 +68,7 @@ var DB_FOLDER = "";
 var prefs = {
     pauseA: false,            // 快速停止翻页开关
     ipages: [false, 2],
+    remain: 1,               // 剩余页面的高度..是显示高度的 remain 倍开始翻页..
 
     lazyImgSrc: 'zoomfile|file|original|load-src|_src|imgsrc|real_src|src2|data-lazyload-src|data-ks-lazyload|data-lazyload|data-src|data-original|data-thumb|data-imageurl|data-defer-src|data-placeholder',
 };
@@ -112,8 +113,8 @@ var SITEINFO_IMPORT_URLS = Config.ORIGINAL_SITEINFO ? [
     ] : [];
 
 // Super_preloaderPlus 规则更新地址
-var SITEINFO_CN_IMPORT_URL = "https://greasyfork.org/scripts/293-super-preloaderplus-one/code/Super_preloaderPlus_one.user.js";
-// var SITEINFO_CN_IMPORT_URL = "https://github.com/ywzhaiqi/userscript/raw/master/Super_preloaderPlus/super_preloaderplus_one.user.js";
+// var SITEINFO_CN_IMPORT_URL = "https://greasyfork.org/scripts/293-super-preloaderplus-one/code/Super_preloaderPlus_one.user.js";
+var SITEINFO_CN_IMPORT_URL = "https://github.com/ywzhaiqi/userscript/raw/master/Super_preloaderPlus/super_preloaderplus_one.user.js";
 
 var COLOR = {
     on: '#0f0',
@@ -636,7 +637,18 @@ var ns = window.uAutoPagerize = {
         window.addEventListener('uAutoPagerize_destroy', this, false);
         window.addEventListener('unload', this, false);
 
+        // uc 脚本会因为打开新窗口而重复注册
+        var mediator = Cc["@mozilla.org/appshell/window-mediator;1"]
+                       .getService(Ci.nsIWindowMediator);
+        var enumerator = mediator.getEnumerator("navigator:browser");
+        while (enumerator.hasMoreElements()) {
+            var win = enumerator.getNext();
+            if (win.uAutoPagerize && win.uAutoPagerize.registerDone) {
+                return;
+            }
+        }
         ns.prefs.addObserver('', this, false);
+        ns.registerDone = true;
     },
     removeListener: function() {
         gBrowser.mPanelContainer.removeEventListener('DOMContentLoaded', this, true);
@@ -645,7 +657,10 @@ var ns = window.uAutoPagerize = {
         window.removeEventListener('uAutoPagerize_destroy', this, false);
         window.removeEventListener('unload', this, false);
 
-        ns.prefs.removeObserver('', this, false);
+        if (ns.registerDone) {
+            ns.prefs.removeObserver('', this, false);
+            ns.registerDone = false;
+        }
     },
     handleEvent: function(event) {
         switch(event.type) {
@@ -733,8 +748,12 @@ var ns = window.uAutoPagerize = {
         // if (sandbox.EXCLUDE)
         //  ns.EXCLUDE = sandbox.EXCLUDE;
 
-        if (sandbox.prefs)
-            prefs = sandbox.prefs;
+        var newPrefs = sandbox.prefs;
+        if (newPrefs) {
+            Object.keys(newPrefs).forEach(function(key){
+                prefs[key] = newPrefs[key];
+            });
+        }
         if (sandbox.HashchangeSites)
             ns.HashchangeSites = sandbox.HashchangeSites;
 
@@ -1133,7 +1152,7 @@ var ns = window.uAutoPagerize = {
                     <caption label="一般设置" />\
                     <checkbox label="检测配置文件是否被修改" tooltiptext="会在每一个页面载入时检测"\
                         preference="monitorUserFile" />\
-                    <hbox tooltiptext="相对于 Chrome 目录，诸如 （空白）、Local。\n需要重启生效">\
+                    <hbox tooltiptext="相对于 Chrome 目录，诸如 （空白）、Local、Local\\js。\n需要重启生效">\
                         <label value="数据库文件夹："/>\
                         <textbox preference="DB_FOLDER" />\
                     </hbox>\
@@ -1455,7 +1474,10 @@ AutoPager.prototype = {
             debug("insertPoint not found.", this.info.pageElement);
             return;
         }
+
+        // 已改成剩余百分比
         this.setRemainHeight();
+        this.remainPercent = this.info.remain || prefs.remain;
 
         if (this.isFrame)
             this.initIcon();
@@ -1592,8 +1614,10 @@ AutoPager.prototype = {
     tmpDoc: null,
     scroll : function(){
         if (this.state !== 'enable' || !ns.AUTO_START) return;
-        var remain = this.getScrollHeight() - this.win.innerHeight - this.win.scrollY;
-        if (remain < this.remainHeight || this.ipagesMode) {
+
+        // 改成剩余高度于页面总高度的比例，原来的计算剩余高度会有问题，随着 js 的运行，高度可能会发生变化
+        var remainPercent = this.getRemain();
+        if (remainPercent < this.remainPercent || this.ipagesMode) {
             if(this.tmpDoc) {
                 this.load(this.tmpDoc);
             } else
@@ -1809,7 +1833,7 @@ AutoPager.prototype = {
         // if (!ns.SCROLL_ONLY)
         //  this.scroll();
         if (!url) {
-            this.C.error('[uAutoPagerize] nextLink not found.', this.info.nextLink);
+            debug('nextLink not found.', this.info.nextLink);
             this.state = 'terminated';
         }
 
@@ -2027,8 +2051,17 @@ AutoPager.prototype = {
         var scrollHeight = this.getScrollHeight();
         var bottom = getElementPosition(this.insertPoint).top ||
             this.getPageElementsBottom() || Math.round(scrollHeight * 0.8);
-        this.remainHeight = scrollHeight - bottom + ns.BASE_REMAIN_HEIGHT;
+
+        this.scrollH = bottom;
+        // this.remainHeight = scrollHeight - bottom + ns.BASE_REMAIN_HEIGHT;
     },
+    // 改自 SP
+    getRemain: function () {
+        var scrolly = this.win.scrollY;
+        var WI = this.win.innerHeight;
+        return (this.scrollH - scrolly - WI) / WI; //剩余高度于页面总高度的比例.
+    },
+
     initIcon: function() {
         var div = this.doc.createElement("div");
         div.setAttribute('id', 'autopagerize_icon');
@@ -2907,13 +2940,13 @@ function loadText(aFile) {
     return data;
 }
 
-function saveFile(name, data) {
+function saveFile(fileOrName, data) {
     var file;
-    if(typeof name == "string"){
-        var file = Services.dirsvc.get('UChrm', Ci.nsILocalFile);
-        file.appendRelativePath(name);
+    if(typeof fileOrName == "string"){
+        file = Services.dirsvc.get('UChrm', Ci.nsILocalFile);
+        file.appendRelativePath(fileOrName);
     }else{
-        file = name;
+        file = fileOrName;
     }
 
     var suConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);

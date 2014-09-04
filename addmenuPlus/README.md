@@ -792,13 +792,14 @@ pagesub([
         }
     })
 
-示例：Firefox 31+ 右键横排菜单，**在链接上和非链接上不相同**。
+示例：Firefox 31+ 横排菜单，**在链接上和非链接上不相同**。
 
-![openIE_menuitem_fx31+.png](openIE_menuitem_fx31+.png)
-
-    var openMenu = PageMenu({ _type: 'group', label: '打开...', condition: 'noinput noselect nomailto nocanvas nomedia', insertBefore: 'context-openlinkincurrent'});
+    var openMenu = GroupMenu({
+        label: '打开...',
+        condition: 'noinput noselect nomailto nocanvas nomedia',
+        insertBefore: 'context-sep-navigation'
+    });
     openMenu([
-        { _type: 'spacer', width: 30 },
         {
             label:"复制文本+链接",
             text:"%RLT_OR_UT%\n%RLINK_OR_URL%",
@@ -815,15 +816,15 @@ pagesub([
             exec: "C:\\Program Files\\Internet Explorer\\iexplore.exe",
         },
         {
-            label: "在 TWC 中打开",
-            text: "%RLINK_OR_URL%",
-            exec: "D:\\Program Files\\TheWorld\\TheWorld.exe",
+            label: "在 Chrome 中打开",
+            text: '%RLINK_OR_URL%',
+            exec: Services.dirsvc.get("LocalAppData", Ci.nsILocalFile).path + "\\Google\\Chrome\\Application\\chrome.exe",
         },
-        {
-            label:"在谷歌缓存打开",
-            url:"http://webcache.googleusercontent.com/search?q=cache:%RLINK_OR_URL%",
-            image:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAH7SURBVDhPhVI9a9tQFBUeO4YOwZTSH+Ch1I2esIdi10jvPYsMmTLkH5Sm9lI8FIsOHUsU+gOMKSGEBNwiB5K9xJbdQJYQYtWIYEonL82HBhNe7316LnbT2AcOsu5759xzr6zdB+FoibPlTPL6OJMUQkuo8nwEtvGsx/TtgOuXASci6hripkMuoy7ZufaXnqtr/0eP69UeI7coDBjpH7JseLKXDW+6RhgbGbdg9F5dj3FeNAryyck7KeR6GHCDYs2y6JZpss/4O+rq5oRRFWsS0PEXRD4G4QjFOLc6mjJAXPlLi2iCSa78zFNZhK6tuDMRMELwo0hWcYF49q8BIvINiimAcR2EW2MDxcO+nX5sWdYT06TnlsXOKKWP5GWFeBQylC89Tj6gEEa5gD2syCIAujdALJCQ4hRYi8lp1CENTPH7e/ohGqyhyU87/UBpJUC4O2mA4yAhDc81aSPfhPqBuaCu3wXGHu+Ac76oyhJ5j4U5j8UjIF59+pYsua2N8uaR/Hyz8HKf2dg936R1VdK0dbeTeuO2R6WN1uD1ZntqYZMofCkkofsAOHrhFVOqHKPktt8CBZqsu77tOOLv/99xnETOo1yKoTvsoKKOpgFjVGQSZQT0QPAVBBcyNnS+VzwGjgNGdTAaopHsCAsD1u7Enofyx6OFmZ9K07Q/7iAmIuxhVMIAAAAASUVORK5CYII="
-        },
+        // {
+        //     label: "在 Opera 中打开",
+        //     text : "%RLINK_OR_URL%",
+        //     exec : "D:\\Program Files\\Opera\\opera.exe",
+        // },
     ]);
 
 示例：子菜单中的 测试视频链接 只在 youku 页面显示，其它页面隐藏。

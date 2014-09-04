@@ -68,7 +68,6 @@ var DB_FOLDER = "";
 var prefs = {
     pauseA: false,            // 快速停止翻页开关
     ipages: [false, 2],
-    remain: 1,               // 剩余页面的高度..是显示高度的 remain 倍开始翻页..
 
     lazyImgSrc: 'zoomfile|file|original|load-src|_src|imgsrc|real_src|src2|data-lazyload-src|data-ks-lazyload|data-lazyload|data-src|data-original|data-thumb|data-imageurl|data-defer-src|data-placeholder',
 };
@@ -1474,10 +1473,7 @@ AutoPager.prototype = {
             debug("insertPoint not found.", this.info.pageElement);
             return;
         }
-
-        // 已改成剩余百分比
         this.setRemainHeight();
-        this.remainPercent = this.info.remain || prefs.remain;
 
         if (this.isFrame)
             this.initIcon();
@@ -1614,10 +1610,12 @@ AutoPager.prototype = {
     tmpDoc: null,
     scroll : function(){
         if (this.state !== 'enable' || !ns.AUTO_START) return;
+        var remain = this.getScrollHeight() - this.win.innerHeight - this.win.scrollY;
 
-        // 改成剩余高度于页面总高度的比例，原来的计算剩余高度会有问题，随着 js 的运行，高度可能会发生变化
-        var remainPercent = this.getRemain();
-        if (remainPercent < this.remainPercent || this.ipagesMode) {
+        // 可能高度会发生变化，所以每次都重新设置
+        this.setRemainHeight();
+
+        if (remain < this.remainHeight || this.ipagesMode) {
             if(this.tmpDoc) {
                 this.load(this.tmpDoc);
             } else
@@ -2051,17 +2049,8 @@ AutoPager.prototype = {
         var scrollHeight = this.getScrollHeight();
         var bottom = getElementPosition(this.insertPoint).top ||
             this.getPageElementsBottom() || Math.round(scrollHeight * 0.8);
-
-        this.scrollH = bottom;
-        // this.remainHeight = scrollHeight - bottom + ns.BASE_REMAIN_HEIGHT;
+        this.remainHeight = scrollHeight - bottom + ns.BASE_REMAIN_HEIGHT;
     },
-    // 改自 SP
-    getRemain: function () {
-        var scrolly = this.win.scrollY;
-        var WI = this.win.innerHeight;
-        return (this.scrollH - scrolly - WI) / WI; //剩余高度于页面总高度的比例.
-    },
-
     initIcon: function() {
         var div = this.doc.createElement("div");
         div.setAttribute('id', 'autopagerize_icon');

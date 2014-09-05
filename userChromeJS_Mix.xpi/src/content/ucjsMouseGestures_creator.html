@@ -1199,9 +1199,9 @@
                             }
                         },
                         togglegPrivateBrowsingUI: {
-                            name: "切换隐私浏览模式",
+                            name: "新建隐私浏览窗口",
                             cmd: function() {
-                                gPrivateBrowsingUI.toggleMode();
+                                OpenBrowserWindow({private: true});
                             }
                         },
                         saveDocument: {

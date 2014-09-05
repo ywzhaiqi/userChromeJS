@@ -10,6 +10,8 @@
 // @charset        UTF-8
 // @include        main
 // @screenshot     http://f.hatena.ne.jp/Griever/20120409200608
+// @homepageURL    https://github.com/ywzhaiqi/userChromeJS/blob/master/Inspector_de_Info/Inspector_de_Info.uc.js
+// @homepageURL    https://github.com/Griever/userChromeJS/blob/master/Inspector_de_Info.uc.js
 // @version        0.0.4
 // @note           0.0.4 なんかいじった
 // @note           0.0.3 CSS Selector も取得してみた

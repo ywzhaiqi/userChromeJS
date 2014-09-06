@@ -1,3 +1,13 @@
+// ==UserScript==
+// @name           fixViewSourceEditArgsForST.uc.js
+// @namespace      https://github.com/ywzhaiqi
+// @description    自带的 `view_source.editor.args` 由于顺序问题无法传递 "行" 参数给 sublime text
+// @include        main
+// @charset        UTF-8
+// @version        2014.9.6
+// @homepageURL    https://github.com/ywzhaiqi/userChromeJS
+// @downloadURL    https://raw.githubusercontent.com/ywzhaiqi/userChromeJS/master/fixViewSourceEditArgsForST.uc.js
+// ==/UserScript==
 
 (function(){
     /**

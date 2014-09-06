@@ -7,12 +7,14 @@
 // @compatibility  Firefox 17
 // @charset        UTF-8
 // @include        main
-// @version        0.0.8
+// @version        0.0.9
 // @homePageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/WordHighlightToolbarFix
-// @oHomePageURL   https://github.com/Griever/userChromeJS/tree/master/WordHighlightToolbar
+// homePageURL     https://github.com/Griever/userChromeJS/tree/master/WordHighlightToolbar
+// @downloadURL    https://raw.githubusercontent.com/ywzhaiqi/userChromeJS/master/WordHighlightToolbarFix/WordHighlightToolbar.uc.js
 // @startup        window.gWHT.init();
 // @shutdown       window.gWHT.destroy();
 // @note           增加延迟及 super_preloader 加载下一页高亮的支持 By ywzhaiqi
+// @note           0.0.9 細部を修正
 // @note           0.0.8 Firefox 25 でエラーが出ていたのを修正
 // @note           0.0.7 ツールバーが自動で消えないことがあったのを修正
 // @note           0.0.6 アイコンを作って検索時の強調を ON/OFF できるようにした
@@ -256,8 +258,9 @@ window.gWHT = {
                 if (!this.GET_KEYWORD) return;
                 var doc = event.target;
                 var win = doc.defaultView;
+				if (!win) return;
                 // frame 内では動作しない
-                if (win && win != win.parent) return;
+                if (win != win.parent) return;
                 // HTMLDocument じゃない場合
                 if (!checkDoc(doc)) return;
 
@@ -334,7 +337,9 @@ window.gWHT = {
                 }, 500);
             }, false);
         }else{
-            this.launch(doc, keywords);
+			win.setTimeout(function(){
+            	self.launch(doc, keywords);
+			}, 500);
         }
     },
     iconClick: function(event){
@@ -495,8 +500,8 @@ window.gWHT = {
         var _bodyHeight = doc.body.clientHeight;
         // 创建观察者对象
         var observer = new win.MutationObserver(function(mutations){
-            var mutation = mutations[mutations.length - 1];
-            if(mutation.addedNodes.length && doc.body.clientHeight > _bodyHeight){
+			var nodeAdded = mutations.some(function(x){ return x.addedNodes.length > 0; });
+            if(nodeAdded && doc.body.clientHeight > _bodyHeight){
                 // debug("MutationObserver addedNodes");
                 _bodyHeight = doc.body.clientHeight;
 

@@ -5,7 +5,9 @@
 // @include         chrome://browser/content/browser.xul
 // @author          harv.c
 // @homepage        http://haoutil.com
-// @version         2014.8.23
+// @homepageURL     https://github.com/ywzhaiqi/userChromeJS/blob/master/.%E4%BF%AE%E6%94%B9%E7%89%88/Redirector.uc.js
+// @downloadURL     https://raw.githubusercontent.com/ywzhaiqi/userChromeJS/master/.%E4%BF%AE%E6%94%B9%E7%89%88/Redirector.uc.js
+// @version         2014.9.6
 // version         1.4.5
 // @startup         window.Redirector.init();
 // @shutdown        window.Redirector.destroy();
@@ -174,7 +176,7 @@
 					icon.setAttribute("onclick", "if (event.button != 2) Redirector.iconClick(event);");
 					icon.setAttribute("tooltiptext", "Redirector");
 					icon.setAttribute("style", "list-style-image: url(" + (this.state ? this.enableIcon : this.disableIcon) + ")");
-					
+
 					ToolbarManager.addWidget(window, icon, false);
 					// document.getElementById("addon-bar").appendChild(icon);
 				}

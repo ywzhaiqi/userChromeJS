@@ -5,9 +5,11 @@
 // @include        main
 // @compatibility  Firefox 2.0 3.0
 // @author         Alice0775
+// @version        2014.9.6
 // @startup        window.viewSourceModoki.init();
 // @shutdown       window.viewSourceModoki.destory();
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/viewSourceModoki
+// @downloadURL    https://raw.githubusercontent.com/ywzhaiqi/userChromeJS/master/viewSourceModoki/viewSourceModoki.uc.js
 // @version        2008/07/06 00:00 例外処理
 // ==/UserScript==
 // @version        2014/08/12 12:00 add startup and shutdown
@@ -36,7 +38,7 @@ if (window.viewSourceModoki) {
   delete window.viewSourceModoki;
 }
 
-var viewSourceModoki = {
+window.viewSourceModoki = {
   MAXLEN:100,
   LASTDOC:null,
   TMP:[],
@@ -263,7 +265,7 @@ var viewSourceModoki = {
       }
       var frames = doc.getElementsByTagName('iframe');
       for (var i = 0; i < frames.length; i++) {
-//alert(frames[i].src);
+    //alert(frames[i].src);
         var host = frames[i].src;
         if(host == 'browser') continue;
         if(host && this.chkdup(_frames, host)) _frames.push(host);
@@ -274,6 +276,16 @@ var viewSourceModoki = {
 
   //リスト表示
   list: function(kind){
+    var doc = this.getTargetDoc()
+    if (this.LASTDOC != doc) {
+      this.debug("getDocumentInfo for viewSourceModoki");
+
+      this.LASTDOC = doc;
+      this.getDataByDoc(doc);
+      this._All =[];
+      this._All = this._All.concat(this._frames, this._css, this._scripts);
+    }
+
     switch(kind){
       case 'All':
         this.displayList(this._All);
@@ -333,7 +345,7 @@ var viewSourceModoki = {
   daleteTmpFile: function(){
     while(this.TMP.length > 0){
       var file = this.TMP.pop();
-this.debug(file.path);
+    this.debug(file.path);
       try{file.remove(false);}catch(e){}
     }
   },
@@ -377,4 +389,4 @@ this.debug(file.path);
   aCallBack: function(status,data){
   }
 }
-viewSourceModoki.init();
+window.viewSourceModoki.init();

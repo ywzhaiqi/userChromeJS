@@ -5,8 +5,9 @@
 // @namespace      ywzhaiqi@gmail.com
 // @include        main
 // @charset        UTF-8
-// @version        2014.07.03
+// @version        2014.9.6
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/moveButton
+// @downloadURL    https://github.com/ywzhaiqi/userChromeJS/blob/master/moveButton/moveButton.uc.js
 // @reviewURL      http://bbs.kafan.cn/thread-1572303-1-1.html
 // @note           2014/06/03 增加对按钮或菜单属性的设置，修正 bar 必须设置 pos 才会生效的问题。
 // @note           2013/06/03 ver0.0.3  改进一些情况下无法移动的问题。
@@ -114,6 +115,10 @@ location == "chrome://browser/content/browser.xul" && (function(){
             // window.addEventListener('aftercustomization', this, false);
         },
         unint: function() {
+            ['uc-movebutton'].forEach(function(id){
+                var node = document.getElementById(id);
+                if (node) node.parentNode.removeChild(node);
+            });
             // window.removeEventListener('aftercustomization', this, false);
         },
         handleEvent: function(event) {
@@ -198,7 +203,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
         },
     };
 
-    MyMoveButton.init();
+    window.MyMoveButton.init();
 
 
     function debug() { Application.console.log('[MyMoveButton DEBUG] ' + Array.slice(arguments)); }

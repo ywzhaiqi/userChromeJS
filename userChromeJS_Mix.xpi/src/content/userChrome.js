@@ -264,11 +264,18 @@
        * 解析脚本得到 script 对象，只有 meta
        */
       userChrome_js.parseScript = function (aFile) {
-        return getScriptData(readFile(aFile, true), aFile);
+        var aContent = aFile;
+        if (typeof aFile != 'string') {
+          aContent = readFile(aFile, true)
+        } else {
+          aFile = null;
+        }
+        
+        return getScriptData(aContent, aFile);
       };
 
       //メタデータ収集
-      function getScriptData(aContent,aFile){
+      function getScriptData(aContent, aFile){
         var charset, description, author, version;
         var header = (aContent.match(/^\/\/\s*==UserScript==[ \t]*\n(?:.*\n)*?\/\/\s*==\/UserScript==[ \t]*\n/m) || [""])[0];
         var match, rex = { include: [], exclude: []};
@@ -292,7 +299,7 @@
           description = match.length > 0 ? match[1].replace(/^\s+/,"") : "";
         //}catch(e){}
         if (description =="" || !description)
-          description = aFile.leafName;
+          description = aFile && aFile.leafName;
 
         // version
         match = header.match(/\/\/ @version\b(.+)\s*/i);
@@ -383,8 +390,8 @@
         if(match)
           config = match.length > 0 ? match[1].replace(/^\s+/,"") : "";
 
-        var url = fph.getURLSpecFromFile(aFile),
-            filename = aFile.leafName,
+        var url = aFile && fph.getURLSpecFromFile(aFile),
+            filename = aFile && aFile.leafName,
             regex = new RegExp("^" + exclude + "(" + (rex.include.join("|") || ".*") + ")$", "i"),
             includeMain = regex.test(BROWSERCHROME);
 

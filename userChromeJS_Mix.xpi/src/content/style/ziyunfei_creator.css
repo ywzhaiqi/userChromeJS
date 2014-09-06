@@ -1,3 +1,10 @@
+body {
+    color: #333;
+    font-family: Verdana,Arial,Helvetica,sans-serif;
+    font-size: 10pt;
+    line-height: 1.8em;
+}
+
 .post {
     margin: 0 50px;
 }
@@ -6,5 +13,16 @@
 }
 
 #MouseDragScript, #MouseGesturesScript {
- height: 550px !important;   
+    height: 550px !important;   
+}
+
+input[type="button"] {
+    cursor: pointer;
+}
+input, textarea {
+    border: 1px solid #999;
+}
+
+#setting {
+    margin-top: 10px;
 }

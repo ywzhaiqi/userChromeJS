@@ -6,12 +6,12 @@
 // @modified       ywzhaiqi
 // @compatibility  Firefox 17
 // @charset        UTF-8
-// @version        2014.9.4
+// @version        2014.9.6
 // version        0.3.0
 // @startup        window.uAutoPagerize.init();
 // @shutdown       window.uAutoPagerize.destroy();
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/uAutoPagerize2
-// @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/uAutoPagerize/uAutoPagerize.uc.js
+// @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/uAutoPagerize2/uAutoPagerize2.uc.js
 // @reviewURL      http://bbs.kafan.cn/thread-1555846-1-1.html
 // @optionsURL     about:config?filter=uAutoPagerize.
 // @note           0.3.0 本家に倣って Cookie の処理を変更した

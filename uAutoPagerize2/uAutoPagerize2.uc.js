@@ -1,12 +1,12 @@
 // ==UserScript==
-// @name           uAutoPagerize 中文规则增强简化版
+// @name           uAutoPagerize2
 // @namespace      http://d.hatena.ne.jp/Griever/
-// @description    在同一个页面自动加载下一页
+// @description    自动翻页，中文规则增强改进版
 // @include        main
 // @modified       ywzhaiqi
 // @compatibility  Firefox 17
 // @charset        UTF-8
-// @version        2014.9.6
+// @version        2014.9.8
 // version        0.3.0
 // @startup        window.uAutoPagerize.init();
 // @shutdown       window.uAutoPagerize.destroy();
@@ -54,7 +54,7 @@ var Config = {
     MAX_PAGER_NUM: -1,          // 默认最大翻页数， -1表示无限制
     IMMEDIATELY_PAGER_NUM: 3,   // 立即加载的默认页数
     USE_IFRAME: true,           // 是否启用 iframe 加载下一页（浏览器级，默认只允许 JavaScript 和 image，在 createIframe 中可设置其它允许）
-    PRELOADER_NEXTPAGE: true,   // 提前预读下一页..就是翻完第1页,立马预读第2页,翻完第2页,立马预读第3页..(大幅加快翻页快感-_-!!)
+    PRELOADER_NEXTPAGE: false,   // 提前预读下一页..就是翻完第1页,立马预读第2页,翻完第2页,立马预读第3页..(大幅加快翻页快感-_-!!)
     ADD_TO_HISTORY: false,      // 添加下一页链接到历史记录
     SEPARATOR_RELATIVELY: true, // 分隔符.在使用上滚一页或下滚一页的时候是否保持相对位置..
 };
@@ -1613,7 +1613,8 @@ AutoPager.prototype = {
         var remain = this.getScrollHeight() - this.win.innerHeight - this.win.scrollY;
 
         // 可能高度会发生变化，所以每次都重新设置
-        this.setRemainHeight();
+        // 但在 https://www.firefox.net.cn/thread-4 又会由于 id("J_posts_list") 只能找到一个，无法准确得到最后一个，所以会不断加载。
+        // this.setRemainHeight();
 
         if (remain < this.remainHeight || this.ipagesMode) {
             if(this.tmpDoc) {

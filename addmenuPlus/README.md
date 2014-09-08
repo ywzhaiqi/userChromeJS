@@ -33,6 +33,10 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
  - [\_addmenu示例合集.js](https://github.com/ywzhaiqi/userChromeJS/blob/master/addmenuPlus/_addmenu%E7%A4%BA%E4%BE%8B%E5%90%88%E9%9B%86.js)
  - [Oos 的摘要](https://github.com/Drager-oos/userChrome/tree/master/Configuration)
 
+### firefox 32+ 右键错位的问题
+
+修改 `insertBefore: 'context-reload',` 或 `insertBefore: 'context-bookmarkpage',` 为 `insertBefore: 'context-openlinkincurrent',`
+
 ## 配置的说明
 
 ### 可添加的范围
@@ -846,6 +850,24 @@ pagesub([
             hidden: true
         }
     ]);
+
+示例：2014-9-8 版本之后新增的 `onshowing` 函数，在右键菜单出现时会执行该函数。例如下面这个例子只在卡饭论坛显示 **插入 code 代码** 右键菜单。
+
+    page({
+        label: '插入 code 代码',
+        id: 'addMenu-insert-bbcode',
+        condition:"input",
+        insertBefore: "context-undo",
+        oncommand: function() {
+            var str = addMenu.convertText('[code]%P[/code]');
+            addMenu.copy(str);
+            goDoCommand('cmd_paste'); 
+        },
+        onshowing: function(menuitem) {
+            var isHidden = !(content.location.host == 'bbs.kafan.cn');
+            this.hidden = isHidden;
+        },
+    })
 
 ### 特殊的示例
 

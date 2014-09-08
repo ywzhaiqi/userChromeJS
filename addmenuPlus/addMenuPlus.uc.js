@@ -7,7 +7,7 @@
 // @license        MIT License
 // @compatibility  Firefox 21
 // @charset        UTF-8
-// @version        2014.9.4
+// @version        2014.9.8
 // @version        0.1.0
 // @startup        window.addMenu.init();
 // @shutdown       window.addMenu.destroy();
@@ -273,10 +273,19 @@ window.addMenu = {
                     if (gContextMenu.onVideo || gContextMenu.onAudio)
                         state.push("media");
                     event.currentTarget.setAttribute("addMenu", state.join(" "));
-                }
 
-                if (enableFileRefreshing) {
-                    this.updateModifiedFile();
+                    this.customShowings.forEach(function(obj){
+                        var curItem = obj.item;
+                        try {
+                            eval('(' + obj.fnSource + ').call(curItem, curItem)');
+                        } catch(ex) {
+                            console.error('addMenuPlus 自定义显示错误', obj.fnSource);
+                        }
+                    });
+
+                    if (enableFileRefreshing) {
+                        this.updateModifiedFile();
+                    }
                 }
                 break;
         }
@@ -449,6 +458,8 @@ window.addMenu = {
 
         this.removeMenuitem();
 
+        this.customShowings = [];
+
         aiueo.forEach(function({ current, submenu, insertId }){
             if (!sandbox["_" + current] || sandbox["_" + current].length == 0) return;
             let insertPoint = $(insertId);
@@ -475,7 +486,7 @@ window.addMenu = {
 			this.setCondition(group, menuObj.condition);
 
 		menuObj._items.forEach(function(obj) {
-			group.appendChild(this.newMenuitem(obj, true));
+			group.appendChild(this.newMenuitem(obj, { isMenuGroup: true }));
 		}, this);
 		return group;
 	},
@@ -530,7 +541,9 @@ window.addMenu = {
         }
         return menu;
     },
-	newMenuitem: function(obj, isMenuGroup) {
+	newMenuitem: function(obj, opt) {
+        opt || (opt = {});
+
 		var menuitem;
 		// label == separator か必要なプロパティが足りない場合は区切りとみなす
 		if (obj.label === "separator" ||
@@ -584,6 +597,15 @@ window.addMenu = {
             }
         }
 
+        // 右键第一层菜单添加 onpopupshowing 事件
+        if (opt.isTopMenuitem && obj.onshowing) {
+            this.customShowings.push({
+                item: menuitem,
+                fnSource: obj.onshowing.toSource()
+            });
+            delete obj.onshowing;
+        }
+
 		// obj を属性にする
 		for (let [key, val] in Iterator(obj)) {
 			if (key === "command") continue;
@@ -606,7 +628,8 @@ window.addMenu = {
         if (!obj.onclick)
             menuitem.setAttribute("onclick", "checkForMiddleClick(this, event)");
 
-        if (isMenuGroup && !obj.tooltiptext && obj.label) {
+        // 给 MenuGroup 的菜单加上 tooltiptext
+        if (opt.isMenuGroup && !obj.tooltiptext && obj.label) {
             menuitem.setAttribute('tooltiptext', obj.label);
         }
 
@@ -668,7 +691,7 @@ window.addMenu = {
                 continue;
             }
 
-            menuitem = obj._items ? this.newMenu(obj) : this.newMenuitem(obj);
+            menuitem = obj._items ? this.newMenu(obj) : this.newMenuitem(obj, { isTopMenuitem: true });
             insertMenuItem(obj, menuitem);
 
         }

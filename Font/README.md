@@ -1,8 +1,12 @@
 # 字体替换为雅黑
 
-### 我目前在用的样式 firefox（2014年9月5日）
+## 我目前在用的样式
 
-**首先需要设置浏览器字体为 Microsoft YaHei UI 或微软雅黑**
+Chrome 的字体替换详见 [chrome_font.md](chrome_font.md)
+
+### firefox 下的样式
+
+**首先需要设置浏览器字体为**  Microsoft YaHei UI 或微软雅黑
 
 ```css
 @namespace url(http://www.w3.org/1999/xhtml);
@@ -52,7 +56,10 @@
 
 ### 补充说明
 
+**特别注意：** firefox 和 chrome 的字体方式不一样，最好使用 2 个不同的样式
+
 - 字体替换只对设置了字体的有效，而百度搜索页面默认无字体，firefox 会调用默认的字体设置。
+- 如果字体为 Arial 或 Verdana，其中中文部分 firefox 会使调用默认的衬线字体，而 chrome 不会。例如 [百度贴吧](http://tieba.baidu.com/p/3285422775?pn=2) 的翻页部分，chrome 需要额外的替换 Verdana 中文部分为雅黑样式。
 
 ### 测试页面
 

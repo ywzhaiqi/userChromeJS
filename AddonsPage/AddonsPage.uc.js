@@ -4,7 +4,7 @@
 // @author       ywzhaiqi
 // @include      main
 // @charset      utf-8
-// @version      2014.07.01
+// @version      2014.09.11
 // @downloadURL  https://raw.github.com/ywzhaiqi/userChromeJS/master/AddonsPage/AddonsPage.uc.js
 // @homepageURL  https://github.com/ywzhaiqi/userChromeJS/tree/master/AddonsPage
 // @reviewURL    http://bbs.kafan.cn/thread-1617407-1-1.html
@@ -42,8 +42,6 @@ location == "chrome://browser/content/browser.xul" && (function(){
     Cu.import("resource://gre/modules/AddonManager.jsm");
 
     const isCN = Services.prefs.getCharPref("general.useragent.locale").indexOf("zh") != -1;
-
-    const ADDONS_SEARCH_URL = 'https://addons.mozilla.org/firefox/search/?q=';
 
     var ApplyPatchForScript = (function(){
         const USO_URL_RE = /(^https?:\/\/userscripts.org.*\/scripts\/source\/\d+)\.\w+\.js$/i;
@@ -269,7 +267,9 @@ location == "chrome://browser/content/browser.xul" && (function(){
 
             // install url
             menuitem = doc.getElementById("AM-open-url");
-            var installURL = aAddon.homepageURL || this.getInstallURL(aAddon) || null;
+            var installURL = isExtension ?
+                        (this.getInstallURL(aAddon) || aAddon.homepageURL) :
+                        (aAddon.homepageURL || this.getInstallURL(aAddon));
             menuitem.tooltipText = installURL;
             menuitem.hidden = !installURL;
             menuitem.className = installURL ? className : '';
@@ -426,7 +426,7 @@ location == "chrome://browser/content/browser.xul" && (function(){
                 case "extension":
                 case "theme":
                     url = (aAddon.contributionURL || aAddon.reviewURL) || null;
-                    return url && url.replace(/\/developers|\/reviews/g, "") || (ADDONS_SEARCH_URL + aAddon.name);
+                    return url && url.replace(/\/developers|\/reviews/g, "") || aAddon.creator.url;
                 case "greasemonkey-user-script":
                     return aAddon._script._downloadURL || aAddon._script._updateURL;
                 case "userscript":

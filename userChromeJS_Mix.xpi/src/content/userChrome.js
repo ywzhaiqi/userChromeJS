@@ -326,7 +326,7 @@
           namespace = match.length > 0 ? match[1].replace(/^\s+/,"") : "";
 
         // homepageURL
-        match = header.match(/\/\/ @homepageURL\b(.+)\s*/i);
+        match = header.match(/\/\/ @homepage(?:URL)?\b(.+)\s*/i);
         var homepageURL = "";
         if(match)
           homepageURL = match.length > 0 ? match[1].replace(/^\s+/,"") : "";
@@ -416,7 +416,7 @@
           type: type,
           homepageURL: homepageURL,
           reviewURL: reviewURL,
-          downloadURL: downloadURL,
+          downloadURL: downloadURL || userChromejs.store.get(filename, {}).installURL,
           updateURL: updateURL,
           optionsURL: optionsURL,
           fullDescription: fullDescription,
@@ -426,7 +426,13 @@
           restartless: includeMain ? !!(startup && shutdown) : true,
           includeMain: includeMain,
           isRunning: false,
-          config: config
+          config: config,
+          get isEnabled() {
+            return !userChrome_js.scriptDisable[this.filename];
+          },
+          get canUpdate() {
+            return this.downloadURL && this.downloadURL.indexOf('http') === 0;
+          },
         }
       }
 

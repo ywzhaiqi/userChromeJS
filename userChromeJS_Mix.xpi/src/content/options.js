@@ -1,9 +1,9 @@
 let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
-var userChromeOptions = {
-    mainWindow: Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator)
-            .getMostRecentWindow("navigator:browser"),
+var mainWindow = Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator)
+            .getMostRecentWindow("navigator:browser");
 
+var userChromeOptions = {
     init: function() {
 
     },
@@ -14,10 +14,10 @@ var userChromeOptions = {
         }
     },
     onDialogAccept: function() {
-        this.mainWindow.userChromejsScriptOptionsMenu.run();
+        mainWindow.userChromejsScriptOptionsMenu.run();
     },
     setEditor: function() {
-        var userChromejs = this.mainWindow.userChromejs;
+        var userChromejs = mainWindow.userChromejs;
 
         var fp = Components.classes['@mozilla.org/filepicker;1']
             .createInstance(Components.interfaces.nsIFilePicker);
@@ -27,7 +27,7 @@ var userChromeOptions = {
             return;
         else {
             var ss = fp.file.path;
-            gPrefService.setCharPref("view_source.editor.path", ss);
+            mainWindow.gPrefService.setCharPref("view_source.editor.path", ss);
             userChromejs.editor = ss;
             return ss;
         }

@@ -1,0 +1,239 @@
+@font-face {
+    font-family: 'iconfont';
+    src: url('iconfont.eot');
+    /* IE9*/
+    src: url('iconfont.eot?#iefix') format('embedded-opentype'),
+    /* IE6-IE8 */
+    url('iconfont.woff') format('woff'),
+    /* chrome、firefox */
+    url('iconfont.ttf') format('truetype'),
+    /* chrome、firefox、opera、Safari, Android, iOS 4.2+*/
+    url('iconfont.svg#uxiconfont') format('svg');
+    /* iOS 4.1- */
+}
+.iconfont {
+    font-family: "iconfont" !important;
+    font-size: 16px;
+    font-style: normal;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-stroke-width: 0.2px;
+    -moz-osx-font-smoothing: grayscale;
+    color: black;
+}
+a {
+    text-decoration: none;
+    /*color: black;*/
+}
+/*
+body {
+  padding: 0;
+  margin: 0;
+}*/
+
+.icon16 {
+    width: 1.3em;
+    height: 1.3em;
+}
+.clickable {
+    cursor: pointer;
+}
+.head_container {
+    display: block;
+    position: relative;
+    padding: 12px 0 0 15px;
+    height: 60px;
+    min-width: 670px;
+}
+.margin4 {
+    margin: 4px;
+}
+.float {
+    float: left;
+}
+.banner {
+    width: 4em;
+    height: 4em;
+    margin: -10px 10px 10px 14px;
+}
+.head {
+    margin-top: 0;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 1.7em;
+    color: black;
+}
+.version {
+    position: relative;
+    left: 77px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: .5em;
+}
+
+.tv_tabs_fill {
+    margin-bottom: 20px;
+    width: 100%;
+    height: 2.6em;
+    position: relative;
+    border-bottom: 1px solid black;
+}
+.tv_tabs {
+    position: absolute;
+    bottom: -1px;
+    right: 0;
+    padding: 0 20px 0 20px;
+}
+.tv_tab {
+    position: relative;
+    color: white;
+    cursor: pointer;
+    text-align: center;
+    padding: 4px 12px 7px 12px;
+    float: left;
+    margin-top: 2px;
+    margin-right: 4px;
+    background: linear-gradient(to bottom, #5a5a5a 0, #383838 100%);
+    border-left: 1px #555 solid;
+    border-top: 1px #606060 solid;
+    border-right: 1px #666 solid;
+    text-shadow: 1px 1px 3px #424242;
+}
+.tv_selected {
+    color: black!important;
+    background-color: #fdfffc!important;
+    background-image: url()!important;
+    text-shadow: 1px 1px 3px #ccc!important;
+}
+
+
+/* 脚本管理主页面 */
+.tv_container {
+    margin-top: 20px;
+}
+#toolbararea {
+    padding-bottom: 10px;
+}
+#search {
+    width: 200px;
+    margin-right: 50px;
+}
+
+/* 表格 */
+.scripttable {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+}
+.scripttable td, .scripttable th {
+    display: table-cell;
+    margin: 5px;
+    padding: 4px 5px 4px 5px;
+    text-align: center;
+
+    overflow:hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.scripttr {
+    display: table-row;
+    border-width: 1px 0 1px 0;
+    border-style: solid;
+    border-color: #66a32f;
+    vertical-align: middle;
+}
+.scripttr:hover {
+    background-color: #eeef98;
+}
+
+/* 被卸载的脚本 */
+.script_deleted {
+    text-decoration: line-through;
+}
+
+.script_sel {
+    min-width: 36px;
+}
+.enabler {
+    display: inline-block;
+    font-size: 1em;
+    padding: .15em;
+    border-radius: 1.1em;
+    border: 1px black solid;
+    vertical-align: middle;
+    text-align: center;
+    height: 1.35em;
+    line-height: 1.35em;
+    min-width: 1.35em;
+}
+.enabler_disabled {
+    background: linear-gradient(to bottom, #e11 0, #811 100%);
+    color: white;
+}
+.enabler_enabled {
+    background: linear-gradient(to bottom, #1e1 0, #181 100%);
+    color: black;
+}
+
+
+.script_name {
+    padding-left: .5em;
+    text-align: left !important;
+    max-width: 280px;
+}
+.script_version {
+    width: 5%;
+}
+.script_author {
+    width: 15%;
+}
+.script_desciption {
+    text-align: left !important;
+    max-width: 500px;
+}
+
+.script_urls {
+    padding-left: 12px;
+    padding-right: 12px;
+}
+.restartless {
+    color: blue;
+}
+
+/* 实用工具 */
+.section {
+    width: 100%:display:table-row;
+    border-bottom: 1px #66a32f solid;
+}
+.section_head {
+    vertical-align: top;
+    font-weight: bold;
+    font-size: 1.2em;
+    width: 130px;
+    padding: 20px 20px 20px 20px;
+    display: table-cell;
+}
+.section_content {
+    display: table-cell;
+    padding: 20px 0;
+}
+
+/* 在线网址 */
+.site-table {
+    font-size: 1.2em;
+}
+.site-table th {
+    width: 5.4em;
+    vertical-align: top;
+    text-align: left;
+}
+.site-table td {
+    float: left;
+    height: 2.2em;
+    min-width: 16em;
+    text-align: left;
+    list-style: outside none none;
+}
+.site-icon {
+    width: 20px;
+    height: 20px;
+}

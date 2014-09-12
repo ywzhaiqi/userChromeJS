@@ -1,0 +1,122 @@
+<html ng-app="userChromejsApp">
+
+<head>
+    <meta charset="UTF-8">
+    <title>userChrome 脚本管理界面</title>
+    <link type="text/css" rel="stylesheet" href="style/index.css">
+</head>
+
+<body ng-controller="mainCtroller">
+    <div class="head_container">
+        <a href="https://github.com/ywzhaiqi/userChromeJS/tree/master/userChromeJS_Mix.xpi" target="_blank">
+            <div class="float margin4">
+                <img class="banner" src="chrome://userchromejs/skin/img/icon32.png">
+            </div>
+            <div class="float head margin4">
+                <div>新一代 uc 脚本管理器</div>
+                <div class="version">v{{version}}</div>
+            </div>
+        </a>
+    </div>
+    <div class="main_container">
+        <div class="tv_tabs_fill">
+            <nav class="tv_tabs">
+                <a ng-class="{tv_selected: $index == activeTabIndex}" ng-repeat="tab in tabs" href class="tv_tab" ng-click="setTab($index)">{{tab}}</a>
+            </nav>
+        </div>
+        <div ng-controller="scriptListCtrl" ng-show="activeTabIndex == 0" class="tab-view">
+            <div id="toolbararea">
+                搜索：
+                <input id="search" ng-model="search" place autofocus title="可直接搜索名称、作者、描述，还可以搜索 homepageURL、downloadURL、reviewURL、config 之类的关键词，无视大小写" />
+                <button class="toolbarlabel" id="optionlabel" title="打开设置窗口" ng-click="openSetting()">打开设置</button>
+                <button class="toolbarlabel" id="updatelabel" title="打开更新页面" ng-click="updateScripts()">更新全部脚本</button>
+            </div>
+            <table class="scripttable">
+                <thead>
+                    <tr class="settingstr filler" style="height: 36px;" name="multiselectcol_hide">
+                        <th class="script_sel">
+                            <input class="multiselectcb" type="checkbox">
+                        </th>
+                        <th></th>
+                        <th class="settingsth" ng-repeat="heading in headings">{{heading}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="script in filters" class="scripttr" ng-class="{'restartless': script.restartless, 'script_deleted': script.deleted}">
+                        <td class="script_sel">
+                            <input type="checkbox" name="scriptselectors">
+                        </td>
+                        <td>
+                            <div class="clickable enabler" ng-class="{'enabler_enabled': script.isEnabled, 'enabler_disabled': !script.isEnabled }" ng-class="" title="已{{ script.isEnabled ? '启用' : '禁用' }}" ng-click="toggleEnable(script);">{{$index + 1}}</div>
+                        </td>
+                        <td class="script_name clickable" >
+                            <span title="{{(script.name || script.filename) + '\n\n' + script.description}}">{{script.name || script.filename}}</span>
+                        </td>
+                        <td class="script_version">
+                            <span title="{{script.version}}">{{script.version}}</span>
+                        </td>
+                        <td class="script_author" style="display:none">
+                            <span title="{{script.author}}">{{script.author}}</span>
+                        </td>
+                        <td class="script_desciption">
+                            <span title="{{script.description}}">{{script.description}}</span>
+                        </td>
+                        <td class="script_urls">
+                            <span>
+                                <a ng-if="script.homepageURL" href="{{script.homepageURL}}" title="{{'homepageURL：\n\n' + script.homepageURL}}" target="blank">
+                                    <i class="iconfont">&#xe603</i>
+                                    <a ng-if="script.downloadURL" href="{{script.downloadURL}}" title="{{'downloadURL：\n\n' + script.downloadURL}}" target="blank">
+                                        <i class="iconfont">&#xe60c</i>
+                                        <a ng-if="script.reviewURL" href="{{script.reviewURL}}" title="{{'reviewURL：\n\n' + script.reviewURL}}" target="blank">
+                                            <i class="iconfont">&#xe60a</i>
+                            </span>
+                        </td>
+                        <td>
+                            <span ng-show="script.canUpdate" ng-click="updateScript(script)">{{getLastUpdateTime(script)}}</span>
+                        </td>
+                        <td>
+                            <i class="iconfont clickable" title="{{script.file.path}}" ng-click="editScript(script)">&#xe60b</i>
+                            <i ng-if="script.config" class="iconfont clickable" title="打开设置文件（config）" ng-click="openConfig(script)">&#xe60e</i>
+                        </td>
+                        <td>
+                            <i class="iconfont clickable" title="{{script.file.path}}" ng-click="openScript(script)">&#xe602</i>
+                        </td>
+                        <td>
+                            <i class="iconfont clickable" title="删除" ng-click="deleteScript(script)">&#xe607</i>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div ng-controller="scriptUtilCtrl" ng-show="activeTabIndex == 1" class="tab-view tv_util">
+            <div ng-repeat="util in utils" class="section">
+                <div class="section_head">{{util.name}}</div>
+                <div class="section_content">
+                    <a ng-if="util.url" href="{{util.url}}" target="_blank">{{util.url}}</a>
+                    <input ng-if="util.input" class="button" name="utils" type="button" value="{{util.input.value}}" ng-click="util.input.onclick()"/>
+                    <input ng-if="util.input2" class="button" name="utils" type="button" value="{{util.input2.value}}" ng-click="util.input2.onclick"/>
+                </div>
+            </div>
+        </div>
+        <div ng-controller="scriptWebSitesCtrl" ng-show="activeTabIndex == 2" class="tab-view">
+            <table class="site-table">
+                <tr ng-repeat="(type, sites) in webSites">
+                    <th><span>{{type}}</span></th>
+                    <td ng-repeat="site in sites">
+                        <a class="site-link" href="{{site[1]}}" title="{{site[0]}}" target="_blank">
+                            <img class="site-icon" src="{{site[2]}}">
+                            {{site[0]}}
+                        </a>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="lib/jquery.js"></script>
+    <script type="text/javascript" src="lib/angular.min.js"></script>
+    <script type="text/javascript" src="lib/js_beautify.js"></script>
+    <script type="text/javascript" src="script/index.js"></script>
+</body>
+
+</html>

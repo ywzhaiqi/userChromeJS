@@ -516,9 +516,7 @@
         }
       }else if(event.button==2){
         if (event.ctrlKey) {
-          if(confirm('是否要卸载这个脚本？注意：会删除该文件')) {
-            userChromejs.Script.uninstall(script);
-          }
+          userChromejs.script.uninstall(script);
         } else {
           userChromejs.launchEditor(script);
         }
@@ -614,9 +612,9 @@
       // 切换前的状态
       var isEnable = userChrome_js.scriptDisable[afilename];
       if (isEnable) {
-        userChromejs.Script.shutdown(script);
+        userChromejs.script.shutdown(script);
       } else {
-        userChromejs.Script.startup(script);
+        userChromejs.script.startup(script);
       }
     },
 
@@ -1008,17 +1006,17 @@
                  onclick="userChromejsScriptOptionsMenu.resetMenu(event);" >
     <menupopup id="userChromejs_options"  onpopupshowing="userChromejs.onpopup();">
     	<menuseparator id="jscmdseparator" hidden="true" />
-      
-      <hbox>
-        <menuitem id="toolbtn_rebuild" class="menuitem-iconic" label="新建窗口并重载脚本" flex="1" oncommand="userChromejs.rebuild();"/>
-        <toolbarbutton id="toolbtn_openPrefs" tooltiptext="打开设置窗口" oncommand="hidePopup(); userChromejs.openPrefs();"/>
-      </hbox>
       <hbox>
       	<menuitem id="toolbtn_chromedir" class="menuitem-iconic" label="打开chrome文件夹" flex="1" oncommand="userChromejs.Openchromedir();"/>
       	<toolbarbutton id="toolbtn_restartApp" tooltiptext="重启浏览器" oncommand="hidePopup(); userChromejs.restartApp();"/>
       </hbox>
+      <hbox>
+        <menuitem class="menuitem-iconic" label="管理uc脚本" flex="1" oncommand="userChromejs.openChromeURL('index.html');"/>
+        <toolbarbutton id="toolbtn_openPrefs" tooltiptext="打开设置窗口" oncommand="hidePopup(); userChromejs.openPrefs();"/>
+      </hbox>
       <menu id="userChromejs_script_setting" label="其它设置" >
         <menupopup >
+          <menuitem id="toolbtn_rebuild" class="menuitem-iconic" label="新建窗口并重载脚本" flex="1" oncommand="userChromejs.rebuild();"/>
           <hbox>
             <menuitem id="jscmd_edit_add" class="menuitem-iconic" label="添加脚本命令" flex="1" oncommand="userChromejsScriptOptionsMenu.adduserChromejsmenu();"/>
               <toolbarbutton id="jscmd_edit_del" tooltiptext="删除脚本命令" oncommand="hidePopup(); userChromejsScriptOptionsMenu.deluserChromejsmenu();"/>
@@ -1027,22 +1025,6 @@
             <menuitem id="showToolsMenu" label="切换到工具菜单" class="menuitem-iconic" oncommand="userChromejs.toggleUI(1);" flex="1" tooltiptext="新菜单在菜单栏的工具菜单中，再次点击后切换回按钮" />
             <checkbox id="userChrome_homebtn"  label="移动菜单" tooltiptext="切换到工具菜单时将脚本命令和脚本目录菜单移动到火狐主页按钮" oncommand="userChromejs.settingHomeMode();" />
           </hbox>
-          <hbox>
-            <menuitem id="userChromejs_export_prefs" class="menuitem-iconic" label="导出脚本设置" flex="1"
-                tooltiptext="包括uc脚本和自定义的设置" oncommand="userChromejs.Save.exportPrefs();"/>
-            <menuitem id="userChromejs_import_prefs" class="menuitem-iconic" label="导入"
-                tooltiptext="包括uc脚本和自定义的设置" oncommand="userChromejs.Save.importPrefs();"/>
-          </hbox>
-          <menuseparator />
-          <menuitem id="userChromejs_addMenu_creator" class="menuitem-iconic" label="addMenuPlus 生成器" flex="1" oncommand="gBrowser.selectedTab = gBrowser.addTab('http://ywzhaiqi.github.io/addMenu_creator/');"/>
-          <menuitem id="userChromejs_ucjsMouseGestures_creator" class="menuitem-iconic" label="紫云飞鼠标手势生成器" flex="1" oncommand="gBrowser.selectedTab = gBrowser.addTab('chrome://userchromejs/content/ucjsMouseGestures_creator.html');"/>
-          <menuitem id="userChromejs_ucjsMouseDrag_creator" class="menuitem-iconic" label="紫云飞拖曳生成器" flex="1" oncommand="gBrowser.selectedTab = gBrowser.addTab('chrome://userchromejs/content/ucjsMouseDrag_creator.html');"/>
-          <menuseparator />
-          <menuitem id="userChromejs_update" class="menuitem-iconic" label="检查脚本的更新" oncommand="gBrowser.selectedTab = gBrowser.addTab('chrome://userchromejs/content/update.html');" />
-        </menupopup>
-      </menu>
-      <menu label="在线网址">
-        <menupopup id="userChrome_websites">
         </menupopup>
       </menu>
 

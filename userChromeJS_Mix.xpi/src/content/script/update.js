@@ -42,7 +42,8 @@ function compareVersion() {
     var text = this.responseText;
     var oldScript = this.oldScript;
     var newScript = mainWin.userChrome_js.parseScript(text);
-    if (newScript.version && Services.vc.compare(oldScript.version, newScript.version) > 0) {
+
+    if (newScript.version && Services.vc.compare(newScript.version, oldScript.version) > 0) {
         displayUpdateScript(newScript, oldScript);
     } else {
         displayNoUpdateScript(oldScript);
@@ -63,15 +64,16 @@ function isHasChanged(script) {
 }
 
 function init() {
-    var scripts = mainWin.userChromejs.Manganer.getAll();
-    var hasLength = scripts.filter((s) => s.downloadURL).length;
+    var scripts = mainWin.userChromejs.manganer.list(),
+        downScripts = scripts.filter((s) => s.canUpdate),
+        downLength = downScripts.length;
 
-    $('#scripts-title').text(nano('共有 {hasLength} 个脚本需要检查是否有更新信息，另有 {noLength} 脚本没有下载链接', {
-        hasLength: hasLength,
-        noLength: scripts.length - hasLength
+    $('#scripts-title').text(nano('共有 {downLength} 个脚本需要检查是否有更新信息，另有 {otherLength} 脚本没有下载链接', {
+        downLength: downLength,
+        otherLength: scripts.length - downLength
     }));
 
-    scripts.map(isHasChanged);
+    downScripts.map(isHasChanged);
 }
 
 init();

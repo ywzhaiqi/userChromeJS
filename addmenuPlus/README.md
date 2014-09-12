@@ -235,6 +235,15 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
 	        label: "复制标题（Html）",
 	        text: '<a href="%URL%">%TITLE%</a>',
 	    },
+	    {
+            label: "复制标题（Link）",
+            class: "copy",
+            oncommand: function(){
+                var url = addMenu.convertText('%URL%'),
+                    label = addMenu.convertText('%TITLE%');
+                addMenu.copyLink(url, label);
+            }
+        },
 	    {},
 	    {
 	        label: "复制 Favicon 的 URL",

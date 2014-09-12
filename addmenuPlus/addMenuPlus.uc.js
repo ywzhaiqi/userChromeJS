@@ -7,10 +7,11 @@
 // @license        MIT License
 // @compatibility  Firefox 21
 // @charset        UTF-8
-// @version        2014.9.8
+// @version        2014.9.12
 // @version        0.1.0
 // @startup        window.addMenu.init();
 // @shutdown       window.addMenu.destroy();
+// @config         window.addMenu.edit(addMenu.FILE);
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/addmenuPlus
 // @ohomepageURL   https://github.com/Griever/userChromeJS/tree/master/addMenu
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
@@ -225,7 +226,7 @@ window.addMenu = {
         ins = $("appmenu-quit") || $("menu_FileQuitItem");
         ins.parentNode.insertBefore(
             $C("menuseparator", { id: "addMenu-app-insertpoint", class: "addMenu-insert-point" }), ins);
-        ins = $('jscmdseparator') || $("devToolsSeparator");
+        ins = $("devToolsSeparator");
         ins.parentNode.insertBefore($C("menuitem", {
             id: "addMenu-rebuild",
             label: "AddMenuPlus",
@@ -258,6 +259,10 @@ window.addMenu = {
             case "popupshowing":
                 if (event.target != event.currentTarget) return;
 
+                if (enableFileRefreshing) {
+                    this.updateModifiedFile();
+                }
+
                 if (event.target.id == 'contentAreaContextMenu') {
                     var state = [];
                     if (gContextMenu.onTextInput)
@@ -282,10 +287,6 @@ window.addMenu = {
                             console.error('addMenuPlus 自定义显示错误', obj.fnSource);
                         }
                     });
-
-                    if (enableFileRefreshing) {
-                        this.updateModifiedFile();
-                    }
                 }
                 break;
         }
@@ -968,6 +969,43 @@ window.addMenu = {
     copy: function(aText) {
         Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(aText);
         XULBrowserWindow.statusTextField.label = "Copy: " + aText;
+    },
+    copyLink: function(copyURL, copyLabel) {
+        // generate the Unicode and HTML versions of the Link
+        var textUnicode = copyURL;
+        var textHtml = ("<a href=\"" + copyURL + "\">" + copyLabel + "</a>");
+
+        // make a copy of the Unicode
+        var str = Components.classes["@mozilla.org/supports-string;1"].
+        createInstance(Components.interfaces.nsISupportsString);
+        if (!str) return false; // couldn't get string obj
+        str.data = textUnicode; // unicode string?
+
+
+        // make a copy of the HTML
+        var htmlstring = Components.classes["@mozilla.org/supports-string;1"].
+        createInstance(Components.interfaces.nsISupportsString);
+        if (!htmlstring) return false; // couldn't get string obj
+        htmlstring.data = textHtml;
+
+        // add Unicode & HTML flavors to the transferable widget
+        var trans = Components.classes["@mozilla.org/widget/transferable;1"].
+        createInstance(Components.interfaces.nsITransferable);
+        if (!trans) return false; //no transferable widget found
+
+        trans.addDataFlavor("text/unicode");
+        trans.setTransferData("text/unicode", str, textUnicode.length * 2); // *2 because it's unicode
+
+        trans.addDataFlavor("text/html");
+        trans.setTransferData("text/html", htmlstring, textHtml.length * 2); // *2 because it's unicode 
+
+        // copy the transferable widget!
+        var clipboard = Components.classes["@mozilla.org/widget/clipboard;1"].
+        getService(Components.interfaces.nsIClipboard);
+        if (!clipboard) return false; // couldn't get the clipboard
+
+        clipboard.setData(trans, null, Components.interfaces.nsIClipboard.kGlobalClipboard);
+        return true;
     },
     alert: function (aMsg, aTitle, aCallback) {
         var callback = aCallback ? {

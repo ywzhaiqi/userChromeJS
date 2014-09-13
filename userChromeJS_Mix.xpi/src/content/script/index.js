@@ -3,16 +3,17 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 var mainWin = Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator)
             .getMostRecentWindow("navigator:browser");
+
 var userChromejs = mainWin.userChromejs;
+
 
 var app = angular.module('userChromejsApp', [], function ($compileProvider) {
     $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|chrome):/);
     $compileProvider.imgSrcSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|chrome|data):/);
 });
 
-
 app.controller('mainCtroller', function($scope){
-    $scope.version = '1.7.0';
+    $scope.version = '1.7.1';
     $scope.activeTabIndex = 0;
     $scope.tabs = ['已安装脚本', '实用程序', '在线网址'];
 
@@ -92,7 +93,7 @@ app.controller('scriptListCtrl', function($scope){
                     return isMatched;
                 }
 
-                // 搜索名字
+                // 搜索名称
                 return ['homepageURL', 'downloadURL', 'reviewURL', 'restartless', 'config'].some(function(pop){
                     if (script[pop]) {
                         return pop.toLowerCase().indexOf(term) !== -1;

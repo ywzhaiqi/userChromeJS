@@ -13,3 +13,5 @@ pref("userChrome.arrSubdir", ", xul, TabMixPlus, withTabMixPlus, SubScript, UCJS
 
 pref("userChrome.install_skipSelect", true);
 pref("userChrome.custom_prefs", "userChrome., userChromeJS., uAutoPagerize., addMenu.");
+
+pref("userChrome.FILE", "local\\userChromejs_mix.json");

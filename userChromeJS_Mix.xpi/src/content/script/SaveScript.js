@@ -20,7 +20,9 @@ function Store() {
 }
 Store.prototype = {
     init: function() {
-        this.file = FileUtils.getFile('UChrm', ['lib', 'userChromejs_mix.json']);
+        var fileArr = userChromejs.prefs.get('FILE', 'local\\userChromejs_mix.json').replace(/\\/g, '/').split('/');
+
+        this.file = FileUtils.getFile('UChrm', fileArr);
         if (!this.file.exists()) {
             userChromejs.utils.saveFile(this.file, '');
         }
@@ -48,11 +50,6 @@ Store.prototype = {
 
 userChromejs.store = new Store();
 
-function ScriptAddon() {
-
-}
-
-userChromejs.mScripts = 
 
 // 从 uc 脚本管理器中添加或移除
 userChromejs.manganer = (function(){
@@ -349,11 +346,6 @@ userChromejs.save = {
                         });
                         // 安装
                         userChromejs.script.install(target);
-                        // TODO: 保存其它文件，不仅仅是 uc 脚本？
-                        // if (RE_USERCHROME_JS)
-                        //     userChromejs.script.install(fp.file);
-                        // else
-                        //     userChromejs.save.showInstallMessage(fp.file.leafName, '保存完毕', false);
                     }
                 }
             };

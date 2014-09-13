@@ -27,8 +27,8 @@ MouseDrag = {
         file.append('tpl');
         file.append(name + '.js');
 
-        // 替换 window 换行符
-        var str = loadText(file).replace(/\r\n/g, '\n');
+        var str = loadText(file)
+        str = str.replace(/\r\n/g, '\n');  // 替换 window 换行符
         // str = utf8_to_b64(str);
         return str;
     },
@@ -94,8 +94,6 @@ MouseDrag = {
             foStream.init(file, 0x02 | 0x08 | 0x20, 0664, 0);
             foStream.write(data, data.length);
             foStream.close();
-
-            // alert('已经成功保存 "' + file.leafName + '" 到 chrome 目录下');
         }
     },
     makeXPI: function() {

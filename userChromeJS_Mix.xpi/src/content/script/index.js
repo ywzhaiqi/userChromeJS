@@ -13,7 +13,7 @@ var app = angular.module('userChromejsApp', [], function ($compileProvider) {
 });
 
 app.controller('mainCtroller', function($scope){
-    $scope.version = '1.7.1';
+    $scope.version = '1.7.2';
     $scope.activeTabIndex = 0;
     $scope.tabs = ['已安装脚本', '实用程序', '在线网址'];
 

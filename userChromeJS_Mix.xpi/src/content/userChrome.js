@@ -391,12 +391,9 @@
           config = match.length > 0 ? match[1].replace(/^\s+/,"") : "";
 
         var url = aFile && fph.getURLSpecFromFile(aFile),
-            filename = aFile && aFile.leafName,
+            filename = aFile && aFile.leafName || '',
             regex = new RegExp("^" + exclude + "(" + (rex.include.join("|") || ".*") + ")$", "i"),
             includeMain = regex.test(BROWSERCHROME);
-
-        var type = /\.uc(?:-\d+)?\.js$/i.test(filename) ? 'js' :
-                         /\.uc(?:-\d+)?\.xul$/i.test(filename) ? 'xul' : '';
 
         return {
           filename: filename,
@@ -413,10 +410,15 @@
 
           // new added
           id: id ? id : (name || filename) + '@' + (namespace || author || 'userChromejs'),
-          type: type,
+          get type() {
+            return /\.uc(?:-\d+)?\.js$/i.test(this.filename) ? 'js' :
+                         /\.uc(?:-\d+)?\.xul$/i.test(this.filename) ? 'xul' : '';
+          },
           homepageURL: homepageURL,
           reviewURL: reviewURL,
-          downloadURL: downloadURL || userChromejs.store.get(filename, {}).installURL,
+          get downloadURL() {
+            return downloadURL || (userChromejs && userChromejs.store.get(filename, {}).installURL);
+          },
           updateURL: updateURL,
           optionsURL: optionsURL,
           fullDescription: fullDescription,
@@ -658,6 +660,7 @@
       if( !this.EXPERIMENT && true ){ //← uc.jsでのloadOverlayに対応
         for(var m=0,len=this.overlays.length; m<len; m++){
           overlay = this.overlays[m];
+          // 排除加载 rebuild_userChrome.uc.xul
           if( overlay.filename == this.ALWAYSEXECUTE
                  || !!this.dirDisable['*']
                  || !!this.dirDisable[overlay.dir]

@@ -5,7 +5,7 @@
 // @include        main
 // @charset        utf-8
 // @author         ywzhaiqi
-// @version        2014.9.16
+// @version        2014.9.16.2
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/GreaemonkeyEnhancer
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/GreaemonkeyEnhancer/GreaemonkeyEnhancer.uc.js
 // @startup        window.GreaemonkeyEnhancer.init();
@@ -75,7 +75,6 @@
 
 		init: function(){
 			var self = this;
-
 			var isCN = navigator.language.substr(0, 2) == "zh";
 
 			var menuitem = document.createElement("menuitem");
@@ -103,9 +102,9 @@
 					menuitem.setAttribute("id", this._id2);
 					gm_popup.insertBefore(menuitem, gm_popup.children[3]);
 					// 添加 tooltiptext
-					gm_popup.addEventListener('popupshowing', self.gmPopupShowing, true);
+					gm_popup.addEventListener('popupshowing', this.gmPopupShowing, true);
 					// 添加中键打开主页
-					gm_popup.addEventListener('click', self.gmPopupClicked, true);
+					gm_popup.addEventListener('click', this.gmPopupClicked, true);
 				}
 
 				// 图标右键菜单
@@ -114,7 +113,7 @@
 					gm_popup = document.querySelector("#greasemonkey-tbb > menupopup");
 					if (gm_popup) {
 						menuitem = menuitem.cloneNode(true);
-						menuitem.setAttribute("id", this._id);
+						menuitem.setAttribute("id", self._id);
 						gm_popup.insertBefore(menuitem, gm_popup.children[3]);
 
 						// 添加 tooltiptext
@@ -147,6 +146,7 @@
 		},
 		gmPopupShowing: function(event) {
 			var popup = event.currentTarget;
+
 			var addHomeUrl = function(menuitem) {
 				var script = menuitem.script;
 				if (!script) return;
@@ -178,36 +178,40 @@
 			var wins = this.getFocusedWindow();
 			var href = wins.location.href;
 			if(!href) return;
-			var p=0;			//for number of "."
-			var f= new Array();
-			var q=2;
-			var t=1;
-			var a=0;
+
+			// 从 http://www.baidu.com/aaa 中得到 baidu
+			var p = 0; //for number of "."
+			var f = new Array();
+			var q = 2;
+			var t = 1;
+			var a = 0;
 			var y;
 			var o;
-			var m=4;
+			var m = 4;
 			var stringa; //= new Array();
 			var re = /(?:[a-z0-9-]+\.)+[a-z]{2,4}/;
-			href=href.match(re); //extract the url part
-			href=href.toString();
+			href = href.match(re); //extract the url part
+			href = href.toString();
 			//get the places and nunbers of the "."
-			for (var i=0;i<href.length;i++){
-				if (href[i]=="."){
-					f[p]=i;
-					p++ ;
+			for (var i = 0; i < href.length; i++) {
+				if (href[i] == ".") {
+					f[p] = i;
+					p++;
 				}
 			}
-			if (p==t){
-				stringa=href.substring(a,f[0]);
-			}else if  (p==q){
-				stringa=href.substring(++f[0],f[1]);
-			}
-			else {
-				stringa=href.substring(++f[0],f[2]);
+			if (p == t) {
+				stringa = href.substring(a, f[0]);
+			} else if (p == q) {
+				stringa = href.substring(++f[0], f[1]);
+			} else {
+				stringa = href.substring(++f[0], f[2]);
 			}
 
+
+			// openLinkIn("https://greasyfork.org/scripts/search?q="+ stringa,  "tab", { inBackground: false});
+			openLinkIn(" https://greasyfork.org/zh-CN/scripts/code-search?c="+ stringa,  "tab", { inBackground: false});
 			openLinkIn("http://www.google.com/search?q=site:userscripts-mirror.org+inurl:scripts+inurl:show+"+ stringa, "tab", {});
-			openLinkIn("https://greasyfork.org/scripts/search?q="+ stringa,  "tab", { inBackground: false});
+			openLinkIn("http://www.webextender.net/scripts/search?q="+ stringa, "tab", {});
 		}
 	};
 

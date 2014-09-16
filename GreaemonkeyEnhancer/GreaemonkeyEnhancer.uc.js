@@ -5,7 +5,7 @@
 // @include        main
 // @charset        utf-8
 // @author         ywzhaiqi
-// @version        2014.9.16.2
+// @version        2014.9.16.3
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/GreaemonkeyEnhancer
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/GreaemonkeyEnhancer/GreaemonkeyEnhancer.uc.js
 // @startup        window.GreaemonkeyEnhancer.init();
@@ -18,8 +18,9 @@
 		inBackground: 1,   // 1：后台打开，0：前台打开
 	};
 
-	var ApplyPatchForScript = (function(){
-		const USO_URL_RE = /(^https?:\/\/userscripts.org.*\/scripts\/source\/\d+)\.\w+\.js$/i;
+	var mScriptTool = (function(){
+		const USO_URL_RE = /(^https?:\/\/userscripts(?:-mirror|)\.org.*\/scripts\/source\/\d+)\.\w+\.js$/i;
+		const USO_W_URL_RE = /(^https?:\/\/www.webextender.net\/scripts\/source\/\d+)\.\w+\.js$/i;
 
 		const GFO_URL_RE_1 = /(^https?:\/\/greasyfork.org\/scripts\/code\/\w+)\.\w+\.js$/i;
 		const GFO_URL_RE_2 = /(^https?:\/\/greasyfork.org\/scripts\/[^\/]+\/)code[\.\/].*\w+\.js$/i;
@@ -33,7 +34,7 @@
 		function getScriptHomeURL(downURL) {
 			var url;
 			if (downURL && downURL.startsWith('http')) {
-				if (USO_URL_RE.test(downURL)) {
+				if (USO_URL_RE.test(downURL) || USO_W_URL_RE.test(downURL)) {
 					url = RegExp.$1.replace(/source/, "show");
 				} else if (GFO_URL_RE_1.test(downURL)) {
 					url = RegExp.$1;
@@ -71,14 +72,14 @@
 
 	window.GreaemonkeyEnhancer = {
 		_id: "GreaemonkeyEnhancer-find-script",
-		_id2: "GreaemonkeyEnhancer-tool-find-script",
+		_id2: "GreaemonkeyEnhancer-find-script-2",
 
 		init: function(){
 			var self = this;
 			var isCN = navigator.language.substr(0, 2) == "zh";
 
 			var menuitem = document.createElement("menuitem");
-			menuitem.setAttribute("id", this._id);
+			menuitem.setAttribute("id", self._id);
 			menuitem.setAttribute("label", isCN ? "为本站搜索脚本(S)" : "find Script");
 			menuitem.setAttribute("accesskey", "s");
 			menuitem.setAttribute("oncommand", "GreaemonkeyEnhancer.findscripts()");
@@ -99,26 +100,25 @@
 				// 工具栏的菜单
 				var gm_popup = document.querySelector("#gm_general_menu > menupopup");
 				if (gm_popup) {
-					menuitem.setAttribute("id", this._id2);
 					gm_popup.insertBefore(menuitem, gm_popup.children[3]);
-					// 添加 tooltiptext
-					gm_popup.addEventListener('popupshowing', this.gmPopupShowing, true);
-					// 添加中键打开主页
-					gm_popup.addEventListener('click', this.gmPopupClicked, true);
+					gm_popup.addEventListener('popupshowing', self.gmPopupShowing, true);
+					gm_popup.addEventListener('click', self.gmPopupClicked, true);
 				}
 
 				// 图标右键菜单
-				// 把按钮移到最新版的 pentadactyl 附加组件栏后，一开始找不到 Greasemonkey 菜单
-				var addToGreasemonkey = function() {
+				var addToGreasemonkey = function() {  // 把按钮移到最新版的 pentadactyl 附加组件栏后，一开始可能会找不到
 					gm_popup = document.querySelector("#greasemonkey-tbb > menupopup");
 					if (gm_popup) {
-						menuitem = menuitem.cloneNode(true);
-						menuitem.setAttribute("id", self._id);
-						gm_popup.insertBefore(menuitem, gm_popup.children[3]);
+						// 上面添加后可能会重复
+						if (gm_popup.children[3].id == self._id) {
+							gm_popup.children[3].id = self._id2;
+						} else {
+							menuitem = menuitem.cloneNode(true);
+							menuitem.id = self.id2;
+							gm_popup.insertBefore(menuitem, gm_popup.children[3]);
+						}
 
-						// 添加 tooltiptext
 						gm_popup.addEventListener('popupshowing', self.gmPopupShowing, true);
-						// 添加中键打开主页
 						gm_popup.addEventListener('click', self.gmPopupClicked, true);
 					} else {
 						setTimeout(addToGreasemonkey, 500);
@@ -129,6 +129,8 @@
 			}
 		},
 		uninit: function(){
+			var self = this;
+
 			[this._id, this._id2].forEach(function(id){
 				var menuitem = document.getElementById(id);
 				if(menuitem){
@@ -139,8 +141,8 @@
 			var gm_popups = document.querySelectorAll("#gm_general_menu > menupopup, #greasemonkey-tbb > menupopup");
 			if (gm_popups) {
 				[].forEach.call(gm_popups, function(popup){
-					popup.removeEventListener('popupshowing', this.gmPopupShowing, true);
-					popup.removeEventListener('click', this.gmPopupClicked, true);
+					popup.removeEventListener('popupshowing', self.gmPopupShowing, true);
+					popup.removeEventListener('click', self.gmPopupClicked, true);
 				});
 			}
 		},
@@ -153,7 +155,7 @@
 				if (menuitem.getAttribute('homeURL')) return;
 
 				var downURL = script._updateURL || script._downloadURL;
-				var homeURL = ApplyPatchForScript.getHomePageURL(downURL) || downURL;
+				var homeURL = mScriptTool.getHomePageURL(downURL) || downURL;
 				menuitem.setAttribute('homeURL', homeURL);
 				menuitem.setAttribute('tooltiptext', homeURL);
 			};
@@ -163,11 +165,12 @@
 		gmPopupClicked: function(event) {
 			if (event.button != 1) return;
 
+			event.stopPropagation();
+			event.preventDefault();
+
 			var homeURL = event.target.getAttribute('homeURL');
 			if (homeURL && homeURL.startsWith('http')) {
 				openLinkIn(homeURL, 'tab', { inBackground: prefs.inBackground });
-				event.stopPropagation();
-				event.preventDefault();
 			}
 		},
 		getFocusedWindow: function () {

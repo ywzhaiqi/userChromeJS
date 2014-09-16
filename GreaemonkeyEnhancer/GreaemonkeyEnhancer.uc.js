@@ -5,7 +5,7 @@
 // @include        main
 // @charset        utf-8
 // @author         ywzhaiqi
-// @version        2014.9.15
+// @version        2014.9.16
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/GreaemonkeyEnhancer
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/GreaemonkeyEnhancer/GreaemonkeyEnhancer.uc.js
 // @startup        window.GreaemonkeyEnhancer.init();
@@ -70,7 +70,9 @@
 	}
 
 	window.GreaemonkeyEnhancer = {
-		_id: "Scriptish-find-script",
+		_id: "GreaemonkeyEnhancer-find-script",
+		_id2: "GreaemonkeyEnhancer-tool-find-script",
+
 		init: function(){
 			var self = this;
 
@@ -98,6 +100,8 @@
 				// 工具栏的菜单
 				var gm_popup = document.querySelector("#gm_general_menu > menupopup");
 				if (gm_popup) {
+					menuitem.setAttribute("id", this._id2);
+					gm_popup.insertBefore(menuitem, gm_popup.children[3]);
 					// 添加 tooltiptext
 					gm_popup.addEventListener('popupshowing', self.gmPopupShowing, true);
 					// 添加中键打开主页
@@ -109,6 +113,8 @@
 				var addToGreasemonkey = function() {
 					gm_popup = document.querySelector("#greasemonkey-tbb > menupopup");
 					if (gm_popup) {
+						menuitem = menuitem.cloneNode(true);
+						menuitem.setAttribute("id", this._id);
 						gm_popup.insertBefore(menuitem, gm_popup.children[3]);
 
 						// 添加 tooltiptext
@@ -124,10 +130,12 @@
 			}
 		},
 		uninit: function(){
-			var menuitem = document.getElementById(this._id);
-			if(menuitem){
-				menuitem.parentNode.removeChild(menuitem);
-			}
+			[this._id, this._id2].forEach(function(id){
+				var menuitem = document.getElementById(id);
+				if(menuitem){
+					menuitem.parentNode.removeChild(menuitem);
+				}
+			});
 
 			var gm_popups = document.querySelectorAll("#gm_general_menu > menupopup, #greasemonkey-tbb > menupopup");
 			if (gm_popups) {
@@ -198,9 +206,8 @@
 				stringa=href.substring(++f[0],f[2]);
 			}
 
-			openLinkIn("http://www.google.com/search?q=site:userscripts.org+inurl:scripts+inurl:show+"+ stringa, 
-				"tab", { inBackground: false});
-			openLinkIn("https://greasyfork.org/scripts/search?q="+ stringa,  "tab", {});
+			openLinkIn("http://www.google.com/search?q=site:userscripts-mirror.org+inurl:scripts+inurl:show+"+ stringa, "tab", {});
+			openLinkIn("https://greasyfork.org/scripts/search?q="+ stringa,  "tab", { inBackground: false});
 		}
 	};
 

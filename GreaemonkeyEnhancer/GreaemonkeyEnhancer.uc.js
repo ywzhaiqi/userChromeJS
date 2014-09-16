@@ -5,7 +5,7 @@
 // @include        main
 // @charset        utf-8
 // @author         ywzhaiqi
-// @version        2014.9.16.3
+// @version        2014.9.16.4
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/GreaemonkeyEnhancer
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/GreaemonkeyEnhancer/GreaemonkeyEnhancer.uc.js
 // @startup        window.GreaemonkeyEnhancer.init();
@@ -81,8 +81,10 @@
 			var menuitem = document.createElement("menuitem");
 			menuitem.setAttribute("id", self._id);
 			menuitem.setAttribute("label", isCN ? "为本站搜索脚本(S)" : "find Script");
+			menuitem.setAttribute("tooltiptext", "左键搜索当前域名，右键自定义搜索");
 			menuitem.setAttribute("accesskey", "s");
 			menuitem.setAttribute("oncommand", "GreaemonkeyEnhancer.findscripts()");
+			menuitem.setAttribute("onclick", "if(event.button == 2) GreaemonkeyEnhancer.customSearch()");
 
 			// Scriptish
 			var scriptishShow = document.getElementById("scriptish-tb-show-us");
@@ -114,7 +116,7 @@
 							gm_popup.children[3].id = self._id2;
 						} else {
 							menuitem = menuitem.cloneNode(true);
-							menuitem.id = self.id2;
+							menuitem.id = self._id2;
 							gm_popup.insertBefore(menuitem, gm_popup.children[3]);
 						}
 
@@ -173,9 +175,11 @@
 				openLinkIn(homeURL, 'tab', { inBackground: prefs.inBackground });
 			}
 		},
-		getFocusedWindow: function () {
-			var win = document.commandDispatcher.focusedWindow;
-			return (!win || win == window) ? content : win;
+		customSearch: function() {
+			var keyword = prompt("请输入要搜索的关键词？", "");
+			if (keyword) {
+				this.openSearchs(keyword);
+			}
 		},
 		findscripts: function(){
 			var wins = this.getFocusedWindow();
@@ -210,12 +214,18 @@
 				stringa = href.substring(++f[0], f[2]);
 			}
 
-
-			// openLinkIn("https://greasyfork.org/scripts/search?q="+ stringa,  "tab", { inBackground: false});
-			openLinkIn(" https://greasyfork.org/zh-CN/scripts/code-search?c="+ stringa,  "tab", { inBackground: false});
-			openLinkIn("http://www.google.com/search?q=site:userscripts-mirror.org+inurl:scripts+inurl:show+"+ stringa, "tab", {});
-			openLinkIn("http://www.webextender.net/scripts/search?q="+ stringa, "tab", {});
-		}
+			this.openSearchs(stringa);
+		},
+		openSearchs: function(keyword) {
+			// openLinkIn("https://greasyfork.org/scripts/search?q="+ keyword,  "tab", { inBackground: false});
+			openLinkIn(" https://greasyfork.org/zh-CN/scripts/code-search?c="+ keyword,  "tab", { inBackground: false});
+			openLinkIn("http://www.google.com/search?q=site:userscripts-mirror.org+inurl:scripts+inurl:show+"+ keyword, "tab", {});
+			openLinkIn("http://www.webextender.net/scripts/search?q="+ keyword, "tab", {});
+		},
+		getFocusedWindow: function () {
+			var win = document.commandDispatcher.focusedWindow;
+			return (!win || win == window) ? content : win;
+		},
 	};
 
 	window.GreaemonkeyEnhancer.init();

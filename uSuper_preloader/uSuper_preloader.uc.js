@@ -10,7 +10,7 @@
 (function (){
 
 // super_preloader.db 存放的位置，相对路径，Chrome 目录下
-var DB_FILE_NAME = "Local\\uSuper_preloader.db.js";
+var DB_FILE_NAME = "uSuper_preloader\\uSuper_preloader.db.js";
 
 // 1 按钮, 2 菜单, 0 无
 // 按钮ID: uSuper_preloader-icon

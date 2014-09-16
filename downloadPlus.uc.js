@@ -208,11 +208,11 @@
             $("mode").addEventListener("select", function() {
                 if (dialog.dialogElement("save").selected) {
                     if (!locationText) {
-                        locationText = downLocation.parentNode.insertBefore(document.createElement("textbox"), downLocation);
-                        locationText.id = "locationtext";
-                        locationText.setAttribute("style", "margin-top:-2px;margin-bottom:-3px");
-                        locationText.value = downLocation.value;
-                    }
+						var _locationText = downLocation.parentNode.insertBefore(document.createElement("textbox"), downLocation);
+						_locationText.id = "locationtext";
+						_locationText.setAttribute("style", "margin-top:-2px;margin-bottom:-3px");
+						_locationText.value = downLocation.value;
+                   }
                     downLocation.hidden = true;
                     locationText.hidden = false;
                 } else {
@@ -370,3 +370,4 @@
     }
 
 })();
+ 

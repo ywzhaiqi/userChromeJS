@@ -13,7 +13,7 @@ var app = angular.module('userChromejsApp', [], function ($compileProvider) {
 });
 
 app.controller('mainCtroller', function($scope){
-    $scope.version = '1.7.2';
+    $scope.version = '1.7.3';
     $scope.activeTabIndex = 0;
     $scope.tabs = ['已安装脚本', '实用程序', '在线网址'];
 
@@ -26,7 +26,7 @@ app.controller('scriptListCtrl', function($scope){
     // 重新读取脚本
     mainWin.userChrome_js.getScripts();
 
-    // $scope.headings = ['名称', '版本', '作者', '说明', '主页', '最新更新', '编辑', '打开', '删除']
+    // 作者？
     $scope.headings = ['名称', '版本', '说明', '主页', '最新更新', '编辑', '打开', '删除']
     $scope.search = '';
 
@@ -48,7 +48,7 @@ app.controller('scriptListCtrl', function($scope){
     };
 
     $scope.toggleEnable = function(script) {
-        userChromejs.chgScriptStat(script.filename);
+        userChromejs.script.toggleScript(script)
     };
     $scope.editScript = function(script) {
         userChromejs.launchEditor(script);

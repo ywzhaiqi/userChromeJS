@@ -214,11 +214,36 @@ userChromejs.script = (function(){
         } catch (e) {}
     }
 
+    function toggleScript(script) {
+        // 重新获取 script，在 angular 里同一个脚本的 script.isRunning 值不相同
+        script = getById(script.id);
+
+        userChromejs.chgScriptStat(script.filename);
+        // 切换前的状态
+        var isEnable = userChrome_js.scriptDisable[script.filename];
+        if (isEnable) {
+            shutdown(script);
+        } else {
+            startup(script);
+        }
+    }
+
+    function getById(id) {
+        var list = userChromejs.manganer.list();
+        for (var i = list.length - 1; i >= 0; i--) {
+            if (list[i].id == id) {
+                return list[i];
+            }
+        }
+    }
+
     return {
         install: install,
         uninstall: uninstall,
         startup: startup,
-        shutdown: shutdown
+        shutdown: shutdown,
+        toggleScript: toggleScript,
+        getById: getById
     }
 })();
 

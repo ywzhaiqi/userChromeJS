@@ -6,7 +6,7 @@
   <Description about="urn:mozilla:install-manifest">
     <em:id>userChromeJS@mozdev.org</em:id>
     <em:name>userChromeJS Mix</em:name>
-    <em:version>1.7.2</em:version>
+    <em:version>1.7.3</em:version>
     <em:type>2</em:type>
     <em:unpack>true</em:unpack>
     <em:description></em:description>

@@ -38,12 +38,25 @@ function displayNoUpdateScript(script) {
     $('<li>').html(nano(tpl, info)).appendTo('#infos');
 }
 
+function displayNoVersionScript(script) {
+    var info = {
+        name: script.name,
+        homepageURL: script.homepageURL || script.downloadURL,
+        downloadURL: script.downloadURL
+    }
+    var tpl = '<a target="_blank" href="{homepageURL}">{name}</a> 脚本没有检测到版本号，可能需要手动判断。' +
+        '<a target="_blank" href="{downloadURL}">下载链接</a>';
+    $('<li>').html(nano(tpl, info)).appendTo('#infos');
+}
+
 function compareVersion() {
     var text = this.responseText;
     var oldScript = this.oldScript;
     var newScript = mainWin.userChrome_js.parseScript(text);
 
-    if (newScript.version && Services.vc.compare(newScript.version, oldScript.version) > 0) {
+    if (!oldScript.version && !newScript.version) {
+        displayNoVersionScript(oldScript);
+    } else if (newScript.version && Services.vc.compare(newScript.version, oldScript.version) > 0) {
         displayUpdateScript(newScript, oldScript);
     } else {
         displayNoUpdateScript(oldScript);
@@ -68,7 +81,7 @@ function init() {
         downScripts = scripts.filter((s) => s.canUpdate),
         downLength = downScripts.length;
 
-    $('#scripts-title').text(nano('共有 {downLength} 个脚本需要检查是否有更新信息，另有 {otherLength} 脚本没有下载链接', {
+    $('#scripts-title').text(nano('共有 {downLength} 个脚本正在更新，另有 {otherLength} 脚本没有下载链接', {
         downLength: downLength,
         otherLength: scripts.length - downLength
     }));

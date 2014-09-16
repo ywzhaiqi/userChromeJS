@@ -66,11 +66,11 @@
                         <td class="script_urls">
                             <span>
                                 <a ng-if="script.homepageURL" href="{{script.homepageURL}}" title="{{'homepageURL：\n\n' + script.homepageURL}}" target="blank">
-                                    <i class="iconfont">&#xe603</i>
-                                    <a ng-if="script.downloadURL" href="{{script.downloadURL}}" title="{{'downloadURL：\n\n' + script.downloadURL}}" target="blank">
-                                        <i class="iconfont">&#xe60c</i>
-                                        <a ng-if="script.reviewURL" href="{{script.reviewURL}}" title="{{'reviewURL：\n\n' + script.reviewURL}}" target="blank">
-                                            <i class="iconfont">&#xe60a</i>
+                                <i class="iconfont">&#xe603</i>
+                                <a ng-if="script.downloadURL" href="{{script.downloadURL}}" title="{{'downloadURL：\n\n' + script.downloadURL}}" target="blank">
+                                <i class="iconfont">&#xe60c</i>
+                                <a ng-if="script.reviewURL" href="{{script.reviewURL}}" title="{{'reviewURL：\n\n' + script.reviewURL}}" target="blank">
+                                    <i class="iconfont">&#xe60a</i>
                             </span>
                         </td>
                         <td>
@@ -96,7 +96,7 @@
                 <div class="section_content">
                     <a ng-if="util.url" href="{{util.url}}" target="_blank">{{util.url}}</a>
                     <input ng-if="util.input" class="button" name="utils" type="button" value="{{util.input.value}}" ng-click="util.input.onclick()"/>
-                    <input ng-if="util.input2" class="button" name="utils" type="button" value="{{util.input2.value}}" ng-click="util.input2.onclick"/>
+                    <input ng-if="util.input2" class="button" name="utils" type="button" value="{{util.input2.value}}" ng-click="util.input2.onclick()"/>
                 </div>
             </div>
         </div>
@@ -116,7 +116,7 @@
     </div>
 
     <script type="text/javascript" src="lib/jquery.js"></script>
-    <script type="text/javascript" src="lib/angular.min.js"></script>
+    <script type="text/javascript" src="lib/angular_custom.min.js"></script>
     <script type="text/javascript" src="lib/js_beautify.js"></script>
     <script type="text/javascript" src="script/index.js"></script>
 </body>

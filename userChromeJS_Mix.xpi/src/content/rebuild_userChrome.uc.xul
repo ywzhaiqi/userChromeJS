@@ -412,7 +412,7 @@
             flg = true;
             menuitem = document.createElement('menuitem');
             menuitem.setAttribute('label',script.filename);
-            menuitem.setAttribute('oncommand','userChromejs.chgScriptStat(this.script.filename);userChromejs.toggleScript(event);');
+            menuitem.setAttribute('oncommand','userChromejs.script.toggleScript(this.script);');
             menuitem.setAttribute('onclick','if(event.button != 0) {event.stopPropagation();event.preventDefault();userChromejs.clickScriptMenu(event);}');
             menuitem.setAttribute('type','checkbox');
             menuitem.setAttribute('autocheck','false');
@@ -604,18 +604,6 @@
       for(var i = 0,len = arr.length; i < len; i++)
         disable[arr[i]] = true;
       return disable;
-    },
-
-    toggleScript: function (event) {  // 无需重启的启用禁用脚本，仅 .uc.js，需要脚本支持
-      var script = event.target.script,
-          afilename = script.filename;
-      // 切换前的状态
-      var isEnable = userChrome_js.scriptDisable[afilename];
-      if (isEnable) {
-        userChromejs.script.shutdown(script);
-      } else {
-        userChromejs.script.startup(script);
-      }
     },
 
     //prefを読み込み

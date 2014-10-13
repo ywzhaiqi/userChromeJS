@@ -5,7 +5,7 @@
 // @description    简单音乐播放面板，支持多个站点，参考了百度随心听播放栏UC脚本。
 // @include        main
 // @charset        UTF-8
-// @version        2014.06.01
+// @version        2014.10.13
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/SimpleMusicPlayer
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/SimpleMusicPlayer/SimpleMusicPlayer.uc.js
 // @startup        window.SimpleMusicPlayer.init();
@@ -43,7 +43,7 @@
             play: ["播放", "a"],
             pause: ["暂停", "s"],
             stop: ["停止", "d"],
-            love: ["喜欢", "f"], 
+            love: ["喜欢", "f"],
             hate: ["讨厌", "g"],
             next: ["下一首", "e"],
             prev: ["上一首", "r"],
@@ -165,6 +165,19 @@
                 isPlaying: "return doc.querySelector('#g_player .ply').classList.contains('pas')",
             }
         },
+        {    
+            name: "网易云音乐FM",
+            url: "http://music.163.com/demo/fm",
+            iframeStyle: "width: 330px; height: 440px;",
+            css: ".m-top,.m-demofm h2{display:none!important}.m-demofm{margin-left:-330px!important;margin-right:-330px!important;margin-top:-40px!important;margin-bottom:-280px!important;}",
+            control: {
+                playPause: ".play-pause",
+                love: ".icon-like",
+                hate: ".icon-hate",
+                prev: ".icon-next",
+            }
+        },
+
         /*
             下面两个在 iframe 无法点击播放？
          */
@@ -681,7 +694,7 @@
             }
 
             this.icon = $('SimpleMusicPlayer');
-            
+
             // 右键菜单
             var menuPopup = $C("menupopup", {
                 id: "SimpleMusicPlayer-popup",
@@ -731,7 +744,7 @@
                 flex: "1",
                 transparent: "transparent",
                 style: Config.iframeStyle.mobile,
-                // context: "contentAreaContextMenu",
+                context: "contentAreaContextMenu",
             }));
 
             var mainPopupSet = $("mainPopupSet");
@@ -755,7 +768,7 @@
                 }
                 self.hideTimer = setTimeout(function(){
                     self.panel.hidePopup();
-                }, 500);   
+                }, 500);
             }, false);
 
             this.panel.addEventListener('mouseover', function(){
@@ -793,7 +806,7 @@
 
                 var url = event.target.getAttribute('url');
                 openLinkIn(url, 'tab', { inBackground: false });
-                
+
                 var popupMenu = event.target.parentNode;
                 popupMenu.hidePopup();
             }
@@ -865,7 +878,7 @@
                         addStyle(curSite.css, self.newWindow.document)
                     }, 500);
                 }
-                
+
                 this.curSiteIndex = siteIndex;
                 this.rebuildControls();
                 return;
@@ -889,7 +902,7 @@
             var onclick = curSite.openLinkInsided == true ?
                     "SimpleMusicPlayer.openLinkInIframe(event);" : "";
             iframe.setAttribute("onclick", onclick)
-            
+
             // 设置 UA
             if (curSite.changeUA) {
                 UAManager.change(Config.mobileUAString);
@@ -1020,7 +1033,7 @@
                 case doAction.startsWith('win'):
                     new Function("win", doAction).apply(unsafeWindow, [unsafeWindow, doc]);
                     break;
-                default:                    
+                default:
                     var button = doc.querySelector(doAction);
                     if (button) {
                         clickOrTap(button);

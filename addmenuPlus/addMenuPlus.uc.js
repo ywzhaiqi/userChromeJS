@@ -7,7 +7,7 @@
 // @license        MIT License
 // @compatibility  Firefox 21
 // @charset        UTF-8
-// @version        2014.9.12
+// @version        2014.10.13
 // @version        0.1.0
 // @startup        window.addMenu.init();
 // @shutdown       window.addMenu.destroy();
@@ -133,7 +133,8 @@ PageMenu, TabMenu, ToolMenu, AppMenu 関数を使って自由に追加できま�
 
 (function(css){
 
-var enableFileRefreshing = true;  // 监视配置文件的变化
+var useScraptchpad = true;  // 如果不存在编辑器，则使用代码片段速记器，否则设置编辑器路径
+var enableFileRefreshing = true;  // 打开右键菜单时，检查配置文件是否变化，可能会减慢速度
 
 let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
@@ -161,8 +162,12 @@ window.addMenu = {
 
         if (!aFile.exists()) {
             saveFile(aFile, '// 这是一个 addMenuPlus 配置文件\n' +
-                '// 请到 http://ywzhaiqi.github.io/addMenu_creator/ 生成配置文件\n\n');
-            alert('目前 addMenuPlus 的配置文件为空，请在打开的链接中生成配置并放入配置文件');
+                '// 请到 http://ywzhaiqi.github.io/addMenu_creator/ 生成配置文件' +
+                '\n\n' +
+                'tab({\n    label: "addMenuPlus 配置",\n    oncommand: "addMenu.edit(addMenu.FILE);"\n});');
+
+            alert('目前 addMenuPlus 的配置文件为空，请在打开的链接中生成配置并放入配置文件。\n通过右键标签打开配置文件。');
+
             var url = 'http://ywzhaiqi.github.io/addMenu_creator/';
             openUILinkIn(url, 'tab', false, null);
         }
@@ -942,15 +947,20 @@ window.addMenu = {
         } catch(e) {}
 
         if (!editor || !editor.exists()) {
-            alert("请先设置编辑器的路径!!!");
-            var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-            fp.init(window, "设置全局脚本编辑器", fp.modeOpen);
-            fp.appendFilter("执行文件", "*.exe");
-            if (fp.show() == fp.returnCancel || !fp.file)
+            if (useScraptchpad) {
+                this.openScriptInScratchpad(window, aFile);
                 return;
-            else {
-                editor = fp.file;
-                Services.prefs.setCharPref("view_source.editor.path", editor.path);
+            } else {
+                alert("请先设置编辑器的路径!!!");
+                var fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
+                fp.init(window, "设置全局脚本编辑器", fp.modeOpen);
+                fp.appendFilter("执行文件", "*.exe");
+                if (fp.show() == fp.returnCancel || !fp.file)
+                    return;
+                else {
+                    editor = fp.file;
+                    Services.prefs.setCharPref("view_source.editor.path", editor.path);
+                }
             }
         }
 
@@ -965,6 +975,23 @@ window.addMenu = {
             gViewSourceUtils.openInExternalEditor(aURL, aPageDescriptor, aDocument, aLineNumber, aCallBack);
         else
             gViewSourceUtils.openInExternalEditor(aURL, aPageDescriptor, aDocument, aCallBack);
+    },
+    openScriptInScratchpad: function(parentWindow, file) {
+        let spWin = (parentWindow.Scratchpad || Services.wm.getMostRecentWindow("navigator:browser").Scratchpad)
+            .openScratchpad();
+
+        spWin.addEventListener("load", function spWinLoaded() {
+            spWin.removeEventListener("load", spWinLoaded, false);
+
+            let Scratchpad = spWin.Scratchpad;
+            Scratchpad.setFilename(file.path);
+            Scratchpad.addObserver({
+                onReady: function() {
+                    Scratchpad.removeObserver(this);
+                    Scratchpad.importFromFile.call(Scratchpad, file);
+                }
+            });
+        }, false);
     },
     copy: function(aText) {
         Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper).copyString(aText);
@@ -981,7 +1008,6 @@ window.addMenu = {
         if (!str) return false; // couldn't get string obj
         str.data = textUnicode; // unicode string?
 
-
         // make a copy of the HTML
         var htmlstring = Components.classes["@mozilla.org/supports-string;1"].
         createInstance(Components.interfaces.nsISupportsString);
@@ -997,7 +1023,7 @@ window.addMenu = {
         trans.setTransferData("text/unicode", str, textUnicode.length * 2); // *2 because it's unicode
 
         trans.addDataFlavor("text/html");
-        trans.setTransferData("text/html", htmlstring, textHtml.length * 2); // *2 because it's unicode 
+        trans.setTransferData("text/html", htmlstring, textHtml.length * 2); // *2 because it's unicode
 
         // copy the transferable widget!
         var clipboard = Components.classes["@mozilla.org/widget/clipboard;1"].

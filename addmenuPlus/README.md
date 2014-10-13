@@ -71,7 +71,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     position/insertBefore/insertAfter: 位置的设置（3选1），position: 1,  insertBefore: "id",  insertAfter: "id"
     clone       false 为不克隆，直接改在原菜单上，还原必须重启生效或打开新窗口
 
-参考的链接：
+参考链接：
 
  - [oncommand - Mozilla | MDN](https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL/Attribute/oncommand)
  - [command - Mozilla | MDN](https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XUL/command)
@@ -117,6 +117,9 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     %t               标题
     %u               URL
 
+### 隐藏菜单右侧的 tab 提示
+
+    css('.addMenu .menu-iconic-accel[value="tab"] { display: none; }');
 
 示例
 -----

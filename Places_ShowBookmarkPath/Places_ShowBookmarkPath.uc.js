@@ -13,6 +13,7 @@ var UC_PlacesShowPath = {
         var menuitem = document.createElement('menuitem');
         menuitem.setAttribute('label', '在文件夹中显示');
         menuitem.setAttribute('title', '书签路径');
+        menuitem.setAttribute('selectiontype', 'single');
         // menuitem.setAttribute('oncommand', 'UC_PlacesShowPath.getFolders();');
 
         // 插入

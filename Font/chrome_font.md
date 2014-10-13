@@ -156,6 +156,9 @@ Chrome 的字体替换为雅黑
 @font-face { font-family: Lucida Console;    font-weight: bold; unicode-range: U+0-2E7F; src: local("Lucida Console"); }
 @font-face { font-family: Monaco;            font-weight: bold; unicode-range: U+0-2E7F; src: local("Monaco"); }
 @font-face { font-family: Palatino Linotype; font-weight: bold; unicode-range: U+0-2E7F; src: local("Palatino Linotype"); }
+
+/* 修正 Mactype 引起的斜体问题 */
+i { font-family: "Microsoft YaHei UI", "Microsoft Yahei"; }
 ```
 
 ### 测试
@@ -171,3 +174,7 @@ chrome 的规则（不考虑编码错误的问题）
 - `font-family: arial, '微软雅黑', sans-serif;` 会调用 Arial 和 雅黑。
 - `font-family: arial, '宋体', sans-serif;` 会调用 Arial 和 宋体。
 - `font-family: times, sans-serif;` 会调用 Times New Roman 和 雅黑。
+
+### 问题
+
+- 这类输入框还是宋体？ [发表帖子](http://bbs.qixing123.com/forum.php?mod=post&action=newthread&fid=38)

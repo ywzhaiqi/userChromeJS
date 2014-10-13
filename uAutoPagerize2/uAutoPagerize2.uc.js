@@ -6,10 +6,12 @@
 // @modified       ywzhaiqi
 // @compatibility  Firefox 17
 // @charset        UTF-8
-// @version        2014.9.8
+// @version        2014.10.13
 // version        0.3.0
+// @inspect        window.uAutoPagerize
 // @startup        window.uAutoPagerize.init();
 // @shutdown       window.uAutoPagerize.destroy();
+// @config         window.uAutoPagerize.edit(uAutoPagerize.file_CN, null, true);uAutoPagerize.edit(uAutoPagerize.file);
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/uAutoPagerize2
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/uAutoPagerize2/uAutoPagerize2.uc.js
 // @reviewURL      http://bbs.kafan.cn/thread-1555846-1-1.html
@@ -883,6 +885,9 @@ var ns = window.uAutoPagerize = {
             var arr = Array.slice(df.querySelectorAll('a[href]:not([href^="mailto:"]):not([href^="javascript:"]):not([href^="#"])'));
             arr.forEach(function (elem){
                 elem.setAttribute('target', '_blank');
+                if (elem.getAttribute('onclick') == 'atarget(this)') {  // 卡饭论坛的控制是否在新标签页打开
+                    elem.removeAttribute('onclick');
+                }
             });
         });
 
@@ -1868,17 +1873,21 @@ AutoPager.prototype = {
         // 修正延迟加载的图片
         var lazyImgSrc = (this.info.lazyImgSrc === undefined) ? prefs.lazyImgSrc : this.info.lazyImgSrc;
         if (lazyImgSrc) {
-            var imgAttrs = lazyImgSrc.split('|');
-            imgAttrs.forEach(function(attr){
-                attr = attr.trim();
-                [].forEach.call(fragment.querySelectorAll("img[" + attr + "]"), function(img){
-                    var newSrc = img.getAttribute(attr);
-                    if (newSrc && newSrc != img.src) {
-                        img.setAttribute("src", newSrc);
-                        img.removeAttribute(attr);
+            var lazyAttributes = lazyImgSrc.split('|');
+
+            var noLazyNode = function (node) {
+                lazyAttributes.some(function(attr) {
+                    if (!node.hasAttribute(attr)) return;
+
+                    var newSrc = node.getAttribute(attr);
+                    if (node.src != newSrc) {
+                        node.src = newSrc;
                     }
+                    return true;
                 });
-            });
+            };
+
+            [].map.call(fragment.querySelectorAll('img'), noLazyNode);
         }
 
         //收集所有图片

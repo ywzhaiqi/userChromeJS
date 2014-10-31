@@ -157,8 +157,8 @@ Chrome 的字体替换为雅黑
 @font-face { font-family: Monaco;            font-weight: bold; unicode-range: U+0-2E7F; src: local("Monaco"); }
 @font-face { font-family: Palatino Linotype; font-weight: bold; unicode-range: U+0-2E7F; src: local("Palatino Linotype"); }
 
-/* 修正 Mactype 引起的斜体问题 */
-i { font-family: "Microsoft YaHei UI", "Microsoft Yahei"; }
+/* 修正 Mactype 引起的可能存在的斜体问题 */
+/* em { font-family: "Microsoft YaHei UI", "Microsoft Yahei"; } */
 ```
 
 ### 测试

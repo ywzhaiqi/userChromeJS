@@ -120,6 +120,9 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
 ### 隐藏菜单右侧的 tab 提示
 
     css('.addMenu .menu-iconic-accel[value="tab"] { display: none; }');
+    css('.addMenu .menu-iconic-accel[value="tabshifted"] { display: none; }');
+    css('.addMenu .menu-iconic-accel[value="window"] { display: none; }');
+    css('.addMenu .menu-iconic-accel[value="current"] { display: none; }');
 
 示例
 -----

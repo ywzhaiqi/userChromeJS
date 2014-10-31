@@ -20,13 +20,13 @@ function Store() {
 }
 Store.prototype = {
     init: function() {
-        var fileArr = userChromejs.prefs.get('FILE', 'local\\userChromejs_mix.json').replace(/\\/g, '/').split('/');
-
+        var fileArr = userChromejs.prefs.get('FILE', 'local\\userChromejs_mix.json')
+                .replace(/\\/g, '/').split('/');
         this.file = FileUtils.getFile('UChrm', fileArr);
         if (!this.file.exists()) {
             userChromejs.utils.saveFile(this.file, '');
         }
-        
+
         this.reload();
     },
     reload: function() {
@@ -179,7 +179,7 @@ userChromejs.script = (function(){
                 return;
             }
         }
-    
+
         shutdown(script);
         script.file.remove(false);
         var success = userChromejs.manganer.remove(script);
@@ -210,8 +210,16 @@ userChromejs.script = (function(){
         if (!script.shutdown) return;
 
          try {
-            eval(script.shutdown); 
+            eval(script.shutdown);
         } catch (e) {}
+    }
+
+    function inspect(script) {
+        if (script.inspect) {
+            try {
+                eval('inspectObject(' + script.inspect + ')');
+            } catch (ex) {}
+        }
     }
 
     function toggleScript(script) {
@@ -242,6 +250,7 @@ userChromejs.script = (function(){
         uninstall: uninstall,
         startup: startup,
         shutdown: shutdown,
+        inspect: inspect,
         toggleScript: toggleScript,
         getById: getById
     }
@@ -459,7 +468,7 @@ userChromejs.save = {
         fp.init(window, "设置文件备份为", Ci.nsIFilePicker.modeSave);
         fp.appendFilter("JSON 文件", "*.json");
         fp.defaultString = 'uc 脚本设置备份.json';
-        if (fp.show() == fp.returnCancel || !fp.file ) { 
+        if (fp.show() == fp.returnCancel || !fp.file ) {
            return;
         } else {
             userChromejs.utils.saveFile(fp.file, data);
@@ -470,7 +479,7 @@ userChromejs.save = {
         fp.init(window, "设置文件", Ci.nsIFilePicker.modeOpen);
         fp.appendFilter("JSON 文件", "*.json");
         fp.defaultString = 'uc 脚本设置备份.json';
-        if (fp.show() == fp.returnCancel || !fp.file ) { 
+        if (fp.show() == fp.returnCancel || !fp.file ) {
            return;
         } else {
             var data = userChromejs.utils.loadText(fp.file);
@@ -538,5 +547,3 @@ function $C(name, attr) {
 }
 
 })()
-
-

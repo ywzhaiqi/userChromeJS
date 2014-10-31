@@ -22,13 +22,16 @@
 }
 a {
     text-decoration: none;
-    /*color: black;*/
 }
-/*
-body {
-  padding: 0;
-  margin: 0;
-}*/
+a:hover {
+	position:relative;
+	top:-1px;
+	left:-1px;
+	text-shadow:1px 1px 1px #ddd!important;
+}
+.head a {
+	color: #1B2B2B;
+}
 
 .icon16 {
     width: 1.3em;
@@ -37,6 +40,13 @@ body {
 .clickable {
     cursor: pointer;
 }
+.clickable:hover {
+	position: relative;
+	top: -1px;
+	left: -1px;
+	text-shadow: 1px 1px 1px #ddd;
+}
+
 .head_container {
     display: block;
     position: relative;
@@ -103,6 +113,17 @@ body {
     background-color: #fdfffc!important;
     background-image: url()!important;
     text-shadow: 1px 1px 3px #ccc!important;
+}
+.tv_tab:hover {
+	position:relative;
+	top:-1px;
+	left:-1px;
+	box-shadow:1px 1px 3px #888;
+}
+.tv_selected:hover {
+	top:0;
+	left:0;
+	box-shadow:none;
 }
 
 

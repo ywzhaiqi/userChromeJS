@@ -6,7 +6,7 @@
   <Description about="urn:mozilla:install-manifest">
     <em:id>userChromeJS@mozdev.org</em:id>
     <em:name>userChromeJS Mix</em:name>
-    <em:version>1.7.3</em:version>
+    <em:version>1.7.4</em:version>
     <em:type>2</em:type>
     <em:unpack>true</em:unpack>
     <em:description></em:description>
@@ -25,7 +25,7 @@
     <em:targetApplication><!-- Firefox -->
       <Description>
         <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
-        <em:minVersion>20</em:minVersion>
+        <em:minVersion>17</em:minVersion>
         <em:maxVersion>38.*</em:maxVersion>
       </Description>
     </em:targetApplication>

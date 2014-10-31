@@ -5,11 +5,11 @@
 			<RDF:Seq>
 				<RDF:li>
 					<RDF:Description>
-						<em:version>1.7.3</em:version>
+						<em:version>1.7.4</em:version>
 						<em:targetApplication>
 							<RDF:Description>
 								<em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
-								<em:minVersion>20</em:minVersion>
+								<em:minVersion>17</em:minVersion>
 								<em:maxVersion>33.*</em:maxVersion>
 								<em:updateLink>https://github.com/ywzhaiqi/userChromeJS/raw/master/userChromeJS_Mix.xpi/userChromeJS_Mix.xpi</em:updateLink>
 							</RDF:Description>

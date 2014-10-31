@@ -8,14 +8,14 @@
 
 <body ng-controller="mainCtroller">
     <div class="head_container">
-        <a href="https://github.com/ywzhaiqi/userChromeJS/tree/master/userChromeJS_Mix.xpi" target="_blank">
+        <a href="{{homepageURL}}" target="_blank">
             <div class="float margin4">
                 <img class="banner" src="chrome://userchromejs/skin/img/icon32.png">
             </div>
             <div class="float head margin4">
                 <div>新一代 uc 脚本管理器</div>
                 <div class="version">
-                    <a href="https://github.com/ywzhaiqi/userChromeJS/blob/master/userChromeJS_Mix.xpi/updateInfo.md">v{{version}}</a>
+                    <a href="{{updateInfoURL}}">v{{version}}</a>
                 </div>
             </div>
         </a>
@@ -29,7 +29,7 @@
         <div ng-controller="scriptListCtrl" ng-show="activeTabIndex == 0" class="tab-view">
             <div id="toolbararea">
                 搜索：
-                <input id="search" ng-model="search" place autofocus title="可直接搜索名称、作者、描述，还可以搜索 homepageURL、downloadURL、reviewURL、config 之类的关键词，无视大小写" />
+                <input id="search" ng-model="search" place autofocus title="{{searchTitle}}" />
                 <button class="toolbarlabel" id="optionlabel" title="打开设置窗口" ng-click="openSetting()">打开设置</button>
                 <button class="toolbarlabel" id="updatelabel" title="打开更新页面" ng-click="updateScripts()">更新全部脚本</button>
             </div>
@@ -51,25 +51,25 @@
                         <td>
                             <div class="clickable enabler" ng-class="{'enabler_enabled': script.isEnabled, 'enabler_disabled': !script.isEnabled }" ng-class="" title="已{{ script.isEnabled ? '启用' : '禁用' }}" ng-click="toggleEnable(script);">{{$index + 1}}</div>
                         </td>
-                        <td class="script_name clickable" >
-                            <span title="{{(script.name || script.filename) + '\n\n' + script.description}}">{{script.name || script.filename}}</span>
+                        <td class="script_name" title="{{(script.name || script.filename) + '\n\n' + script.description}}">
+                            <span class="clickable">{{script.name || script.filename}}</span>
                         </td>
-                        <td class="script_version">
-                            <span title="{{script.version}}">{{script.version}}</span>
+                        <td class="script_version" title="{{script.version}}">
+                            <span>{{script.version}}</span>
                         </td>
                         <td class="script_author" style="display:none">
                             <span title="{{script.author}}">{{script.author}}</span>
                         </td>
-                        <td class="script_desciption">
-                            <span title="{{script.description}}">{{script.description}}</span>
+                        <td class="script_desciption" title="{{script.description}}">
+                            <span>{{script.description}}</span>
                         </td>
                         <td class="script_urls">
                             <span>
-                                <a ng-if="script.homepageURL" href="{{script.homepageURL}}" title="{{'homepageURL：\n\n' + script.homepageURL}}" target="blank">
+                                <a ng-if="script.homepageURL" href="{{script.homepageURL}}" title="{{script.homepageURL}}" target="blank">
                                 <i class="iconfont">&#xe603</i>
-                                <a ng-if="script.downloadURL" href="{{script.downloadURL}}" title="{{'downloadURL：\n\n' + script.downloadURL}}" target="blank">
+                                <a ng-if="script.downloadURL" href="{{script.downloadURL}}" title="{{script.downloadURL}}" target="blank">
                                 <i class="iconfont">&#xe60c</i>
-                                <a ng-if="script.reviewURL" href="{{script.reviewURL}}" title="{{'reviewURL：\n\n' + script.reviewURL}}" target="blank">
+                                <a ng-if="script.reviewURL" href="{{script.reviewURL}}" title="{{script.reviewURL}}" target="blank">
                                     <i class="iconfont">&#xe60a</i>
                             </span>
                         </td>
@@ -79,6 +79,7 @@
                         <td>
                             <i class="iconfont clickable" title="{{script.file.path}}" ng-click="editScript(script)">&#xe60b</i>
                             <i ng-if="script.config" class="iconfont clickable" title="打开设置文件（config）" ng-click="openConfig(script)">&#xe60e</i>
+                            <i ng-if="script.canInspect" class="iconfont clickable" title="用 DOM Inspector 查看变量" ng-click="inspectScript(script)">I</i>
                         </td>
                         <td>
                             <i class="iconfont clickable" title="{{script.file.path}}" ng-click="openScript(script)">&#xe602</i>

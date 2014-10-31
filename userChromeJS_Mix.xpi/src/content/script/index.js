@@ -13,7 +13,10 @@ var app = angular.module('userChromejsApp', [], function ($compileProvider) {
 });
 
 app.controller('mainCtroller', function($scope){
-    $scope.version = '1.7.3';
+    $scope.version = '1.7.4';
+    $scope.homepageURL = 'https://github.com/ywzhaiqi/userChromeJS/tree/master/userChromeJS_Mix.xpi';
+    $scope.updateInfoURL = 'https://github.com/ywzhaiqi/userChromeJS/blob/master/userChromeJS_Mix.xpi/updateInfo.md';
+
     $scope.activeTabIndex = 0;
     $scope.tabs = ['已安装脚本', '实用程序', '在线网址'];
 
@@ -27,14 +30,16 @@ app.controller('scriptListCtrl', function($scope){
     mainWin.userChrome_js.getScripts();
 
     // 作者？
-    $scope.headings = ['名称', '版本', '说明', '主页', '最新更新', '编辑', '打开', '删除']
+    $scope.headings = ['名称', '版本', '说明', '主页', '最新更新', '编辑', '打开', '删除'];
     $scope.search = '';
+    $scope.searchTitle = '可直接搜索脚本的名称、文件名、作者、描述，\n' +
+            '还可搜索 enable/disable、homepageURL、downloadURL、reviewURL、restartless、config 之类的关键词，无视大小写';
 
     $scope.openSetting = function() {
-        mainWin.userChromejs.openPrefs();
+        userChromejs.openPrefs();
     };
     $scope.updateScripts = function() {
-        mainWin.userChromejs.openChromeURL('update.html');
+        userChromejs.openChromeURL('update.html');
     };
 
     // $scope.predicate = '-name';
@@ -48,7 +53,10 @@ app.controller('scriptListCtrl', function($scope){
     };
 
     $scope.toggleEnable = function(script) {
-        userChromejs.script.toggleScript(script)
+        userChromejs.script.toggleScript(script);
+    };
+    $scope.inspectScript = function(script) {
+        userChromejs.script.inspect(script);
     };
     $scope.editScript = function(script) {
         userChromejs.launchEditor(script);
@@ -93,8 +101,10 @@ app.controller('scriptListCtrl', function($scope){
                     return isMatched;
                 }
 
+                var enableName = script.isEnabled ? 'enable' : 'disable';
+
                 // 搜索名称
-                return ['homepageURL', 'downloadURL', 'reviewURL', 'restartless', 'config'].some(function(pop){
+                return [enableName, 'homepageURL', 'downloadURL', 'reviewURL', 'restartless', 'config'].some(function(pop){
                     if (script[pop]) {
                         return pop.toLowerCase().indexOf(term) !== -1;
                     }
@@ -115,7 +125,7 @@ app.controller('scriptListCtrl', function($scope){
 
 app.controller('scriptUtilCtrl', function($scope){
     $scope.utils = [
-        {name: '脚本设置', 
+        {name: '脚本设置',
             input: { value: '导出', onclick: function() { userChromejs.save.exportPrefs(js_beautify); } },
             input2: { value: '导入', onclick: function() { userChromejs.save.importPrefs(js_beautify); } },
         },
@@ -175,6 +185,7 @@ app.controller('scriptWebSitesCtrl', function($scope) {
         'bitbucket.org': 'img/bitbucket.png'
     };
 
+    // 根据 icons 设置图标
     angular.forEach(webSites, function(sites, type){
         sites.forEach(function(site){
             if (site[2]) return;

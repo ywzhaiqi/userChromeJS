@@ -37,7 +37,14 @@
 
 var EXPORTED_SYMBOLS = ["userChrome"];
 
-var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
+if (Cc == undefined)
+  var Cc = Components.classes;
+if (Ci == undefined)
+  var Ci = Components.interfaces;
+if (Cr == undefined)
+  var Cr = Components.results;
+if (Cu == undefined)
+  var Cu = Components.utils;
 
 /* ........ Utility functions ............................................... */
 

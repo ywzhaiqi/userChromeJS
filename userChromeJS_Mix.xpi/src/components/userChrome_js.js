@@ -36,7 +36,14 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
+if (Cc == undefined)
+  var Cc = Components.classes;
+if (Ci == undefined)
+  var Ci = Components.interfaces;
+if (Cr == undefined)
+  var Cr = Components.results;
+if (Cu == undefined)
+  var Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 

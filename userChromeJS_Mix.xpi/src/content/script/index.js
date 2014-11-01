@@ -13,7 +13,7 @@ var app = angular.module('userChromejsApp', [], function ($compileProvider) {
 });
 
 app.controller('mainCtroller', function($scope){
-    $scope.version = '1.7.4';
+    $scope.version = '1.8.0';
     $scope.homepageURL = 'https://github.com/ywzhaiqi/userChromeJS/tree/master/userChromeJS_Mix.xpi';
     $scope.updateInfoURL = 'https://github.com/ywzhaiqi/userChromeJS/blob/master/userChromeJS_Mix.xpi/updateInfo.md';
 

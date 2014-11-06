@@ -70,6 +70,7 @@ addMenuPlus 是一个非常强大的定制菜单的 uc 脚本。通过配置文�
     id          标签的ID（我新增的，修改原菜单用）
     position/insertBefore/insertAfter: 位置的设置（3选1），position: 1,  insertBefore: "id",  insertAfter: "id"
     clone       false 为不克隆，直接改在原菜单上，还原必须重启生效或打开新窗口
+    onshowing   新增的，当页面右键显示时会执行该函数，可用于动态更改标签标题，详见下面的示例。
 
 参考链接：
 
@@ -881,6 +882,19 @@ pagesub([
         onshowing: function(menuitem) {
             var isHidden = !(content.location.host == 'bbs.kafan.cn');
             this.hidden = isHidden;
+        },
+    })
+
+示例：动态显示标签标题，详见 [怎么样用addmenuplus实现一个这样的菜单项](http://bbs.kafan.cn/forum.php?mod=viewthread&tid=1784671)
+
+    page({
+        label: '复制: ...',
+        text: '%SEL%',
+        onshowing: function(menuitem) {
+            var sel = getBrowserSelection(16);
+            if (sel && sel.length > 15)
+                sel = sel.substr(0,15) + "...";
+            this.label = '复制: ' +  sel;
         },
     })
 

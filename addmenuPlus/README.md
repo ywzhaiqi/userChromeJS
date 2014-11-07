@@ -898,6 +898,28 @@ pagesub([
         },
     })
 
+示例：动态显示标签标题（二级菜单）。
+
+    var menu = PageMenu({
+        label: '搜索',
+        onshowing: function(menu) {
+            var sel = getBrowserSelection(16);
+            if (sel && sel.length > 15)
+                sel = sel.substr(0,15) + "...";
+            this.label = '搜索: ' +  sel;
+        }
+    });
+    menu([
+        {
+            label: '百度',
+            url: "http://www.baidu.com/s?ie=UTF-8&wd=%SEL%",
+        },
+        {
+            label: 'Bing',
+            url: "http://www.bing.com/search?q=%SEL%",
+        },
+    ]);
+
 ### 特殊的示例
 
 示例："字符编码" 移动到 "web开发者" 的位置

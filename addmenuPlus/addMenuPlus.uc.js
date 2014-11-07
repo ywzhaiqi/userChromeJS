@@ -7,7 +7,7 @@
 // @license        MIT License
 // @compatibility  Firefox 21
 // @charset        UTF-8
-// @version        2014.10.13
+// @version        2014.11.07
 // @version        0.1.0
 // @startup        window.addMenu.init();
 // @shutdown       window.addMenu.destroy();
@@ -504,6 +504,16 @@ window.addMenu = {
 		var popup = menu.appendChild(document.createElement("menupopup"));
 		for (let [key, val] in Iterator(menuObj)) {
 			if (key === "_items") continue;
+
+            if (key === 'onshowing') {
+                this.customShowings.push({
+                    item: menu,
+                    fnSource: menuObj.onshowing.toSource()
+                });
+                delete menuObj.onshowing;
+                continue;
+            }
+
 			if (typeof val == "function")
 				menuObj[key] = val = "(" + val.toSource() + ").call(this, event);"
 			menu.setAttribute(key, val);

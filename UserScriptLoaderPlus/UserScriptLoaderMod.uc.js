@@ -3,9 +3,14 @@
 // @description    Greasemonkey 模拟器。新增 GM_saveFile、GM_download 等 API，个人用于特殊用途
 // @namespace      http://d.hatena.ne.jp/Griever/
 // @include        main
-// @compatibility  Firefox 32
+// @compatibility  Firefox 35
 // @license        MIT License
-// @version        0.1.8.3
+// @versin         2015.04.12 support @grant none
+// @version        0.1.8.4
+// @note           0.1.8.4 add persistFlags for PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION to fix @require save data
+// @note           0.1.8.4 Firefox 35 用の修正
+// @note           0.1.8.4 エディタで Scratchpad を使えるようにした
+// @note           0.1.8.4 GM_notification を独自実装
 // @note           0.1.8.3 Firefox 32 で GM_xmlhttpRequest が動かないのを修正
 // @note           0.1.8.3 内臓の console を利用するようにした
 // @note           0.1.8.3 obsever を使わないようにした
@@ -44,6 +49,8 @@
 
 (function (css) {
 
+const GM_notification_SOUND = "file:///C:/WINDOWS/Media/Alarm03.wav";
+
 const GLOBAL_EXCLUDES = [
 	"chrome:*"
 	,"jar:*"
@@ -53,8 +60,6 @@ const GLOBAL_EXCLUDES = [
 
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
-Components.utils.import("resource://gre/modules/NetUtil.jsm");
-Components.utils.import("resource://gre/modules/FileUtils.jsm");
 
 if (window.USL) {
 	window.USL.destroy();
@@ -101,13 +106,6 @@ USL.PrefManager.prototype = {
 		} catch(e) { }
 	},
 	listValues: function() this.pref.getChildList("", {}),
-	//dannylee
-	hasValue: function(name){
-	  if (this.pref.prefHasUserValue(name))
-		return true;
-	  else
-		return false;
-	}
 };
 
 USL.ScriptEntry = function (aFile) {
@@ -134,6 +132,12 @@ USL.ScriptEntry.prototype = {
 			this.delay = isNaN(delay) ? 0 : Math.max(delay, 0);
 		} else if (this.run_at === "document-idle") {
 			this.delay = 0;
+		}
+
+		// support @grant none
+		if ('grant' in this.metadata) {
+			if (this.metadata['grant'][0] == 'none')
+				this.grantNone = true;
 		}
 
 		if (this.metadata.match) {
@@ -188,7 +192,7 @@ USL.ScriptEntry.prototype = {
 	createRegExp: function(urlarray, isMatch) {
 		let regstr = urlarray.map(function(url) {
 			if (!isMatch && '/' == url.substr(0, 1) && '/' == url.substr(-1, 1)) {
-			return url.substring(1, url.length - 1);
+				return url.substring(1, url.length - 1);
 			}
 			url = url.replace(/([()[\]{}|+.,^$?\\])/g, "\\$1");
 			if (isMatch) {
@@ -290,7 +294,10 @@ USL.API = function(script, sandbox, win, doc) {
 	var self = this;
 
 	this.GM_log = function() {
-		Services.console.logStringMessage("["+ script.name +"] " + Array.slice(arguments).join(", "));
+		var arr = Array.slice(arguments);
+		arr.unshift('[' + script.name + ']');
+		win.console.log.apply(win.console, arr);
+		// Services.console.logStringMessage("["+ script.name +"] " + Array.slice(arguments).join(", "));
 	};
 
 	this.GM_xmlhttpRequest = function(obj) {
@@ -411,23 +418,46 @@ USL.API = function(script, sandbox, win, doc) {
 		return script.metadata[key] ? script.metadata[key].slice() : void 0;
 	};
 
-	this.GM_notification = function(aMsg, aTitle, aIconURL, aCallback) {
-		if (!USL.ALLOW_NOTIFY) return;
-		var callback = null;
-		if (aCallback) {
-			callback = {
-				observe: function(subject, topic, data) {
-					if ("alertclickcallback" != topic)
-						return;
-					aCallback.call(null);
-				}
-			};
+	this.GM_notification = function(msg, title, icon, callback, playSound) {
+		if (!icon) {
+			icon = 'data:image/png;base64,\
+iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACOElEQVQ4ja3Q3UtTcRgH8N8f4K11\
+FaRrVGumlTXndPYiyQqkCyPoLroOCbyJSCGJUhOGUSnShVqtFpYlW/lCKiPmy5zinObZdJtn29nZ\
+cW7nnB39TapvF+WdI4W+95/n+zwPIf8zwnRFt+AyIj5VDn7CAN5ZiphDD25Mh+jIaUSGixEePAnW\
+XhTaeYCr/OdWogMZoR2Z2DPQyBNsrpqxEWiF4muG4LwK9nOhvCOOT5Y1iks3sSV0IP29CrLnAkS3\
+EalxPRR/CxJTN8Dai35kXZ+fNGQyfBs2Q7chz1dCcp9FasIAxd+E5GwtwoNl8H3QqnZuHy+tSc5f\
+RybejvTCRUiz55CaKoPsvQV5sR7ciAnBvoJLWdtjTn1aCTWARlshz52HOG1E0lkCxd+C+LdrCH7S\
+1mXHjhLd2nQ1MvxzyF4TxJlKpCYrsD6mQ3rpEUL92l+BPg1d6T1Kl98dpr43asq8OkSZ7nyeEEII\
+59DzElMHGm3DJmvGRvAxFH8TFF8T0osPIXkaIc7UI+W6i+TEHbD9VWC68hRPx4E//+BGz6QiX4tp\
+eOgUZQdO0FV7IQ3ZCqi8+ACC7TjWhkwQ3Q2IfrmCZcsxMF0HX2Q9ZzuBj9rRdVctpLn7EN33ELaZ\
+wPSoRE/nvv3/xIQQEnivgeRpBDdcg5W3BWB68s27gn/xDDdUjejAZfheqxOezrzdtRJCiNeamxPo\
+1WLFqgHzUtW8a7idZesRr9+i5r1Pc3P2jAkhhLGodXs1vwEkf3FKAtNVEwAAAABJRU5ErkJggg==';
 		}
 
-		var alertsService = Components.classes["@mozilla.org/alerts-service;1"]
-			.getService(Components.interfaces.nsIAlertsService);
-		alertsService.showAlertNotification(
-			aIconURL || "chrome://global/skin/icons/information-32.png", aTitle || "UserScriptLoader-notification", aMsg + "", !!callback, "", callback);
+		let aBrowser = win.QueryInterface(Ci.nsIDOMWindow)
+			.QueryInterface(Ci.nsIInterfaceRequestor)
+			.getInterface(Ci.nsIWebNavigation)
+			.QueryInterface(Ci.nsIDocShell).chromeEventHandler;
+
+		let buttons = [{
+			label: msg,
+			accessKey: 'U',
+			callback: function (aNotification, aButton) {
+				try {
+					if (callback)
+						callback.call(win);
+					if (playSound)
+						playSoundFile(GM_notification_SOUND);
+				} catch (e) {
+					self.GM_log(new Error(e));
+				}
+			}.bind(this)
+		}];
+		let notificationBox = gBrowser.getNotificationBox(aBrowser);
+		let notification = notificationBox.appendNotification(
+			title, 'USL_notification', icon,
+			notificationBox.PRIORITY_INFO_MEDIUM,
+			buttons);
 	};
 };
 USL.API.prototype = {
@@ -452,11 +482,16 @@ USL.API.prototype = {
 		return Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator).generateUUID().toString();
 	},
 
+
+	// 以下我新增的
 	/**
 	 * filename 支持 text/a.html
 	 */
-	// https://developer.mozilla.org/en-US/Add-ons/Code_snippets/File_I_O
 	GM_saveFile: function(data, filename, dir) {
+		if (typeof filename != 'string') {
+			console.log('GM_saveFile filename is not string');
+		}
+
 		var file = getDownloadFile(filename, dir);
 
 		var converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
@@ -473,7 +508,7 @@ USL.API.prototype = {
 			// Data has been written to the file.
 		});
 	},
-	GM_saveSync: function(data, filename, dir) {
+	GM_saveFileSync: function(data, filename, dir) {
 		var file = getDownloadFile(filename, dir);
 
 		var converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
@@ -491,16 +526,6 @@ USL.API.prototype = {
 	 * GM_download(url, name)  GM_download(details)
 	 */
 	GM_download: function(url, name, dir) {
-		var defaultDetails = {
-			url: null,
-			name: getFileBaseName(url),
-			dir: null,
-			headers: null,
-			saveAs: false,
-			onload: function() {},
-			onerror: function(download) {}
-		};
-
 		var details;
 		if (arguments.length == 1) {
 			details = arguments[0];
@@ -512,11 +537,24 @@ USL.API.prototype = {
 			};
 		}
 
-		Object.keys(defaultDetails).forEach(function(key) {
-			if (!(key in details)) details[key] = defaultDetails[key];
-		});
+		if (!details.name) {
+			try {
+				details.name = getFileBaseName(url);
+			} catch(ex) {}
+		}
+		details.onload || (details.onload = function() {});
 
-		var uri = NetUtil.newURI(url);
+		var uri;
+		try {
+			uri = NetUtil.newURI(url);
+		} catch(ex) {
+			USL.error(ex)
+			return;
+		}
+
+		if (typeof details.name != 'string') {
+			console.log('GM_download filename is not string');
+		}
 		var targetFile = getDownloadFile(details.name, details.dir);
 
 		var persist = Cc["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"]
@@ -527,12 +565,12 @@ USL.API.prototype = {
 			onProgressChange: function(progress, request, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress) {},
 			onStateChange: function(progress, request, flags, status) {
 				if ((flags & Ci.nsIWebProgressListener.STATE_STOP) && status == 0) {
-					details.onload();
+					details.onload(targetFile.path);
 				}
 			}
 		};
 
-		persist.saveURI(uri, null, null, null, "", targetFile, null);
+		persist.saveURI(uri, null, uri, Ci.nsIHttpChannel.REFERRER_POLICY_NO_REFERRER_WHEN_DOWNGRADE, null, null, targetFile, null);
 	},
 	GM_run: function(path, args) {
 		var file    = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
@@ -552,13 +590,54 @@ USL.API.prototype = {
 			USL.log(ex);
 		}
 	},
+
+	GM_openConsole: function() {
+		gDevToolsBrowser.selectToolCommand(gBrowser, "webconsole");
+	},
 };
 
+function safeFileName(title) {
+	return title.replace(/:/g, '：').replace(/[\\\|:\*"\?<>]/g, "_");
+}
+
+// https://developer.mozilla.org/en-US/Add-ons/Code_snippets/File_I_O
 function getDownloadFile(filename, dir) {
+	if (!getDownloadFile.isSeted) {
+		// 注册一个自定义路径供下面调用
+		Cc["@mozilla.org/file/directory_service;1"]
+				.getService(Ci.nsIProperties)
+				.set("Dwnld", USL.DOWNLOAD_FOLDER);
+		getDownloadFile.isSeted = true;
+	}
+
 	var pathArr = dir ? dir.split(/\/|\\/) : [];
 	pathArr.push(filename);
-	var file = FileUtils.getFile("DfltDwnld", pathArr, true);
+	// safe filename
+	pathArr = pathArr.map(safeFileName);
+
+	var file = FileUtils.getFile("Dwnld", pathArr, true);
 	return file;
+}
+
+function playSoundFile(aFilePath) {
+  var ios = Components.classes["@mozilla.org/network/io-service;1"]
+			.createInstance(Components.interfaces["nsIIOService"]);
+  try {
+	var uri = ios.newURI(aFilePath, "UTF-8", null);
+  } catch(e) {
+	return;
+  }
+  var file = uri.QueryInterface(Components.interfaces.nsIFileURL).file;
+  if (!file.exists())
+	return;
+
+  play(uri);
+}
+
+function play(aUri) {
+  var sound = Components.classes["@mozilla.org/sound;1"]
+			.createInstance(Components.interfaces["nsISound"]);
+  sound.play(aUri);
 }
 
 USL.database = { pref: {}, resource: {} };
@@ -622,17 +701,29 @@ USL.__defineGetter__("GLOBAL_EXCLUDES_REGEXP", function(){
 	return this.GLOBAL_EXCLUDES_REGEXP = regexp;
 });
 
+USL.__defineGetter__("DOWNLOAD_FOLDER", function(){
+	var prefs = Services.prefs.getBranch("browser.download.");
+	try {
+		var aFolder = prefs.getComplexValue("dir", Ci.nsILocalFile);
+	} catch(ex) {
+		var aFolder = FileUtils.getFile("DfltDwnld", []);
+	}
+	delete this.DOWNLOAD_FOLDER;
+	return this.DOWNLOAD_FOLDER = aFolder;
+});
+
+
 var DISABLED = true;
 USL.__defineGetter__("disabled", function() DISABLED);
 USL.__defineSetter__("disabled", function(bool){
 	if (bool) {
 		this.icon.setAttribute("state", "disable");
 		this.icon.setAttribute("tooltiptext", "UserScriptLoader已禁用");
-		gBrowser.mPanelContainer.removeEventListener("DOMWindowCreated", this, false);
+		// gBrowser.mPanelContainer.removeEventListener("DOMWindowCreated", this, false);
 	} else {
 		this.icon.setAttribute("state", "enable");
 		this.icon.setAttribute("tooltiptext", "UserScriptLoader已启用");
-		gBrowser.mPanelContainer.addEventListener("DOMWindowCreated", this, false);
+		// gBrowser.mPanelContainer.addEventListener("DOMWindowCreated", this, false);
 	}
 	return DISABLED = bool;
 });
@@ -655,20 +746,21 @@ USL.__defineSetter__("HIDE_EXCLUDE", function(bool){
 	return bool;
 });
 
-var ALLOW_NOTIFY = USL.pref.getValue('ALLOW_NOTIFY', true);
-USL.__defineGetter__("ALLOW_NOTIFY", function() ALLOW_NOTIFY);
-USL.__defineSetter__("ALLOW_NOTIFY", function(bool){
-	ALLOW_NOTIFY = !!bool;
-	let elem = $("UserScriptLoader-allow-notify");
-	if (elem) elem.setAttribute("checked", ALLOW_NOTIFY);
-	return bool;
-});
 var CACHE_SCRIPT = USL.pref.getValue('CACHE_SCRIPT', true);
 USL.__defineGetter__("CACHE_SCRIPT", function() CACHE_SCRIPT);
 USL.__defineSetter__("CACHE_SCRIPT", function(bool){
 	CACHE_SCRIPT = !!bool;
 	let elem = $("UserScriptLoader-cache-script");
 	if (elem) elem.setAttribute("checked", CACHE_SCRIPT);
+	return bool;
+});
+
+var MY_EDITOR = USL.pref.getValue('MY_EDITOR', true);
+USL.__defineGetter__("MY_EDITOR", function() MY_EDITOR);
+USL.__defineSetter__("MY_EDITOR", function(bool){
+	MY_EDITOR = !!bool;
+	let elem = $("UserScriptLoader-use-myeditor");
+	if (elem) elem.setAttribute("checked", MY_EDITOR);
 	return bool;
 });
 
@@ -698,55 +790,55 @@ USL.init = function(){
 
 	var xml = '\
 		<menupopup id="UserScriptLoader-popup" \
-				   onpopupshowing="USL.onPopupShowing(event);"\
-				   onpopuphidden="USL.onPopupHidden(event);"\
-				   onclick="USL.menuClick(event);">\
+		           onpopupshowing="USL.onPopupShowing(event);"\
+		           onpopuphidden="USL.onPopupHidden(event);"\
+		           onclick="USL.menuClick(event);">\
 			<menuseparator id="UserScriptLoader-menuseparator"/>\
 			<menu label="User Script Command"\
-				  id="UserScriptLoader-register-menu"\
-				  accesskey="C">\
+			      id="UserScriptLoader-register-menu"\
+			      accesskey="C">\
 				<menupopup id="UserScriptLoader-register-popup"/>\
 			</menu>\
 			<menuitem label="Save Script"\
-					  id="UserScriptLoader-saveMenu"\
-					  accesskey="S"\
-					  oncommand="USL.saveScript();"/>\
+			          id="UserScriptLoader-saveMenu"\
+			          accesskey="S"\
+			          oncommand="USL.saveScript();"/>\
 			<menu label="Menu" id="UserScriptLoader-submenu">\
 				<menupopup id="UserScriptLoader-submenu-popup">\
 					<menuitem label="delete pref storage"\
-							  oncommand="USL.deleteStorage(\'pref\');" />\
+					          oncommand="USL.deleteStorage(\'pref\');" />\
 					<menuseparator/>\
 					<menuitem label="Hide exclude script"\
-							  id="UserScriptLoader-hide-exclude"\
-							  accesskey="N"\
-							  type="checkbox"\
-							  checked="' + USL.HIDE_EXCLUDE + '"\
-							  oncommand="USL.HIDE_EXCLUDE = !USL.HIDE_EXCLUDE;" />\
+					          id="UserScriptLoader-hide-exclude"\
+					          accesskey="N"\
+					          type="checkbox"\
+					          checked="' + USL.HIDE_EXCLUDE + '"\
+					          oncommand="USL.HIDE_EXCLUDE = !USL.HIDE_EXCLUDE;" />\
 					<menuitem label="Open Scripts Folder"\
-							  id="UserScriptLoader-openFolderMenu"\
-							  accesskey="O"\
-							  oncommand="USL.openFolder();" />\
+					          id="UserScriptLoader-openFolderMenu"\
+					          accesskey="O"\
+					          oncommand="USL.openFolder();" />\
 					<menuitem label="Rebuild"\
-							  accesskey="R"\
-							  oncommand="USL.rebuild();" />\
+					          accesskey="R"\
+					          oncommand="USL.rebuild();" />\
 					<menuitem label="Cache Script"\
-							  id="UserScriptLoader-cache-script"\
-							  accesskey="C"\
-							  type="checkbox"\
-							  checked="' + USL.CACHE_SCRIPT + '"\
-							  oncommand="USL.CACHE_SCRIPT = !USL.CACHE_SCRIPT;" />\
+					          id="UserScriptLoader-cache-script"\
+					          accesskey="C"\
+					          type="checkbox"\
+					          checked="' + USL.CACHE_SCRIPT + '"\
+					          oncommand="USL.CACHE_SCRIPT = !USL.CACHE_SCRIPT;" />\
+					<menuitem label="Use My Editor"\
+					          id="UserScriptLoader-use-myeditor"\
+					          accesskey="E"\
+					          type="checkbox"\
+					          checked="' + USL.MY_EDITOR + '"\
+					          oncommand="USL.MY_EDITOR = !USL.MY_EDITOR;" />\
 					<menuitem label="DEBUG MODE"\
-							  id="UserScriptLoader-debug-mode"\
-							  accesskey="D"\
-							  type="checkbox"\
-							  checked="' + USL.DEBUG + '"\
-							  oncommand="USL.DEBUG = !USL.DEBUG;" />\
-					<menuitem label="Allow Notifify"\
-							  id="UserScriptLoader-allow-notify"\
-							  type="checkbox"\
-							  accesskey="Y"\
-							  checked="' + USL.ALLOW_NOTIFY + '"\
-							  oncommand="USL.ALLOW_NOTIFY = !USL.ALLOW_NOTIFY;" />\
+					          id="UserScriptLoader-debug-mode"\
+					          accesskey="D"\
+					          type="checkbox"\
+					          checked="' + USL.DEBUG + '"\
+					          oncommand="USL.DEBUG = !USL.DEBUG;" />\
 				</menupopup>\
 			</menu>\
 		</menupopup>\
@@ -764,23 +856,28 @@ USL.init = function(){
 
 	USL.rebuild();
 	USL.disabled = USL.pref.getValue('disabled', false);
+	Array.from(gBrowser.browsers, browser => {
+		browser.addEventListener('DOMWindowCreated', USL, false);
+	});
+	gBrowser.mTabContainer.addEventListener('TabOpen', USL, false);
+	gBrowser.mTabContainer.addEventListener('TabClose', USL, false);
 	window.addEventListener('unload', USL, false);
 	USL.initialized = true;
 };
 
 USL.uninit = function () {
+	Array.from(gBrowser.browsers, browser => {
+		browser.removeEventListener('DOMWindowCreated', USL, false);
+	});
+	gBrowser.mTabContainer.removeEventListener('TabOpen', USL, false);
+	gBrowser.mTabContainer.removeEventListener('TabClose', USL, false);
 	window.removeEventListener('unload', USL, false);
-	USL.saveSetting();
 };
 
 USL.destroy = function () {
-	window.removeEventListener('unload', USL, false);
+	USL.saveSetting();
+	USL.uninit();
 
-	let disabledScripts = [x.leafName for each(x in USL.readScripts) if (x.disabled)];
-	USL.pref.setValue('script.disabled', disabledScripts.join('|'));
-	USL.pref.setValue('disabled', USL.disabled);
-	USL.pref.setValue('HIDE_EXCLUDE', USL.HIDE_EXCLUDE);
-	USL.pref.setValue('ALLOW_NOTIFY', USL.ALLOW_NOTIFY);
 	var e = document.getElementById("UserScriptLoader-icon");
 	if (e) e.parentNode.removeChild(e);
 	var e = document.getElementById("UserScriptLoader-popup");
@@ -797,10 +894,17 @@ USL.handleEvent = function (event) {
 			win.USL_run = [];
 			if (USL.disabled) return;
 			if (USL.readScripts.length === 0) return;
-			this.injectScripts(win);
+			USL.injectScripts(win);
+			break;
+		case 'TabOpen':
+			event.target.linkedBrowser.addEventListener('DOMWindowCreated', USL, false);
+			break;
+		case 'TabClose':
+			event.target.linkedBrowser.removeEventListener('DOMWindowCreated', USL, false);
 			break;
 		case "unload":
-			this.uninit();
+			USL.saveSetting();
+			USL.uninit();
 			break;
 	}
 };
@@ -844,8 +948,8 @@ USL.rebuild = function() {
 
 	function loadScript(aFile) {
 		var script,
-			leafName = aFile.leafName,
-			lastModifiedTime = aFile.lastModifiedTime;
+		    leafName = aFile.leafName,
+		    lastModifiedTime = aFile.lastModifiedTime;
 		USL.readScripts.some(function(s, i){
 			if (s.leafName === leafName) {
 				if (s.lastModifiedTime !== lastModifiedTime && USL.initialized) {
@@ -909,7 +1013,7 @@ USL.saveScript = function() {
 			var loadContext = win.QueryInterface(Ci.nsIInterfaceRequestor)
 				.getInterface(Ci.nsIWebNavigation)
 				.QueryInterface(Ci.nsILoadContext);
-			wbp.saveURI(uri, null, uri, null, null, fp.file, loadContext);
+			wbp.saveURI(uri, null, uri, null, null, null, fp.file, loadContext);
 		}
 	}
 	fp.open(callbackObj);
@@ -1004,23 +1108,50 @@ USL.menuClick = function(event){
 	if (event.button == 1) {
 		menuitem.doCommand();
 		menuitem.setAttribute('checked', menuitem.getAttribute('checked') == 'true'? 'false' : 'true');
-	} else if (event.button == 2 && USL.EDITOR && menuitem.script) {
-		USL.edit(menuitem.script.path);
+	} else if (event.button == 2 && menuitem.script) {
+		USL.edit(menuitem.script);
 	}
 };
 
-USL.edit = function(path) {
-	if (!USL.EDITOR) return;
+USL.edit = function(script) {
+	if (!USL.MY_EDITOR || !USL.EDITOR)
+		return USL.editByScratchpad(script);
 	try {
 		var UI = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
+		// UI.charset = window.navigator.platform.toLowerCase().indexOf("win") >= 0? "Shift_JIS": "UTF-8";
 		UI.charset = window.navigator.platform.toLowerCase().indexOf("win") >= 0? "GB2312": "UTF-8";
-		path = UI.ConvertFromUnicode(path);
+		var path = UI.ConvertFromUnicode(script.path);
 		var app = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
 		app.initWithPath(USL.EDITOR);
 		var process = Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
 		process.init(app);
 		process.run(false, [path], 1);
 	} catch (e) {}
+};
+
+USL.editByScratchpad = function(script) {
+	var win = Scratchpad.ScratchpadManager.openScratchpad({
+		filename: script.path,
+		text: USL.loadText(script.file),
+		saved: true,
+	});
+
+	var onload = (event) => {
+		win.removeEventListener('load', onload, false);
+		['sp-cmd-newWindow'
+		,'sp-cmd-openFile'
+		,'sp-cmd-clearRecentFiles'
+		,'sp-cmd-run'
+		,'sp-cmd-inspect'
+		,'sp-cmd-display'
+		,'sp-cmd-reloadAndRun'
+		].forEach(id => {
+			var elem = win.document.getElementById(id);
+			if (!elem) return;
+			elem.setAttribute('disabled', 'true');
+		});
+	};
+	win.addEventListener('load', onload, false);
 };
 
 USL.iconClick = function(event){
@@ -1048,9 +1179,9 @@ USL.injectScripts = function(safeWindow, rsflag) {
 	// document-start でフレームを開いた際にちょっとおかしいので…
 	if (!rsflag && locationHref == ""/* && safeWindow.frameElement*/)
 		return USL.retryInject(safeWindow);
-/*	// target="_blank" で about:blank 状態で開かれるので…
+	// target="_blank" で about:blank 状態で開かれるので…
 	if (!rsflag && locationHref == 'about:blank')
-		return USL.retryInject(safeWindow);*/
+		return USL.retryInject(safeWindow);
 
 	if (USL.GLOBAL_EXCLUDES_REGEXP.test(locationHref)) return;
 
@@ -1064,8 +1195,8 @@ USL.injectScripts = function(safeWindow, rsflag) {
 		//if (!/^(?:https?|data|file|chrome):/.test(locationHref)) return;
 		if (!script.isURLMatching(locationHref)) return false;
 		if ("noframes" in script &&
-			safeWindow.frameElement &&
-			!(safeWindow.frameElement instanceof HTMLFrameElement))
+		    safeWindow.frameElement &&
+		    !(safeWindow.frameElement instanceof HTMLFrameElement))
 			return false;
 
 		if (script.run_at === "document-start") {
@@ -1076,19 +1207,33 @@ USL.injectScripts = function(safeWindow, rsflag) {
 			documentEnds.push(script);
 		}
 	});
-	if (documentEnds.length) {
-		safeWindow.addEventListener("DOMContentLoaded", function(event){
-			event.currentTarget.removeEventListener(event.type, arguments.callee, false);
+	/* 画像を開いた際に実行されないので適当に実行する */
+	if (aDocument instanceof ImageDocument) {
+		safeWindow.setTimeout(function() {
 			documentEnds.forEach(function(s) "delay" in s ?
-				safeWindow.setTimeout(run, s.delay, s) : run(s));
-		}, false);
-	}
-	if (windowLoads.length) {
-		safeWindow.addEventListener("load", function(event) {
-			event.currentTarget.removeEventListener(event.type, arguments.callee, false);
+				safeWindow.setTimeout(run, s.delay, s) :
+				run(s));
+		}, 10);
+		safeWindow.setTimeout(function() {
 			windowLoads.forEach(function(s) "delay" in s ?
-				safeWindow.setTimeout(run, s.delay, s) : run(s));
-		}, false);
+				safeWindow.setTimeout(run, s.delay, s) :
+				run(s));
+		}, 300);
+	} else {
+		if (documentEnds.length) {
+			safeWindow.addEventListener("DOMContentLoaded", function(event){
+				event.currentTarget.removeEventListener(event.type, arguments.callee, false);
+				documentEnds.forEach(function(s) "delay" in s ?
+					safeWindow.setTimeout(run, s.delay, s) : run(s));
+			}, false);
+		}
+		if (windowLoads.length) {
+			safeWindow.addEventListener("load", function(event) {
+				event.currentTarget.removeEventListener(event.type, arguments.callee, false);
+				windowLoads.forEach(function(s) "delay" in s ?
+					safeWindow.setTimeout(run, s.delay, s) : run(s));
+			}, false);
+		}
 	}
 
 	function run(script) {
@@ -1103,18 +1248,23 @@ USL.injectScripts = function(safeWindow, rsflag) {
 			return;
 		}
 
-		let sandbox = new Cu.Sandbox(safeWindow, {sandboxPrototype: safeWindow});
-		let GM_API = new USL.API(script, sandbox, safeWindow, aDocument);
-		for (let n in GM_API)
-			sandbox[n] = GM_API[n];
+		let sandbox = new Cu.Sandbox(safeWindow, {sandboxPrototype: safeWindow, 'wantXrays': !script.grantNone});
+		let unsafeWindowGetter = new sandbox.Function('return window.wrappedJSObject || window;');
+		Object.defineProperty(sandbox, 'unsafeWindow', {get: unsafeWindowGetter});
+
+		if (!script.grantNone) {
+			let GM_API = new USL.API(script, sandbox, safeWindow, aDocument);
+			for (let n in GM_API)
+				sandbox[n] = GM_API[n];
+		}
 
 		sandbox.XPathResult  = Ci.nsIDOMXPathResult;
-		sandbox.unsafeWindow = safeWindow.wrappedJSObject;
+		// sandbox.unsafeWindow = safeWindow.wrappedJSObject;
 		sandbox.document     = safeWindow.document;
 		sandbox.console      = safeWindow.console;
 		sandbox.window       = safeWindow;
 
-		sandbox.__proto__ = safeWindow;
+		// sandbox.__proto__ = safeWindow;
 		USL.evalInSandbox(script, sandbox);
 		safeWindow.USL_run.push(script);
 	}
@@ -1195,6 +1345,7 @@ USL.saveSetting = function() {
 	USL.pref.setValue('disabled', USL.disabled);
 	USL.pref.setValue('HIDE_EXCLUDE', USL.HIDE_EXCLUDE);
 	USL.pref.setValue('CACHE_SCRIPT', USL.CACHE_SCRIPT);
+	USL.pref.setValue('MY_EDITOR', USL.MY_EDITOR);
 	USL.pref.setValue('DEBUG', USL.DEBUG);
 
 	var aFile = Services.dirsvc.get('UChrm', Ci.nsILocalFile);
@@ -1234,7 +1385,9 @@ USL.getContents = function(aURL, aCallback){
 			onLinkIconAvailable: function(aIconURL) {},
 		}
 	}
-	wbp.saveURI(uri, null, null, null, null, aFile, null);
+	wbp.persistFlags = Ci.nsIWebBrowserPersist.PERSIST_FLAGS_BYPASS_CACHE;
+	wbp.persistFlags |= Ci.nsIWebBrowserPersist.PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION;
+	wbp.saveURI(uri, null, null, null, null, null, aFile, null);
 	USL.debug("getContents: " + aURL);
 };
 

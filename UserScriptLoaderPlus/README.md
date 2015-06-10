@@ -1,5 +1,11 @@
-UserScriptLoaderPlus.uc.js
-==========================
+# UserScriptLoaderPlus
+
+## 文件说明
+
+- UserScriptLoaderMod.uc.js：**危险，请勿使用**，Greasemonkey 模拟器。新增 GM\_saveFile、GM\_download 等 API，个人用于特殊用途。
+- UserScriptLoaderPlus.uc.js
+
+## UserScriptLoaderPlus.uc.js
 
 Greasemonkey 的 uc 脚本版。原脚本 [UserScriptLoader.uc.js By Griever](https://github.com/Griever/userChromeJS/tree/master/UserScriptLoader)，[dannylee 的版本](http://g.mozest.com/viewthread.php?tid=41278&highlight=UserScriptLoader)
 

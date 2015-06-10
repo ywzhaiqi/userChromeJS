@@ -384,7 +384,9 @@ userChromejs.save = {
                 }
             };
 
-            persist.saveURI(obj_URI, null, null, null, "", target, null);
+            // persist.saveURI(obj_URI, null, null, null, "", target, null);
+			// ff36+
+            persist.saveURI(obj_URI, null, null, null, null, null, target, null);
         };
 
         if (typeof skipSelect === 'undefined')

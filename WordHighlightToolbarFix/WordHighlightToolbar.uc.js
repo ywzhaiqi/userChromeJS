@@ -4,16 +4,17 @@
 // @namespace      http://d.hatena.ne.jp/Griever/
 // @author         Griever
 // @license        MIT License
-// @compatibility  Firefox 17
+// @compatibility  Firefox 40
 // @charset        UTF-8
 // @include        main
-// @version        0.0.9
+// @version        0.0.10
 // @homePageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/WordHighlightToolbarFix
 // homePageURL     https://github.com/Griever/userChromeJS/tree/master/WordHighlightToolbar
 // @downloadURL    https://raw.githubusercontent.com/ywzhaiqi/userChromeJS/master/WordHighlightToolbarFix/WordHighlightToolbar.uc.js
 // @startup        window.gWHT.init();
 // @shutdown       window.gWHT.destroy();
 // @note           增加延迟及 super_preloader 加载下一页高亮的支持 By ywzhaiqi
+// @note           0.0.10 Firefox 40 で動かなくなった部分を修正
 // @note           0.0.9 細部を修正
 // @note           0.0.8 Firefox 25 でエラーが出ていたのを修正
 // @note           0.0.7 ツールバーが自動で消えないことがあったのを修正
@@ -497,13 +498,10 @@ window.gWHT = {
     launchFrame: function(doc) {
     },
     fixAutoPager: function(doc, win){
-        var _bodyHeight = doc.body.clientHeight;
         // 创建观察者对象
         var observer = new win.MutationObserver(function(mutations){
 			var nodeAdded = mutations.some(function(x){ return x.addedNodes.length > 0; });
-            if(nodeAdded && doc.body.clientHeight > _bodyHeight){
-                // debug("MutationObserver addedNodes");
-                _bodyHeight = doc.body.clientHeight;
+            if(nodeAdded){
 
                 setTimeout(function(){
                     gWHT.recoveryToolbar();
@@ -803,6 +801,8 @@ window.gWHT.ContentClass.prototype = {
         ,'padding: 0px !important;'
         ,'border: none !important;'
         ,'text-shadow: none !important;'
+		,'float: none !important;'
+		,'display: inline !important;'
     ].join(' '),
     throughSelector: ['textarea', 'input', '.' + CLASS_SPAN].map(function(w) w+', '+w+' *').join(','),
 
@@ -1129,11 +1129,18 @@ function getWins(win) {
     return wins.filter(function(win) checkDoc(win.document));
 }
 function checkDoc(doc) {
-    if (!(doc instanceof HTMLDocument)) return false;
-    if (!window.mimeTypeIsTextBased(doc.contentType)) return false;
-    if (!doc.body || !doc.body.hasChildNodes()) return false;
-    if (doc.body instanceof HTMLFrameSetElement) return false;
-    return true;
+	if (!(doc instanceof HTMLDocument)) return false;
+	if (!mimeTypeIsTextBased(doc.contentType)) return false;
+	if (!doc.body || !doc.body.hasChildNodes()) return false;
+	if (doc.body instanceof HTMLFrameSetElement) return false;
+	return true;
+}
+function mimeTypeIsTextBased(contentType) {
+	return /^text\/|\+xml$/.test(contentType) ||
+		contentType == "application/x-javascript" ||
+		contentType == "application/javascript" ||
+		contentType == "application/xml" ||
+		contentType == "mozilla.application/cached-xul";
 }
 function getFocusedWindow() {
     var win = document.commandDispatcher.focusedWindow;
@@ -1167,10 +1174,10 @@ window.gWHT.init();
 
 })('\
 .wordhighlight-toolbar-icon {\
-  list-style-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABKSURBVDhPzcqxDQAgCAVRFnF5d3AlY+0C2PyOI6Gw4JLrnvXJr3ll8RhhWjxGmBZv3zxeOo0wnUaY7tXawyuLxwjT4jHCtPivzB566PWhwL2sEQAAAABJRU5ErkJggg==");\
+  list-style-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAANUlEQVQ4jWNgGBTg6dOi/6RgrAb8/19PFB7EBlAUBoMDFD0t+k8qxjCgngQ4SA2gKAwGDAAAM3SE/usVkKQAAAAASUVORK5CYII=");\
 }\
 .wordhighlight-toolbar-icon[state="disable"] {\
-  filter: url("chrome://mozapps/skin/extensions/extensions.svg#greyscale");\
+  filter: grayscale(100%);\
 }\
 .wordhighlight-toolbar-arrowscrollbox > .autorepeatbutton-up,\
 .wordhighlight-toolbar-arrowscrollbox > .autorepeatbutton-down {\
@@ -1183,12 +1190,14 @@ window.gWHT.init();
   text-shadow: none;\
 }\
 .wordhighlight-toolbar-item > .toolbarbutton-icon { visibility: collapse; }\
-.wordhighlight-toolbar-reloadbutton{\
-list-style-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEwSURBVDhP1Y/LSsNAFIaz9QEEoZCVW1duXQlufaXYXItmkomZkk5uJsEUkxBLtz5JwVXBVaFQEISCME7CUUhsF93pBz+c8805zIzw//Ae5waUu3Gi4pgkdUiy2XqczZib1AuS1pQ8lCe8NxoHo79x4/qKL6x4msVugnr7XcN4l+ZmM65WTlwxJ6pyFBSnjcdpKXL32npIu9DHDp8oD+PJQbXw3gD/EzjqMqL5G6JThmkpghKQNzUa1w8cd7kj8Va/jz+hPRyFRMvROGU6ydq/H4zmRC5/AeOpQHVAqDiCcjcqSgY3ONxoOGSaHTzLKD5rvOEE5yoO5ooZLnU7vG6H96FY/qVy678rts/6kWx/o2B6AaP7kTAVh2iCJZMuJIt+yBZ9ka3JUEXeAEb+FILwBYO3ysFzKw59AAAAAElFTkSuQmCC");\
-}\
+\
+.wordhighlight-toolbar-reloadbutton,\
 .wordhighlight-toolbar-addbutton {\
-  list-style-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAB9SURBVDhPtZHRDYAgDERxDSdyOTfw3y2pvFiS0oCIxEteIvV6hzH8KhFZQI9jijGuFh2/E60s7ccpwPPQTT4HYMrUAjJqL4XJYwM8unbLN/bAW9xkOgAxTGwWs1DME/XfSmoGk2/MqL2tVoC+7ms6ALGUeP7mnmgdbh5TCBe3oUIwyIab9QAAAABJRU5ErkJggg==");\
+  list-style-image: url("chrome://browser/skin/Toolbar.png");\
 }\
+.wordhighlight-toolbar-reloadbutton { -moz-image-region: rect(0pt, 270px, 18px, 252px); }\
+.wordhighlight-toolbar-addbutton    { -moz-image-region: rect(0px, 576px, 18px, 558px); }\
+\
 #wordhighlight-toolbar-box:empty,\
 .wordhighlight-toolbar-arrowscrollbox:empty,\
 .wordhighlight-toolbar-arrowscrollbox:empty ~ * { visibility: collapse; }\

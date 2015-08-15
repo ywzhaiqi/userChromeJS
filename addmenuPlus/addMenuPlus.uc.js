@@ -5,10 +5,10 @@
 // @author         Griever
 // @include        main
 // @license        MIT License
-// @compatibility  Firefox 21
+// @compatibility  Firefox 40
 // @charset        UTF-8
-// @version        2014.11.07
-// @version        0.1.0
+// @version        2015.8.15
+// @version        0.1.1
 // @startup        window.addMenu.init();
 // @shutdown       window.addMenu.destroy();
 // @config         window.addMenu.edit(addMenu.FILE);
@@ -16,6 +16,7 @@
 // @ohomepageURL   https://github.com/Griever/userChromeJS/tree/master/addMenu
 // @reviewURL      http://bbs.kafan.cn/thread-1554431-1-1.html
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/addmenuPlus/addMenuPlus.uc.js
+// @note           0.1.1 Places keywords API を使うようにした
 // @note           0.1.0 menugroup をとりあえず利用できるようにした
 // @note           0.0.9 Firefox 29 の Firefox Button 廃止に伴いファイルメニューに追加するように変更
 // @note           0.0.8 Firefox 25 の getShortcutOrURI 廃止に仮対応
@@ -181,6 +182,10 @@ window.addMenu = {
         return gContextMenu && gContextMenu.target ? gContextMenu.target.ownerDocument.defaultView : content;
     },
     init: function() {
+		if (("isInitialized" in Services.search) && !Services.search.isInitialized) {
+			Services.search.init(this.init.bind(this));
+			return
+		}
         let he = "(?:_HTML(?:IFIED)?|_ENCODE)?";
         let rTITLE     = "%TITLE"+ he +"%|%t\\b";
         let rTITLES    = "%TITLES"+ he +"%|%t\\b";
@@ -315,16 +320,21 @@ window.addMenu = {
         var where    = menuitem.getAttribute("where") || "";
         var exec     = menuitem.getAttribute("exec") || "";
 
-        if (keyword) {
-            let kw = keyword + (text? " " + (text = this.convertText(text)) : "");
-            let loc = getShortcutOrURI(kw);
-            let newurl = loc[0];
-            let postData = loc[1].value;
-            if (newurl == kw && text)
-                return this.log(U("未找到关键字: ") + keyword);
-
-            this.openCommand(event, newurl, where, postData);
-        }
+		if (keyword) {
+			let param = (text ? (text = this.convertText(text)) : "");
+			let engine = Services.search.getEngineByAlias(keyword);
+			if (engine) {
+				let submission = engine.getSubmission(param);
+				this.openCommand(event, submission.uri.spec, where);
+			} else {
+				PlacesUtils.keywords.fetch(keyword||'').then(entry => {
+					if (!entry) return;
+					// 文字化けの心配が…
+					let newurl = entry.url.href.replace('%s', encodeURIComponent(param));
+					this.openCommand(event, newurl, where);
+				});
+			}
+		}
         else if (url)
             this.openCommand(event, this.convertText(url), where);
         else if (exec)
@@ -773,27 +783,34 @@ window.addMenu = {
                 return;
             }
         }
+		var setIconCallback = function(url) {
+			let uri, iconURI;
+			try {
+				uri = Services.io.newURI(url, null, null);
+			} catch (e) { }
+			if (!uri) return;
 
-        let url = obj.keyword ? getShortcutOrURI(obj.keyword)[0] : obj.url ? obj.url.replace(this.regexp, "") : "";
-        if (!url) return;
-
-        let uri, iconURI;
-        try {
-            uri = Services.io.newURI(url, null, null);
-        } catch (e) { }
-        if (!uri) return;
-
-        menu.setAttribute("scheme", uri.scheme);
-        PlacesUtils.favicons.getFaviconDataForPage(uri, {
-            onComplete: function(aURI, aDataLen, aData, aMimeType) {
-                try {
-                    // javascript: URI の host にアクセスするとエラー
-                    menu.setAttribute("image", aURI && aURI.spec?
-                        "moz-anno:favicon:" + aURI.spec:
-                        "moz-anno:favicon:" + uri.scheme + "://" + uri.host + "/favicon.ico");
-                } catch (e) { }
-            }
-        });
+			menu.setAttribute("scheme", uri.scheme);
+			PlacesUtils.favicons.getFaviconDataForPage(uri, {
+				onComplete: function(aURI, aDataLen, aData, aMimeType) {
+					try {
+						// javascript: URI の host にアクセスするとエラー
+						menu.setAttribute("image", aURI && aURI.spec?
+							"moz-anno:favicon:" + aURI.spec:
+							"moz-anno:favicon:" + uri.scheme + "://" + uri.host + "/favicon.ico");
+					} catch (e) { }
+				}
+			});
+		}
+		PlacesUtils.keywords.fetch(obj.keyword || '').then(entry => {
+			let url;
+			if (entry) {
+				url = entry.url.href;
+			} else {
+				url = (obj.url+'').replace(this.regexp, "");
+			}
+			setIconCallback(url);
+		}, e => {console.log(e) }).catch(e=>{});
     },
     setCondition: function(menu, condition) {
         if (/\bnormal\b/i.test(condition)) {
@@ -1116,90 +1133,6 @@ function loadFile(aLeafName) {
     sstream.close();
     fstream.close();
     return data;
-}
-
-function getShortcutOrURI(aURL, aPostDataRef, aMayInheritPrincipal) {
-  // Initialize outparam to false
-  if (aMayInheritPrincipal)
-    aMayInheritPrincipal.value = false;
-
-  var shortcutURL = null;
-  var keyword = aURL;
-  var param = "";
-
-  var offset = aURL.indexOf(" ");
-  if (offset > 0) {
-    keyword = aURL.substr(0, offset);
-    param = aURL.substr(offset + 1);
-  }
-
-  if (!aPostDataRef)
-    aPostDataRef = {};
-
-  var engine = Services.search.getEngineByAlias(keyword);
-  if (engine) {
-    var submission = engine.getSubmission(param);
-    aPostDataRef.value = submission.postData;
-    return [submission.uri.spec, aPostDataRef];
-  }
-
-  [shortcutURL, aPostDataRef.value] =
-    PlacesUtils.getURLAndPostDataForKeyword(keyword);
-
-  if (!shortcutURL)
-    return aURL;
-
-  var postData = "";
-  if (aPostDataRef.value)
-    postData = unescape(aPostDataRef.value);
-
-  if (/%s/i.test(shortcutURL) || /%s/i.test(postData)) {
-    var charset = "";
-    const re = /^(.*)\&mozcharset=([a-zA-Z][_\-a-zA-Z0-9]+)\s*$/;
-    var matches = shortcutURL.match(re);
-    if (matches)
-      [, shortcutURL, charset] = matches;
-    else {
-      // Try to get the saved character-set.
-      try {
-        // makeURI throws if URI is invalid.
-        // Will return an empty string if character-set is not found.
-        charset = PlacesUtils.history.getCharsetForURI(makeURI(shortcutURL));
-      } catch (e) {}
-    }
-
-    // encodeURIComponent produces UTF-8, and cannot be used for other charsets.
-    // escape() works in those cases, but it doesn't uri-encode +, @, and /.
-    // Therefore we need to manually replace these ASCII characters by their
-    // encodeURIComponent result, to match the behavior of nsEscape() with
-    // url_XPAlphas
-    var encodedParam = "";
-    if (charset && charset != "UTF-8")
-      encodedParam = escape(convertFromUnicode(charset, param)).
-                     replace(/[+@\/]+/g, encodeURIComponent);
-    else // Default charset is UTF-8
-      encodedParam = encodeURIComponent(param);
-
-    shortcutURL = shortcutURL.replace(/%s/g, encodedParam).replace(/%S/g, param);
-
-    if (/%s/i.test(postData)) // POST keyword
-      aPostDataRef.value = getPostDataStream(postData, param, encodedParam,
-                                             "application/x-www-form-urlencoded");
-  }
-  else if (param) {
-    // This keyword doesn't take a parameter, but one was provided. Just return
-    // the original URL.
-    aPostDataRef.value = null;
-
-    return [aURL, aPostDataRef];
-  }
-
-  // This URL came from a bookmark, so it's safe to let it inherit the current
-  // document's principal.
-  if (aMayInheritPrincipal)
-    aMayInheritPrincipal.value = true;
-
-  return [shortcutURL, aPostDataRef];
 }
 
 function saveFile(fileOrName, data) {

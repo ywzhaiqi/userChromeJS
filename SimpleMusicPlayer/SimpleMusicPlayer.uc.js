@@ -864,12 +864,13 @@
             // 先设为空白，加快速度？
             this.setIframeSrc("about:blank", iframe);
 
-            if (siteIndex == undefined) {
+            if (siteIndex === undefined) {
                 siteIndex = this.curSiteIndex;
             }
 
-            var curSite = Sites[siteIndex],
+            var curSite = Sites[this.curSiteIndex],
                 url = curSite.url;
+            this.curSite = curSite;
 
             // 打开新窗口的
             if (curSite.isWindow) {
@@ -921,7 +922,7 @@
             iframe.setAttribute("style", iStyle);
 
             // 强制链接在 iframe 里打开
-            var onclick = curSite.openLinkInsided == true ?
+            var onclick = curSite.openLinkInsided ?
                     "SimpleMusicPlayer.openLinkInIframe(event);" : "";
             iframe.setAttribute("onclick", onclick)
 
@@ -932,18 +933,8 @@
 
             this.setIframeSrc(url, iframe);
 
-            var onload = function(event){
-                var doc = event.originalTarget;
-                if (doc.location.href == "about:blank") return;
-
-                iframe.removeEventListener("DOMContentLoaded", onload, false);
-
-                // 添加样式
-                var style = doc.createElement("style");
-                style.textContent = curSite.css;
-                doc.head.appendChild(style);
-            };
-            iframe.addEventListener("DOMContentLoaded", onload, false);
+            iframe.removeEventListener("DOMContentLoaded", this.iframeOnload, false);
+            iframe.addEventListener("DOMContentLoaded", this.iframeOnload, false);
 
             openPopup();
 
@@ -951,6 +942,17 @@
             if (curSite.changeUA) {
                 UAManager.revert();
             }
+        },
+        iframeOnload: function(event) {  // this 非 SimpleMusicPlayer
+            var doc = event.originalTarget;
+            if (doc.location.href == "about:blank") return;
+
+             var curSite = SimpleMusicPlayer.curSite;
+
+            // 添加样式
+            var style = doc.createElement("style");
+            style.textContent = curSite.css;
+            doc.head.appendChild(style);
         },
         close: function() {
             if (this.newWindow) {

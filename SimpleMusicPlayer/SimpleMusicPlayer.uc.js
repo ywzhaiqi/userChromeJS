@@ -6,7 +6,7 @@
 // @description    简单音乐播放面板，支持多个站点，参考了百度随心听播放栏UC脚本。
 // @include        main
 // @charset        UTF-8
-// @version        2015.8.18 修正样式重复添加的bug
+// @version        2015.8.18 修正样式重复添加的bug，关闭后打开面板不再为空白
 // @version        2015.8.17 更新部分站点样式
 // @version        2015.1.26 简单更新修复按钮失效，更新部分站点样式
 // @version        2014.10.13
@@ -28,7 +28,7 @@
         },
         logo: {  // 感谢 defpt 提供图标
             //main: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEtSURBVDhPYyAFSElJyWpqapYZGxtf1NXVnQgVxg/4+fkFVVVVU42MjA4ANf4F4v8grK+vvxqqBBPIy8tzKCoqhhgaGq4HKv4B0wTDQMN+6+nprYIqRwUSEhKaQAVv0TUB8VNtbe1eSUlJY5BmnAYA/RkG0wQ06CNQ4Xw5OTkXoBQTRAUDA14DpKWlQ0GaVVRUQmVkZDihwiiAkAEhIAOgXKxgiBsgKCgoa2BgsINkA8TFxcWA6WIvUO4fSB6rAUDT+dXU1AqxGQC0dTtIHIaBKXERVAoCdHR0WoAS8FQHFYYDZDkg/qugoOAGlWJgAMZ5EpIkKAF9h0rBAdCCZqD4J6D8NaD6YKgwBABz1mJkA4D+mwWVIg4AnWMPNP0xUPMroGHdQCE2iAwhwMAAAP8QgByLBig2AAAAAElFTkSuQmCC",
-            main: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABQUlEQVQ4jdWRMUpkQRRFn4KRCxBMDNTADbiIYQwMFX7y61NV52zCzMxZQm9AlyFmCqYOiJnxDE6DaHdP8kdmitbEaC4UFLfuva/eexENUkpbwKn6HXgFXsf7aUppq9X/g1rrvnqlztRH4BK4VB9H7qrWur/UnHPeVq/VqfpN3eu6br3runV1b+Sm6nXOebv1rwBnwLzWepJzXltSYK3WegLMgbOIWHl77Pt+E7gDbodh2HivxWEYNoBb4K7v+82/ez8EnoFJRKx+MKZVYAI811oPIyJCPVDv1YX6AExKKbuts5SyC0zUh1F7rx4EcDMSf86slHK0JOBo3MSbFrgJ9aUh58BxGwAcA/Om2Es0xEKdvRfQ/kBdhPr0iYCnUM8/0cJ5pJR2gAvg12j+WWv9umSIX9Qfo3EKXKSUdj5Y+f+C332LB/3Wwm2DAAAAAElFTkSuQmCC",
+            main: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAQCAYAAAAmlE46AAABSElEQVQokX1TsZGEMAx0RAnXAzk5NVzgFhjg5AwsBQSSUsqgkauADiiAAi6+D4z8MH/3mmHGHrTS7kp27p+AyFUgeQLJBqhLH6fyY6L3XHSj1t5z0Q58A5Q9kL7tA5LNey4uoD5OZUBdU4I23ah1IH0Dyg6kTUBdAXW5APs4lefqQNr0cSoN+JGi91wEkqcldaPWqZAuZ5qB5PkguWfgg+R+8H9B5Kod+AYk2xV01qlNcu6oDKjL5X44aefM6mjgzBCjYd0eJPd24JslJ80mSRdnpkDk6gzsRq0Tg9//JiugrpcOzjlnVc1+09YOfMtOk2x/NUaugOR1MQR5PhsZUNeLqzYviFwB8gyoS3bxxAZQlzTHvDGyfdtHQJ6Ngem/0AOUHZDnbtS6G7UG0ibrPtHOkZK+D/4jyCK9CJ6To7KnBU+LkOkd8QOTm2Sby5kMlwAAAABJRU5ErkJggg==",
             playPause: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACOSURBVDhPYxg8wNjY+D8Ig9h6enqtCgoKdmAJYgGaAauA7L9AeqqwsDAvWAEhgMUAMB/IfqisrOwBVoQP4DIAiv8BxRbw8fEJgRVjAzDFIDYWA8BYX1//uYqKSjBYAzqAKQKxcRkAw0CDVoM1IQOYJIhNyABDQ0PyDKDEC+QHIpBNdjRSlJBIT8oDBBgYAPBVgtchO+kXAAAAAElFTkSuQmCC",
             play: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACtSURBVDhPY6AakJKSMpCXlzeEckkH0tLSIUZGRn/09PRmiYuLi0GFiQcgA4yNjf9D8QctLa1ioDArRJYIgGYAGANddENVVdUbqgQ/wGYADBsaGm6TlJTUgCrFDvAZAMJA1/wChk8/Pz+/AFQLKiBkABJ+BQyfdKAWJohOKCDFAHV1ddINAHlBR0eHPC+QHYhAjTcUFRXJisYPQH+SnpAoSsqgzATE5Gcm8gADAwC38IBnl19y/AAAAABJRU5ErkJggg==",
             pause: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAuSURBVDhPYxg8wNjY+D8y1tPTWwWVYgCx0eWhUgiArmDUgFEDQHgIGjBAgIEBAAR/teH6mMe/AAAAAElFTkSuQmCC",
@@ -228,7 +228,7 @@
             url: "http://www.luoo.net/music",
             iframeStyle: "width: 300px; height: 525px;",
             // 该样式为 defpt 修改版，http://bbs.kafan.cn/forum.php?mod=redirect&goto=findpost&ptid=1738389&pid=31590846
-            css: "body{width:360px;}.player-large,.cover.rounded.PLCover{position:fixed;top:20px;left:0;width:300px;height:300px;}#playerCt{position:fixed;top:-5px;left:0;width:300px;height:300px;z-index:999;background: black !important;opacity: 0.6 !important;}#lyricWrapper{position:fixed;top:15px;left:0;width:300px;height:300px;z-index:999;background: black !important;opacity: 0.8 !important;}.vol-tags{position:fixed;left:0px;top:0px;width: 300px;}.pagenav-wrapper{position:fixed;left:10px;top:0px;z-index:998;width: 280px !important;text-align:center;text-indent: -0.5em;background: black !important;opacity: 0.8 !important;}.item.actived{position:fixed;left:120px;top:80px;height:25px;z-index:999;background: black !important;opacity: 0.8 !important;}#luooPlayerPlaylist > UL{overflow-y:scroll;overflow-x:hidden;position:fixed;top: 325px !important;width:300px;height:200px;}.article{ position:fixed;overflow-x:hidden;left:0px;top:0px;width: 300px;height:525px;}.cover.rounded{overflow-x:hidden; width: 300px;height: 200px;}.header,.vol-name,.vol-cover,#widgetHotVol,.vol-desc,.relative-vol,#comment,.footer,.vol-meta,.thanks-block{display:none;}",
+            css: "body{width:360px;overflow:hidden;}.player-large,.cover.rounded.PLCover{position:fixed;top:20px;left:0;width:300px;height:300px;}#playerCt{position:fixed;top:-5px;left:0;width:300px;height:300px;z-index:999;background: black !important;opacity: 0.6 !important;}#lyricWrapper{position:fixed;top:15px;left:0;width:300px;height:300px;z-index:999;background: black !important;opacity: 0.8 !important;}.vol-tags{position:fixed;left:0px;top:0px;width: 300px;}.pagenav-wrapper{position:fixed;left:10px;top:0px;z-index:998;width: 280px !important;text-align:center;text-indent: -0.5em;background: black !important;opacity: 0.8 !important;}.item.actived{position:fixed;left:120px;top:80px;height:25px;z-index:999;background: black !important;opacity: 0.8 !important;}#luooPlayerPlaylist > UL{overflow-y:scroll;overflow-x:hidden;position:fixed;top: 325px !important;width:300px;height:200px;}.article{ position:fixed;overflow-x:hidden;left:0px;top:0px;width: 300px;height:525px;}.cover.rounded{overflow-x:hidden; width: 300px;height: 200px;}.header,.vol-name,.vol-cover,#widgetHotVol,.vol-desc,.relative-vol,#comment,.footer,.vol-meta,.thanks-block{display:none;}",
             control: {
                 playPause: [".jp-play", ".jp-pause"],
                 love: ".btn-action-like",
@@ -846,8 +846,8 @@
                 panel.openPopup(icon, "after_end", 0, 0, false, null, null);
             };
 
-            // 已经在播放的页面直接打开
-            if (siteIndex == undefined) {
+            // 非切换站点，直接打开面板执行的动作
+            if (siteIndex === undefined) {
                 if (this.newWindow) {
                     try {
                         this.newWindow.focus();
@@ -855,7 +855,7 @@
                     } catch(ex) {
                         this.newWindow = null;
                     }
-                } else if (iframe.src) {
+                } else if (iframe.src && iframe.src != "about:blank") {
                     openPopup();
                     return;
                 }

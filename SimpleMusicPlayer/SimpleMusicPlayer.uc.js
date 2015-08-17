@@ -1,12 +1,17 @@
 ﻿// ==UserScript==
 // @name           SimpleMusicPlayer.uc.js
 // @author         ywzhaiqi
+// @contributor    defpt、boy3510817、卡饭网友
 // @namespace      https://github.com/ywzhaiqi
 // @description    简单音乐播放面板，支持多个站点，参考了百度随心听播放栏UC脚本。
 // @include        main
 // @charset        UTF-8
+// @version        2015.8.18 修正样式重复添加的bug
+// @version        2015.8.17 更新部分站点样式
+// @version        2015.1.26 简单更新修复按钮失效，更新部分站点样式
 // @version        2014.10.13
 // @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/SimpleMusicPlayer
+// @homepageURL    boy3510817 卡饭页面：http://bbs.kafan.cn/thread-1805934-1-1.html
 // @downloadURL    https://github.com/ywzhaiqi/userChromeJS/raw/master/SimpleMusicPlayer/SimpleMusicPlayer.uc.js
 // @startup        window.SimpleMusicPlayer.init();
 // @shutdown       window.SimpleMusicPlayer.uninit();
@@ -22,8 +27,8 @@
             mobile: "width: 320px; height: 480px;",
         },
         logo: {  // 感谢 defpt 提供图标
-            // main: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEtSURBVDhPYyAFSElJyWpqapYZGxtf1NXVnQgVxg/4+fkFVVVVU42MjA4ANf4F4v8grK+vvxqqBBPIy8tzKCoqhhgaGq4HKv4B0wTDQMN+6+nprYIqRwUSEhKaQAVv0TUB8VNtbe1eSUlJY5BmnAYA/RkG0wQ06CNQ4Xw5OTkXoBQTRAUDA14DpKWlQ0GaVVRUQmVkZDihwiiAkAEhIAOgXKxgiBsgKCgoa2BgsINkA8TFxcWA6WIvUO4fSB6rAUDT+dXU1AqxGQC0dTtIHIaBKXERVAoCdHR0WoAS8FQHFYYDZDkg/qugoOAGlWJgAMZ5EpIkKAF9h0rBAdCCZqD4J6D8NaD6YKgwBABz1mJkA4D+mwWVIg4AnWMPNP0xUPMroGHdQCE2iAwhwMAAAP8QgByLBig2AAAAAElFTkSuQmCC",
-            main: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABX0lEQVQ4jZ2TT0sCQRiH50uYSS0YehGkS9D3EAIDQSJv0i3QDuGho1AggZ4i8OihTmEHr3boPVfg7Ap9gd2dZZkZ9fDrsLm06Wp2eC7vn4cf8zKMMcZs28Z/YIwxJoSA7/uYTCYb4fs+hBBgnudhOp2uJFsbIF3tIV3twSi3w7rneesF2doARrmNRKGJRKGJXGMYFQghVkbdOrpBvt5HrjHEYesNRBT2hBDrBalSB/l6H0QUWf6zwKh0FxYjAtd1obWOJV3tgYiW9lzXXS/YO3tYL1BKRXh8t3Hx/InM+VOY4PeMUmq5wKh0cXD9gf2rl+Du328QK3AcB1LKkFSpg52TO+ye3iNz+YpUqQMiiszMcRwnSPCzSERIFlvYPr5FstiKXZZSBgmEENBaR6LNbx4XXSkFrXVwxtFoBCklZrPZRkgpwTkPfiTnHJxzmKYJ0zRhWRbG4/EClmWFM/PlL1Rejfxv4Dc3AAAAAElFTkSuQmCC",
+            //main: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEtSURBVDhPYyAFSElJyWpqapYZGxtf1NXVnQgVxg/4+fkFVVVVU42MjA4ANf4F4v8grK+vvxqqBBPIy8tzKCoqhhgaGq4HKv4B0wTDQMN+6+nprYIqRwUSEhKaQAVv0TUB8VNtbe1eSUlJY5BmnAYA/RkG0wQ06CNQ4Xw5OTkXoBQTRAUDA14DpKWlQ0GaVVRUQmVkZDihwiiAkAEhIAOgXKxgiBsgKCgoa2BgsINkA8TFxcWA6WIvUO4fSB6rAUDT+dXU1AqxGQC0dTtIHIaBKXERVAoCdHR0WoAS8FQHFYYDZDkg/qugoOAGlWJgAMZ5EpIkKAF9h0rBAdCCZqD4J6D8NaD6YKgwBABz1mJkA4D+mwWVIg4AnWMPNP0xUPMroGHdQCE2iAwhwMAAAP8QgByLBig2AAAAAElFTkSuQmCC",
+            main: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABQUlEQVQ4jdWRMUpkQRRFn4KRCxBMDNTADbiIYQwMFX7y61NV52zCzMxZQm9AlyFmCqYOiJnxDE6DaHdP8kdmitbEaC4UFLfuva/eexENUkpbwKn6HXgFXsf7aUppq9X/g1rrvnqlztRH4BK4VB9H7qrWur/UnHPeVq/VqfpN3eu6br3runV1b+Sm6nXOebv1rwBnwLzWepJzXltSYK3WegLMgbOIWHl77Pt+E7gDbodh2HivxWEYNoBb4K7v+82/ez8EnoFJRKx+MKZVYAI811oPIyJCPVDv1YX6AExKKbuts5SyC0zUh1F7rx4EcDMSf86slHK0JOBo3MSbFrgJ9aUh58BxGwAcA/Om2Es0xEKdvRfQ/kBdhPr0iYCnUM8/0cJ5pJR2gAvg12j+WWv9umSIX9Qfo3EKXKSUdj5Y+f+C332LB/3Wwm2DAAAAAElFTkSuQmCC",
             playPause: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACOSURBVDhPYxg8wNjY+D8Ig9h6enqtCgoKdmAJYgGaAauA7L9AeqqwsDAvWAEhgMUAMB/IfqisrOwBVoQP4DIAiv8BxRbw8fEJgRVjAzDFIDYWA8BYX1//uYqKSjBYAzqAKQKxcRkAw0CDVoM1IQOYJIhNyABDQ0PyDKDEC+QHIpBNdjRSlJBIT8oDBBgYAPBVgtchO+kXAAAAAElFTkSuQmCC",
             play: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACtSURBVDhPY6AakJKSMpCXlzeEckkH0tLSIUZGRn/09PRmiYuLi0GFiQcgA4yNjf9D8QctLa1ioDArRJYIgGYAGANddENVVdUbqgQ/wGYADBsaGm6TlJTUgCrFDvAZAMJA1/wChk8/Pz+/AFQLKiBkABJ+BQyfdKAWJohOKCDFAHV1ddINAHlBR0eHPC+QHYhAjTcUFRXJisYPQH+SnpAoSsqgzATE5Gcm8gADAwC38IBnl19y/AAAAABJRU5ErkJggg==",
             pause: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAuSURBVDhPYxg8wNjY+D8y1tPTWwWVYgCx0eWhUgiArmDUgFEDQHgIGjBAgIEBAAR/teH6mMe/AAAAAElFTkSuQmCC",
@@ -89,34 +94,34 @@
         {
             name: "百度随心听",
             url: "http://fm.baidu.com/",
-            iframeStyle: "width: 720px; height: 500px;",
+            iframeStyle: "width: 670px; height: 500px;",
             // 来自样式 http://userstyles.org/styles/101925/fm-baidu-com
-            css: "html{overflow-y:auto}#header-inner{width:auto}#logo-wrap{display:none}#channelbar-wrap{left:20px}#user-bar{right:20px}#user-bar #quality-panel{display:none}#main{width:auto}#right-wrapper{display:none}#playerpanel-share{display:none}.tab-page{width:auto;margin:20px}.playerpanel-bottom{height:auto}.footer{display:none}",
+            css: ".fm-header .fm-logo { display: none }.page-tip { display: none }#fm-panel .fm-footer { display: none }.fm-main { top:10px !important; }.fm-userbar { top:10px !important; }.fm-aside { padding-left: 10px !important; top:40px !important; height:100% !important; width:100% !important;}.fm-channel { left: 30px; top:-7px }.fm-player { left: 30px }.fm-main .fm-lrc { left: 290px }#fm-panel .fm-main, #fm-panel .fm-aside, #fm-panel .fm-content { top: 70px; }.page-fm-channel .scene-panel li { margin-right: 5px; }.page-fm-channel .scene-panel li, .page-fm-channel .channel-panel li { width: 100px;}.page-fm-channel .channel { width: 100px; margin: 0px 5px -15px 0px }.page-fm-channel .channel.special .channel-item.private i,.page-fm-channel .channel.special .channel-item.heart i,.page-fm-channel .channel.special .channel-item.musician i { margin-left: -20px; }#fm-panel .fm-page { width: 640px; }#fm-panel .next-page, #fm-panel .prev-page { width: 70px; }#fm-panel .next-page .arrow { margin: 0px -30px 0px 0 }#fm-panel .prev-page .arrow { margin: 0px 0px 0px -30px }.page-fm-channel .scene-panel, .page-fm-channel .channel-panel { margin-right: 0 }.page-fm-channel .scene-panel { margin-bottom: 10px }.page-fm-channel .channel li { margin-bottom: 4px; height: 24px; line-height: 24px }#fm-panel .fm-page { margin-bottom: 0 }.prev-page { left: -53px !important; }.next-page { right: -53px !important; }",
             control: {
-                playPause: "#playerpanel-btnplay",
-                // play: "win.player.play()",
-                love: "#playerpanel-btnlove",
-                hate: "#playerpanel-btnhate",
-                next: "#playerpanel-btnskip",
+                playPause: ".fm-play > .play",
+                //play: ".play.stop",
+                love: ".fm-favor > A",
+                hate: ".fm-trashcan > A",
+                next: ".fm-next > A",
             },
             state: {
-                isPlaying: "return win.player.getState() == 'play'",
-                isLoved: "return win.$('#playerpanel-btnlove').hasClass('loved')",
+                isPlaying: "return !win.$('.fm-play > .play').hasClass('stop')",
+                isLoved: "return win.$('.fm-favor > A').hasClass('collected')",
             },
         },
         {
             name: "百度音乐盒",
             url: "http://play.baidu.com/",
             iframeStyle: "width: 960px; height: 600px;",
-            css: ".down-mobile,.m-client-product,.column4,#pauseAd{display:none!important}#lrcCol{right:0!important}.mb-layout-bd.column2{margin-right:-165px!important}",
+            //css: ".down-mobile,.m-client-product,.column4,#pauseAd{display:none!important}#lrcCol{right:0!important}.mb-layout-bd.column2{margin-right:-165px!important}",
             control: {
-                playPause: ".play",
+                playPause: ".play.wg-button",
                 love: ".icons > .favor",
-                next: ".next",
-                prev: ".prev"
+                next: ".next > .wg-button",
+                prev: ".prev > .wg-button"
             },
             state: {
-                isPlaying: "return !win.$('.play').hasClass('stop')",
+                isPlaying: "return !win.$('.play.wg-button').hasClass('stop')",
                 isLoved: "return win.$('.icons > .favor').hasClass('unfavor')",
             },
         },
@@ -129,7 +134,7 @@
                 play: ".bn-play",
                 pause: ".bn-pause",
                 love: ".bn-love",
-                hate: ".bn-ban-disable",
+                hate: ".bn-ban",
                 next: ".bn-skip",
             },
             state: {
@@ -156,6 +161,7 @@
         {
             name: "网易云音乐",
             url: "http://music.163.com/",
+            iframeStyle: "width: 980px; height: 600px;",
             control: {
                 playPause: "#g_player .ply",
                 next: "#g_player .nxt",
@@ -168,13 +174,16 @@
         {    
             name: "网易云音乐FM",
             url: "http://music.163.com/demo/fm",
-            iframeStyle: "width: 330px; height: 440px;",
-            css: ".m-top,.m-demofm h2{display:none!important}.m-demofm{margin-left:-330px!important;margin-right:-330px!important;margin-top:-40px!important;margin-bottom:-280px!important;}",
+            iframeStyle: "width: 330px; height: 410px;",
+            css: "body{width:330px;overflow:hidden;}.m-top,.m-demofm h2{display:none!important}.m-demofm{margin-left:-330px!important;margin-right:-330px!important;margin-top:-40px!important;margin-bottom:-280px!important;}",
             control: {
                 playPause: ".play-pause",
-                love: ".icon-like",
+                love: ".f-fr > .j-flag",
                 hate: ".icon-hate",
-                prev: ".icon-next",
+                next: ".icon-next",
+            },
+            state: {
+                isLoved: "return win.$('.f-fr > .j-flag').hasClass('icon-liked');",
             }
         },
 
@@ -204,24 +213,28 @@
             name: "心理FM",
             url: "http://fm.xinli001.com/",
             control: {
-                playPause: "#playBtn",
-                love: "#collect",
-                next: "#nextBtn",
-                prev: "#prevBtn",
+                playPause: ".playbtn",
+                love: "#favoriteA",
+                next: ".next",
+                prev: ".pre",
+            },
+            state: {
+                isPlaying: "return win.$('.playbtn').hasClass('pause')",
+                isLoved: "return win.$('#favoriteA').hasClass('collected')",
             }
         },
         {
             name: "落网电台",
-            url: "http://www.luoo.net/",
-            iframeStyle: "width: 360px; height: 440px;",
+            url: "http://www.luoo.net/music",
+            iframeStyle: "width: 300px; height: 525px;",
             // 该样式为 defpt 修改版，http://bbs.kafan.cn/forum.php?mod=redirect&goto=findpost&ptid=1738389&pid=31590846
-            css: "body{width:360px;height:1500px;overflow:hidden}#luooPlayerPlaylist{position:fixed;top:0;left:0;width:360px}#follow-player-wrapper{position:fixed;top:180px!important;width:360px}#follow-player-wrapper .toolbar>*{margin:0 9px}#fmSelector{position:fixed;z-index:999;top:130px;left:182px}#luooPlayerTracklist{overflow-y:scroll;overflow-x:hidden;position:fixed;width:360px;height:218px;top:225px}#luooPlayerTracklist .track-info{position:relative;left:70px;margin-top:-40px}#luooPlayerTracklist .track-sns{position:relative;left:15px;margin-top:-50px}#fmWrapper{position:fixed;overflow-x:hidden;left:0;top:0;width:360px}.head,.fm-cover,.fm-info,.widget.luoo-scroller.relative-vols,.comment.index-comment,.foot{display:none}",
+            css: "body{width:360px;}.player-large,.cover.rounded.PLCover{position:fixed;top:20px;left:0;width:300px;height:300px;}#playerCt{position:fixed;top:-5px;left:0;width:300px;height:300px;z-index:999;background: black !important;opacity: 0.6 !important;}#lyricWrapper{position:fixed;top:15px;left:0;width:300px;height:300px;z-index:999;background: black !important;opacity: 0.8 !important;}.vol-tags{position:fixed;left:0px;top:0px;width: 300px;}.pagenav-wrapper{position:fixed;left:10px;top:0px;z-index:998;width: 280px !important;text-align:center;text-indent: -0.5em;background: black !important;opacity: 0.8 !important;}.item.actived{position:fixed;left:120px;top:80px;height:25px;z-index:999;background: black !important;opacity: 0.8 !important;}#luooPlayerPlaylist > UL{overflow-y:scroll;overflow-x:hidden;position:fixed;top: 325px !important;width:300px;height:200px;}.article{ position:fixed;overflow-x:hidden;left:0px;top:0px;width: 300px;height:525px;}.cover.rounded{overflow-x:hidden; width: 300px;height: 200px;}.header,.vol-name,.vol-cover,#widgetHotVol,.vol-desc,.relative-vol,#comment,.footer,.vol-meta,.thanks-block{display:none;}",
             control: {
-                playPause: [".btn-play", ".btn-pause"],
-                love: "a[title='收藏']",
-                next: ".btn-next",
-                prev: ".btn-prev",
-                rptOne: [".btn-repeat", ".btn-repeat-off"],
+                playPause: [".jp-play", ".jp-pause"],
+                love: ".btn-action-like",
+                next: ".jp-previous",
+                prev: ".jp-next",
+                rptOne: [".jp-repeatone", ".jp-repeatone-off"]
             }
         },
         {
@@ -230,7 +243,10 @@
             openLinkInsided: true,
             iframeStyle: "width: 1000px; height: 600px;",
             control: {
-                playPause: "a[title='播放/暂停']"
+                playPause: ".play.playable-play",
+            },
+            state: {
+                isPlaying: "return !win.$('.play.playable-play').hasClass('play')",
             },
         },
         {
@@ -242,13 +258,19 @@
         {
             name: "FIFM.CN",
             url: "http://www.fifm.cn/",
-            iframeStyle: "width: 980px; height: 600px;",
-            css: "#bdshare,.footer, #favorite_table_box div[style*='overflow:hidden']{display:none;}",
+            iframeStyle: "width: 990px; height: 600px;",
+            css: "#bdshare,.headerbg, #favorite_table_box div[style*='overflow:hidden']{display:none;}",
         },
         {
             name: "萌否电台",
             url: "http://moefm.ccloli.com/",
             // iframeStyle: "width:";
+            control: {
+                play: ".c_play",
+                pause:".c_pause",
+                next: ".c_next",
+                prev: ".c_previous",
+            },
         },
         // {
         // 	name: "AOP音乐网址导航",
@@ -913,6 +935,8 @@
             var onload = function(event){
                 var doc = event.originalTarget;
                 if (doc.location.href == "about:blank") return;
+
+                iframe.removeEventListener("DOMContentLoaded", onload, false);
 
                 // 添加样式
                 var style = doc.createElement("style");

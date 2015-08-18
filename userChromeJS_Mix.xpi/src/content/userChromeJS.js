@@ -16,7 +16,7 @@
  * The Initial Developer of the Original Code is
  * alta88 <alta88@gmail.com>
  *
- * Portions created by the Initial Developer are Copyright (C) 2014
+ * Portions created by the Initial Developer are Copyright (C) 2015
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -37,39 +37,37 @@
 
 var EXPORTED_SYMBOLS = ["userChrome"];
 
-if (Cc == undefined)
-  var Cc = Components.classes;
-if (Ci == undefined)
-  var Ci = Components.interfaces;
-if (Cr == undefined)
-  var Cr = Components.results;
-if (Cu == undefined)
-  var Cu = Components.utils;
+Components.utils.import("resource://gre/modules/Services.jsm");
 
 /* ........ Utility functions ............................................... */
 
 var userChrome = {
+  /* Console logger */
+  log: function(aMsg, aCaller) {
+    Services.console.logStringMessage(this.date + " extensions.userChromeJS: " +
+                                      (aCaller ? aCaller +": " : "") + aMsg);
+  },
+
   path: null,
   dirToken: null,
+  overlayPollDelay: 200,
 
-  get loadOverlayDelay () {
-    if (!this._loadOverlayDelay)
-      this._loadOverlayDelay = 500;
-    return this._loadOverlayDelay;
-  },
+  // Overlay observer.
+  Observer: {
+    queued: null,
+    observe: function(aSubject, aTopic, aData) {
+      if ((aTopic != "xul-overlay-merged" && aTopic != null) ||
+          !(aSubject instanceof Components.interfaces.nsIURI))
+        return;
 
-  set loadOverlayDelay(delay) {
-    this._loadOverlayDelay = delay;
-  },
+      let fileUrl = aSubject.QueryInterface(Components.interfaces.nsIURI).spec;
+//userChrome.log("aTopic:overlay fileUrl - "+aTopic+":"+fileUrl, "Observer.observe");
+      if (this.queued != fileUrl)
+        return;
 
-  get loadOverlayDelayIncr() {
-    if (!this._loadOverlayDelayIncr)
-      this._loadOverlayDelayIncr = 1600;
-    return this._loadOverlayDelayIncr;
-  },
-
-  set loadOverlayDelayIncr(delay) {
-    this._loadOverlayDelayIncr = delay;
+userChrome.log(aTopic+" - "+fileUrl, "userChrome.Observer");
+      this.queued = null;
+    }
   },
 
   import: function(aPath, aRelDirToken) {
@@ -78,7 +76,7 @@ var userChrome = {
     this.dirToken = aRelDirToken;
 
     if (aRelDirToken) {
-      // Relative file
+      // Relative file.
       let absDir = this.getAbsoluteFile(aRelDirToken);
       if (!absDir)
         return;
@@ -87,7 +85,7 @@ var userChrome = {
           "" : pathSep + aPath.replace(/[\/\\]/g, pathSep));
     }
     else
-      // Absolute file
+      // Absolute file.
       file = aPath;
 
     file = this.getFile(file);
@@ -95,96 +93,90 @@ var userChrome = {
       return;
     if (file.isFile()) {
       if (/\.js$/i.test(file.leafName))
-        this.loadScript(file, aRelDirToken, null);
-      else if (/\.xul$/i.test(file.leafName)) {
-        let xul_files = [];
-        xul_files.push(file);
-        this.loadOverlay(xul_files, this.dirToken, null, this.loadOverlayDelay);
-//        this.loadOverlayDelay = this.loadOverlayDelay + this.loadOverlayDelayIncr;
-      }
+        this.loadScript(file, null, this.dirToken);
+      else if (/\.xul$/i.test(file.leafName))
+        this.loadOverlay(file, null, this.dirToken);
       else
-        this.log("File '" + this.path +
-                 "' does not have a valid .js or .xul extension.", "userChrome.import");
+        this.log("File '" + this.path + "' does not have a valid .js or .xul extension.",
+                 "userChrome.import");
     }
     else if (file.isDirectory())
       this.importFolder(file);
     else
-      this.log("File '" + this.path +
-               "' is neither a file nor a directory.", "userChrome.import");
+      this.log("File '" + this.path + "' is neither a file nor a directory.",
+               "userChrome.import");
   },
 
   loadScript: function(aFile, aFolder, aRelDirToken) {
     setTimeout(function() {
-      Cc["@mozilla.org/moz/jssubscript-loader;1"].
-      getService(Ci.mozIJSSubScriptLoader).
-      loadSubScript(userChrome.getURLSpecFromFile(aFile),
-                    null, // defaults to the global object of the caller.
-                    userChrome.charSet);
-      // log it
+      Services.scriptloader.loadSubScript(userChrome.getURLSpecFromFile(aFile),
+                                          null, // defaults to the global object of the caller.
+                                          userChrome.charSet);
+
       userChrome.log(aRelDirToken ? ("[" + aRelDirToken + "]/" +
-          (aFolder && aFolder != "*" ? aFolder + "/" : "") + aFile.leafName) :
-          aFile.path, "userChrome.loadScript");
+                                      (aFolder && aFolder != "*" ? aFolder + "/" : "") +
+                                      aFile.leafName) :
+                                    aFile.path,
+                     "userChrome.loadScript");
     }, 0);
   },
 
-  // XXX: Due to bug 330458, an overlay must finish before another can be
-  // called, otherwise neither are successful.  Implementing an observer to
-  // serialize is better left as a fix in the core bug.  Here, settimout values
-  // are set to minimize but there is no quarantee; overlay cdata (if any)
-  // needs to consider overlay completions and logging does not strictly mean
-  // an overlay has completed, rather that the overlay file has been invoked.
-  loadOverlay: function(aFiles, aRelDirToken, aFolder, aDelay) {
-//userChrome.log(aDelay+" multiple import delay", userChrome.loadOverlay);
-    // Increment multiple import delay
-    this.loadOverlayDelay = this.loadOverlayDelay + this.loadOverlayDelayIncr;
-    setTimeout(function() {
-      if (aFiles.length > 0) {
-//userChrome.log(userChrome.loadOverlayDelay+" inter folder delay", userChrome.loadOverlay);
-        // log it
-        userChrome.log(aRelDirToken ? ("[" + aRelDirToken + "]/" +
-            (aFolder && aFolder != "*" ? aFolder + "/" : "") + aFiles[0].leafName) :
-            aFiles[0].path, "userChrome.loadOverlay");
-        document.loadOverlay(userChrome.getURLSpecFromFile(aFiles.shift()), null);
-        setTimeout(arguments.callee, userChrome.loadOverlayDelay);
-      }
-    }, aDelay);
-  },
-
-  // Include all files ending in .js and .xul from passed folder
-  importFolder: function(aFolder) {
-    let files = aFolder.directoryEntries.QueryInterface(Ci.nsISimpleEnumerator);
-    let xul_files = [];
-
-    while (files.hasMoreElements()) {
-      let file = files.getNext().QueryInterface(Ci.nsIFile);
-      if (/\.js$/i.test(file.leafName) && file.leafName != "userChrome.js")
-        this.loadScript(file, this.path, this.dirToken);
-      else if (/\.xul$/i.test(file.leafName)) {
-        xul_files.push(file);
-      }
+  // Due to bug 330458, an overlay must finish before another can be
+  // called, otherwise neither are successful.  Implement an observer; if
+  // busy try again.
+  loadOverlay: function(aFile, aFolder, aRelDirToken) {
+    if (userChrome.Observer.queued) {
+      setTimeout(userChrome.loadOverlay, userChrome.overlayPollDelay, aFile, aFolder, aRelDirToken);
+      return;
     }
 
-    if (xul_files.length > 0)
-      this.loadOverlay(xul_files, this.dirToken, this.path);
+    let fileUrl = userChrome.getURLSpecFromFile(aFile);
+//    userChrome.log("aRelDirToken:aFile.leafName:aFile.path:fileUrl - "+
+//                     aRelDirToken+":"+aFile.leafName+":"+aFile.path+":"+fileUrl,
+//                   "userChrome.loadOverlay");
+//    userChrome.log("queue fileUrl - "+
+//                   (aRelDirToken ? ("[" + aRelDirToken + "]/" +
+//                                     (aFolder && aFolder != "*" ? aFolder + "/" : "") +
+//                                     aFile.leafName) :
+//                                   aFile.path),
+//                   "userChrome.loadOverlay");
+    userChrome.Observer.queued = fileUrl;
+    document.loadOverlay(fileUrl, userChrome.Observer);
+  },
+
+  // Include all files ending in .js and .xul from passed folder.
+  importFolder: function(aFolder) {
+    let files = aFolder.directoryEntries
+                       .QueryInterface(Components.interfaces.nsISimpleEnumerator);
+
+    while (files.hasMoreElements()) {
+      let file = files.getNext().QueryInterface(Components.interfaces.nsIFile);
+      if (/\.js$/i.test(file.leafName) && file.leafName != "userChrome.js")
+        this.loadScript(file, this.path, this.dirToken);
+      else if (/\.xul$/i.test(file.leafName))
+        this.loadOverlay(file, this.path, this.dirToken);
+    }
   },
 
   getFile: function(aPath, aRelDirToken) {
       try {
-        let file = Cc["@mozilla.org/file/local;1"].
-                   createInstance(Ci.nsILocalFile);
+        let file = Components.classes["@mozilla.org/file/local;1"]
+                             .createInstance(Components.interfaces.nsIFile);
         file.initWithPath(aPath);
-        // Bad file doesn't throw on initWithPath, need to test
+        // Bad file doesn't throw on initWithPath, need to test.
         if (file.exists())
           return file;
         this.log("Invalid file '" + this.path + (this.dirToken ?
-            ("' or file not found in directory with token '" + this.dirToken) :
-            "") + "' or other access error.", "userChrome.getFile");
+                   ("' or file not found in directory with token '" + this.dirToken) :
+                   "") + "' or other access error.",
+                 "userChrome.getFile");
       }
       catch (e) {
-        // Bad folder throws on initWithPath
+        // Bad folder throws on initWithPath.
         this.log("Invalid folder '" + this.path + (this.dirToken ?
-            ("' or folder not found in directory with token '" + this.dirToken) :
-            "") + "' or other access error.", "userChrome.getFile");
+                   ("' or folder not found in directory with token '" + this.dirToken) :
+                   "") + "' or other access error.",
+                 "userChrome.getFile");
       }
 
     return null;
@@ -192,31 +184,20 @@ var userChrome = {
 
   getAbsoluteFile: function(aRelDirToken) {
     try {
-      let absDir = Cc["@mozilla.org/file/directory_service;1"].
-                   getService(Ci.nsIProperties).
-                   get(aRelDirToken, Ci.nsILocalFile);
+      let absDir = Services.dirsvc.get(aRelDirToken, Components.interfaces.nsIFile);
       return absDir;
     }
     catch (e) {
       this.log("Invalid directory name token '" + this.dirToken +
-               "' or directory cannot be accessed.", "userChrome.getAbsoluteFile");
+                 "' or directory cannot be accessed.",
+               "userChrome.getAbsoluteFile");
       return null;
     }
   },
 
-  getURLSpecFromFile: Cc["@mozilla.org/network/io-service;1"].
-                      getService(Ci.nsIIOService).
-                      getProtocolHandler("file").
-                      QueryInterface(Ci.nsIFileProtocolHandler).
-                      getURLSpecFromFile,
-
-  /* Console logger */
-  log: function(aMsg, aCaller) {
-    Cc["@mozilla.org/consoleservice;1"].
-    getService(Ci.nsIConsoleService).
-    logStringMessage(this.date + " userChromeJS " +
-        (aCaller ? aCaller +": " : "") + aMsg);
-  },
+  getURLSpecFromFile: Services.io.getProtocolHandler("file")
+                                 .QueryInterface(Components.interfaces.nsIFileProtocolHandler)
+                                 .getURLSpecFromFile,
 
   get dateFormat() {
     if (!this._dateFormat)
@@ -239,7 +220,7 @@ var userChrome = {
 
   get charSet() {
     if (!this._charSet)
-      this._charSet = "UTF-8"; // use "UTF-8". defaults to ascii if null.
+      this._charSet = "UTF-8"; // use "UTF-8"; defaults to ascii if null.
     return this._charSet;
   }
 

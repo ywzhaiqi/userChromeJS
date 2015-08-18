@@ -12,7 +12,8 @@ const RE_CONTENTTYPE = /text\/html/i;
 // 创建一个 prefs 调用
 userChromejs.__defineGetter__("prefs", function(){
     delete this.prefs;
-    return this.prefs = new userChromejs.Prefs('userChrome.');
+    this.prefs = new userChromejs.Prefs('userChrome.');
+    return this.prefs;
 });
 
 function Store() {

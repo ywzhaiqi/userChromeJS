@@ -3,8 +3,8 @@ userChromeJS Mix 扩展
 
 **userChromeJS Mix 扩展 = userChromeJS 扩展 + userChrome.js + rebuild_userChrome.uc.xul + SaveUserChromeJS.uc.js**
 
- - userChromeJS 扩展为[官方的 1.6 版本](http://userchromejs.mozdev.org/)。
- - userChrome.js 为 [Alice0775 的修改版](https://github.com/ywzhaiqi/userChromeJS/blob/master/userChrome.js)。
+ - userChromeJS 扩展为[官方的版本](http://userchromejs.mozdev.org/)。
+ - userChrome.js 为 [Alice0775 的修改版](https://github.com/alice0775/userChrome.js)。
  - UC脚本管理器为 [dannylee 的UC脚本管理器（2014.4.29版）](https://g.mozest.com/thread-41292-1-4) 的修改版。
  - **安装后会自动更新，不再需要下载附件更新。**
  - 版本 1.5 以上有了大幅改进。
@@ -25,12 +25,6 @@ userChromeJS Mix 扩展
  - [卡饭链接地址](http://bbs.kafan.cn/thread-1753671-1-1.html)
  - [github 地址](https://github.com/ywzhaiqi/userChromeJS/tree/master/userChromeJS_Mix.xpi)
 
-其它说明
--------
-
-1、为什么不采用卡饭论坛的 userChromeJS 扩展 2.0+ 修改版？
-
-    xul 文件是通过 userChrome.js 导入的，而 userChrome.js 里面并没有修改版所说的问题。
 
 更新
 ----

@@ -1,4 +1,4 @@
-/* :::::::: Sub-Script/Overlay Loader v3.0.44mod ::::::::::::::: */
+/* :::::::: Sub-Script/Overlay Loader v3.0.48mod ::::::::::::::: */
 
 // automatically includes all files ending in .uc.xul and .uc.js from the profile's chrome folder
 
@@ -14,9 +14,14 @@
 // 4.Support window.userChrome_js.loadOverlay(overlay [,observer]) //
 // Modified by Alice0775
 //
+// Date 2015/06/28 13:00 about:preferences#privacy etc
+// Date 2014/12/28 19:00 workaround loading xul on second browser
+// Date 2014/12/13 21:00 remove a debug log
+// Date 2014/12/13 21:00 allow to load scripts into about: in dialog
+// Date 2014/12/13 21:00 require userchrome.js-0.8.014121301-Fx31.xpi
 // Date 2014/06/07 21:00 skip about:blank
 // Date 2014/06/07 19:00 turn off experiment by default
-// Date 2014/06/04 12:00 fixed possibility of shutdown crash
+// Date 2014/06/04 12:00 fixed possibility of shutdown crash Bug 1016875
 // Date 2014/05/19 00:00 delay 0, experiment
 // Date 2013/10/06 00:00 allow to load scripts into about:xxx
 // Date 2013/09/13 00:00 Bug 856437 Remove Components.lookupMethod, remove REPLACEDOCUMENTOVERLAY
@@ -105,10 +110,12 @@
  */
 
 
-  //chromeでないならスキップ
-  if(!/^chrome:/i.test(location.href)) return;
+  //chrome/aboutでないならスキップ
+  if(!/^(chrome:|about:)/i.test(location.href)) return;
+  if(/^(about:(blank|newtab|home))/i.test(location.href)) return;
   //コモンダイアログに対するオーバーレイが今のところ無いので時間短縮のためスキップすることにした
   if(location.href =='chrome://global/content/commonDialog.xul') return;
+  if(location.href =='chrome://global/content/alerts/alert.xul') return;
   if(/.html?$/i.test(location.href)) return;
 
   window.userChrome_js = {
@@ -660,7 +667,7 @@
     //xulを読み込む
     runOverlays: function(doc){
       try {
-        var dochref = doc.location.href;
+        var dochref = doc.location.href.replace(/#.*$/, "");
       } catch (e) {
         return;
       }
@@ -670,7 +677,7 @@
       if( !this.EXPERIMENT && true ){ //← uc.jsでのloadOverlayに対応
         for(var m=0,len=this.overlays.length; m<len; m++){
           overlay = this.overlays[m];
-          // 排除加载 rebuild_userChrome.uc.xul
+          // 比较原版，需要多排除加载 rebuild_userChrome.uc.xul
           if( overlay.filename == this.ALWAYSEXECUTE
                  || !!this.dirDisable['*']
                  || !!this.dirDisable[overlay.dir]
@@ -713,7 +720,7 @@
     //uc.jsを読み込む
     runScripts: function(doc){
       try {
-        var dochref = doc.location.href;
+        var dochref = doc.location.href.replace(/#.*$/, "");
       } catch (e) {
         return;
       }
@@ -970,7 +977,7 @@
     window.document.addEventListener("load",
       function(event){
         if (!event.originalTarget.location) return;
-        if( /^about:blank/.test(event.originalTarget.location.href) )return;
+        if(/^(about:(blank|newtab|home))/i.test(event.originalTarget.location.href)) return;
         if( !/^(about:|chrome:)/.test(event.originalTarget.location.href) )return;
         var doc = event.originalTarget;
         var href = doc.location.href;

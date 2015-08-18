@@ -36,27 +36,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-if (Cc == undefined)
-  var Cc = Components.classes;
-if (Ci == undefined)
-  var Ci = Components.interfaces;
-if (Cr == undefined)
-  var Cr = Components.results;
-if (Cu == undefined)
-  var Cu = Components.utils;
-
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-
-// Gecko 1.9.0/1.9.1 compatibility - add XPCOMUtils.defineLazyServiceGetter
-if (!("defineLazyServiceGetter" in XPCOMUtils)) {
-  XPCOMUtils.defineLazyServiceGetter =
-    function XPCU_defineLazyServiceGetter(obj, prop, contract, iface) {
-      obj.__defineGetter__(prop, function XPCU_serviceGetter() {
-        delete obj[prop];
-        return obj[prop] = Cc[contract].getService(Ci[iface]);
-      });
-    };
-}
+Components.utils.import("resource://gre/modules/Services.jsm");
+Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 function UserChrome_js() {};
 
@@ -73,61 +54,48 @@ UserChrome_js.prototype = {
 
 /* ........ QueryInterface .................................................. */
 
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsISupports,
-                                         Ci.nsIObserver,
-                                         Ci.nsIModule,
-                                         Ci.nsIFactory,
-                                         Ci.nsIDOMEventListener]),
+  QueryInterface: XPCOMUtils.generateQI([Components.interfaces.nsISupports,
+                                         Components.interfaces.nsIObserver,
+                                         Components.interfaces.nsIModule,
+                                         Components.interfaces.nsIFactory,
+                                         Components.interfaces.nsIDOMEventListener]),
 
 /* ........ nsIObserver ..................................................... */
 
   observe: function(aSubject, aTopic, aData) {
-    var os = Cc["@mozilla.org/observer-service;1"].
-             getService(Ci.nsIObserverService);
-
     switch (aTopic) {
-    case "app-startup":
-    case "profile-after-change":
-      os.addObserver(this, "final-ui-startup", false);
-      break;
-    case "final-ui-startup":
-      var file = Cc["@mozilla.org/file/directory_service;1"].
-                 getService(Ci.nsIProperties).
-                 get("UChrm", Ci.nsILocalFile);
-      file.append("userChrome.js");
+      case "app-startup":
+      case "profile-after-change":
+        Services.obs.addObserver(this, "final-ui-startup", false);
+        break;
+      case "final-ui-startup":
+        var file = Services.dirsvc.get("UChrm", Components.interfaces.nsIFile);
+        file.append("userChrome.js");
 
-      if (file.exists()) {
-        file.renameTo(file.parent, 'userChrome-1.js');
-      }
+        // if (!file.exists()) {
+        //   var componentFile = __LOCATION__;
+        //   var componentsDir = componentFile.parent;
+        //   var extensionDir = componentsDir.parent;
+        //   extensionDir.append("README.txt");
+        //   if (extensionDir.exists())
+        //     extensionDir.copyTo(file.parent, "userChrome.js");
+        // }
 
-      // if (!file.exists()) {
-      //   var componentFile = __LOCATION__;
-      //   var componentsDir = componentFile.parent;
-      //   var extensionDir = componentsDir.parent;
-      //   extensionDir.append("userChrome.js");
-      //   if (extensionDir.exists())
-      //     extensionDir.copyTo(file.parent, "userChrome.js");
-      // }
+        if (file.exists()) {
+          file.renameTo(file.parent, 'userChrome-1.js');
+        }
 
-      // if (file.exists() && file.isFile() &&
-      //     !Cc["@mozilla.org/xre/app-info;1"].
-      //     getService(Ci.nsIXULRuntime).
-      //     inSafeMode) {
-      //   this.mFileURL = Cc["@mozilla.org/network/io-service;1"].
-      //                   getService(Ci.nsIIOService).
-      //                   getProtocolHandler("file").
-      //                   QueryInterface(Ci.nsIFileProtocolHandler).
-      //                   getURLSpecFromFile(file);
+        // if (file.exists() && file.isFile() && !Services.appinfo.inSafeMode) {
+        //   this.mFileURL = Services.io.getProtocolHandler("file")
+        //                              .QueryInterface(Components.interfaces.nsIFileProtocolHandler)
+        //                              .getURLSpecFromFile(file);
 
-      if (!Cc["@mozilla.org/xre/app-info;1"].
-          getService(Ci.nsIXULRuntime).
-          inSafeMode) {
-        os.addObserver(this, "domwindowopened", false);
-      }
-      break;
-    case "domwindowopened":
-      aSubject.addEventListener("load", this, true);
-      break;
+		    Services.obs.addObserver(this, "domwindowopened", false);
+        // }
+        break;
+      case "domwindowopened":
+        aSubject.addEventListener("load", this, true);
+        break;
     }
   },
 
@@ -135,27 +103,25 @@ UserChrome_js.prototype = {
 
   handleEvent: function(aEvent) {
     var document = aEvent.originalTarget;
-    if (document.location && document.location.protocol == "chrome:") {
+    if (document.location &&
+        (document.location.protocol == "chrome:" || document.location.protocol == "about:")) {
       try {
-        let loader = Cc["@mozilla.org/moz/jssubscript-loader;1"].
-                     getService(Ci.mozIJSSubScriptLoader);
+        Services.scriptloader.loadSubScript("chrome://userChromeJS/content/userChromeJS.js",
+                                            document.defaultView,
+                                            "UTF-8");
 
-        loader.loadSubScript("chrome://userChromeJS/content/userChromeJS.js",
-                             document.defaultView,
-                             "UTF-8");
-
-        // loader.loadSubScript(this.mFileURL,
+        // Services.scriptloader.loadSubScript(this.mFileURL,
         //                      document.defaultView,
         //                      "UTF-8");
 
-        loader.loadSubScript("chrome://userChromeJS/content/userChrome.js",
+        Services.scriptloader.loadSubScript("chrome://userChromeJS/content/userChrome.js",
                              document.defaultView,
                              "UTF-8");
       }
       catch (ex) {
         // script execution can be stopped with |throw "stop";|
         if (ex !== "stop") {
-          Cu.reportError(ex);
+          Components.utils.reportError(ex);
         }
       }
     }
@@ -168,9 +134,5 @@ UserChrome_js.prototype = {
  * prototype must have a .classID which is used to create it.
  *
  * XPCOMUtils.generateNSGetFactory was introduced in Mozilla 2 (Firefox 4).
- * XPCOMUtils.generateNSGetModule is for Mozilla 1.9.2 (Firefox 3.6).
  */
-if (XPCOMUtils.generateNSGetFactory)
-  var NSGetFactory = XPCOMUtils.generateNSGetFactory([UserChrome_js]);
-else
-  var NSGetModule = XPCOMUtils.generateNSGetModule([UserChrome_js]);
+var NSGetFactory = XPCOMUtils.generateNSGetFactory([UserChrome_js]);

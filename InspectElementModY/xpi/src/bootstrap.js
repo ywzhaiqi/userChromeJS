@@ -308,7 +308,7 @@ var InspectElement = {
         timer.initWithCallback(function () {
             AddonManager.getAllAddons(function (addons) {
                 for (let i in addons) {
-                    if (addons[i].id == "inspector@mozilla.org" && addons[i].isActive) {
+                    if ((addons[i].id == "inspector@mozilla.org" || addons[i].id == "inspector-dp@mozilla.org") && addons[i].isActive) {
                         that.hasDOMInspector = true;
                         break;
                     }

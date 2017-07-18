@@ -3,10 +3,14 @@
 // @description    Greasemonkey 模拟器。新增 GM_saveFile、GM_download 等 API，个人用于特殊用途
 // @namespace      http://d.hatena.ne.jp/Griever/
 // @include        main
-// @compatibility  Firefox 35
+// @compatibility  Firefox 53
 // @license        MIT License
 // @versin         2015.04.12 support @grant none
-// @version        0.1.8.4
+// @version        0.2
+// @startup
+// @shutdown       window.USL.destroy();
+// @note           2017-7-18 Support Firefox 53. Remove for each, [x for(x
+// @note           2017-01-01 add // @include-jquery  true，兼容 USI（手机火狐脚本管理器）。使用本地 require/jQuery.js
 // @note           0.1.8.4 add persistFlags for PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION to fix @require save data
 // @note           0.1.8.4 Firefox 35 用の修正
 // @note           0.1.8.4 エディタで Scratchpad を使えるようにした
@@ -268,6 +272,14 @@ USL.ScriptEntry.prototype = {
 		}
 	},
 	getRequire: function() {
+		if (this.metadata['include-jquery']) {
+			if (this.metadata['include-jquery'][0] == 'true') {
+				if (!this.metadata.require)
+					this.metadata.require = []
+				this.metadata.require.push('jQuery.js');
+			}
+		}
+
 		if (!this.metadata.require) return;
 		var self = this;
 		this.metadata.require.forEach(function(url){
@@ -361,7 +373,11 @@ USL.API = function(script, sandbox, win, doc) {
 
 	this.GM_listValues = function() {
 		var p = script.pref.listValues();
-		var s = [x for(x in USL.database.pref[script.prefName + name])];
+		// var s = [x for(x in USL.database.pref[script.prefName + name])];
+		// 此修改有问题
+		var pref = USL.database.pref[script.prefName + name];
+		if (!pref) return;
+		var s = Object.keys(pref);
 		s.forEach(function(e, i, a) a[i] = e.replace(script.prefName, ''));
 		p.push.apply(p, s);
 		return p;
@@ -482,30 +498,33 @@ USL.API.prototype = {
 		return Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator).generateUUID().toString();
 	},
 
-
 	// 以下我新增的
 	/**
 	 * filename 支持 text/a.html
 	 */
 	GM_saveFile: function(data, filename, dir) {
-		if (typeof filename != 'string') {
-			console.log('GM_saveFile filename is not string');
-		}
-
-		var file = getDownloadFile(filename, dir);
-
-		var converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
-		converter.charset = 'UTF-8';
-		var istream = converter.convertToInputStream(data);
-		var ostream = FileUtils.openSafeFileOutputStream(file);
-
-		NetUtil.asyncCopy(istream, ostream, function(status) {
-			if (!Components.isSuccessCode(status)) {
-				// Handle error!
-				return;
+		return new Promise(function(resolve, reject) {
+			if (typeof filename != 'string') {
+				throw new Error('GM_saveFile filename is not string');
 			}
 
-			// Data has been written to the file.
+			var file = getDownloadFile(filename, dir);
+
+			var converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
+			converter.charset = 'UTF-8';
+			var istream = converter.convertToInputStream(data);
+			var ostream = FileUtils.openSafeFileOutputStream(file);
+
+			NetUtil.asyncCopy(istream, ostream, function(status) {
+				if (!Components.isSuccessCode(status)) {
+					// Handle error!
+					console.error('[USL] GM_saveFile Failed.');
+					reject();
+					return;
+				}
+
+				resolve();
+			});
 		});
 	},
 	GM_saveFileSync: function(data, filename, dir) {
@@ -520,7 +539,16 @@ USL.API.prototype = {
 		foStream.write(data, data.length);
 		foStream.close();
 	},
+	GM_readFileSync: function(filename, dir) {
+		var aFile = getDownloadFile(filename, dir);
 
+		if (!aFile.exists()) {
+			return null;
+		}
+		
+		var data = USL.loadText(aFile);
+		return data;
+	},
 	/**
 	 * http://tampermonkey.net/documentation.php?ext=dhdg#GM_download
 	 * GM_download(url, name)  GM_download(details)
@@ -544,34 +572,16 @@ USL.API.prototype = {
 		}
 		details.onload || (details.onload = function() {});
 
-		var uri;
-		try {
-			uri = NetUtil.newURI(url);
-		} catch(ex) {
-			USL.error(ex)
-			return;
-		}
-
 		if (typeof details.name != 'string') {
 			console.log('GM_download filename is not string');
 		}
 		var targetFile = getDownloadFile(details.name, details.dir);
 
-		var persist = Cc["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"]
-				.createInstance(Ci.nsIWebBrowserPersist);
-		persist.persistFlags = persist.PERSIST_FLAGS_FROM_CACHE
-							 | persist.PERSIST_FLAGS_REPLACE_EXISTING_FILES;
-		persist.progressListener = {
-			onProgressChange: function(progress, request, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress) {},
-			onStateChange: function(progress, request, flags, status) {
-				if ((flags & Ci.nsIWebProgressListener.STATE_STOP) && status == 0) {
-					details.onload(targetFile.path);
-				}
-			}
-		};
-
-		persist.saveURI(uri, null, uri, Ci.nsIHttpChannel.REFERRER_POLICY_NO_REFERRER_WHEN_DOWNGRADE, null, null, targetFile, null);
+		// 注：下载图片可能会有破损的情况
+		downloadFileUsingPersist(url, targetFile, details.onload);
+		// downloadFileUsingDownloadsJSM(url, targetFile, details.onload);
 	},
+	// new
 	GM_run: function(path, args) {
 		var file    = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
 		var process = Cc['@mozilla.org/process/util;1'].createInstance(Ci.nsIProcess);
@@ -590,11 +600,64 @@ USL.API.prototype = {
 			USL.log(ex);
 		}
 	},
-
+	// 无效的？
+	// GM_setEnterKey: function() {
+	// 	window.QueryInterface(Ci.nsIInterfaceRequestor)
+	//         .getInterface(Ci.nsIDOMWindowUtils)
+	//         .sendKeyEvent("keypress", KeyEvent.DOM_VK_RETURN, 0, 0);
+	// },
 	GM_openConsole: function() {
 		gDevToolsBrowser.selectToolCommand(gBrowser, "webconsole");
 	},
 };
+
+function downloadFileUsingPersist(url, file, onload) {
+	var uri;
+	try {
+		uri = NetUtil.newURI(url);
+	} catch(ex) {
+		USL.error(ex)
+		return;
+	}
+
+	var persist = Cc["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"]
+			.createInstance(Ci.nsIWebBrowserPersist);
+	persist.persistFlags = persist.PERSIST_FLAGS_FROM_CACHE
+						 | persist.PERSIST_FLAGS_REPLACE_EXISTING_FILES;
+	persist.progressListener = {
+		onProgressChange: function(progress, request, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress) {},
+		onStateChange: function(progress, request, flags, status) {
+			if ((flags & Ci.nsIWebProgressListener.STATE_STOP) && status == 0) {
+				onload(file.path);
+			}
+		}
+	};
+
+	persist.saveURI(uri, null, uri, Ci.nsIHttpChannel.REFERRER_POLICY_NO_REFERRER_WHEN_DOWNGRADE, null, null, file, null);
+}
+
+function downloadFileUsingDownloadsJSM(url, file, onload) {
+    var imports = {};
+    Components.utils.import("resource://gre/modules/Downloads.jsm", imports);
+    Components.utils.import("resource://gre/modules/Task.jsm", imports);
+    var Downloads = imports.Downloads;
+    var Task = imports.Task;
+
+    Task.spawn(function () {
+        // let list = yield Downloads.getList(Downloads.ALL);
+        try {
+            let download = yield Downloads.createDownload({
+                source: url,
+                target: file
+            });
+            // list.add(download);
+            try {
+                download.start();
+            } finally { }
+            onload(file.path);
+        } finally { }
+    }).then(null, Components.utils.reportError);
+}
 
 function safeFileName(title) {
 	return title.replace(/:/g, '：').replace(/[\\\|:\*"\?<>]/g, "_");
@@ -611,6 +674,7 @@ function getDownloadFile(filename, dir) {
 	}
 
 	var pathArr = dir ? dir.split(/\/|\\/) : [];
+	filename = filename.replace(/\\+|\/+/g, '_');
 	pathArr.push(filename);
 	// safe filename
 	pathArr = pathArr.map(safeFileName);
@@ -930,7 +994,7 @@ USL.createMenuitem = function () {
 };
 
 USL.rebuild = function() {
-	USL.disabled_scripts = [x.leafName for each(x in USL.readScripts) if (x.disabled)];
+	USL.disabled_scripts = USL.readScripts.filter(x => x.disabled).map(x => x.leafName);
 	USL.pref.setValue('script.disabled', USL.disabled_scripts.join('|'));
 
 	let newScripts = [];
@@ -1021,7 +1085,8 @@ USL.saveScript = function() {
 
 USL.deleteStorage = function(type) {
 	var data = USL.database[type];
-	var list = [x for(x in data)];
+	// var list = [x for(x in data)];
+	var list = Object.keys(data);
 	if (list.length == 0)
 		return alert(type + ' is none.');
 
@@ -1252,11 +1317,11 @@ USL.injectScripts = function(safeWindow, rsflag) {
 		let unsafeWindowGetter = new sandbox.Function('return window.wrappedJSObject || window;');
 		Object.defineProperty(sandbox, 'unsafeWindow', {get: unsafeWindowGetter});
 
-		if (!script.grantNone) {
+		// if (!script.grantNone) {
 			let GM_API = new USL.API(script, sandbox, safeWindow, aDocument);
 			for (let n in GM_API)
 				sandbox[n] = GM_API[n];
-		}
+		// }
 
 		sandbox.XPathResult  = Ci.nsIDOMXPathResult;
 		// sandbox.unsafeWindow = safeWindow.wrappedJSObject;
@@ -1328,6 +1393,7 @@ USL.saveFile = function (aFile, data) {
 USL.loadSetting = function() {
 	try {
 		var aFile = Services.dirsvc.get('UChrm', Ci.nsILocalFile);
+		aFile.appendRelativePath("local");
 		aFile.appendRelativePath("UserScriptLoader.json");
 		var data = USL.loadText(aFile);
 		data = JSON.parse(data);
@@ -1340,7 +1406,7 @@ USL.loadSetting = function() {
 };
 
 USL.saveSetting = function() {
-	let disabledScripts = [x.leafName for each(x in USL.readScripts) if (x.disabled)];
+	let disabledScripts = USL.readScripts.filter(x => x.disabled).map(x => x.leafName);
 	USL.pref.setValue('script.disabled', disabledScripts.join('|'));
 	USL.pref.setValue('disabled', USL.disabled);
 	USL.pref.setValue('HIDE_EXCLUDE', USL.HIDE_EXCLUDE);

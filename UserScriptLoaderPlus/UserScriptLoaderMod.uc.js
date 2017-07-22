@@ -5,12 +5,13 @@
 // @include        main
 // @compatibility  Firefox 53
 // @license        MIT License
-// @versin         2015.04.12 support @grant none
+// @versin         2017.07.22
 // @version        0.2
-// @startup
+// @startup        
 // @shutdown       window.USL.destroy();
 // @note           2017-7-18 Support Firefox 53. Remove for each, [x for(x
 // @note           2017-01-01 add // @include-jquery  true，兼容 USI（手机火狐脚本管理器）。使用本地 require/jQuery.js
+// @note           2015-04-12 support @grant none
 // @note           0.1.8.4 add persistFlags for PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION to fix @require save data
 // @note           0.1.8.4 Firefox 35 用の修正
 // @note           0.1.8.4 エディタで Scratchpad を使えるようにした
@@ -65,6 +66,8 @@ const GLOBAL_EXCLUDES = [
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 if (!window.Services) Cu.import("resource://gre/modules/Services.jsm");
 
+const lazy = XPCOMUtils.defineLazyGetter.bind(XPCOMUtils);
+
 if (window.USL) {
 	window.USL.destroy();
 	delete window.USL;
@@ -109,7 +112,7 @@ USL.PrefManager.prototype = {
 			this.pref.deleteBranch(name);
 		} catch(e) { }
 	},
-	listValues: function() this.pref.getChildList("", {}),
+	listValues: () => this.pref.getChildList("", {}),
 };
 
 USL.ScriptEntry = function (aFile) {
@@ -219,7 +222,7 @@ USL.ScriptEntry.prototype = {
 		return new RegExp(regstr);
 	},
 	isTLD: function(urlarray) {
-		return urlarray.some(function(url) /^.+?:\/{2,3}?[^\/]+\.tld\b/.test(url));
+		return urlarray.some((url) => /^.+?:\/{2,3}?[^\/]+\.tld\b/.test(url));
 	},
 	makeTLDURL: function(aURL) {
 		try {
@@ -308,7 +311,9 @@ USL.API = function(script, sandbox, win, doc) {
 	this.GM_log = function() {
 		var arr = Array.slice(arguments);
 		arr.unshift('[' + script.name + ']');
-		win.console.log.apply(win.console, arr);
+		// win.console.log.apply(win.console, arr);
+		console.log.apply(console, arr);
+		// 另一种方法
 		// Services.console.logStringMessage("["+ script.name +"] " + Array.slice(arguments).join(", "));
 	};
 
@@ -378,7 +383,7 @@ USL.API = function(script, sandbox, win, doc) {
 		var pref = USL.database.pref[script.prefName + name];
 		if (!pref) return;
 		var s = Object.keys(pref);
-		s.forEach(function(e, i, a) a[i] = e.replace(script.prefName, ''));
+		s.forEach((e, i, a) => a[i] = e.replace(script.prefName, ''));
 		p.push.apply(p, s);
 		return p;
 	};
@@ -508,6 +513,9 @@ USL.API.prototype = {
 				throw new Error('GM_saveFile filename is not string');
 			}
 
+			if (typeof(data) == 'object')
+        data = JSON.stringify(data);
+
 			var file = getDownloadFile(filename, dir);
 
 			var converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
@@ -570,16 +578,19 @@ USL.API.prototype = {
 				details.name = getFileBaseName(url);
 			} catch(ex) {}
 		}
-		details.onload || (details.onload = function() {});
 
 		if (typeof details.name != 'string') {
 			console.log('GM_download filename is not string');
 		}
 		var targetFile = getDownloadFile(details.name, details.dir);
 
-		// 注：下载图片可能会有破损的情况
-		downloadFileUsingPersist(url, targetFile, details.onload);
-		// downloadFileUsingDownloadsJSM(url, targetFile, details.onload);
+		if (details.onload) {
+			downloadImage(url, targetFile, details.onload)
+		} else {
+			return new Promise((resolve, reject) => {
+				downloadImage(url, targetFile, resolve)
+			});
+		}
 	},
 	// new
 	GM_run: function(path, args) {
@@ -610,6 +621,12 @@ USL.API.prototype = {
 		gDevToolsBrowser.selectToolCommand(gBrowser, "webconsole");
 	},
 };
+
+function downloadImage(url, file, onload) {
+	// 注：下载图片可能会有破损的情况（2种方式好像都会有）
+	// downloadFileUsingPersist(url, targetFile, details.onload);
+	downloadFileUsingDownloadsJSM(url, targetFile, details.onload);
+}
 
 function downloadFileUsingPersist(url, file, onload) {
 	var uri;
@@ -776,9 +793,17 @@ USL.__defineGetter__("DOWNLOAD_FOLDER", function(){
 	return this.DOWNLOAD_FOLDER = aFolder;
 });
 
+USL.__defineGetter__("SETTING_FILE", function() {
+	var aFile = Services.dirsvc.get('UChrm', Ci.nsILocalFile);
+	aFile.appendRelativePath("local");
+	aFile.appendRelativePath("UserScriptLoader.json");
+
+	delete this.SETTING_FILE;
+	return this.SETTING_FILE = aFile;
+});
 
 var DISABLED = true;
-USL.__defineGetter__("disabled", function() DISABLED);
+USL.__defineGetter__("disabled", () => DISABLED);
 USL.__defineSetter__("disabled", function(bool){
 	if (bool) {
 		this.icon.setAttribute("state", "disable");
@@ -793,7 +818,7 @@ USL.__defineSetter__("disabled", function(bool){
 });
 
 var DEBUG = USL.pref.getValue('DEBUG', false);
-USL.__defineGetter__("DEBUG", function() DEBUG);
+USL.__defineGetter__("DEBUG", () => DEBUG);
 USL.__defineSetter__("DEBUG", function(bool) {
 	DEBUG = !!bool;
 	let elem = $("UserScriptLoader-debug-mode");
@@ -802,7 +827,7 @@ USL.__defineSetter__("DEBUG", function(bool) {
 });
 
 var HIDE_EXCLUDE = USL.pref.getValue('HIDE_EXCLUDE', false);
-USL.__defineGetter__("HIDE_EXCLUDE", function() HIDE_EXCLUDE);
+USL.__defineGetter__("HIDE_EXCLUDE", () => HIDE_EXCLUDE);
 USL.__defineSetter__("HIDE_EXCLUDE", function(bool){
 	HIDE_EXCLUDE = !!bool;
 	let elem = $("UserScriptLoader-hide-exclude");
@@ -810,8 +835,10 @@ USL.__defineSetter__("HIDE_EXCLUDE", function(bool){
 	return bool;
 });
 
-var CACHE_SCRIPT = USL.pref.getValue('CACHE_SCRIPT', true);
-USL.__defineGetter__("CACHE_SCRIPT", function() CACHE_SCRIPT);
+// 改为默认缓存，打开脚本后自动设为不缓存。
+// var CACHE_SCRIPT = USL.pref.getValue('CACHE_SCRIPT', true);
+var CACHE_SCRIPT = true;
+USL.__defineGetter__("CACHE_SCRIPT", () => CACHE_SCRIPT);
 USL.__defineSetter__("CACHE_SCRIPT", function(bool){
 	CACHE_SCRIPT = !!bool;
 	let elem = $("UserScriptLoader-cache-script");
@@ -820,7 +847,7 @@ USL.__defineSetter__("CACHE_SCRIPT", function(bool){
 });
 
 var MY_EDITOR = USL.pref.getValue('MY_EDITOR', true);
-USL.__defineGetter__("MY_EDITOR", function() MY_EDITOR);
+USL.__defineGetter__("MY_EDITOR", () => MY_EDITOR);
 USL.__defineSetter__("MY_EDITOR", function(bool){
 	MY_EDITOR = !!bool;
 	let elem = $("UserScriptLoader-use-myeditor");
@@ -987,6 +1014,7 @@ USL.createMenuitem = function () {
 		m.setAttribute("class", "UserScriptLoader-item");
 		m.setAttribute('checked', !script.disabled);
 		m.setAttribute('type', 'checkbox');
+		m.setAttribute('autocheck', 'false');
 		m.setAttribute('oncommand', 'this.script.disabled = !this.script.disabled;');
 		m.script = script;
 		USL.popup.insertBefore(m, USL.menuseparator);
@@ -1179,6 +1207,10 @@ USL.menuClick = function(event){
 };
 
 USL.edit = function(script) {
+	if (USL.CACHE_SCRIPT) {
+		USL.CACHE_SCRIPT = false;
+	}
+
 	if (!USL.MY_EDITOR || !USL.EDITOR)
 		return USL.editByScratchpad(script);
 	try {
@@ -1275,12 +1307,12 @@ USL.injectScripts = function(safeWindow, rsflag) {
 	/* 画像を開いた際に実行されないので適当に実行する */
 	if (aDocument instanceof ImageDocument) {
 		safeWindow.setTimeout(function() {
-			documentEnds.forEach(function(s) "delay" in s ?
+			documentEnds.forEach((s) => "delay" in s ?
 				safeWindow.setTimeout(run, s.delay, s) :
 				run(s));
 		}, 10);
 		safeWindow.setTimeout(function() {
-			windowLoads.forEach(function(s) "delay" in s ?
+			windowLoads.forEach((s) => "delay" in s ?
 				safeWindow.setTimeout(run, s.delay, s) :
 				run(s));
 		}, 300);
@@ -1288,14 +1320,14 @@ USL.injectScripts = function(safeWindow, rsflag) {
 		if (documentEnds.length) {
 			safeWindow.addEventListener("DOMContentLoaded", function(event){
 				event.currentTarget.removeEventListener(event.type, arguments.callee, false);
-				documentEnds.forEach(function(s) "delay" in s ?
+				documentEnds.forEach((s) => "delay" in s ?
 					safeWindow.setTimeout(run, s.delay, s) : run(s));
 			}, false);
 		}
 		if (windowLoads.length) {
 			safeWindow.addEventListener("load", function(event) {
 				event.currentTarget.removeEventListener(event.type, arguments.callee, false);
-				windowLoads.forEach(function(s) "delay" in s ?
+				windowLoads.forEach((s) => "delay" in s ?
 					safeWindow.setTimeout(run, s.delay, s) : run(s));
 			}, false);
 		}
@@ -1338,7 +1370,7 @@ USL.injectScripts = function(safeWindow, rsflag) {
 USL.evalInSandbox = function(aScript, aSandbox) {
 	try{
 		var lineFinder = new Error();
-		Cu.evalInSandbox('(function() {' + aScript.requireSrc + '\r\n' + aScript.code + '\r\n})();', aSandbox, "1.8");
+		Cu.evalInSandbox('(function() {' + aScript.requireSrc + '\r\n' + aScript.code + '\r\n})();', aSandbox, 'latest');
 	} catch(e) {
 		let line = e.lineNumber - lineFinder.lineNumber - aScript.requireSrc.split("\n").length;
 		USL.error(aScript.name + ' / line:' + line + "\n" + e);
@@ -1392,9 +1424,7 @@ USL.saveFile = function (aFile, data) {
 
 USL.loadSetting = function() {
 	try {
-		var aFile = Services.dirsvc.get('UChrm', Ci.nsILocalFile);
-		aFile.appendRelativePath("local");
-		aFile.appendRelativePath("UserScriptLoader.json");
+		var aFile = USL.SETTING_FILE;
 		var data = USL.loadText(aFile);
 		data = JSON.parse(data);
 		USL.database.pref = data.pref;
@@ -1414,8 +1444,7 @@ USL.saveSetting = function() {
 	USL.pref.setValue('MY_EDITOR', USL.MY_EDITOR);
 	USL.pref.setValue('DEBUG', USL.DEBUG);
 
-	var aFile = Services.dirsvc.get('UChrm', Ci.nsILocalFile);
-	aFile.appendRelativePath("UserScriptLoader.json");
+	var aFile = USL.SETTING_FILE;
 	USL.saveText(aFile, JSON.stringify(USL.database));
 };
 
@@ -1486,10 +1515,10 @@ window.USL = USL;
 function log(str) { Application.console.log(Array.slice(arguments)); }
 function debug() { if (USL.DEBUG) Application.console.log('[USL DEBUG] ' + Array.slice(arguments));}
 
-function $(id) document.getElementById(id);
+function $(id) { return document.getElementById(id); }
 function $C(name, attr) {
 	var el = document.createElement(name);
-	if (attr) Object.keys(attr).forEach(function(n) el.setAttribute(n, attr[n]));
+	if (attr) Object.keys(attr).forEach((n) => el.setAttribute(n, attr[n]));
 	return el;
 }
 

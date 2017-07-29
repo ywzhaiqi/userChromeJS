@@ -5,11 +5,12 @@
 // @include        main
 // @compatibility  Firefox 53
 // @license        MIT License
-// @versin         2017.07.22
+// @versin         2017.07.29
 // @version        0.2
 // @startup        
 // @shutdown       window.USL.destroy();
-// @note           2017-7-18 Support Firefox 53. Remove for each, [x for(x
+// @note           2017-07-29 Fix GM_download onload Function Error
+// @note           2017-07-18 Support Firefox 53. Remove for each, [x for(x
 // @note           2017-01-01 add // @include-jquery  true，兼容 USI（手机火狐脚本管理器）。使用本地 require/jQuery.js
 // @note           2015-04-12 support @grant none
 // @note           0.1.8.4 add persistFlags for PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION to fix @require save data
@@ -564,7 +565,8 @@ USL.API.prototype = {
 	GM_download: function(url, name, dir) {
 		var details;
 		if (arguments.length == 1) {
-			details = arguments[0];
+			// https://developer.mozilla.org/en-US/docs/Mozilla/Tech/Xray_vision
+			details = Cu.waiveXrays(arguments[0]);
 		} else {
 			details = {
 				url: arguments[0],
@@ -579,18 +581,20 @@ USL.API.prototype = {
 			} catch(ex) {}
 		}
 
+		const onload = function() {
+			if (typeof details.onload === 'function') {
+				details.onload()
+			}
+		}
+
 		if (typeof details.name != 'string') {
 			console.log('GM_download filename is not string');
 		}
 		var targetFile = getDownloadFile(details.name, details.dir);
 
-		if (details.onload) {
-			downloadImage(url, targetFile, details.onload)
-		} else {
-			return new Promise((resolve, reject) => {
-				downloadImage(url, targetFile, resolve)
-			});
-		}
+		// 注：下载图片可能会有破损的情况
+		downloadFile(details.url, targetFile, onload);
+		// downloadFile2(details.url, targetFile, onload);
 	},
 	// new
 	GM_run: function(path, args) {
@@ -622,18 +626,12 @@ USL.API.prototype = {
 	},
 };
 
-function downloadImage(url, file, onload) {
-	// 注：下载图片可能会有破损的情况（2种方式好像都会有）
-	// downloadFileUsingPersist(url, targetFile, details.onload);
-	downloadFileUsingDownloadsJSM(url, targetFile, details.onload);
-}
-
-function downloadFileUsingPersist(url, file, onload) {
+function downloadFile(url, file, onload) {
 	var uri;
 	try {
 		uri = NetUtil.newURI(url);
 	} catch(ex) {
-		USL.error(ex)
+		USL.error(url, ex)
 		return;
 	}
 
@@ -653,27 +651,14 @@ function downloadFileUsingPersist(url, file, onload) {
 	persist.saveURI(uri, null, uri, Ci.nsIHttpChannel.REFERRER_POLICY_NO_REFERRER_WHEN_DOWNGRADE, null, null, file, null);
 }
 
-function downloadFileUsingDownloadsJSM(url, file, onload) {
-    var imports = {};
-    Components.utils.import("resource://gre/modules/Downloads.jsm", imports);
-    Components.utils.import("resource://gre/modules/Task.jsm", imports);
-    var Downloads = imports.Downloads;
-    var Task = imports.Task;
+async function downloadFile2(url, targetFile) { // 两种方式都会添加到全部下载项
+	// return Downloads.fetch(url, targetFile);
 
-    Task.spawn(function () {
-        // let list = yield Downloads.getList(Downloads.ALL);
-        try {
-            let download = yield Downloads.createDownload({
-                source: url,
-                target: file
-            });
-            // list.add(download);
-            try {
-                download.start();
-            } finally { }
-            onload(file.path);
-        } finally { }
-    }).then(null, Components.utils.reportError);
+	// let download = await Downloads.createDownload({
+	//   source: url,
+	// 	target
+	// });
+	// download.start();
 }
 
 function safeFileName(title) {
@@ -683,10 +668,13 @@ function safeFileName(title) {
 // https://developer.mozilla.org/en-US/Add-ons/Code_snippets/File_I_O
 function getDownloadFile(filename, dir) {
 	if (!getDownloadFile.isSeted) {
-		// 注册一个自定义路径供下面调用
-		Cc["@mozilla.org/file/directory_service;1"]
-				.getService(Ci.nsIProperties)
-				.set("Dwnld", USL.DOWNLOAD_FOLDER);
+		try {
+			// 注册一个自定义路径供下面调用
+			Cc["@mozilla.org/file/directory_service;1"]
+					.getService(Ci.nsIProperties)
+					.set("Dwnld", USL.DOWNLOAD_FOLDER);
+		} catch(e) {}
+		
 		getDownloadFile.isSeted = true;
 	}
 

@@ -7,7 +7,7 @@
 // @homepage        http://haoutil.tk
 // @version         1.6.0.26
 // @update          2014.8.10
-// @compatible      firefox 17+
+// @compatible      firefox 37+
 // @startup         window.mYoukuAntiADs.init();
 // @shutdown        window.mYoukuAntiADs.destroy();
 // @homePageURL     https://github.com/ywzhaiqi/userChromeJS/tree/master/YoukuantiadsModY
@@ -29,7 +29,7 @@
     var SWF_DIR = 'swf';           // 本地播放器路径，chrome 目录下
     // var SWF_DIR = 'local\\swf';
 
-    var XHR_TIMEOUT = 30 * 1000;
+    var XHR_TIMEOUT = 60 * 1000;
 
     var updateStates = {
         noUpdate: '无更新',
@@ -74,45 +74,41 @@
         SITES: {
             'youku_loader': {
                 // enable: true,
-                'player': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/loader.swf',
+                'player': 'https://bitbucket.org/kafan15536900/haoutil/raw/master/player/testmod/loader.swf',
                 're': /http:\/\/static\.youku\.com(\/v[\d\.]+)?\/v\/swf\/loaders?\.swf/i
             },
             'youku_player': {
-                'player': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/player.swf',
+                'player': 'https://bitbucket.org/kafan15536900/haoutil/raw/master/player/testmod/player.swf',
                 're': /http:\/\/static\.youku\.com(\/v[\d\.]+)?\/v\/swf\/q?player[^\.]*\.swf/i
             },
             'ku6': {
-                'player': 'https://haoutil.googlecode.com/svn/trunk/player/ku6.swf',
+                'player': 'https://bitbucket.org/kafan15536900/haoutil/raw/master/player/ku6.swf',
                 're': /http:\/\/player\.ku6cdn\.com\/default\/common\/player\/\d{12}\/player\.swf/i
             },
             'ku6_out': {
-                'player': 'https://haoutil.googlecode.com/svn/trunk/player/ku6_out.swf',
+                'player': 'https://bitbucket.org/kafan15536900/haoutil/raw/master/player/ku6_out.swf',
                 're': /http:\/\/player\.ku6cdn\.com\/default\/out\/\d{12}\/player\.swf/i
             },
             'iqiyi': {
-                'player0': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/iqiyi_out.swf',
-                'player1': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/iqiyi5.swf',
-                'player2': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/iqiyi.swf',
+                'player0': 'https://bitbucket.org/kafan15536900/haoutil/raw/master/player/testmod/iqiyi_out.swf',
+                'player1': 'https://bitbucket.org/kafan15536900/haoutil/raw/master/player/testmod/iqiyi5.swf',
+                'player2': 'https://bitbucket.org/kafan15536900/haoutil/raw/master/player/testmod/iqiyi.swf',
                 're': /https?:\/\/www\.iqiyi\.com\/(player\/\d+\/Player|common\/flashplayer\/\d+\/(Main)?Player_.*)\.swf/i
             },
-            'iqiyip2p': {
-                'player': 'http://www.iqiyi.com/player/20140709110406/20088.swf',
-                're': /http:\/\/www\.iqiyi\.com\/common\/flashplayer\/\d+\/\d[a-z0-9]*.swf/i
-            },
             'tudou': {
-                'player': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/tudou.swf',
+                'player': 'https://bitbucket.org/kafan15536900/haoutil/raw/master/player/testmod/tudou.swf',
                 're': /http:\/\/js\.tudouui\.com\/.*portalplayer[^\.]*\.swf/i
             },
             'tudou_olc': {
-                'player': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/olc_8.swf',
+                'player': 'https://bitbucket.org/kafan15536900/haoutil/raw/master/player/testmod/olc_8.swf',
                 're': /http:\/\/js\.tudouui\.com\/.*olc[^\.]*\.swf/i
             },
             'tudou_sp': {
-                'player': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/sp.swf',
+                'player': 'https://bitbucket.org/kafan15536900/haoutil/raw/master/player/testmod/sp.swf',
                 're': /http:\/\/js\.tudouui\.com\/.*\/socialplayer[^\.]*\.swf/i
             },
             'letv': {
-                'player': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/letv.swf',
+                'player': 'https://bitbucket.org/kafan15536900/haoutil/raw/master/player/testmod/letv.swf',
                 're': /http:\/\/.*letv[\w]*\.com\/(hz|.*\/(?!(Live|seed))(S[\w]{2,3})?(?!Live)[\w]{4})Player[^\.]*\.swf/i
             },
             'letvskin': {
@@ -120,19 +116,19 @@
                 're': /http:\/\/.*letv[\w]*\.com\/p\/\d+\/\d+\/(?!1456)\d*\/newplayer\/\d+\/SLetvPlayer\.swf/i
             },
             'pplive': {
-                'player': 'https://haoutil.googlecode.com/svn/trunk/player/pplive.swf',
+                'player': 'https://bitbucket.org/kafan15536900/haoutil/raw/master/player/pplive.swf',
                 're': /http:\/\/player\.pplive\.cn\/ikan\/.*\/player4player2\.swf/i
             },
             'pplive_live': {
-                'player': 'https://haoutil.googlecode.com/svn/trunk/player/pplive_live.swf',
+                'player': 'https://bitbucket.org/kafan15536900/haoutil/raw/master/player/pplive_live.swf',
                 're': /http:\/\/player\.pplive\.cn\/live\/.*\/player4live2\.swf/i
             },
             'sohu': {
-                'player': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/sohu.swf',
+                'player': 'https://bitbucket.org/kafan15536900/haoutil/raw/master/player/testmod/sohu.swf',
                 're': /http:\/\/tv\.sohu\.com\/upload\/swf(\/p2p(\/yc)?)?\/\d+\/(main|playershell)\.swf/i
             },
             'pps': {
-                'player': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/pps.swf',
+                'player': 'https://bitbucket.org/kafan15536900/haoutil/raw/master/player/testmod/pps.swf',
                 're': /http:\/\/www\.iqiyi\.com\/player\/cupid\/.*\/pps[\w]+.swf/i
             },
             // http://bbs.kafan.cn/thread-1725172-1-1.html
@@ -710,7 +706,7 @@
                 }
             };
 
-            persist.saveURI(this.uri, null, null, null, "", targetFile, null);
+            persist.saveURI(this.uri, null, null, null, null, "", targetFile, null);
         },
     };
 
